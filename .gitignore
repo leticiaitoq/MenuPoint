@@ -1,0 +1,6 @@
+node_modules
+dist
+.env
+prisma/migrations/dev.db
+.DS_Store
+/src/generated/prisma

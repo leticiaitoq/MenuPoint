@@ -1,0 +1,28 @@
+@host = http://localhost:3333
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZjA2ZmI0NS1jN2ExLTQwNWItODQ5My02MDU1NWM3ZTdhNmMiLCJub21lIjoiQWRtaW5nbG9iYWwiLCJlbWFpbCI6ImFkbWluZ2xvYmFsQGVtYWlsLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiZXNjb3BvIjoiR0xPQkFMIiwiZXN0YWJlbGVjaW1lbnRvX2lkIjoiZDMyNDY3NGQtYTc5NS00MGI4LTg4YWItODg1YWQxMWZiNWUyIiwiZW1wcmVzYV9pZCI6bnVsbCwiaWF0IjoxNzc0ODczNTYwLCJleHAiOjE3NzU0NzgzNjB9.wNPXI9QselEQO8aY-Rz_9kjfZQW3EvIMzhvEeJVX_PU
+
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "adminglobal@email.com",
+  "senha": "senha123"
+}
+
+###
+
+### Login
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@email.com",
+  "senha": "senha123"
+}
+
+###
+
+GET {{host}}/auth/me
+Authorization: Bearer {{token}}

@@ -1,0 +1,422 @@
+// ============================================================
+// Prisma Schema — Sistema de Cardápio Digital
+// Banco: PostgreSQL
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// GRUPO 1 — EMPRESAS E ESTABELECIMENTOS
+// ============================================================
+
+model Empresa {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome       String   @db.VarChar(150)
+  cnpj       String?  @unique @db.VarChar(18)
+  plano      Plano
+  ativo      Boolean  @default(true)
+  criado_em  DateTime @default(now()) @db.Timestamptz
+
+  estabelecimentos Estabelecimento[]
+  usuarios         Usuario[]
+
+  @@map("empresas")
+}
+
+model Estabelecimento {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  empresa_id    String?  @db.Uuid
+  nome          String   @db.VarChar(150)
+  slug          String   @unique @db.VarChar(100)
+  cnpj          String?  @unique @db.VarChar(18)
+  telefone      String   @db.VarChar(20)
+  whatsapp      String   @db.VarChar(20)
+  email         String?  @unique @db.VarChar(150)
+  endereco      Json
+  logo_url      String?  @db.VarChar(500)
+  banner_url    String?  @db.VarChar(500)
+  tema          Tema     @default(CLARO)
+
+  chave_pix                  String?  @db.VarChar(150)
+  tipo_chave_pix             TipoChavePix?
+  tempo_entrega_min          Int      @default(30)
+  tempo_entrega_max          Int      @default(60)
+  taxa_entrega               Decimal  @default(0) @db.Decimal(8, 2)
+  pedido_minimo              Decimal  @default(0) @db.Decimal(8, 2)
+  aceita_entrega             Boolean  @default(true)
+  aceita_retirada            Boolean  @default(true)
+  aceita_mesa                Boolean  @default(true)
+  horario_funcionamento      Json?
+  desconto_boas_vindas_usado Boolean  @default(false)
+  ativo                      Boolean  @default(true)
+  criado_em                  DateTime @default(now()) @db.Timestamptz
+
+  empresa    Empresa?  @relation(fields: [empresa_id], references: [id])
+  usuarios   Usuario[]
+  categorias Categoria[]
+  produtos   Produto[]
+  mesas      Mesa[]
+  reservas   Reserva[]
+  pedidos    Pedido[]
+  pagamentos Pagamento[]
+
+  @@map("estabelecimentos")
+}
+
+// ============================================================
+// GRUPO 2 — USUÁRIOS
+// ============================================================
+
+model Usuario {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  empresa_id           String?  @db.Uuid
+  estabelecimento_id   String?  @db.Uuid
+  nome                 String   @db.VarChar(100)
+  email                String   @unique @db.VarChar(150)
+  senha_hash           String   @db.VarChar(255)
+  perfil               Perfil
+  escopo               Escopo   @default(LOCAL)
+  ativo                Boolean  @default(true)
+  ultimo_acesso        DateTime? @db.Timestamptz
+  criado_em            DateTime @default(now()) @db.Timestamptz
+
+  empresa          Empresa?         @relation(fields: [empresa_id], references: [id])
+  estabelecimento  Estabelecimento? @relation(fields: [estabelecimento_id], references: [id])
+
+  pedidos_atendidos    Pedido[]    @relation("AtendidoPor")
+  reservas_confirmadas Reserva[]   @relation("ConfirmadaPor")
+  pagamentos_confirmados Pagamento[] @relation("ConfirmadoPor")
+
+  @@map("usuarios")
+}
+
+// ============================================================
+// GRUPO 3 — CARDÁPIO
+// ============================================================
+
+model Categoria {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String   @db.Uuid
+  nome               String   @db.VarChar(100)
+  descricao          String?  @db.VarChar(255)
+  icone              String?  @db.VarChar(10)
+  imagem_url         String?  @db.VarChar(500)
+  ordem              Int      @default(0)
+  ativo              Boolean  @default(true)
+  criado_em          DateTime @default(now()) @db.Timestamptz
+
+  estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
+  produtos        Produto[]
+
+  @@map("categorias")
+}
+
+model Produto {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String   @db.Uuid
+  categoria_id       String   @db.Uuid
+  nome               String   @db.VarChar(150)
+  descricao          String?
+  preco              Decimal  @db.Decimal(10, 2)
+  preco_promocional  Decimal? @db.Decimal(10, 2)
+  imagem_url         String?  @db.VarChar(500)
+  codigo_interno     String?  @db.VarChar(50)
+  tempo_preparo_min  Int?
+  disponivel         Boolean  @default(true)
+  destaque           Boolean  @default(false)
+  ordem              Int      @default(0)
+  total_vendido      Int      @default(0)
+  criado_em          DateTime @default(now()) @db.Timestamptz
+  atualizado_em      DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  estabelecimento   Estabelecimento    @relation(fields: [estabelecimento_id], references: [id])
+  categoria         Categoria          @relation(fields: [categoria_id], references: [id])
+  grupos_adicionais GrupoAdicional[]
+  itens_pedido      ItemPedido[]
+
+  @@map("produtos")
+}
+
+model GrupoAdicional {
+  id               String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  produto_id       String  @db.Uuid
+  nome             String  @db.VarChar(100)
+  obrigatorio      Boolean @default(false)
+  selecao_multipla Boolean @default(false)
+  min_selecoes     Int     @default(0)
+  max_selecoes     Int     @default(1)
+  ordem            Int     @default(0)
+
+  produto    Produto     @relation(fields: [produto_id], references: [id])
+  adicionais Adicional[]
+
+  @@map("grupos_adicionais")
+}
+
+model Adicional {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  grupo_id    String  @db.Uuid
+  nome        String  @db.VarChar(100)
+  preco_extra Decimal @default(0) @db.Decimal(8, 2)
+  disponivel  Boolean @default(true)
+  ordem       Int     @default(0)
+
+  grupo            GrupoAdicional   @relation(fields: [grupo_id], references: [id])
+  itens_adicionais ItemAdicional[]
+
+  @@map("adicionais")
+}
+
+// ============================================================
+// GRUPO 4 — MESAS
+// ============================================================
+
+model Mesa {
+  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String      @db.Uuid
+  numero             Int
+  capacidade         Int
+  qr_code_token      String      @unique @db.VarChar(64)
+  qr_code_url        String?     @db.VarChar(500)
+  localizacao        String?     @db.VarChar(100)
+  status             StatusMesa  @default(LIVRE)
+  ativo              Boolean     @default(true)
+  criado_em          DateTime    @default(now()) @db.Timestamptz
+
+  estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
+  reservas        Reserva[]
+  pedidos         Pedido[]
+
+  @@map("mesas")
+}
+
+// ============================================================
+// GRUPO 5 — RESERVAS
+// ============================================================
+
+model Reserva {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String        @db.Uuid
+  mesa_id            String?       @db.Uuid
+  confirmada_por_id  String?       @db.Uuid
+  cliente_nome       String        @db.VarChar(100)
+  cliente_telefone   String        @db.VarChar(20)
+  cliente_email      String?       @db.VarChar(150)
+  data_reserva       DateTime      @db.Date
+  hora_inicio        DateTime      @db.Time
+  hora_fim           DateTime      @db.Time
+  num_pessoas        Int
+  observacoes        String?
+  status             StatusReserva @default(PENDENTE)
+  criado_em          DateTime      @default(now()) @db.Timestamptz
+  atualizado_em      DateTime      @default(now()) @updatedAt @db.Timestamptz
+
+  estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
+  mesa            Mesa?           @relation(fields: [mesa_id], references: [id])
+  confirmada_por  Usuario?        @relation("ConfirmadaPor", fields: [confirmada_por_id], references: [id])
+  pedidos         Pedido[]
+
+  @@map("reservas")
+}
+
+// ============================================================
+// GRUPO 6 — PEDIDOS
+// ============================================================
+
+model Pedido {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String        @db.Uuid
+  mesa_id            String?       @db.Uuid
+  reserva_id         String?       @db.Uuid
+  atendido_por_id    String?       @db.Uuid
+  numero_pedido      Int           @default(autoincrement())
+  modalidade         Modalidade
+  status             StatusPedido  @default(RECEBIDO)
+  cliente_nome       String        @db.VarChar(100)
+  cliente_telefone   String        @db.VarChar(20)
+  endereco_entrega   Json?
+  observacoes        String?
+  subtotal           Decimal       @db.Decimal(10, 2)
+  taxa_entrega       Decimal       @default(0) @db.Decimal(8, 2)
+  desconto           Decimal       @default(0) @db.Decimal(8, 2)
+  total              Decimal       @db.Decimal(10, 2)
+  forma_pagamento    FormaPagamento?
+  troco_para         Decimal?      @db.Decimal(10, 2)
+  whatsapp_enviado   Boolean       @default(false)
+  cancelamento_motivo String?
+  criado_em          DateTime      @default(now()) @db.Timestamptz
+  atualizado_em      DateTime      @default(now()) @updatedAt @db.Timestamptz
+  entregue_em        DateTime?     @db.Timestamptz
+
+  estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
+  mesa            Mesa?           @relation(fields: [mesa_id], references: [id])
+  reserva         Reserva?        @relation(fields: [reserva_id], references: [id])
+  atendido_por    Usuario?        @relation("AtendidoPor", fields: [atendido_por_id], references: [id])
+  itens           ItemPedido[]
+  pagamento       Pagamento?
+
+  @@map("pedidos")
+}
+
+model ItemPedido {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pedido_id       String   @db.Uuid
+  produto_id      String   @db.Uuid
+  quantidade      Int
+  preco_unitario  Decimal  @db.Decimal(10, 2)
+  preco_total     Decimal  @db.Decimal(10, 2)
+  observacoes     String?
+
+  pedido           Pedido          @relation(fields: [pedido_id], references: [id])
+  produto          Produto         @relation(fields: [produto_id], references: [id])
+  itens_adicionais ItemAdicional[]
+
+  @@map("itens_pedido")
+}
+
+model ItemAdicional {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  item_pedido_id  String  @db.Uuid
+  adicional_id    String  @db.Uuid
+  nome_adicional  String  @db.VarChar(100)
+  preco_extra     Decimal @db.Decimal(8, 2)
+
+  item_pedido ItemPedido @relation(fields: [item_pedido_id], references: [id])
+  adicional   Adicional  @relation(fields: [adicional_id], references: [id])
+
+  @@map("itens_adicionais")
+}
+
+// ============================================================
+// GRUPO 7 — PAGAMENTOS
+// ============================================================
+
+model Pagamento {
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pedido_id          String         @unique @db.Uuid
+  estabelecimento_id String         @db.Uuid
+  confirmado_por_id  String?        @db.Uuid
+  valor              Decimal        @db.Decimal(10, 2)
+  metodo             FormaPagamento
+  status             StatusPagamento @default(PENDENTE)
+  chave_pix_usada    String?        @db.VarChar(150)
+  comprovante_url    String?        @db.VarChar(500)
+  valor_original     Decimal?       @db.Decimal(10, 2)
+  desconto_percentual Decimal?      @default(0) @db.Decimal(5, 2)
+  desconto_valor     Decimal?       @default(0) @db.Decimal(10, 2)
+  observacoes        String?
+  confirmado_em      DateTime?      @db.Timestamptz
+  criado_em          DateTime       @default(now()) @db.Timestamptz
+
+  pedido          Pedido          @relation(fields: [pedido_id], references: [id])
+  estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
+  confirmado_por  Usuario?        @relation("ConfirmadoPor", fields: [confirmado_por_id], references: [id])
+
+  @@map("pagamentos")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Plano {
+  STARTER
+  PRO
+  BUSINESS
+  ENTERPRISE
+
+  @@map("plano")
+}
+
+enum Tema {
+  CLARO
+  ESCURO
+
+  @@map("tema")
+}
+
+enum TipoChavePix {
+  CPF
+  CNPJ
+  EMAIL
+  TELEFONE
+  ALEATORIA
+
+  @@map("tipo_chave_pix")
+}
+
+enum Perfil {
+  ADMIN
+  ATENDENTE
+  CAIXA
+
+  @@map("perfil")
+}
+
+enum Escopo {
+  GLOBAL
+  LOCAL
+
+  @@map("escopo")
+}
+
+enum StatusMesa {
+  LIVRE
+  OCUPADA
+  RESERVADA
+  INATIVA
+
+  @@map("status_mesa")
+}
+
+enum StatusReserva {
+  PENDENTE
+  CONFIRMADA
+  CONCLUIDA
+  CANCELADA
+
+  @@map("status_reserva")
+}
+
+enum Modalidade {
+  ENTREGA
+  MESA
+  RETIRADA
+
+  @@map("modalidade")
+}
+
+enum StatusPedido {
+  RECEBIDO
+  PREPARO
+  PRONTO
+  ENTREGUE
+  CANCELADO
+
+  @@map("status_pedido")
+}
+
+enum FormaPagamento {
+  PIX_ONLINE
+  PIX_PRESENCIAL
+  DINHEIRO
+  CARTAO
+
+  @@map("forma_pagamento")
+}
+
+enum StatusPagamento {
+  PENDENTE
+  CONFIRMADO
+  ESTORNADO
+  FALHOU
+
+  @@map("status_pagamento")
+}

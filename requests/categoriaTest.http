@@ -1,0 +1,71 @@
+@host = http://localhost:3333
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZjA2ZmI0NS1jN2ExLTQwNWItODQ5My02MDU1NWM3ZTdhNmMiLCJub21lIjoiQWRtaW5nbG9iYWwiLCJlbWFpbCI6ImFkbWluZ2xvYmFsQGVtYWlsLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiZXNjb3BvIjoiR0xPQkFMIiwiZXN0YWJlbGVjaW1lbnRvX2lkIjoiZDMyNDY3NGQtYTc5NS00MGI4LTg4YWItODg1YWQxMWZiNWUyIiwiZW1wcmVzYV9pZCI6bnVsbCwiaWF0IjoxNzc0ODc2OTA4LCJleHAiOjE3NzU0ODE3MDh9.CTQ48GPJEQj3vSf3qkZC1uDK0oPy9rgUc2tHX1_Ow5Y
+@categoria_id = b0fac7b4-6280-46a6-9f14-b4333879dd60
+### Listar categorias (painel admin)
+GET {{host}}/categorias
+Authorization: Bearer {{token}}
+
+###
+
+### Criar categoria
+# @name criarCategoria
+POST {{host}}/categorias
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Pizza",
+  "ordem": 1,
+  "ativo": true,
+  "descricao": "Nossas deliciosas pizzas artesanais",
+  "icone": "lanche.ico",
+  "imagem_url": "https://meusite.com/imagens/lanche.jpg",
+  "estabelecimento_id": "d324674d-a795-40b8-88ab-885ad11fb5e2"
+}
+
+###
+
+### Buscar categoria por ID
+GET {{host}}/categorias/{{categoria_id}}
+Authorization: Bearer {{token}}
+
+###
+
+### Atualizar categoria
+PUT {{host}}/categorias/{{categoria_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Pizzaria",
+  "ordem": 1,
+  "ativo": true,
+  "descricao": "Nossas deliciosas pizzas artesanais",
+  "icone": "lanche.ico",
+  "imagem_url": "https://meusite.com/imagens/lanche.jpg",
+  "estabelecimento_id": "d324674d-a795-40b8-88ab-885ad11fb5e2"
+}
+
+
+###
+
+### Reordenar categorias
+PATCH {{host}}/categorias/reordenar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+[
+  { "id": "b0fac7b4-6280-46a6-9f14-b4333879dd60", "ordem": 0 },
+  { "id": "bdc76863-f52e-41ba-a543-d5dfc99f6f4a", "ordem": 1 }
+]
+
+###
+
+### Cardápio público com produtos (sem token)
+GET {{host}}/categorias/publico/c5d53081-b991-4217-83b4-eaa6f062e860
+
+###
+
+### Desativar categoria
+DELETE {{host}}/categorias/{{categoria_id}}
+Authorization: Bearer {{token}}
