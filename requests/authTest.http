@@ -1,6 +1,5 @@
-@host = http://localhost:3333
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZjA2ZmI0NS1jN2ExLTQwNWItODQ5My02MDU1NWM3ZTdhNmMiLCJub21lIjoiQWRtaW5nbG9iYWwiLCJlbWFpbCI6ImFkbWluZ2xvYmFsQGVtYWlsLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiZXNjb3BvIjoiR0xPQkFMIiwiZXN0YWJlbGVjaW1lbnRvX2lkIjoiZDMyNDY3NGQtYTc5NS00MGI4LTg4YWItODg1YWQxMWZiNWUyIiwiZW1wcmVzYV9pZCI6bnVsbCwiaWF0IjoxNzc0ODczNTYwLCJleHAiOjE3NzU0NzgzNjB9.wNPXI9QselEQO8aY-Rz_9kjfZQW3EvIMzhvEeJVX_PU
-
+@host = http://localhost:3333/api/v1
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZjA2ZmI0NS1jN2ExLTQwNWItODQ5My02MDU1NWM3ZTdhNmMiLCJub21lIjoiQWRtaW5nbG9iYWwiLCJlbWFpbCI6ImFkbWluZ2xvYmFsQGVtYWlsLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiZXNjb3BvIjoiR0xPQkFMIiwiZXN0YWJlbGVjaW1lbnRvX2lkIjoiZDMyNDY3NGQtYTc5NS00MGI4LTg4YWItODg1YWQxMWZiNWUyIiwiZW1wcmVzYV9pZCI6bnVsbCwiaWF0IjoxNzc1NTIzMDE2LCJleHAiOjE3NzYxMjc4MTZ9.gjQlnfj5b5PyZhUf7P7hkV1L524KIyot1oOquCmXpvY
 # @name login
 POST {{host}}/auth/login
 Content-Type: application/json
@@ -10,7 +9,6 @@ Content-Type: application/json
   "senha": "senha123"
 }
 
-###
 
 ### Login
 # @name login
@@ -19,10 +17,32 @@ Content-Type: application/json
 
 {
   "email": "admin@email.com",
-  "senha": "senha123"
+  "senha": "novasenha123"
 }
 
 ###
 
 GET {{host}}/auth/me
 Authorization: Bearer {{token}}
+
+### Esqueci minha senha
+POST {{host}}/auth/esqueci-senha
+Content-Type: application/json
+
+{
+  "email": "admin@email.com"
+}
+
+###
+
+### Redefinir senha
+### Copie o token do banco pelo Prisma Studio:
+### npm run prisma:studio → tabela tokens_recuperacao_senha
+POST {{host}}/auth/redefinir-senha
+Content-Type: application/json
+
+{
+  "token": "81029230420de48b203ddf260321aa2be94fcbfecc0b94632ef0ebb29921a5cd",
+  "nova_senha": "novaSenha123",
+  "confirmar_senha": "novaSenha123"
+}

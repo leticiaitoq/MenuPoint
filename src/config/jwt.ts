@@ -1,6 +1,3 @@
-// Centraliza as configurações do JWT
-// Assim se precisar mudar algo, muda em um lugar só
-
 import { env } from './env'
 
 export const jwtConfig = {

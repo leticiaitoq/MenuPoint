@@ -1,7 +1,3 @@
-// Interface base para os Services
-// Define que todo Service trabalha com DTOs (Data Transfer Objects)
-// DTOs são objetos simples que carregam dados entre camadas
-
 export interface IService<T, C, U> {
   findById(id: string): Promise<T>
   findAll(filters?: Record<string, any>): Promise<T[]>

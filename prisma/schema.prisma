@@ -93,6 +93,7 @@ model Usuario {
   pedidos_atendidos    Pedido[]    @relation("AtendidoPor")
   reservas_confirmadas Reserva[]   @relation("ConfirmadaPor")
   pagamentos_confirmados Pagamento[] @relation("ConfirmadoPor")
+  tokens_recuperacao TokenRecuperacaoSenha[]
 
   @@map("usuarios")
 }
@@ -320,6 +321,23 @@ model Pagamento {
   confirmado_por  Usuario?        @relation("ConfirmadoPor", fields: [confirmado_por_id], references: [id])
 
   @@map("pagamentos")
+}
+
+// ============================================================
+// GRUPO - 8 - RECUPERAR SENHA
+// ============================================================
+
+model TokenRecuperacaoSenha {
+  id          String   @id @default(uuid()) @db.Uuid
+  usuario_id  String   @db.Uuid
+  usuario     Usuario  @relation(fields: [usuario_id], references: [id])
+  token       String   @unique @db.VarChar(64)
+  expira_em   DateTime @db.Timestamptz(0)
+  usado       Boolean  @default(false)
+  criado_em   DateTime @default(now()) @db.Timestamptz(0)
+
+  @@map("tokens_recuperacao_senha")
+  
 }
 
 // ============================================================

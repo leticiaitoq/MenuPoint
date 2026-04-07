@@ -14,14 +14,14 @@ const service = new EstabelecimentoService(repository)
 
 export async function estabelecimentosRoutes(app: FastifyInstance) {
 
-  // 🚀 ROTA PÚBLICA
+  // Rota Pública
   app.get('/publico/:slug', async (request, reply) => {
     const { slug } = request.params as { slug: string }
     const estabelecimento = await service.findBySlugPublico(slug)
     return reply.send(estabelecimento)
   })
 
-  // 🔒 ROTAS PRIVADAS
+  // Rotas Privadas
   app.post(
     '/',
     { preHandler: [authenticate] },

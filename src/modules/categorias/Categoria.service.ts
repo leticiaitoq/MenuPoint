@@ -1,5 +1,3 @@
-// src/modules/categorias/Categoria.service.ts
-
 import { Categoria } from '@prisma/client'
 import { BaseService } from '@shared/abstracts/BaseService'
 import { AppError } from '@shared/errors/AppError'

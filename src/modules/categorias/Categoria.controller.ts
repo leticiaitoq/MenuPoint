@@ -1,5 +1,3 @@
-// src/modules/categorias/Categoria.controller.ts
-
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { CategoriaService } from './Categoria.service'
 import { CategoriaRepository } from './Categoria.repository'
@@ -20,9 +18,7 @@ export async function categoriasRoutes(
   app: FastifyInstance
 ): Promise<void> {
 
-  // ROTA PÚBLICA — Cardápio completo pelo slug
-  // Retorna todas as categorias com seus produtos e adicionais
-  // Essa é a rota que o cliente usa ao abrir o cardápio pelo QR Code
+  // ROTA PÚBLICA —  rota que o cliente usa ao abrir o cardápio pelo QR Code
   app.get(
     '/publico/:estabelecimento_id',
     async (request: FastifyRequest, reply: FastifyReply) => {
@@ -36,9 +32,6 @@ export async function categoriasRoutes(
   )
 
   //ROTAS PRIVADAS
-  // app.addHook('onRequest', async (request, reply) => {
-  //   await request.jwtVerify()
-  // })
 
   app.post(
     '/',

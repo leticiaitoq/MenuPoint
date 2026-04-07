@@ -1,0 +1,114 @@
+@host = http://localhost:3333/api/v1
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZjA2ZmI0NS1jN2ExLTQwNWItODQ5My02MDU1NWM3ZTdhNmMiLCJub21lIjoiQWRtaW5nbG9iYWwiLCJlbWFpbCI6ImFkbWluZ2xvYmFsQGVtYWlsLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiZXNjb3BvIjoiR0xPQkFMIiwiZXN0YWJlbGVjaW1lbnRvX2lkIjoiZDMyNDY3NGQtYTc5NS00MGI4LTg4YWItODg1YWQxMWZiNWUyIiwiZW1wcmVzYV9pZCI6bnVsbCwiaWF0IjoxNzc1NDc2MTE2LCJleHAiOjE3NzYwODA5MTZ9.QdTfpsEB9fAXsGT7srgd6ufqrUSXoxRDQELE6lJ53wI
+@mesa_id = 90cca891-1ecd-4a94-b543-5e1d24063b5b
+@qr_token = 4d11b00f-7f56-437e-8dd8-ad7a2e5cf940
+
+### Criar mesas
+POST {{host}}/mesas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "numero": 1,
+  "capacidade": 4,
+  "localizacao": "Área interna"
+}
+
+###
+
+POST {{host}}/mesas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "numero": 2,
+  "capacidade": 2,
+  "localizacao": "Área externa"
+}
+
+###
+
+POST {{host}}/mesas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "numero": 3,
+  "capacidade": 6,
+  "localizacao": "Salão principal"
+}
+
+###
+
+### Listar mesas ativas
+GET {{host}}/mesas
+Authorization: Bearer {{token}}
+
+###
+
+### Listar todas (incluindo inativas)
+GET {{host}}/mesas?todas=true
+Authorization: Bearer {{token}}
+
+###
+
+### Resumo de ocupação (dashboard)
+GET {{host}}/mesas/ocupacao
+Authorization: Bearer {{token}}
+
+###
+
+### Buscar mesa por ID
+GET {{host}}/mesas/{{mesa_id}}
+Authorization: Bearer {{token}}
+
+###
+
+### Atualizar status para ocupada
+PATCH {{host}}/mesas/{{mesa_id}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "OCUPADA"
+}
+
+###
+
+### Liberar mesa
+PATCH {{host}}/mesas/{{mesa_id}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "LIVRE"
+}
+
+###
+
+### Atualizar dados da mesa
+PUT {{host}}/mesas/{{mesa_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "capacidade": 7,
+  "localizacao": "Salão VIP"
+}
+
+###
+
+### Desativar mesa (soft delete)
+DELETE {{host}}/mesas/{{mesa_id}}
+Authorization: Bearer {{token}}
+
+###
+
+### Reativar mesa
+PATCH {{host}}/mesas/{{mesa_id}}/reativar
+Authorization: Bearer {{token}}
+
+###
+
+### QR Code — rota pública (sem token)
+GET {{host}}/mesas/qrcode/{{qr_token}}

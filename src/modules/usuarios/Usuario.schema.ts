@@ -77,8 +77,6 @@ export const criarUsuarioSchema = z.object({
 
 export type CriarUsuarioDTO = z.infer<typeof criarUsuarioSchema>;
 
-//Atualiza usuário
-
 export const atualizarUsuarioSchema = z.object({
   nome: z
     .string()
@@ -103,8 +101,6 @@ export const atualizarUsuarioSchema = z.object({
 });
 
 export type AtualizarUsuarioDTO = z.infer<typeof atualizarUsuarioSchema>;
-
-// ── RESPOSTA PÚBLICA ─────────────────────────────────────────────────────────
 
 export interface UsuarioResponseDTO {
   id: string;

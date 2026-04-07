@@ -6,10 +6,13 @@ import { jwtConfig } from '@config/jwt'
 import { AppError } from '@shared/errors/AppError'
 import { FastifyError } from 'fastify'
 import { FastifyRequest, FastifyReply } from 'fastify'
+
 import { authRoutes } from '@modules/auth/Auth.controller'
 import { usuariosRoutes } from '@modules/usuarios/Usuario.controller'
 import { estabelecimentosRoutes } from '@modules/estabelecimentos/Estabelecimento.controller'
 import { categoriasRoutes } from '@modules/categorias/Categoria.controller'
+import { produtosRoutes } from '@modules/produtos/Produto.controller'
+import { mesasRoutes } from '@modules/mesas/Mesa.controller'
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({
@@ -36,19 +39,16 @@ export function buildApp(): FastifyInstance {
   }
 )
 
+  // ── Rotas
+  app.register(async (api) => {
+    api.register(authRoutes,            { prefix: '/auth' })
+    api.register(usuariosRoutes,        { prefix: '/usuarios' })
+    api.register(estabelecimentosRoutes,{ prefix: '/estabelecimentos' })
+    api.register(categoriasRoutes,      { prefix: '/categorias' })
+    api.register(produtosRoutes,        { prefix: '/produtos' })
+    api.register(mesasRoutes,           { prefix: '/mesas' })
+  }, { prefix: '/api/v1' })
 
-  // Rotas
-    app.register(authRoutes, { prefix: '/auth' })
-    app.register(usuariosRoutes, { prefix: '/usuarios' })
-    app.register(estabelecimentosRoutes, { prefix: '/estabelecimentos' })
-    app.register(categoriasRoutes, { prefix: '/categorias' })
-
-  // ── ROTAS ────────────────────────────────────────────────
-  // As rotas serão registradas aqui conforme os módulos forem criados
-  // app.register(authRoutes, { prefix: '/auth' })
-  // app.register(produtosRoutes, { prefix: '/produtos' })
-
-  // Erros
   // Qualquer erro lançado em qualquer rota cai aqui
  app.setErrorHandler((error: FastifyError, request, reply) => {
   if (error instanceof AppError) {

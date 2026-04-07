@@ -1,6 +1,6 @@
-@host = http://localhost:3333
+@host = http://localhost:3333/api/v1
 @token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZjA2ZmI0NS1jN2ExLTQwNWItODQ5My02MDU1NWM3ZTdhNmMiLCJub21lIjoiQWRtaW5nbG9iYWwiLCJlbWFpbCI6ImFkbWluZ2xvYmFsQGVtYWlsLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiZXNjb3BvIjoiR0xPQkFMIiwiZXN0YWJlbGVjaW1lbnRvX2lkIjoiZDMyNDY3NGQtYTc5NS00MGI4LTg4YWItODg1YWQxMWZiNWUyIiwiZW1wcmVzYV9pZCI6bnVsbCwiaWF0IjoxNzc0ODc2OTA4LCJleHAiOjE3NzU0ODE3MDh9.CTQ48GPJEQj3vSf3qkZC1uDK0oPy9rgUc2tHX1_Ow5Y
-@categoria_id = b0fac7b4-6280-46a6-9f14-b4333879dd60
+@categoria_id = 82f2ca3b-cad4-4d72-b781-9badc80c1f77
 ### Listar categorias (painel admin)
 GET {{host}}/categorias
 Authorization: Bearer {{token}}
@@ -14,7 +14,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "nome": "Pizza",
+  "nome": "Pizza2",
   "ordem": 1,
   "ativo": true,
   "descricao": "Nossas deliciosas pizzas artesanais",
@@ -37,7 +37,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "nome": "Pizzaria",
+  "nome": "Pizzaria2",
   "ordem": 1,
   "ativo": true,
   "descricao": "Nossas deliciosas pizzas artesanais",

@@ -1,7 +1,3 @@
-// scripts/seed.js
-// Script para criar o primeiro usuário admin no banco
-// Rode com: npm run prisma:seed
-
 const { PrismaClient } = require('@prisma/client')
 const bcrypt = require('bcryptjs')
 

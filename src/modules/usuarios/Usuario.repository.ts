@@ -1,5 +1,3 @@
-// src/modules/usuarios/Usuario.repository.ts
-
 import { Usuario } from '@prisma/client'
 import { BaseRepository } from '@shared/abstracts/BaseRepository'
 import { CriarUsuarioDTO, AtualizarUsuarioDTO } from './Usuario.schema'
