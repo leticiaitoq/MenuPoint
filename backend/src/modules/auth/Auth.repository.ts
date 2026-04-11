@@ -50,6 +50,38 @@ export class AuthRepository {
     })
   }
 
+  async registrar(data: {
+    nome_empresa: string
+    cnpj?: string
+    email: string
+    senha_hash: string
+  }) {
+    return prisma.$transaction(async (tx) => {
+      // 1. Cria a empresa
+      const empresa = await tx.empresa.create({
+        data: {
+          nome: data.nome_empresa,
+          cnpj: data.cnpj,
+          plano: 'STARTER',
+        },
+      })
+
+      // 2. Cria o usuário ADMIN vinculado à empresa (escopo GLOBAL — sem estabelecimento ainda)
+      const usuario = await tx.usuario.create({
+        data: {
+          empresa_id: empresa.id,
+          nome: data.nome_empresa,
+          email: data.email,
+          senha_hash: data.senha_hash,
+          perfil: 'ADMIN',
+          escopo: 'GLOBAL',
+        },
+      })
+
+      return { empresa, usuario }
+    })
+  }
+
   async atualizarUltimoAcesso(id: string): Promise<void> {
     await prisma.usuario.update({
       where: { id },

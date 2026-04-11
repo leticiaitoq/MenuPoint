@@ -19,8 +19,6 @@ const EXPIRACAO_TOKEN_HORAS = 2
 
 export class AuthService {
 
-  // O Repository é injetado pelo constructor — injeção de dependência
-  // O Service não cria o Repository, ele recebe pronto
   constructor(
     private readonly repository: AuthRepository
   ) {}
@@ -78,6 +76,53 @@ export class AuthService {
       },
     }
   }
+  // ── REGISTRO ─────────────────────────────────────────────────────────────
+  async registrar(
+    data: import('./Auth.schema').RegistrarDTO,
+    jwtSign: (payload: JWTPayload) => string
+  ): Promise<import('./Auth.schema').RegistrarResponseDTO> {
+
+    // Verifica se o e-mail já está em uso
+    const emailExistente = await this.repository.findByEmail(data.email)
+    if (emailExistente) {
+      throw new AppError('Este e-mail já está cadastrado', 409)
+    }
+
+    const senha_hash = await bcrypt.hash(data.senha, 10)
+
+    const { empresa, usuario } = await this.repository.registrar({
+      nome_empresa: data.nome_restaurante,
+      cnpj: data.cnpj,
+      email: data.email,
+      senha_hash,
+    })
+
+    const payload: JWTPayload = {
+      sub: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      perfil: usuario.perfil,
+      escopo: usuario.escopo,
+      estabelecimento_id: usuario.estabelecimento_id,
+      empresa_id: usuario.empresa_id,
+    }
+
+    const token = jwtSign(payload)
+
+    return {
+      token,
+      usuario: {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        perfil: usuario.perfil,
+        escopo: usuario.escopo,
+        estabelecimento_id: usuario.estabelecimento_id!,
+        empresa_id: usuario.empresa_id!,
+      },
+    }
+  }
+
   // ── ESQUECI MINHA SENHA ──────────────────────────────────────────────────
   async esqueciSenha(data: EsqueciSenhaDTO): Promise<void> {
 

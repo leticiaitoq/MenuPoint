@@ -1,5 +1,3 @@
-// src/modules/auth/Auth.controller.ts
-
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { AuthService } from './Auth.service'
 import { AuthRepository } from './Auth.repository'
@@ -7,6 +5,7 @@ import {
   loginSchema,
   esqueciSenhaSchema,
   redefinirSenhaSchema,
+  registrarSchema,
 } from './Auth.schema'
 import { JWTPayload } from './Auth.schema'
 
@@ -17,6 +16,21 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
   // ── ROTAS PÚBLICAS ───────────────────────────────────────────────────────
   app.register(async (publicRoutes) => {
+
+    // POST /auth/register
+    publicRoutes.post(
+      '/register',
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const data = registrarSchema.parse(request.body)
+
+        const result = await service.registrar(
+          data,
+          (payload: JWTPayload) => app.jwt.sign(payload)
+        )
+
+        return reply.status(201).send(result)
+      }
+    )
 
     // POST /auth/login
     publicRoutes.post(

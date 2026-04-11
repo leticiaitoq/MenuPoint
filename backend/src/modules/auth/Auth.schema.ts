@@ -76,3 +76,49 @@ export const redefinirSenhaSchema = z.object({
 )
 
 export type RedefinirSenhaDTO = z.infer<typeof redefinirSenhaSchema>
+
+// ── DTO REGISTRO ─────────────────────────────────────────────────────────────
+export const registrarSchema = z.object({
+  nome_restaurante: z
+    .string()
+    .min(1, 'Nome do restaurante é obrigatório')
+    .max(150, 'Nome deve ter no máximo 150 caracteres'),
+
+  cnpj: z
+    .string()
+    .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, 'CNPJ inválido')
+    .optional(),
+
+  email: z
+    .string()
+    .min(1, 'E-mail é obrigatório')
+    .email('Formato de e-mail inválido')
+    .toLowerCase(),
+
+  senha: z
+    .string()
+    .min(6, 'Senha deve ter no mínimo 6 caracteres'),
+
+  confirmar_senha: z
+    .string()
+    .min(1, 'Confirmação de senha é obrigatória'),
+})
+.refine((data) => data.senha === data.confirmar_senha, {
+  message: 'As senhas não coincidem',
+  path: ['confirmar_senha'],
+})
+
+export type RegistrarDTO = z.infer<typeof registrarSchema>
+
+export interface RegistrarResponseDTO {
+  token: string
+  usuario: {
+    id: string
+    nome: string
+    email: string
+    perfil: string
+    escopo: string
+    estabelecimento_id: string
+    empresa_id: string
+  }
+}

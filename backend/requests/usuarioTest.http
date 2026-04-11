@@ -1,0 +1,20 @@
+@host = http://localhost:3333/api/v1
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZjA2ZmI0NS1jN2ExLTQwNWItODQ5My02MDU1NWM3ZTdhNmMiLCJub21lIjoiQWRtaW5nbG9iYWwiLCJlbWFpbCI6ImFkbWluZ2xvYmFsQGVtYWlsLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiZXNjb3BvIjoiR0xPQkFMIiwiZXN0YWJlbGVjaW1lbnRvX2lkIjoiZDMyNDY3NGQtYTc5NS00MGI4LTg4YWItODg1YWQxMWZiNWUyIiwiZW1wcmVzYV9pZCI6bnVsbCwiaWF0IjoxNzc1ODY1NDE4LCJleHAiOjE3NzY0NzAyMTh9.O5uanUkACltCw1E0If4mDGk7iHB8-b2unIi01MexKnY
+
+POST {{host}}/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Admin",
+  "email": "admin@email.com",
+  "senha": "senha123",
+  "perfil": "ADMIN",
+  "escopo": "LOCAL",
+  "estabelecimento_id": "ID_DO_ESTABELECIMENTO_AQUI"
+}
+
+###
+
+GET {{host}}/usuarios
+Content-Type: application/json
+Authorization: Bearer {{token}}

@@ -7,6 +7,9 @@ import { AppError } from '@shared/errors/AppError'
 import { FastifyError } from 'fastify'
 import { FastifyRequest, FastifyReply } from 'fastify'
 
+import fastifySwagger from '@fastify/swagger'
+import fastifySwaggerUi from '@fastify/swagger-ui'
+
 import { authRoutes } from '@modules/auth/Auth.controller'
 import { usuariosRoutes } from '@modules/usuarios/Usuario.controller'
 import { estabelecimentosRoutes } from '@modules/estabelecimentos/Estabelecimento.controller'
@@ -22,12 +25,28 @@ export function buildApp(): FastifyInstance {
       : true,
   })
 
-    // Registra o CORS com a URL do frontend
-  app.register(cors, {
-    origin: env.FRONTEND_URL,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
+//Registro de ligação com o backend
+app.register(cors, {
+  origin: env.NODE_ENV === 'development'
+    ? ['http://localhost:3000', 'http://localhost:5173']
+    : env.FRONTEND_URL,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+})
+
+app.register(fastifySwagger, {
+  openapi: {
+    info: {
+      title: 'Menupoint API',
+      version: '1.0.0',
+    },
+  },
+})
+
+app.register(fastifySwaggerUi, {
+  routePrefix: '/docs',
+})
 
   // Registra o JWT com as configurações centralizadas
   app.register(jwt, jwtConfig)

@@ -1,12 +1,13 @@
 @host = http://localhost:3333/api/v1
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZjA2ZmI0NS1jN2ExLTQwNWItODQ5My02MDU1NWM3ZTdhNmMiLCJub21lIjoiQWRtaW5nbG9iYWwiLCJlbWFpbCI6ImFkbWluZ2xvYmFsQGVtYWlsLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiZXNjb3BvIjoiR0xPQkFMIiwiZXN0YWJlbGVjaW1lbnRvX2lkIjoiZDMyNDY3NGQtYTc5NS00MGI4LTg4YWItODg1YWQxMWZiNWUyIiwiZW1wcmVzYV9pZCI6bnVsbCwiaWF0IjoxNzc1NTIzMDE2LCJleHAiOjE3NzYxMjc4MTZ9.gjQlnfj5b5PyZhUf7P7hkV1L524KIyot1oOquCmXpvY
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYTI3ZTQ5YS0xNjQ4LTQ1YjUtYjg0MS1iNjA2MzY4MmViNmEiLCJub21lIjoiQWRtaW4iLCJlbWFpbCI6ImFkbWluQGVtYWlsLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiZXNjb3BvIjoiTE9DQUwiLCJlc3RhYmVsZWNpbWVudG9faWQiOiJkMzI0Njc0ZC1hNzk1LTQwYjgtODhhYi04ODVhZDExZmI1ZTIiLCJlbXByZXNhX2lkIjpudWxsLCJpYXQiOjE3NzU3NDA3NjAsImV4cCI6MTc3NjM0NTU2MH0.8QXvxU4D4UhEwvBeo598tr-3MZPbiSvshO4EB_37wDM
+
 # @name login
 POST {{host}}/auth/login
 Content-Type: application/json
 
 {
   "email": "adminglobal@email.com",
-  "senha": "senha123"
+  "senha": "novaSenha123"
 }
 
 
@@ -17,7 +18,7 @@ Content-Type: application/json
 
 {
   "email": "admin@email.com",
-  "senha": "novasenha123"
+  "senha": "novaSenha123"
 }
 
 ###
@@ -30,7 +31,7 @@ POST {{host}}/auth/esqueci-senha
 Content-Type: application/json
 
 {
-  "email": "admin@email.com"
+  "email": "adminglobal@email.com"
 }
 
 ###
@@ -42,7 +43,7 @@ POST {{host}}/auth/redefinir-senha
 Content-Type: application/json
 
 {
-  "token": "81029230420de48b203ddf260321aa2be94fcbfecc0b94632ef0ebb29921a5cd",
+  "token": "195e50bead43dabaeac32c6938e80b8de11ddc7ce543e1f36a3e75a3e05cbb5f",
   "nova_senha": "novaSenha123",
   "confirmar_senha": "novaSenha123"
 }
