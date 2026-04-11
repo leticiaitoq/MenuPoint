@@ -1,0 +1,144 @@
+.welcome-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  gap: 24px;
+}
+
+.welcome-page__logo-wrapper {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.welcome-page__logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.welcome-page__input-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 440px;
+}
+
+.welcome-page__input {
+  width: 100%;
+  padding: 16px 24px;
+  border: none;
+  border-radius: 50px;
+  font-size: 16px;
+  color: #1a1a1a;
+  background-color: #ffffff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  outline: none;
+  transition: box-shadow 0.2s;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.welcome-page__input:focus {
+  box-shadow: 0 2px 16px rgba(192, 57, 43, 0.25);
+}
+
+.welcome-page__input--error {
+  border: 1.5px solid #c0392b;
+  box-shadow: 0 2px 12px rgba(192, 57, 43, 0.15);
+}
+
+.welcome-page__error {
+  font-size: 13px;
+  color: #c0392b;
+  text-align: center;
+}
+
+/**
+ * Overlay — cobre toda a tela com transparência.
+ * position: fixed garante que cobre tudo, incluindo
+ * navbar e footer, independente do scroll.
+ */
+.welcome-page__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+/**
+ * Card do modal com borda gradiente.
+ * A borda gradiente é feita com padding + background no wrapper externo,
+ * e background branco no wrapper interno — criando a ilusão de borda colorida.
+ */
+.welcome-page__modal {
+  background: linear-gradient(135deg, #f1c40f, #c0392b, #6b0f1a);
+  padding: 4px;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.welcome-page__modal-inner {
+  background-color: #ffffff;
+  border-radius: 21px;
+  padding: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/**
+ * Pill com o número da mesa — fundo cinza claro,
+ * texto centralizado, bordas bem arredondadas.
+ */
+.welcome-page__modal-pill {
+  background-color: #f0f0f0;
+  padding: 14px 32px;
+  border-radius: 50px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #1a1a1a;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.welcome-page__modal-text {
+  font-size: 15px;
+  color: #888888;
+  text-align: center;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.welcome-page__modal-button {
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 16px 64px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 8px;
+}
+
+.welcome-page__modal-button:hover {
+  background-color: #a93226;
+}

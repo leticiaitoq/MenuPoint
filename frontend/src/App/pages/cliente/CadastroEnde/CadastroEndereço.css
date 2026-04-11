@@ -1,0 +1,530 @@
+.cad-end {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  box-sizing: border-box;
+}
+
+/* ── Card principal */
+.cad-end__card {
+  flex: 1;
+  min-width: 0;
+  background-color: #ffffff;
+  border-radius: 20px;
+  border: 3px solid #c0392b;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.cad-end__titulo {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.cad-end__subtitulo {
+  font-size: 14px;
+  color: #888888;
+  margin: -8px 0 4px 0;
+}
+
+/* ── Campo genérico */
+.cad-end__campo        { display: flex; flex-direction: column; gap: 6px; }
+.cad-end__campo--flex  { flex: 1; min-width: 0; }
+.cad-end__campo--fixo  { width: 120px; flex-shrink: 0; }
+.cad-end__campo--medio { width: 160px; flex-shrink: 0; }
+.cad-end__campo--estado { width: 64px; flex-shrink: 0; }
+
+.cad-end__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.cad-end__linha {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+/* ── Inputs */
+.cad-end__input {
+  padding: 10px 14px;
+  border: 1.5px solid #dddddd;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1a1a1a;
+  background-color: #ffffff;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.cad-end__input:focus    { border-color: #c0392b; }
+.cad-end__input::placeholder { color: #bbbbbb; }
+.cad-end__input--full    { width: 100%; }
+.cad-end__input--estado  { text-align: center; font-weight: 600; letter-spacing: 1px; }
+.cad-end__select         { cursor: pointer; appearance: auto; }
+
+.cad-end__lista-selecao {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cad-end__item-selecao {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+  background-color: #fafafa;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.cad-end__item-selecao:hover {
+  border-color: #c0392b;
+  background-color: #fff5f5;
+}
+
+.cad-end__item-selecao--ativo {
+  border-color: #c0392b;
+  background-color: #fdecea;
+}
+
+.cad-end__item-icone {
+  font-size: 22px;
+  color: #c0392b;
+  flex-shrink: 0;
+}
+
+.cad-end__item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cad-end__item-tipo {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.cad-end__item-rua {
+  font-size: 13px;
+  color: #666666;
+  line-height: 1.4;
+}
+
+/* Bolinha de seleção à direita */
+.cad-end__item-radio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #c0392b;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cad-end__item-radio-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #c0392b;
+}
+
+/* ── Botão novo endereço */
+.cad-end__novo-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1.5px dashed #bbbbbb;
+  background: transparent;
+  font-size: 14px;
+  color: #888888;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  width: 100%;
+}
+
+.cad-end__novo-btn:hover {
+  border-color: #c0392b;
+  color: #c0392b;
+}
+
+/* ── Ações */
+.cad-end__acoes {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.cad-end__acoes--direita {
+  justify-content: flex-end;
+}
+
+.cad-end__btn-cancelar {
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: #555555;
+  cursor: pointer;
+  padding: 10px 16px;
+  border-radius: 8px;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.cad-end__btn-cancelar:hover {
+  color: #c0392b;
+  background-color: #fdecea;
+}
+
+.cad-end__btn-salvar {
+  background-color: #f0a500;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+  white-space: nowrap;
+}
+
+.cad-end__btn-salvar:hover    { background-color: #e09800; }
+.cad-end__btn-salvar:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/*
+   MODO CADASTRAR — campos do formulário*/
+
+/* Tipos de endereço */
+.cad-end__tipos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.cad-end__tipo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1.5px solid #dddddd;
+  background-color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  color: #444444;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cad-end__tipo-btn:hover         { border-color: #c0392b; color: #c0392b; }
+.cad-end__tipo-btn--ativo        { background-color: #f0a500; border-color: #f0a500; color: #ffffff; font-weight: 600; }
+.cad-end__tipo-btn--ativo:hover  { background-color: #e09800; border-color: #e09800; color: #ffffff; }
+.cad-end__tipo-icon              { font-size: 16px; display: flex; align-items: center; }
+
+.cad-end__add-tipo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1.5px dashed #bbbbbb;
+  background: transparent;
+  font-size: 13px;
+  color: #888888;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.cad-end__add-tipo-btn:hover { border-color: #c0392b; color: #c0392b; }
+
+.cad-end__novo-tipo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cad-end__novo-tipo-input {
+  padding: 7px 12px;
+  border: 1.5px solid #c0392b;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  width: 120px;
+}
+
+.cad-end__novo-tipo-ok {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: none;
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cad-end__novo-tipo-cancel {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: none;
+  background-color: #f0f0f0;
+  color: #555555;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Campo telefone com botão + */
+.cad-end__tel-wrap {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cad-end__tel-wrap .cad-end__input { flex: 1; }
+
+.cad-end__tel-btn {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: none;
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s;
+}
+
+.cad-end__tel-btn:hover  { background-color: #a93226; }
+.cad-end__tel-btn:active { transform: scale(0.95); }
+
+/* Rodapé do formulário */
+.cad-end__rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+/* Toggles */
+.cad-end__toggles { display: flex; gap: 24px; flex-wrap: wrap; }
+
+.cad-end__toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #444444;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cad-end__toggle-input { display: none; }
+
+.cad-end__toggle-slider {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  background-color: #cccccc;
+  border-radius: 50px;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+.cad-end__toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.cad-end__toggle-input:checked + .cad-end__toggle-slider            { background-color: #c0392b; }
+.cad-end__toggle-input:checked + .cad-end__toggle-slider::after     { transform: translateX(18px); }
+
+/*
+   Painel lateral
+*/
+
+.cad-end__painel {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cad-end__secao        { display: flex; flex-direction: column; gap: 10px; }
+.cad-end__secao-titulo { font-size: 16px; font-weight: 700; color: #1a1a1a; margin: 0; }
+.cad-end__lista        { display: flex; flex-direction: column; gap: 8px; }
+
+.cad-end__salvo {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+}
+
+.cad-end__salvo-icone  { font-size: 20px; color: #c0392b; flex-shrink: 0; margin-top: 2px; }
+.cad-end__salvo-tipo  { font-size: 15px; font-weight: 700; color: #1a1a1a; margin: 0; }
+.cad-end__salvo-rua   { font-size: 13px; color: #666666; margin: 2px 0 0 0; line-height: 1.4; }
+
+/*
+   Modal de sucesso
+*/
+
+.cad-end__overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.cad-end__modal-sucesso {
+  background-color: #ffffff;
+  border-radius: 24px;
+  padding: 40px 48px;
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+.cad-end__sucesso-icone {
+  font-size: 64px;
+  color: #2ecc71;
+}
+
+.cad-end__sucesso-titulo {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.cad-end__sucesso-texto {
+  font-size: 14px;
+  color: #888888;
+  margin: 0;
+}
+
+.cad-end__sucesso-endereco {
+  background-color: #f5f5f5;
+  border-radius: 12px;
+  padding: 14px 20px;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cad-end__sucesso-tipo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.cad-end__sucesso-rua {
+  font-size: 13px;
+  color: #555555;
+  line-height: 1.5;
+}
+
+/* 
+   Modal de sucesso
+    */
+
+.cad-end__overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.cad-end__modal-sucesso {
+  background-color: #ffffff;
+  border-radius: 24px;
+  padding: 40px 48px;
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+.cad-end__sucesso-icone  { font-size: 64px; color: #2ecc71; }
+.cad-end__sucesso-titulo { font-size: 22px; font-weight: 800; color: #1a1a1a; margin: 0; }
+.cad-end__sucesso-texto  { font-size: 14px; color: #888888; margin: 0; }
+
+.cad-end__sucesso-endereco {
+  background-color: #f5f5f5;
+  border-radius: 12px;
+  padding: 14px 20px;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cad-end__sucesso-tipo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.cad-end__sucesso-rua { font-size: 13px; color: #555555; line-height: 1.5; }

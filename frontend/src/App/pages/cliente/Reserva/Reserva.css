@@ -1,0 +1,396 @@
+/* ── Container principal  */
+.reserva {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Card do formulário */
+.reserva__card {
+  flex: 1;
+  min-width: 0;
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 32px 36px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  position: relative;                  /* ancora o absolute da imagem */
+  overflow: hidden;                    /* imagem não vaza do card */
+}
+
+/* Imagem fixada fica fora do fluxo (absolute) e não empurra nenhum elemento. */
+.reserva__ilustracao {
+  position: absolute;
+  top: 5;
+  right: 0;
+  width: 260px;
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* ── Título da seção */
+.reserva__titulo {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 24px 0;   /* separa o título do formulário */
+  letter-spacing: 0.5px;
+}
+
+/* ── Campo genérico (label + input) */
+.reserva__campo {
+  display: flex;
+   margin: 0 0 24px 0;
+  flex-direction: column;
+  gap: 4px;              
+}
+
+.reserva__label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  letter-spacing: 0.3px;
+}
+
+/* ── Input de data ────────────────────────────────────
+   Quando a data é selecionada, um span sobreposto exibe o texto em pt.
+   pointer-events:none no span deixa o clique chegar ao input. */
+.reserva__input-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.reserva__date-input {
+  padding: 12px 20px;
+  border: 1.5px solid #cccccc;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1a1a;
+  background-color: #ffffff;
+  outline: none;
+  cursor: pointer;
+  width: 320px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.reserva__date-input:focus {
+  border-color: #c0392b;
+}
+
+.reserva__date-input[data-empty='true'] {
+  color: #aaaaaa;
+}
+
+/* Cobre o valor nativo com texto pt, preserva ícone do calendário */
+.reserva__date-overlay {
+  position: absolute;
+  left: 20px;
+  right: 36px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1a1a;
+  pointer-events: none;
+  user-select: none;
+  background-color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* ── Input de horário */
+.reserva__input {
+  padding: 12px 20px;
+  border: 1.5px solid #cccccc;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #1a1a1a;
+  background-color: #ffffff;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.reserva__input:focus {
+  border-color: #c0392b;
+}
+
+.reserva__input--time {
+  width: 180px;
+}
+
+/* ── Controle de pessoas */
+.reserva__pessoas {
+  display: flex;
+  align-items: center;
+}
+
+.reserva__pessoas-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 2px solid currentColor;
+  background: transparent;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.reserva__pessoas-btn--add {
+  color: #2ecc71;
+  border-color: #2ecc71;
+}
+
+.reserva__pessoas-btn--add:hover {
+  background-color: rgba(46, 204, 113, 0.1);
+}
+
+.reserva__pessoas-btn--remove {
+  color: #c0392b;
+  border-color: #c0392b;
+}
+
+.reserva__pessoas-btn--remove:hover {
+  background-color: rgba(192, 57, 43, 0.1);
+}
+
+.reserva__pessoas-count {
+  width: 56px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* ── Textarea de observação */
+.reserva__textarea {
+  padding: 12px 20px;
+  border: 1.5px solid #cccccc;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1a1a1a;
+  background-color: #ffffff;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  line-height: 1.5;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.reserva__textarea:focus {
+  border-color: #c0392b;
+}
+
+.reserva__textarea::placeholder {
+  color: #aaaaaa;
+}
+
+/* ── Mensagem de erro*/
+.reserva__erro {
+  font-size: 13px;
+  color: #c0392b;
+  margin: 0;
+}
+
+/* ── Painel lateral de mesas 
+   Largura fixa à direita do card principal*/
+.reserva__painel {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reserva__painel-titulo {
+  font-size: 16px;
+  font-weight: 800;
+  color: #555555;
+  text-align: right;
+  margin: 0 0 2px 0;
+}
+
+/* ── Lista de botões de mesa */
+.reserva__mesas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Botão de mesa individual */
+.reserva__mesa {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  border: none;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.reserva__mesa:hover {
+  background-color: #e5e5e5;
+  transform: translateX(-2px);
+}
+
+/* Mesa selecionada */
+.reserva__mesa--ativa {
+  background-color: #f0a500;
+}
+
+.reserva__mesa--ativa:hover {
+  background-color: #e09800;
+}
+
+.reserva__mesa-icon {
+  font-size: 22px;
+  color: #555555;
+  flex-shrink: 0;
+}
+
+.reserva__mesa--ativa .reserva__mesa-icon {
+  color: #ffffff;
+}
+
+.reserva__mesa-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  letter-spacing: 0.3px;
+}
+
+.reserva__mesa--ativa .reserva__mesa-label {
+  color: #ffffff;
+}
+
+/* ── Botão reservar */
+.reserva__btn-reservar {
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 60%;
+  align-self: flex-end;
+  margin-top: 4px;
+}
+
+.reserva__btn-reservar:hover {
+  background-color: #a93226;
+}
+
+/* 
+   Modal de confirmação
+*/
+
+.reserva__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+/* Borda gradiente */
+.reserva__modal {
+  background: linear-gradient(135deg, #f1c40f, #c0392b, #6b0f1a);
+  padding: 4px;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 480px;
+}
+
+.reserva__modal-inner {
+  background-color: #ffffff;
+  border-radius: 21px;
+  padding: 36px 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.reserva__modal-subtitulo {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.reserva__modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.reserva__modal-pill {
+  background-color: #f0f0f0;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1a1a;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.reserva__modal-obs {
+  font-size: 13px;
+  color: #888888;
+  text-align: center;
+  font-style: italic;
+  padding: 0 8px;
+}
+
+.reserva__modal-texto {
+  font-size: 14px;
+  color: #888888;
+  text-align: center;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.reserva__modal-btn {
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 16px 56px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 4px;
+}
+
+.reserva__modal-btn:hover {
+  background-color: #a93226;
+}

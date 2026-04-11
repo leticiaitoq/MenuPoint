@@ -1,0 +1,21 @@
+.restaurant-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #ececec;
+}
+
+
+.restaurant-layout__body {
+  flex: 1;
+  display: flex;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.restaurant-layout__content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}

@@ -1,0 +1,205 @@
+.wc {
+  display: flex;
+  gap: 32px;
+  height: 100%;
+  align-items: flex-start;
+}
+
+/* ── Coluna esquerda ── */
+.wc__left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  min-width: 260px;
+  max-width: 300px;
+}
+
+/* Círculo da logo */
+.wc__logo-wrap {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #f0f0f0;
+  flex-shrink: 0;
+}
+
+.wc__logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wc__endereco {
+  font-size: 15px;
+  color: #333333;
+  text-align: center;
+  margin: 0;
+}
+
+.wc__horarios {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.wc__horarios-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #c0392b;
+}
+
+.wc__horario-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 14px;
+  color: #333333;
+  line-height: 1.4;
+}
+
+/* ── Coluna direita ── */
+.wc__right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+/* Nome do restaurante */
+.wc__nome {
+  font-size: 64px;
+  font-weight: 900;
+  color: #c0392b;
+  line-height: 1;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* Card cinza com status, movimento e botões */
+.wc__info-card {
+  background-color: #e8e8e8;
+  border-radius: 16px;
+  padding: 18px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 340px;
+}
+
+.wc__status {
+  font-size: 36px;
+  font-weight: 700;
+  text-align: center;
+}
+
+
+.wc__movimento-title {
+  font-size: 20px;
+  color: #333333;
+  text-align: center;
+  margin: 0;
+}
+
+.wc__movimento-legenda {
+  display: flex;
+  justify-content: space-around;
+  gap: 8px;
+}
+
+.wc__nivel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.wc__nivel-label {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.wc__nivel-tempo {
+  font-size: 13px;
+  color: #333333;
+}
+
+/* Movimento atual */
+.wc__movimento-atual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.wc__movimento-texto {
+  font-size: 18px;
+  color: #333333;
+  font-weight: 500;
+}
+
+.wc__movimento-bolinha {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.wc__movimento-valor {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* ── Botões de ação ── */
+.wc__acoes {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+  margin-top: auto;
+}
+
+.wc__acao-grupo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.wc__acao-label {
+  font-size: 16px;
+  color: #333333;
+  margin: 0;
+  text-align: center;
+}
+
+.wc__ou {
+  font-size: 18px;
+  color: #333333;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.wc__btn {
+  width: 100%;
+  padding: 18px 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  color: #ffffff;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.wc__btn:hover  { opacity: 0.88; transform: translateY(-2px); }
+.wc__btn:active { opacity: 1;    transform: translateY(0); }
+
+.wc__btn--reserva  { background-color: #c0392b; }
+.wc__btn--cardapio { background-color: #c0392b; }
+

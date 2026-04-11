@@ -1,0 +1,161 @@
+/* Tela imagem de fundo */
+.register-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 24px;
+}
+
+.register-page__container {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  max-width: 1000px;
+  min-height: 580px;
+  height: auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  background-color: #ffffff;
+}
+
+/* Lado direito — formulário */
+.register-page__form-side {
+  flex: 1;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: #ffffff;
+}
+
+.register-page__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 24px;
+}
+
+.register-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.register-page__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.register-page__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.register-page__input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.register-page__input {
+  width: 100%;
+  padding: 11px 16px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #1a1a1a;
+  background-color: #fafafa;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.register-page__input--with-toggle {
+  padding-right: 44px;
+}
+
+.register-page__input:focus {
+  border-color: #c0392b;
+}
+
+.register-page__toggle-password {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888888;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+/**
+ * Desativamento do icone nativo do revelar senha, que vem com o edge ou chrome
+ */
+.register-page__input::-ms-reveal,
+.register-page__input::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-textfield-decoration-container {
+  display: none;
+}
+
+/**
+ * Dois campos de senha lado a lado.
+ * gap ta separando os dois campos.
+ */
+.register-page__field-row {
+  display: flex;
+  gap: 16px;
+}
+
+.register-page__submit {
+  width: 100%;
+  padding: 14px;
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 4px;
+}
+
+.register-page__submit:hover {
+  background-color: #a93226;
+}
+
+.register-page__redirect {
+  text-align: center;
+  font-size: 14px;
+  color: #888888;
+  margin: 0;
+}
+
+.register-page__redirect-link {
+  background: none;
+  border: none;
+  color: #c0392b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.register-page__redirect-link:hover {
+  text-decoration: underline;
+}

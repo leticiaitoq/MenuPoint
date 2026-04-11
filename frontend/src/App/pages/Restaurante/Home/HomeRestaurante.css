@@ -1,0 +1,124 @@
+.home-rest {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  padding: 8px 0;
+}
+
+/* Título "Pedidos Hoje" */
+.home-rest__title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #333333;
+  margin: 0;
+}
+
+/* Grade 2×2 dos cards */
+.home-rest__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Card base */
+.home-rest__card {
+  background-color: #ffffffc9;
+  border: none;
+  border-radius: 20px;
+  padding: 42px 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  position: relative;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  min-height: 140px;
+  cursor: pointer;
+  text-align: left;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.home-rest__card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.13);
+  transform: translateY(-2px);
+}
+
+.home-rest__card:active {
+  transform: translateY(0px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Ícones dos cards */
+.home-rest__card-icon {
+  font-size: 32px;
+}
+
+.home-rest__card-icon--red {
+  color: #c0392b;
+}
+
+.home-rest__card-icon--yellow {
+  color: #e6a817;
+}
+
+.home-rest__card-icon--green {
+  color: #27ae60;
+}
+
+/* Texto principal do card */
+.home-rest__card-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: #c0392b;
+}
+
+/* Texto secundário */
+.home-rest__card-sub {
+  font-size: 14px;
+  color: #888888;
+  font-weight: 400;
+}
+
+/* Badge de contagem*/
+.home-rest__card-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background-color: #e6a817;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Faixa de alerta inferior */
+.home-rest__alert {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+}
+
+.home-rest__alert-icon {
+  font-size: 28px;
+  color: #e6a817;
+  flex-shrink: 0;
+}
+
+.home-rest__alert span {
+  font-size: 16px;
+  font-weight: 500;
+  color: #555555;
+}
+
+

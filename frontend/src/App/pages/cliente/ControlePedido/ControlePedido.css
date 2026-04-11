@@ -1,0 +1,275 @@
+/* ── Container principal*/
+.pedidos {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 32px;
+}
+
+/* ── Título */
+.pedidos__titulo {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+/* ── Filtros */
+.pedidos__filtros {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pedidos__filtro-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: 50px;
+  border: 1.5px solid #dddddd;
+  background-color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  color: #555555;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pedidos__filtro-btn:hover {
+  border-color: #c0392b;
+  color: #c0392b;
+}
+
+/* Aba ativa — fundo vermelho */
+.pedidos__filtro-btn--ativo {
+  background-color: #c0392b;
+  border-color: #c0392b;
+  color: #ffffff;
+}
+
+.pedidos__filtro-btn--ativo:hover {
+  background-color: #a93226;
+  border-color: #a93226;
+  color: #ffffff;
+}
+
+/* Badge numérico dentro do botão */
+.pedidos__filtro-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 700;
+  background-color: rgba(255, 255, 255, 0.25);
+  color: inherit;
+}
+
+.pedidos__filtro-btn:not(.pedidos__filtro-btn--ativo) .pedidos__filtro-badge {
+  background-color: #f0f0f0;
+  color: #555555;
+}
+
+/* ── Lista de cards */
+.pedidos__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pedidos__vazio {
+  color: #aaaaaa;
+  font-size: 15px;
+  text-align: center;
+  margin-top: 32px;
+}
+
+/* ── Card de pedido */
+.pedidos__card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Cabeçalho do card */
+.pedidos__card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pedidos__card-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pedidos__card-numero {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+/* ── Badge de status */
+.pedidos__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 50px;
+}
+
+.pedidos__status--pronto {
+  background-color: #fef3cd;
+  color: #856404;
+}
+
+.pedidos__status--finalizado {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.pedidos__status-icon {
+  font-size: 14px;
+}
+
+.pedidos__card-meta {
+  font-size: 13px;
+  color: #888888;
+  margin: 0;
+}
+
+/* ── Corpo do card: itens + rodapé*/
+.pedidos__card-body {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+/* ── Lista de itens */
+.pedidos__itens {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.pedidos__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pedidos__item-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.pedidos__item-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pedidos__item-nome {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.pedidos__item-preco {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+}
+
+/* ── Rodapé do card: totais + botão*/
+.pedidos__card-rodape {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+  min-width: 130px;
+}
+
+.pedidos__totais {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.pedidos__total-label {
+  font-size: 13px;
+  color: #888888;
+}
+
+.pedidos__total-destaque {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+/* ── Botões de ação */
+.pedidos__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.pedidos__btn:active {
+  transform: scale(0.97);
+}
+
+.pedidos__btn-icon {
+  font-size: 16px;
+}
+
+/* Finalizar — fundo dourado */
+.pedidos__btn--finalizar {
+  background-color: #f0c040;
+  color: #5a3e00;
+}
+
+.pedidos__btn--finalizar:hover {
+  background-color: #e0b030;
+}
+
+/* Ver Conta — fundo cinza claro */
+.pedidos__btn--conta {
+  background-color: #f0f0f0;
+  color: #333333;
+}
+
+.pedidos__btn--conta:hover {
+  background-color: #e2e2e2;
+}

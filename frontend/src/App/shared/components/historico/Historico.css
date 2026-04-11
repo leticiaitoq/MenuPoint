@@ -1,0 +1,139 @@
+/* Overlay escuro cobrindo tudo */
+.historico__overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  z-index: 100;
+  cursor: pointer;
+}
+
+/* Modal centralizado */
+.historico__modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 580px;
+  max-width: 90vw;
+  max-height: 85vh;
+  background-color: #ffffff;
+  border-radius: 24px;
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+/* ── Cabeçalho ── */
+.historico__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.historico__titulo {
+  font-size: 28px;
+  font-weight: 800;
+  color: #c0392b;
+  margin: 0;
+}
+
+.historico__header-icon {
+  font-size: 36px;
+  color: #333333;
+}
+
+/* ── Lista ── */
+.historico__lista {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.historico__vazio {
+  text-align: center;
+  color: #aaaaaa;
+  font-size: 15px;
+  margin-top: 40px;
+}
+
+/* Item */
+.historico__item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.historico__item-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.historico__item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.historico__item-nome {
+  font-size: 16px;
+  font-weight: 600;
+  color: #222222;
+  line-height: 1.3;
+}
+
+.historico__item-qtd {
+  font-size: 14px;
+  color: #888888;
+}
+
+.historico__item-preco {
+  font-size: 18px;
+  font-weight: 700;
+  color: #222222;
+  flex-shrink: 0;
+}
+
+/* ── Rodapé ── */
+.historico__rodape {
+  padding: 20px 28px 24px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.historico__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 26px;
+  font-weight: 700;
+  color: #222222;
+}
+
+.historico__btn-sair {
+  width: 100%;
+  padding: 18px;
+  background-color: #7b2020;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.15s;
+}
+
+.historico__btn-sair:hover  { background-color: #5e1818; transform: translateY(-1px); }
+.historico__btn-sair:active { transform: translateY(0); }
