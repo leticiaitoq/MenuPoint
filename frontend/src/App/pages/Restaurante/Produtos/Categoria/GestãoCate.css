@@ -1,0 +1,352 @@
+.cate {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  padding: 8px 0;
+}
+
+/* Cabeçalho */
+.cate__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cate__titulo {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.cate__btn-novo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 22px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cate__btn-novo:hover { background: #a93226; }
+
+/* Card */
+.cate__card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cate__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.cate__card-titulo {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.cate__subtitulo {
+  font-size: 13px;
+  color: #888;
+  margin: 4px 0 0 0;
+}
+
+/* Botão interno */
+.cate__btn-interno {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  width: fit-content;
+  transition: background 0.2s;
+}
+
+.cate__btn-interno:hover { background: #f5f5f5; }
+
+/* Tabela */
+.cate__tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.cate__tabela thead tr { background: #fdf0f0; }
+
+.cate__tabela th {
+  text-align: left;
+  padding: 12px 16px;
+  color: #555;
+  font-weight: 600;
+}
+
+.cate__tabela tbody tr {
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.cate__tabela td {
+  padding: 14px 16px;
+  color: #333;
+  vertical-align: middle;
+}
+
+.cate__td-ordem {
+  white-space: nowrap;
+  color: #888;
+}
+
+.cate__drag-icon {
+  font-size: 18px;
+  color: #bbb;
+  cursor: grab;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.cate__td-nome { font-weight: 500; }
+
+.cate__td-acoes {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Badges */
+.cate__badge {
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.cate__badge--ativo   { background: #27ae60; }
+.cate__badge--inativo { background: #aaa; }
+
+/* Botões de ação */
+.cate__btn-acao {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #888;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.cate__btn-acao:hover              { color: #333; }
+.cate__btn-acao--deletar:hover     { color: #c0392b; }
+
+/* Dica */
+.cate__dica {
+  font-size: 13px;
+  color: #c0392b;
+  margin: 0;
+}
+
+/* Modal */
+.cate__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.cate__modal {
+  background: #fff;
+  border-radius: 14px;
+  width: 460px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+.cate__modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.cate__modal-header h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.cate__modal-fechar {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.cate__modal-fechar:hover { color: #333; }
+
+.cate__modal-corpo {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Campos */
+.cate__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cate__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.cate__opcional {
+  font-weight: 400;
+  color: #999;
+}
+
+.cate__input {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  color: #333;
+  transition: border 0.2s;
+}
+
+.cate__input:focus { border-color: #aaa; }
+
+.cate__input--pequeno { width: 80px; }
+
+/* Radio customizado */
+.cate__radio-grupo {
+  display: flex;
+  gap: 20px;
+}
+
+.cate__radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+}
+
+.cate__radio-label input { display: none; }
+
+.cate__radio-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.2s;
+}
+
+.cate__radio-check--ativo {
+  border-color: #27ae60;
+  background: #27ae60;
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+/* Erro */
+.cate__erro {
+  font-size: 13px;
+  color: #c0392b;
+  margin: 0;
+}
+
+/* Ações do modal */
+.cate__modal-acoes {
+  display: flex;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.cate__modal-acoes--direita { justify-content: flex-end; }
+
+.cate__modal-acoes--tres {
+  justify-content: flex-start;
+}
+
+.cate__btn-cancelar {
+  background: #f0f0f0;
+  color: #555;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cate__btn-cancelar:hover { background: #ddd; }
+
+.cate__btn-salvar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-left: auto;
+}
+
+.cate__btn-salvar:hover { background: #a93226; }
+
+.cate__btn-desativar {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cate__btn-desativar:hover { background: #a93226; }

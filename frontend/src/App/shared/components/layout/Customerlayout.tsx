@@ -1,6 +1,7 @@
 import React from 'react';
 import { FaShoppingCart } from 'react-icons/fa';
 import Navbar from './Navbar/Navbar';
+import { useNavigate } from 'react-router-dom';
 import Footer from './Footer/Footer';
 import CustomerSidebar, { CustomerSidebarItem } from './Sidebar/CustomerSidebar';
 import './Customerlayout.css';
@@ -43,6 +44,10 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
   onOrdersClick,
 }) => {
 
+// ── navegação
+const navigate = useNavigate();
+const handleClick = () => navigate('/perfil');
+   
   const rightIcon = mode === 'guest' ? (
     <div
       className="cart-icon"
@@ -55,7 +60,9 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
       )}
     </div>
   ) : (
+    <button className="btn-imagem" onClick={handleClick}>
     <img src="/icons/customer-avatar.png" alt="Perfil do cliente" />
+    </button>
   );
 
   const leftIcon = (

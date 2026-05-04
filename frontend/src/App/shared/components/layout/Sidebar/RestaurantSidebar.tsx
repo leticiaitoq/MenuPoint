@@ -32,28 +32,25 @@ const RestaurantSidebar: React.FC = () => {
             <span className="sidebar__item-label">Pedidos</span>
           </NavLink>
           <div className="sidebar__subitems">
-            <NavLink to="/restaurante/orders/history" className="sidebar__subitem">
+            <NavLink to="/restaurante/historico" className="sidebar__subitem">
               • Histórico
             </NavLink>
           </div>
         </div>
 
         <div className="sidebar__group">
-          <NavLink to="/restaurante/menu" className="sidebar__item">
+          <NavLink to="/restaurante/produtos" className="sidebar__item">
             <HiViewList className="sidebar__icon" />
-            <span className="sidebar__item-label">Cardápio</span>
+            <span className="sidebar__item-label">Produtos</span>
           </NavLink>
           <div className="sidebar__subitems">
-            <NavLink to="/restaurante/menu/products" className="sidebar__subitem">
-              • Produtos
-            </NavLink>
-            <NavLink to="/restaurante/menu/categories" className="sidebar__subitem">
+            <NavLink to="/restaurante/categories" className="sidebar__subitem">
               • Categorias
             </NavLink>
           </div>
         </div>
 
-        <NavLink to="/restaurante/tables" className="sidebar__item">
+        <NavLink to="/restaurante/mesas" className="sidebar__item">
           <MdTableRestaurant className="sidebar__icon" />
           <span className="sidebar__item-label">Mesas</span>
         </NavLink>

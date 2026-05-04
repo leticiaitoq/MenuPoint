@@ -212,7 +212,7 @@ const MenuCliente: React.FC = () => {
               <span className="mtp__card-label">Para entrega</span>
               <img src="/images/delivery.png" alt="Para entrega" className="mtp__card-img" />
             </button>
-            <button className="mtp__card" onClick={() => escolherTipo('/customer/retirada')}>
+            <button className="mtp__card" onClick={() => escolherTipo('/retirada')}>
               <span className="mtp__card-label">Para Retirada</span>
               <img src="/images/retirada.png" alt="Para retirada" className="mtp__card-img" />
             </button>

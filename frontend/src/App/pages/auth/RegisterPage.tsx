@@ -18,6 +18,7 @@ const RegisterPage: React.FC = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
+  const [showSucesso, setShowSucesso] = useState(false);
 
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 14);
@@ -29,12 +30,29 @@ const RegisterPage: React.FC = () => {
     setCnpj(formatted);
   };
 
+  const handleNomeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const valor = e.target.value.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '');
+  setNome(valor);
+};
+
+const regrasSenha = [
+  { label: 'Mínimo 8 caracteres', valido: senha.length >= 8 },
+  { label: 'Pelo menos 1 letra maiúscula', valido: /[A-Z]/.test(senha) },
+  { label: 'Pelo menos 1 número', valido: /[0-9]/.test(senha) },
+];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
 
     if (senha !== confirmarSenha) {
       setErro('As senhas não coincidem.');
+      return;
+    }
+
+        const senhaValida = regrasSenha.every((r) => r.valido);
+    if (!senhaValida) {
+      setErro('A senha não atende aos requisitos mínimos.');
       return;
     }
 
@@ -50,13 +68,18 @@ const RegisterPage: React.FC = () => {
 
       localStorage.setItem('@menupoint:token', resultado.token)
       localStorage.setItem('@menupoint:usuario', JSON.stringify(resultado.usuario))
-      navigate('/');
+      setShowSucesso(true);
     } catch (err: any) {
       setErro(err?.response?.data?.message ?? 'Erro ao criar conta. Tente novamente.');
     } finally {
       setCarregando(false);
     }
   };
+
+      const handleIrParaConfirmacao = () => {
+      setShowSucesso(false);
+      navigate('/confirmar-email');
+    };
 
   return (
     <div
@@ -91,7 +114,7 @@ const RegisterPage: React.FC = () => {
                 placeholder="Digite o nome do restaurante"
                 className="register-page__input"
                 value={nome}
-                onChange={(e) => setNome(e.target.value)}
+                onChange={handleNomeChange}
                 required
               />
             </div>
@@ -153,6 +176,21 @@ const RegisterPage: React.FC = () => {
                     {showPassword ? <HiEyeOff /> : <HiEye />}
                   </button>
                 </div>
+                {senha.length > 0 && (
+                  <ul className="register-page__senha-regras">
+                    {regrasSenha.map((regra) => (
+                      <li
+                        key={regra.label}
+                        className={regra.valido
+                          ? 'register-page__regra register-page__regra--ok'
+                          : 'register-page__regra register-page__regra--erro'
+                        }
+                      >
+                        {regra.valido ? '✔' : '✘'} {regra.label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               <div className="register-page__field">
@@ -195,15 +233,36 @@ const RegisterPage: React.FC = () => {
             Já possui conta?{' '}
             <button
               className="register-page__redirect-link"
-              onClick={() => navigate('/login')}
-            >
+              onClick={() => navigate('/login')} >
               Entrar
             </button>
           </p>
         </div>
 
       </div>
+              {showSucesso && (
+          <div className="register-page__overlay" onClick={() => setShowSucesso(false)}>
+            <div
+              className="register-page__modal-sucesso"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="register-page__sucesso-titulo">Cadastro realizado!</h2>
+              <p className="register-page__sucesso-texto">
+                Enviamos um e-mail para você confirmar sua conta.
+              </p>
+
+              <button
+                className="register-page__btn"
+                onClick={handleIrParaConfirmacao}
+              >
+                Confirmar e-mail
+              </button>
+            </div>
+          </div>
+        )}
     </div>
+
+    
   );
 };
 
