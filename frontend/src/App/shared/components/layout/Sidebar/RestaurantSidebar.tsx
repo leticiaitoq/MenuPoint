@@ -55,17 +55,17 @@ const RestaurantSidebar: React.FC = () => {
           <span className="sidebar__item-label">Mesas</span>
         </NavLink>
 
-        <NavLink to="/restaurante/queue" className="sidebar__item">
+        <NavLink to="/restaurante/fila" className="sidebar__item">
           <HiUserGroup className="sidebar__icon" />
           <span className="sidebar__item-label">Fila</span>
         </NavLink>
 
-        <NavLink to="/restaurante/reports" className="sidebar__item">
+        <NavLink to="/restaurante/relatorios" className="sidebar__item">
           <HiChartBar className="sidebar__icon" />
           <span className="sidebar__item-label">Relatórios</span>
         </NavLink>
 
-        <NavLink to="/restaurante/settings" className="sidebar__item sidebar__item--bottom">
+        <NavLink to="/restaurante/config" className="sidebar__item sidebar__item--bottom">
           <HiCog className="sidebar__icon" />
           <span className="sidebar__item-label">Configurações</span>
         </NavLink>
