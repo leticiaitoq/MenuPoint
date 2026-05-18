@@ -23,8 +23,8 @@ import PerfilCliente from "../pages/cliente/Perfil/PerfilCliente";
 import Fila from "../pages/Restaurante/Gestão/Fila/Fila";
 import Relatorios from "../pages/Restaurante/Gestão/Relatorios/Relatorios";
 import Config from '../pages/Restaurante/Configuracão/Config';
-/**]
- * 
+import VerifyCodePage from "../pages/auth/VerifyCodePage";
+/**
  * Novas telas = Novas rotas aqui (Obrigatorio)
  */
 const AppRoutes: React.FC = () => {
@@ -40,6 +40,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/menulocal" element={<MenuLocal />} />
         <Route path="/restaurante/pedido" element={<Pedido />} />
         <Route path="/recover" element={<RecoverPass />} />
+        <Route path="/verify-code" element={<VerifyCodePage />} />   {/* Rota para a página de verificação de código usada tanto para registro quanto para recuperação de senha */ }
         <Route path="/reserva" element={<Reserva />} />
         <Route path="/historico" element={<ControlePedido />} />
         <Route path="/endereço" element={<CadastroEndereco />} />

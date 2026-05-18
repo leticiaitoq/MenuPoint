@@ -20,6 +20,11 @@ export interface LoginResponse {
   usuario: Usuario
 }
 
+export interface VerifyCodeDTO {
+  email: string
+  code: string
+}
+
 export interface RegistrarDTO {
   nome_restaurante: string
   cnpj?: string
@@ -46,6 +51,17 @@ const AuthService = {
   async me(): Promise<{ usuario: Usuario }> {
     const response = await api.get<{ usuario: Usuario }>('auth/me')
     return response.data
+  },
+
+  // Verifica o código OTP recebido por e-mail (cadastro ou recuperação)
+  async verifyCode(data: VerifyCodeDTO): Promise<LoginResponse> {
+    const response = await api.post<LoginResponse>('/auth/verify-code', data)
+    return response.data
+  },
+
+  // Reenvia o código OTP para o e-mail informado
+  async resendCode(email: string): Promise<void> {
+    await api.post('/auth/resend-code', { email })
   },
 
   // Envia e-mail de recuperação de senha

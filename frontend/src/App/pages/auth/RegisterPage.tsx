@@ -5,7 +5,6 @@ import AuthCard from './AuthCard';
 import AuthService from '../../services/auth.service';
 import './RegisterPage.css';
 
-
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -69,6 +68,7 @@ const regrasSenha = [
       localStorage.setItem('@menupoint:token', resultado.token)
       localStorage.setItem('@menupoint:usuario', JSON.stringify(resultado.usuario))
       setShowSucesso(true);
+      //navigate('/verify-code', { state: { email, mode: 'register' } });  <- parte de verificação de email
     } catch (err: any) {
       setErro(err?.response?.data?.message ?? 'Erro ao criar conta. Tente novamente.');
     } finally {

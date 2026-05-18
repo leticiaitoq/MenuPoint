@@ -45,8 +45,7 @@
   align-items: center;
   justify-content: center;
 }
-
-.btn-imagem {
+/*.btn-imagem {
   background: none;
   border: none;
   padding: 0;
@@ -54,11 +53,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-}
+}*/
 
 .btn-imagem img {
   width: 60px;
   height: 60px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  /* No mobile a sidebar some do lado e vai pro bottom */
+  .customer-layout__body {
+    flex-direction: column;
+  }
+
+  .customer-layout__content {
+    padding: 16px 12px;
+    /* Espaço extra embaixo para a bottom nav não sobrepor o conteúdo */
+    padding-bottom: 60px;
+  }
 }

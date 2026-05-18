@@ -394,3 +394,36 @@
 .reserva__modal-btn:hover {
   background-color: #a93226;
 }
+/* ── Responsividade Mobile ── */
+@media (max-width: 600px) {
+  .reserva {
+    flex-direction: column;
+    align-items: normal;
+    gap: 16px;
+  }
+
+  .reserva__card {
+    padding: 20px 16px;
+  }
+
+  .reserva__ilustracao {
+    display: none;
+  }
+  .reserva__btn-reservar {
+    align-self: anchor-center;
+  }
+  .reserva__painel {
+  width: 100%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: normal;
+  gap: 10px;
+}
+  .reserva__painel-titulo{
+    text-align: center;
+  }
+  .reserva__painel{
+    align-items: normal;
+  }
+}

@@ -273,3 +273,31 @@
 .pedidos__btn--conta:hover {
   background-color: #e2e2e2;
 }
+
+/* Responsividade Mobile */
+@media (max-width: 600px) {
+  .pedidos__card {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .pedidos__card-rodape {
+    align-items: flex-start;
+    min-width: unset;
+    width: 100%;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: end;
+  }
+
+  .pedidos__btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  .pedidos__card-rodape {
+    align-items: flex-start;
+    min-width: unset;
+    width: 30%;
+    
+    
+  }
+}
