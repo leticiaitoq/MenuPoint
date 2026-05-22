@@ -1,10 +1,9 @@
 /* ═══════════════════════════════════════════════════
-   VERIFY CODE PAGE — segue o padrão auth do MenuPoint
-   (mesma estrutura de LoginPage.css / RecoverPass.css)
+   VERIFY CODE CLIENTE — segue o padrão auth do MenuPoint
    ═══════════════════════════════════════════════════ */
 
 /* ── Fundo com imagem ── */
-.verify-page {
+.verify-cliente {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -16,7 +15,7 @@
 }
 
 /* ── Container principal (card branco) ── */
-.verify-page__container {
+.verify-cliente__container {
   display: flex;
   align-items: stretch;
   width: 100%;
@@ -30,7 +29,7 @@
 }
 
 /* ── Lado direito — formulário ── */
-.verify-page__form-side {
+.verify-cliente__form-side {
   flex: 1;
   padding: 48px 40px;
   display: flex;
@@ -40,7 +39,7 @@
 }
 
 /* ── Ícone de envelope ── */
-.verify-page__icon-wrapper {
+.verify-cliente__icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -51,13 +50,13 @@
   margin-bottom: 20px;
 }
 
-.verify-page__email-icon {
+.verify-cliente__email-icon {
   font-size: 28px;
   color: #c0392b;
 }
 
 /* ── Título ── */
-.verify-page__title {
+.verify-cliente__title {
   font-size: 28px;
   font-weight: 700;
   color: #1a1a1a;
@@ -65,20 +64,20 @@
 }
 
 /* ── Descrição ── */
-.verify-page__description {
+.verify-cliente__description {
   font-size: 14px;
   color: #888888;
   margin-bottom: 28px;
   line-height: 1.6;
 }
 
-.verify-page__email {
+.verify-cliente__email {
   color: #1a1a1a;
   font-weight: 600;
 }
 
 /* ── Formulário ── */
-.verify-page__form {
+.verify-cliente__form {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -86,7 +85,7 @@
 }
 
 /* ── Mensagem de erro ── */
-.verify-page__error {
+.verify-cliente__error {
   color: #c0392b;
   font-size: 14px;
   margin: 0;
@@ -99,13 +98,13 @@
 /* ══════════════════════════════════════
    GRUPO DOS 6 CAMPOS OTP
    ══════════════════════════════════════ */
-.verify-page__otp-group {
+.verify-cliente__otp-group {
   display: flex;
   gap: 12px;
   justify-content: center;
 }
 
-.verify-page__otp-input {
+.verify-cliente__otp-input {
   width: 52px;
   height: 60px;
   text-align: center;
@@ -118,33 +117,32 @@
   outline: none;
   transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
   caret-color: #c0392b;
-  /* Remove setas de number inputs */
   -moz-appearance: textfield;
   appearance: textfield;
 }
 
-.verify-page__otp-input::-webkit-outer-spin-button,
-.verify-page__otp-input::-webkit-inner-spin-button {
+.verify-cliente__otp-input::-webkit-outer-spin-button,
+.verify-cliente__otp-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
 /* Estado foco */
-.verify-page__otp-input:focus {
+.verify-cliente__otp-input:focus {
   border-color: #c0392b;
   background-color: #fff;
   box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.12);
 }
 
 /* Estado preenchido */
-.verify-page__otp-input--filled {
+.verify-cliente__otp-input--filled {
   border-color: #c0392b;
   background-color: #fff8f7;
   color: #c0392b;
 }
 
 /* ── Botão principal ── */
-.verify-page__submit {
+.verify-cliente__submit {
   width: 100%;
   padding: 14px;
   background-color: #c0392b;
@@ -158,17 +156,17 @@
   margin-top: 4px;
 }
 
-.verify-page__submit:hover:not(:disabled) {
+.verify-cliente__submit:hover:not(:disabled) {
   background-color: #a93226;
 }
 
-.verify-page__submit:disabled {
+.verify-cliente__submit:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
 
 /* ── Bloco de reenvio ── */
-.verify-page__resend {
+.verify-cliente__resend {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,12 +175,12 @@
   flex-wrap: wrap;
 }
 
-.verify-page__resend-text {
+.verify-cliente__resend-text {
   font-size: 14px;
   color: #888888;
 }
 
-.verify-page__resend-btn {
+.verify-cliente__resend-btn {
   background: none;
   border: none;
   color: #c0392b;
@@ -192,18 +190,18 @@
   padding: 0;
 }
 
-.verify-page__resend-btn:hover {
+.verify-cliente__resend-btn:hover {
   text-decoration: underline;
 }
 
-.verify-page__resend-timer {
+.verify-cliente__resend-timer {
   font-size: 14px;
   color: #aaaaaa;
   font-weight: 500;
 }
 
 /* ── Linha divisória ── */
-.verify-page__divider {
+.verify-cliente__divider {
   width: 100%;
   height: 1px;
   background-color: #e0e0e0;
@@ -211,12 +209,12 @@
 }
 
 /* ── Botão voltar ── */
-.verify-page__redirect {
+.verify-cliente__redirect {
   text-align: center;
   margin: 0;
 }
 
-.verify-page__back-btn {
+.verify-cliente__back-btn {
   background: none;
   border: none;
   color: #888888;
@@ -226,41 +224,40 @@
   transition: color 0.2s;
 }
 
-.verify-page__back-btn:hover {
+.verify-cliente__back-btn:hover {
   color: #c0392b;
 }
 
 /* ══════════════════════════════════════
    RESPONSIVIDADE — Mobile (≤ 768px)
-   Segue o mesmo breakpoint do LoginPage
    ══════════════════════════════════════ */
 @media (max-width: 768px) {
-  .verify-page {
+  .verify-cliente {
     padding: 0;
     align-items: flex-start;
   }
 
-  .verify-page__container {
+  .verify-cliente__container {
     flex-direction: column;
     border-radius: 0;
     min-height: 100vh;
     box-shadow: none;
   }
 
-  .verify-page__form-side {
+  .verify-cliente__form-side {
     padding: 32px 24px 40px;
     flex: 1;
   }
 
-  .verify-page__title {
+  .verify-cliente__title {
     font-size: 22px;
   }
 
-  .verify-page__otp-group {
+  .verify-cliente__otp-group {
     gap: 8px;
   }
 
-  .verify-page__otp-input {
+  .verify-cliente__otp-input {
     width: 44px;
     height: 52px;
     font-size: 20px;
@@ -268,11 +265,11 @@
 }
 
 @media (max-width: 400px) {
-  .verify-page__otp-group {
+  .verify-cliente__otp-group {
     gap: 6px;
   }
 
-  .verify-page__otp-input {
+  .verify-cliente__otp-input {
     width: 38px;
     height: 46px;
     font-size: 18px;

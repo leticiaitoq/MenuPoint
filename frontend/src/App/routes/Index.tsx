@@ -24,6 +24,10 @@ import Fila from "../pages/Restaurante/Gestão/Fila/Fila";
 import Relatorios from "../pages/Restaurante/Gestão/Relatorios/Relatorios";
 import Config from '../pages/Restaurante/Configuracão/Config';
 import VerifyCodePage from "../pages/auth/VerifyCodePage";
+import LoginCliente from "../pages/authCliente/LoginCliente";
+import RecoverPassCliente from "../pages/authCliente/RecoverPassCliente";
+import RegisterCliente from "../pages/authCliente/RegisterCliente";
+import VerifyCodeCliente from "../pages/authCliente/VerifyCodeCliente";
 /**
  * Novas telas = Novas rotas aqui (Obrigatorio)
  */
@@ -33,6 +37,8 @@ const AppRoutes: React.FC = () => {
       <Routes>
         <Route path="/welcomepage" element={<WelcomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/login/cliente" element={<LoginCliente />} />
+        <Route path="/register/cliente" element={<RegisterCliente />} />
         <Route path="/" element={<RegisterPage />} />
         <Route path="/restaurante/home" element={<HomeRestaurante /> } />
         <Route path="/dwelcome" element={<DWelcomePage />} />
@@ -40,7 +46,9 @@ const AppRoutes: React.FC = () => {
         <Route path="/menulocal" element={<MenuLocal />} />
         <Route path="/restaurante/pedido" element={<Pedido />} />
         <Route path="/recover" element={<RecoverPass />} />
+         <Route path="/recover/cliente" element={<RecoverPassCliente />} />
         <Route path="/verify-code" element={<VerifyCodePage />} />   {/* Rota para a página de verificação de código usada tanto para registro quanto para recuperação de senha */ }
+        <Route path="/verify-code/cliente" element={<VerifyCodeCliente />} />   
         <Route path="/reserva" element={<Reserva />} />
         <Route path="/historico" element={<ControlePedido />} />
         <Route path="/endereço" element={<CadastroEndereco />} />
