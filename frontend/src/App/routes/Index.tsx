@@ -20,6 +20,7 @@ import GestãoCate from '../pages/Restaurante/Produtos/Categoria/GestãoCate';
 import GestaoMesas from "../pages/Restaurante/Gestão/Mesas/GestaoMesas";
 import InfoRetirada from "../pages/cliente/Retirada/InfoRetirada";
 import PerfilCliente from "../pages/cliente/Perfil/PerfilCliente";
+import PerfilLocal from "../pages/ClienteLocal/Perfil/PerfilLocal";
 import Fila from "../pages/Restaurante/Gestão/Fila/Fila";
 import Relatorios from "../pages/Restaurante/Gestão/Relatorios/Relatorios";
 import Config from '../pages/Restaurante/Configuracão/Config';
@@ -28,6 +29,7 @@ import LoginCliente from "../pages/authCliente/LoginCliente";
 import RecoverPassCliente from "../pages/authCliente/RecoverPassCliente";
 import RegisterCliente from "../pages/authCliente/RegisterCliente";
 import VerifyCodeCliente from "../pages/authCliente/VerifyCodeCliente";
+import ControlePedidoLocal from "../pages/ClienteLocal/ControlePedido/Controlepedidolocal";
 /**
  * Novas telas = Novas rotas aqui (Obrigatorio)
  */
@@ -51,6 +53,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/verify-code/cliente" element={<VerifyCodeCliente />} />   
         <Route path="/reserva" element={<Reserva />} />
         <Route path="/historico" element={<ControlePedido />} />
+        <Route path="/historicolocal" element={<ControlePedidoLocal />} />
         <Route path="/endereço" element={<CadastroEndereco />} />
         <Route path="/restaurante/historico" element={<RestHistorico />} />
         <Route path="/restaurante/produtos" element={<RestProdutos />} />
@@ -60,6 +63,7 @@ const AppRoutes: React.FC = () => {
          <Route path="/restaurante/mesas" element={<GestaoMesas />} />
          <Route path="/retirada" element={<InfoRetirada />} />
          <Route path="/perfil" element={<PerfilCliente />} />
+          <Route path="/perfilLocal" element={<PerfilLocal />} />
          <Route path="/restaurante/fila" element={<Fila />} />
          <Route path="/restaurante/relatorios" element={<Relatorios />} />
          <Route path="/restaurante/config" element={<Config />} />

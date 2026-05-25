@@ -1,5 +1,5 @@
 /* ── Container principal*/
-.pedidos {
+.pedidos-local {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -7,7 +7,7 @@
 }
 
 /* ── Título */
-.pedidos__titulo {
+.pedidos-local__titulo {
   font-size: 24px;
   font-weight: 700;
   color: #1a1a1a;
@@ -15,13 +15,13 @@
 }
 
 /* ── Filtros */
-.pedidos__filtros {
+.pedidos-local__filtros {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.pedidos__filtro-btn {
+.pedidos-local__filtro-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -36,26 +36,26 @@
   transition: all 0.2s;
 }
 
-.pedidos__filtro-btn:hover {
+.pedidos-local__filtro-btn:hover {
   border-color: #c0392b;
   color: #c0392b;
 }
 
 /* Aba ativa — fundo vermelho */
-.pedidos__filtro-btn--ativo {
+.pedidos-local__filtro-btn--ativo {
   background-color: #c0392b;
   border-color: #c0392b;
   color: #ffffff;
 }
 
-.pedidos__filtro-btn--ativo:hover {
+.pedidos-local__filtro-btn--ativo:hover {
   background-color: #a93226;
   border-color: #a93226;
   color: #ffffff;
 }
 
 /* Badge numérico dentro do botão */
-.pedidos__filtro-badge {
+.pedidos-local__filtro-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -69,19 +69,19 @@
   color: inherit;
 }
 
-.pedidos__filtro-btn:not(.pedidos__filtro-btn--ativo) .pedidos__filtro-badge {
+.pedidos-local__filtro-btn:not(.pedidos-local__filtro-btn--ativo) .pedidos-local__filtro-badge {
   background-color: #f0f0f0;
   color: #555555;
 }
 
 /* ── Lista de cards */
-.pedidos__lista {
+.pedidos-local__lista {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.pedidos__vazio {
+.pedidos-local__vazio {
   color: #aaaaaa;
   font-size: 15px;
   text-align: center;
@@ -89,7 +89,7 @@
 }
 
 /* ── Card de pedido */
-.pedidos__card {
+.pedidos-local__card {
   background-color: #ffffff;
   border-radius: 16px;
   padding: 20px 24px;
@@ -100,19 +100,19 @@
 }
 
 /* ── Cabeçalho do card */
-.pedidos__card-header {
+.pedidos-local__card-header {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.pedidos__card-info {
+.pedidos-local__card-info {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.pedidos__card-numero {
+.pedidos-local__card-numero {
   font-size: 18px;
   font-weight: 700;
   color: #1a1a1a;
@@ -120,7 +120,7 @@
 }
 
 /* ── Badge de status */
-.pedidos__status {
+.pedidos-local__status {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -130,40 +130,40 @@
   border-radius: 50px;
 }
 
-.pedidos__status--pendente {
+.pedidos-local__status--pendente {
   background-color: #dbeafe;
   color: #1e40af;
 }
 
-.pedidos__status--pronto {
+.pedidos-local__status--pronto {
   background-color: #fef3cd;
   color: #856404;
 }
 
-.pedidos__status--finalizado {
+.pedidos-local__status--finalizado {
   background-color: #d4edda;
   color: #155724;
 }
 
-.pedidos__status-icon {
+.pedidos-local__status-icon {
   font-size: 14px;
 }
 
-.pedidos__card-meta {
+.pedidos-local__card-meta {
   font-size: 13px;
   color: #888888;
   margin: 0;
 }
 
 /* ── Corpo do card: itens + rodapé*/
-.pedidos__card-body {
+.pedidos-local__card-body {
   display: flex;
   gap: 16px;
   align-items: flex-end;
 }
 
 /* ── Lista de itens */
-.pedidos__itens {
+.pedidos-local__itens {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -173,13 +173,13 @@
   padding: 14px 16px;
 }
 
-.pedidos__item {
+.pedidos-local__item {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.pedidos__item-img {
+.pedidos-local__item-img {
   width: 48px;
   height: 48px;
   border-radius: 8px;
@@ -187,7 +187,7 @@
   flex-shrink: 0;
 }
 
-.pedidos__item-info {
+.pedidos-local__item-info {
   flex: 1;
   display: flex;
   align-items: center;
@@ -195,13 +195,13 @@
   gap: 8px;
 }
 
-.pedidos__item-nome {
+.pedidos-local__item-nome {
   font-size: 14px;
   font-weight: 500;
   color: #1a1a1a;
 }
 
-.pedidos__item-preco {
+.pedidos-local__item-preco {
   font-size: 14px;
   font-weight: 600;
   color: #1a1a1a;
@@ -209,7 +209,7 @@
 }
 
 /* ── Rodapé do card: totais + botão*/
-.pedidos__card-rodape {
+.pedidos-local__card-rodape {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -218,26 +218,26 @@
   min-width: 130px;
 }
 
-.pedidos__totais {
+.pedidos-local__totais {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
 }
 
-.pedidos__total-label {
+.pedidos-local__total-label {
   font-size: 13px;
   color: #888888;
 }
 
-.pedidos__total-destaque {
+.pedidos-local__total-destaque {
   font-size: 14px;
   font-weight: 700;
   color: #1a1a1a;
 }
 
 /* ── Botões de ação */
-.pedidos__btn {
+.pedidos-local__btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -251,16 +251,16 @@
   white-space: nowrap;
 }
 
-.pedidos__btn:active {
+.pedidos-local__btn:active {
   transform: scale(0.97);
 }
 
-.pedidos__btn-icon {
+.pedidos-local__btn-icon {
   font-size: 16px;
 }
 
 /* Aguardando — pedido pendente, só informativo */
-.pedidos__btn--aguardando {
+.pedidos-local__btn--aguardando {
   background-color: #eff6ff;
   color: #1e40af;
   cursor: default;
@@ -272,21 +272,21 @@
 }
 
 /* Finalizar — fundo dourado */
-.pedidos__btn--finalizar {
+.pedidos-local__btn--finalizar {
   background-color: #f0c040;
   color: #5a3e00;
 }
 
-.pedidos__btn--finalizar:hover {
+.pedidos-local__btn--finalizar:hover {
   background-color: #e0b030;
 }
 
 /* Ver Conta — fundo cinza claro */
-.pedidos__btn--conta {
+.pedidos-local__btn--conta {
   background-color: #f0f0f0;
   color: #333333;
 }
 
-.pedidos__btn--conta:hover {
+.pedidos-local__btn--conta:hover {
   background-color: #e2e2e2;
 }

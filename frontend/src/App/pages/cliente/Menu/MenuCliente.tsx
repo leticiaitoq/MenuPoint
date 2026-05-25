@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import Carrinho, { ItemCarrinho } from '../../../shared/components/Carrinho/Carrinho';
-import Historico, { PedidoHistorico } from '../../../shared/components/historico/Historico';
 import './MenuCliente.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -52,8 +51,6 @@ const MenuCliente: React.FC = () => {
   const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
   const [itensCarrinho, setItensCarrinho]     = useState<ItemCarrinho[]>([]);
   const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
-  const [historicoAberto, setHistoricoAberto] = useState(false);
-  const [itensPedidos, setItensPedidos]       = useState<PedidoHistorico[]>([]);
   const [modalTipoAberto, setModalTipoAberto] = useState(false);
 
   // ── Filtro ──────────────────────────────────────────────────────────────────
@@ -82,25 +79,8 @@ const MenuCliente: React.FC = () => {
     setItensCarrinho((prev) => prev.filter((i) => i.id !== id));
   };
 
-  const finalizarPedido = () => {
-    setItensPedidos((prev) => {
-      const novo = [...prev];
-      itensCarrinho.forEach((item) => {
-        const existente = novo.find((i) => i.id === item.id);
-        if (existente) {
-          existente.quantidade += item.quantidade;
-        } else {
-          novo.push({ ...item });
-        }
-      });
-      return novo;
-    });
-    setItensCarrinho([]);
-    setModalTipoAberto(false);
-  };
 
   const escolherTipo = (rota: string) => {
-    finalizarPedido();
     navigate(rota);
   };
 
@@ -110,7 +90,6 @@ const MenuCliente: React.FC = () => {
       mode="logged"
       cartCount={totalCarrinho}
       onCartClick={() => setCarrinhoAberto(true)}
-      onOrdersClick={() => setHistoricoAberto(true)}
     >
       <div className="menu" style={{ backgroundImage: 'url(/images/Fundo-menu.png)' }}>
 
@@ -194,13 +173,6 @@ const MenuCliente: React.FC = () => {
           setCarrinhoAberto(false);
           setModalTipoAberto(true);
         }}
-      />
-
-      {/* Painel do histórico */}
-      <Historico
-        aberto={historicoAberto}
-        onFechar={() => setHistoricoAberto(false)}
-        itens={itensPedidos}
       />
 
       {/* Modal de tipo de pedido — entrega ou retirada */}

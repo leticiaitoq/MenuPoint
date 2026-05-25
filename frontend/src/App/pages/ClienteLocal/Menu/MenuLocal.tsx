@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import Carrinho, { ItemCarrinho } from '../../../shared/components/Carrinho/Carrinho';
-import Historico, { PedidoHistorico } from '../../../shared/components/historico/Historico';
 import './MenuLocal.css';
 
 // ── Tipos 
@@ -51,8 +50,6 @@ const MenuLocal: React.FC = () => {
     const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
     const [itensCarrinho, setItensCarrinho]     = useState<ItemCarrinho[]>([]);
     const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
-    const [historicoAberto, setHistoricoAberto] = useState(false);
-    const [itensPedidos, setItensPedidos]       = useState<PedidoHistorico[]>([]);
 
   // ── Filtro
   const produtosFiltrados = PRODUTOS.filter((p) => {
@@ -81,30 +78,30 @@ const MenuLocal: React.FC = () => {
   };
 
   const finalizarPedido = () => {
-    setItensPedidos((prev) => {
-      const novo = [...prev];
-      itensCarrinho.forEach((item) => {
-        const existente = novo.find((i) => i.id === item.id);
-        if (existente) {
-          existente.quantidade += item.quantidade;
-        } else {
-          novo.push({ ...item });
-        }
-      });
-      return novo;
-    });
-    setItensCarrinho([]);
-    setCarrinhoAberto(false);
-  };
+  setItensCarrinho([]);
+  setCarrinhoAberto(false);
+};
   // ── Render
   return (
     <CustomerLayout
       mode="guest"
       cartCount={totalCarrinho}
       onCartClick={() => setCarrinhoAberto(true)}
-      onOrdersClick={() => setHistoricoAberto(true)}
     >
       <div className="menu" style={{ backgroundImage: 'url(/images/Fundo-menu.png)' }}>
+
+      {/* Botão flutuante do carrinho — igual ao MenuCliente */}
+      <button
+      className="menu__carrinho-fab"
+      onClick={() => setCarrinhoAberto(true)}
+      aria-label="Abrir carrinho"
+       >
+       🛒
+      {totalCarrinho > 0 && (
+      <span className="menu__carrinho-fab-badge">{totalCarrinho}</span>
+      )}
+      </button>
+
 
 
         {/* Busca */}
@@ -170,12 +167,6 @@ const MenuLocal: React.FC = () => {
         itens={itensCarrinho}
         onRemover={removerDoCarrinho}
         onFinalizar={finalizarPedido}
-      />
-
-      <Historico
-        aberto={historicoAberto}
-        onFechar={() => setHistoricoAberto(false)}
-        itens={itensPedidos}
       />
     </CustomerLayout>
   );
