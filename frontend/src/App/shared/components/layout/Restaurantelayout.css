@@ -5,17 +5,36 @@
   background-color: #ececec;
 }
 
-
 .restaurant-layout__body {
   flex: 1;
   display: flex;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
 }
 
 .restaurant-layout__content {
   flex: 1;
   padding: 24px;
   overflow-y: auto;
+}
+
+/**
+ * Botão do avatar — remove estilo padrão do button
+ * e mantém só o comportamento de clique.
+ * O cursor: pointer deixa claro que é clicável.
+ */
+.restaurant-layout__avatar-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.restaurant-layout__avatar-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
