@@ -1,6 +1,6 @@
 import React from 'react';
-import { FaShoppingCart } from 'react-icons/fa';
 import Navbar from './Navbar/Navbar';
+import { useNavigate } from 'react-router-dom';
 import Footer from './Footer/Footer';
 import CustomerSidebar, { CustomerSidebarItem } from './Sidebar/CustomerSidebar';
 import './Customerlayout.css';
@@ -31,7 +31,8 @@ const LOGGED_ITEMS: CustomerSidebarItem[] = ['home', 'orders', 'tables', 'menu']
  * O item 'menu' deve apontar para /menulocal, não para /menu (delivery).
  */
 const GUEST_ROUTE_OVERRIDES: Partial<Record<CustomerSidebarItem, string>> = {
-  home: '/menulocal'
+  home: '/menulocal' ,
+  orders: '/historicolocal'
 };
 
 // ── Componente ─────────────────────────────────────────
@@ -43,20 +44,16 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
   onOrdersClick,
 }) => {
 
-  const rightIcon = mode === 'guest' ? (
-    <div
-      className="cart-icon"
-      onClick={onCartClick}
-      style={{ cursor: onCartClick ? 'pointer' : 'default' }}
-    >
-      <FaShoppingCart className="cart-icon__svg" />
-      {cartCount > 0 && (
-        <span className="cart-icon__badge">{cartCount}</span>
-      )}
-    </div>
-  ) : (
+// ── navegação
+const navigate = useNavigate();
+const handleClick = () => navigate(mode === 'guest' ? '/perfillocal' : '/perfil');
+   
+  // Sempre mostra o perfil na navbar, independente do modo
+const rightIcon = (
+  <button className="btn-imagem" onClick={handleClick}>
     <img src="/icons/customer-avatar.png" alt="Perfil do cliente" />
-  );
+  </button>
+);
 
   const leftIcon = (
     <img src="/icons/restaurant-logo.png" alt="Logo do restaurante" />

@@ -384,3 +384,115 @@
   color: #777;
   margin: 0;
 }
+/* ── Responsividade ── */
+
+/* Tablet */
+@media (max-width: 768px) {
+  .pedido__card {
+    padding: 20px 18px;
+  }
+
+  .pedido__linha {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .pedido__select-wrap {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .pedido__campo {
+    width: 100%;
+  }
+
+  /* Tabela com scroll horizontal */
+  .pedido__tabela-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pedido__tabela {
+    min-width: 480px;
+  }
+
+  /* Rodapé empilha verticalmente */
+  .pedido__rodape {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .pedido__total-wrap {
+    align-items: flex-start;
+    flex-direction: row;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .pedido__acoes {
+    justify-content: stretch;
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .pedido__btn-cancelar,
+  .pedido__btn-salvar {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .pedido__card {
+    padding: 16px 14px;
+  }
+
+  .pedido__titulo {
+    font-size: 22px;
+  }
+
+  .pedido__input-wrap {
+    max-width: 100%;
+  }
+
+  /* Tabela: scroll horizontal compacto */
+  .pedido__tabela-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+    border: 1px solid #eeeeee;
+  }
+
+  .pedido__tabela {
+    min-width: 380px;
+    border-collapse: collapse;
+    display: table;
+    width: 100%;
+  }
+
+  .pedido__th {
+    padding: 10px 10px;
+    font-size: 12px;
+  }
+
+  .pedido__td {
+    padding: 10px 10px;
+    font-size: 13px;
+    display: table-cell;
+    text-align: left;
+  }
+
+  .pedido__td--center {
+    text-align: center;
+  }
+
+  .pedido__popup {
+    padding: 28px 20px;
+    margin: 0 16px;
+  }
+}

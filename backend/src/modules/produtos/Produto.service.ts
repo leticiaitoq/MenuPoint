@@ -105,7 +105,7 @@ export class ProdutoService {
     )
 
     const todasPertencem = encontrados.every(
-      (p) => p && (p as any).estabelecimento_id === estabelecimento_id
+      (p: unknown) => p && (p as any).estabelecimento_id === estabelecimento_id
     )
 
     if (!todasPertencem) {
@@ -126,8 +126,31 @@ export class ProdutoService {
     })
   }
 
-async remove(id: string, estabelecimento_id: string): Promise<void> {
-  await this.findCompleto(id, estabelecimento_id)
-  await this.repository.update(id, { ativo: false } as any)
-}
+  async remove(id: string, estabelecimento_id: string): Promise<void> {
+    const produto = await this.findCompleto(id, estabelecimento_id)
+
+    if (!(produto as any).disponivel && (produto as any).ativo === false) {
+      throw new AppError('Produto já está desativado', 400)
+    }
+
+    await this.repository.update(id, { ativo: false } as any)
+  }
+
+  async reativar(id: string, estabelecimento_id: string): Promise<Produto> {
+    const produto = await this.repository.findById(id)
+
+    if (!produto) {
+      throw new AppError('Produto não encontrado', 404)
+    }
+
+    if ((produto as any).estabelecimento_id !== estabelecimento_id) {
+      throw new AppError('Acesso não autorizado', 403)
+    }
+
+    if ((produto as any).ativo !== false) {
+      throw new AppError('Produto já está ativo', 400)
+    }
+
+    return this.repository.update(id, { ativo: true } as any)
+  }
 }

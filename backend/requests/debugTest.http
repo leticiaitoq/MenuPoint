@@ -1,0 +1,88 @@
+# Substitua pelo seu token (sem espaços)
+@token=TEST-2641258245009571-051808-801b1ddb694653d05c76460c769f1569-3411018746
+@plan_id_basico = 68070d05852a4886834463e8ca318441
+
+
+### 1 — Valida se o token está funcionando (deve retornar seus dados)
+GET https://api.mercadopago.com/users/me
+Authorization: Bearer {{token}}
+
+
+###
+
+
+### 2 — Busca os dados do plano Básico (verifica se o plano existe e está ativo)
+GET https://api.mercadopago.com/preapproval_plan/{{plan_id_basico}}
+Authorization: Bearer {{token}}
+
+
+###
+
+
+### 3 — Cria assinatura direto na API do MP (sem passar pelo seu backend)
+POST https://api.mercadopago.com/preapproval
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "preapproval_plan_id": "{{plan_id_basico}}",
+  "payer_email": "test_user_123@testuser.com",
+  "back_url": "http://localhost:5173?assinatura=sucesso",
+  "status": "pending",
+  "reason": "Plano MenuPoint"
+}
+
+
+###
+
+
+### 4 — Cria plano de teste Básico
+POST https://api.mercadopago.com/preapproval_plan
+Authorization: Bearer TEST-2641258245009571-051808-801b1ddb694653d05c76460c769f1569-3411018746
+Content-Type: application/json
+
+{
+  "reason": "Plano Básico MenuPoint",
+  "auto_recurring": {
+    "frequency": 1,
+    "frequency_type": "months",
+    "transaction_amount": 49.90,
+    "currency_id": "BRL"
+  },
+  "payment_methods_allowed": {
+    "payment_types": [{ "id": "credit_card" }]
+  },
+  "back_url": "https://example.com"
+}
+
+
+###
+
+
+### 5 — Cria plano de teste Pro
+POST https://api.mercadopago.com/preapproval_plan
+Authorization: Bearer TEST-2641258245009571-051808-801b1ddb694653d05c76460c769f1569-3411018746
+Content-Type: application/json
+
+{
+  "reason": "Plano Pro MenuPoint",
+  "auto_recurring": {
+    "frequency": 1,
+    "frequency_type": "months",
+    "transaction_amount": 99.90,
+    "currency_id": "BRL"
+  },
+  "payment_methods_allowed": {
+    "payment_types": [{ "id": "credit_card" }]
+  },
+  "back_url": "https://example.com"
+}
+
+### 6 — Criar usuário de teste comprador
+POST https://api.mercadopago.com/users/test_user
+Authorization: Bearer TEST-2641258245009571-051808-801b1ddb694653d05c76460c769f1569-3411018746
+Content-Type: application/json
+
+{
+  "site_id": "MLB"
+}

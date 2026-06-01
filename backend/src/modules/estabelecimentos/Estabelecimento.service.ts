@@ -69,4 +69,14 @@ export class EstabelecimentoService extends BaseService <
     await this.findById(id)
     await this.repository.update(id, { ativo: false } as any)
   }
+
+  async reativar(id: string): Promise<Estabelecimento> {
+    const estabelecimento = await this.findById(id)
+
+    if ((estabelecimento as any).ativo) {
+      throw new AppError('Estabelecimento já está ativo', 400)
+    }
+
+    return this.repository.update(id, { ativo: true } as any)
+  }
 }

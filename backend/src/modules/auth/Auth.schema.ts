@@ -2,32 +2,31 @@ import { z } from 'zod'
 
 export const loginSchema = z.object({
   email: z
-  .string()
-  .min(1, 'E-mail é obrigatório')
-  .email('Formato de e-mail inválido')
-  .toLowerCase(),
-senha: z
-  .string()
-  .min(1, 'Senha é obrigatória')
-  .min(6, 'Senha deve ter no mínimo 6 caracteres'),
+    .string()
+    .min(1, 'E-mail é obrigatório')
+    .email('Formato de e-mail inválido')
+    .toLowerCase(),
+  senha: z
+    .string()
+    .min(1, 'Senha é obrigatória')
+    .min(6, 'Senha deve ter no mínimo 6 caracteres'),
 })
 
 export type LoginDTO = z.infer<typeof loginSchema>
 
 export interface JWTPayload {
-  sub: string                    // ID do usuário
+  sub: string
   nome: string
   email: string
-  perfil: string                 // ADMIN | ATENDENTE | CAIXA
-  escopo: string                 // GLOBAL | LOCAL
+  perfil: string                 // ADMIN | ATENDENTE | CAIXA | CLIENTE
+  escopo: string                 // GLOBAL | LOCAL | CLIENTE
   estabelecimento_id: string | null
   empresa_id: string | null
 }
 
-// Define o que a rota de login devolve ao cliente
-
 export interface LoginResponseDTO {
   token: string
+  refresh_token: string
   usuario: {
     id: string
     nome: string
@@ -39,7 +38,7 @@ export interface LoginResponseDTO {
   }
 }
 
-// ── DTO ESQUECI SENHA ────────────────────────────────────────────────────────
+// ── ESQUECI SENHA ────────────────────────────────────────────────────────────
 export const esqueciSenhaSchema = z.object({
   email: z
     .string()
@@ -50,34 +49,19 @@ export const esqueciSenhaSchema = z.object({
 
 export type EsqueciSenhaDTO = z.infer<typeof esqueciSenhaSchema>
 
-// Redefinir senha
-
+// ── REDEFINIR SENHA ──────────────────────────────────────────────────────────
 export const redefinirSenhaSchema = z.object({
-  token: z
-    .string()
-    .min(1, 'Token é obrigatório'),
-
-  nova_senha: z
-    .string()
-    .min(1, 'Nova senha é obrigatória')
-    .min(6, 'Nova senha deve ter no mínimo 6 caracteres'),
-
-  confirmar_senha: z
-    .string()
-    .min(1, 'Confirmação de senha é obrigatória'),
+  token: z.string().min(1, 'Token é obrigatório'),
+  nova_senha: z.string().min(6, 'Nova senha deve ter no mínimo 6 caracteres'),
+  confirmar_senha: z.string().min(1, 'Confirmação de senha é obrigatória'),
+}).refine((data) => data.nova_senha === data.confirmar_senha, {
+  message: 'As senhas não coincidem',
+  path: ['confirmar_senha'],
 })
-// Valida que as senhas são iguais
-.refine(
-  (data) => data.nova_senha === data.confirmar_senha,
-  {
-    message: 'As senhas não coincidem',
-    path: ['confirmar_senha'],
-  }
-)
 
 export type RedefinirSenhaDTO = z.infer<typeof redefinirSenhaSchema>
 
-// ── DTO REGISTRO ─────────────────────────────────────────────────────────────
+// ── REGISTRO ─────────────────────────────────────────────────────────────────
 export const registrarSchema = z.object({
   nome_restaurante: z
     .string()
@@ -95,13 +79,14 @@ export const registrarSchema = z.object({
     .email('Formato de e-mail inválido')
     .toLowerCase(),
 
-  senha: z
-    .string()
-    .min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  senha: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  confirmar_senha: z.string().min(1, 'Confirmação de senha é obrigatória'),
 
-  confirmar_senha: z
+  // Gerado pelo webhook após pagamento da assinatura ser confirmado
+  token_pagamento: z
     .string()
-    .min(1, 'Confirmação de senha é obrigatória'),
+    .min(1, 'Token de pagamento inválido.')
+    .optional(),
 })
 .refine((data) => data.senha === data.confirmar_senha, {
   message: 'As senhas não coincidem',
@@ -112,6 +97,7 @@ export type RegistrarDTO = z.infer<typeof registrarSchema>
 
 export interface RegistrarResponseDTO {
   token: string
+  refresh_token: string
   usuario: {
     id: string
     nome: string
@@ -122,3 +108,10 @@ export interface RegistrarResponseDTO {
     empresa_id: string
   }
 }
+
+// ── REFRESH TOKEN ─────────────────────────────────────────────────────────────
+export const refreshTokenSchema = z.object({
+  refresh_token: z.string().min(1, 'Refresh token é obrigatório'),
+})
+
+export type RefreshTokenDTO = z.infer<typeof refreshTokenSchema>

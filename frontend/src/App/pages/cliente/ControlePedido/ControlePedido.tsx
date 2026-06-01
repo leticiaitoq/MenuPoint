@@ -6,9 +6,9 @@ import './ControlePedido.css';
 
 // ── Tipos ──────────────────────────────────────────────
 
-type StatusPedido = 'pronto' | 'finalizado';
+type StatusPedido = 'pendente' | 'pronto' | 'finalizado';
 
-type FiltroAtivo = 'todos' | 'prontos' | 'finalizados';
+type FiltroAtivo = 'todos' | 'pendentes' | 'prontos' | 'finalizados';
 
 interface ItemPedido {
   id: string;
@@ -27,10 +27,21 @@ interface Pedido {
   itens: ItemPedido[];
 }
 
-// ── Dados mockados 
+// ── Dados mockados
 // Futuramente virão da API via useEffect com o id do cliente
 
 const PEDIDOS_MOCK: Pedido[] = [
+  {
+    id: 'p-1025',
+    numero: 1025,
+    status: 'pendente',
+    horario: '12:30',
+    mesa: 2,
+    itens: [
+      { id: 'i-8', nome: 'Pizza Calabresa', quantidade: 1, preco: 42.00, imagem: '/images/Menu/pp.jpg' },
+      { id: 'i-9', nome: 'Suco de Laranja', quantidade: 2, preco: 8.00,  imagem: '/images/Menu/coca.jpg' },
+    ],
+  },
   {
     id: 'p-1024',
     numero: 1024,
@@ -49,8 +60,8 @@ const PEDIDOS_MOCK: Pedido[] = [
     horario: '11:50',
     mesa: 3,
     itens: [
-      { id: 'i-3', nome: 'Salada Cesar', quantidade: 2, preco: 38.00, imagem: '/images/Menu/ceaser.jpg' },
-      { id: 'i-4', nome: 'Coca-Cola Lata',      quantidade: 2, preco: 6.00,  imagem: '/images/Menu/coca.jpg' },
+      { id: 'i-3', nome: 'Salada Cesar',  quantidade: 2, preco: 38.00, imagem: '/images/Menu/ceaser.jpg' },
+      { id: 'i-4', nome: 'Coca-Cola Lata', quantidade: 2, preco: 6.00,  imagem: '/images/Menu/coca.jpg' },
     ],
   },
   {
@@ -60,14 +71,14 @@ const PEDIDOS_MOCK: Pedido[] = [
     horario: '11:30',
     mesa: 5,
     itens: [
-      { id: 'i-5', nome: 'Hamburguer Celestino',          quantidade: 1, preco: 25.00, imagem: '/images/Menu/lanche.jpg' },
-      { id: 'i-6', nome: 'Caipirinha',      quantidade: 1, preco: 6.00,  imagem: '/images/Menu/caipira.jpg' },
-      { id: 'i-7', nome: 'Sorvete', quantidade: 1, preco: 18.00, imagem: '/images/Menu/sor.jpg' },
+      { id: 'i-5', nome: 'Hamburguer Celestino', quantidade: 1, preco: 25.00, imagem: '/images/Menu/lanche.jpg' },
+      { id: 'i-6', nome: 'Caipirinha',           quantidade: 1, preco: 6.00,  imagem: '/images/Menu/caipira.jpg' },
+      { id: 'i-7', nome: 'Sorvete',              quantidade: 1, preco: 18.00, imagem: '/images/Menu/sor.jpg' },
     ],
   },
 ];
 
-// ── Helpers 
+// ── Helpers
 
 /**
  * Calcula o total de um pedido somando preco * quantidade de cada item.
@@ -77,12 +88,12 @@ const calcularTotal = (itens: ItemPedido[]): number =>
 
 /**
  * Formata número como moeda brasileira.
- * Ex.: 51 → "R$ 51,00" (Interessante)
+ * Ex.: 51 → "R$ 51,00"
  */
 const formatarPreco = (valor: number): string =>
   `R$ ${valor.toFixed(2).replace('.', ',')}`;
 
-// ── Componente 
+// ── Componente
 
 const ControlePedido: React.FC = () => {
   const [filtro, setFiltro]   = useState<FiltroAtivo>('todos');
@@ -90,14 +101,16 @@ const ControlePedido: React.FC = () => {
 
   // ── Contagens para os badges dos filtros
   const contagens = {
-    todos:      pedidos.length,
-    prontos:    pedidos.filter((p) => p.status === 'pronto').length,
+    todos:       pedidos.length,
+    pendentes:   pedidos.filter((p) => p.status === 'pendente').length,
+    prontos:     pedidos.filter((p) => p.status === 'pronto').length,
     finalizados: pedidos.filter((p) => p.status === 'finalizado').length,
   };
 
   // ── Pedidos filtrados conforme aba ativa
   const pedidosFiltrados = pedidos.filter((p) => {
-    if (filtro === 'prontos')    return p.status === 'pronto';
+    if (filtro === 'pendentes')   return p.status === 'pendente';
+    if (filtro === 'prontos')     return p.status === 'pronto';
     if (filtro === 'finalizados') return p.status === 'finalizado';
     return true;
   });
@@ -118,11 +131,11 @@ const ControlePedido: React.FC = () => {
       <div className="pedidos">
 
         {/* ── Cabeçalho ── */}
-        <h1 className="pedidos__titulo">Histórico de Pedidos</h1>
+        <h1 className="pedidos__titulo">Meus Pedidos</h1>
 
         {/* ── Filtros ── */}
         <div className="pedidos__filtros">
-          {(['todos', 'prontos', 'finalizados'] as FiltroAtivo[]).map((f) => (
+          {(['todos', 'pendentes', 'prontos', 'finalizados'] as FiltroAtivo[]).map((f) => (
             <button
               key={f}
               className={`pedidos__filtro-btn ${filtro === f ? 'pedidos__filtro-btn--ativo' : ''}`}
@@ -150,9 +163,9 @@ const ControlePedido: React.FC = () => {
                     <div className="pedidos__card-info">
                       <h2 className="pedidos__card-numero">Pedido #{pedido.numero}</h2>
                       <span className={`pedidos__status pedidos__status--${pedido.status}`}>
-                        {pedido.status === 'pronto' ? (
-                          <>🟡 Pronto</>
-                        ) : (
+                        {pedido.status === 'pendente' && <>🔵 Pendente</>}
+                        {pedido.status === 'pronto'   && <>🟡 Pronto</>}
+                        {pedido.status === 'finalizado' && (
                           <><HiCheckCircle className="pedidos__status-icon" /> Finalizado</>
                         )}
                       </span>
@@ -190,15 +203,20 @@ const ControlePedido: React.FC = () => {
                     {/* Totais + botão de ação */}
                     <div className="pedidos__card-rodape">
                       <div className="pedidos__totais">
-                        <span className="pedidos__total-label">
-                          Total: {formatarPreco(total)}
-                        </span>
+                        <span className="pedidos__total-label">Total</span>
                         <span className="pedidos__total-destaque">
-                          Total: {formatarPreco(total)}
+                          {formatarPreco(total)}
                         </span>
                       </div>
 
-                      {pedido.status === 'pronto' ? (
+                      {pedido.status === 'pendente' && (
+                        // Pedido aguardando preparo — cliente só pode acompanhar
+                        <span className="pedidos__btn pedidos__btn--aguardando">
+                          Aguardando...
+                        </span>
+                      )}
+
+                      {pedido.status === 'pronto' && (
                         <button
                           className="pedidos__btn pedidos__btn--finalizar"
                           onClick={() => handleFinalizar(pedido.id)}
@@ -206,7 +224,9 @@ const ControlePedido: React.FC = () => {
                           <FiCheck className="pedidos__btn-icon" />
                           Finalizar
                         </button>
-                      ) : (
+                      )}
+
+                      {pedido.status === 'finalizado' && (
                         <button className="pedidos__btn pedidos__btn--conta">
                           <HiClipboardList className="pedidos__btn-icon" />
                           Ver Conta

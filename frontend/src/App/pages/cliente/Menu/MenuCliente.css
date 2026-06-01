@@ -257,3 +257,107 @@
   text-align: center;
   line-height: 1.2;
 }
+/* ── Responsividade Mobile ── */
+@media (max-width: 600px) {
+  .menu {
+    margin: -16px;
+    padding: 16px 12px;
+    gap: 14px;
+  }
+
+  /* Busca ocupa toda a largura */
+  .menu__busca-wrap {
+    max-width: 100%;
+    padding: 8px 14px;
+  }
+
+  .menu__busca {
+    font-size: 14px;
+  }
+
+  /* Categorias: botões menores, scroll horizontal */
+  .menu__categorias {
+    gap: 8px;
+  }
+
+  .menu__cat-btn {
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+  }
+
+  .menu__cat-icon {
+    font-size: 24px;
+  }
+
+  /* Grid: 2 colunas no mobile */
+  .menu__grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  /* Cards menores */
+  .menu__card-img {
+    height: 130px;
+  }
+
+  .menu__card-body {
+    padding: 10px 12px;
+    gap: 4px;
+  }
+
+  .menu__card-nome {
+    font-size: 13px;
+  }
+
+  .menu__card-desc {
+    font-size: 11px;
+    /* Limita a 2 linhas para economizar espaço */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .menu__card-preco {
+    font-size: 16px;
+  }
+
+  .menu__card-add {
+    width: 34px;
+    height: 34px;
+    font-size: 20px;
+  }
+
+  /* FAB carrinho: ajusta posição para não sobrepor a bottom nav */
+  .menu__carrinho-fab {
+    top: auto;
+    bottom: 72px;
+    right: 16px;
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+  }
+
+  /* Modal de tipo de pedido: empilha verticalmente no mobile */
+  .mtp__modal {
+    flex-direction: column;
+    gap: 16px;
+    width: 90%;
+    max-width: 340px;
+  }
+
+  .mtp__card {
+    width: 100%;
+    padding: 16px 20px;
+  }
+
+  .mtp__card-img {
+    width: 100px;
+    height: 100px;
+  }
+
+  .mtp__card-label {
+    font-size: 24px;
+  }
+}

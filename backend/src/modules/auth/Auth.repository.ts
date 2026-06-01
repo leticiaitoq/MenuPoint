@@ -1,6 +1,7 @@
-import { Prisma } from '@prisma/client'
+import { Prisma, Plano } from '@prisma/client'
 import prisma from '@config/prisma'
 import crypto from 'crypto'
+import { AppError } from '@shared/errors/AppError'
 
 export class AuthRepository {
 
@@ -55,18 +56,51 @@ export class AuthRepository {
     cnpj?: string
     email: string
     senha_hash: string
+    token_pagamento?: string
   }) {
     return prisma.$transaction(async (tx) => {
-      // 1. Cria a empresa
+      let plano: Plano = Plano.STARTER
+      let assinaturaId: string | undefined
+
+      if (data.token_pagamento) {
+        const assinatura = await tx.assinatura.findUnique({
+          where: { token_registro: data.token_pagamento },
+        })
+
+        if (!assinatura) {
+          throw new AppError('Token de pagamento inválido ou inexistente', 400)
+        }
+
+        if (assinatura.status !== 'ATIVA') {
+          throw new AppError(
+            'Pagamento do plano não confirmado. Verifique seu e-mail ou finalize o pagamento.',
+            402
+          )
+        }
+
+        if (assinatura.expira_em && assinatura.expira_em < new Date()) {
+          throw new AppError('Token de pagamento expirado. Renove sua assinatura.', 402)
+        }
+
+        plano = assinatura.plano as Plano
+        assinaturaId = assinatura.id
+      }
+
       const empresa = await tx.empresa.create({
         data: {
           nome: data.nome_empresa,
           cnpj: data.cnpj,
-          plano: 'STARTER',
+          plano,
         },
       })
 
-      // 2. Cria o usuário ADMIN vinculado à empresa (escopo GLOBAL — sem estabelecimento ainda)
+      if (assinaturaId) {
+        await tx.assinatura.update({
+          where: { id: assinaturaId },
+          data: { empresa_id: empresa.id },
+        })
+      }
+
       const usuario = await tx.usuario.create({
         data: {
           empresa_id: empresa.id,
@@ -80,7 +114,7 @@ export class AuthRepository {
 
       return { empresa, usuario }
     })
-  }
+  } 
 
   async atualizarUltimoAcesso(id: string): Promise<void> {
     await prisma.usuario.update({

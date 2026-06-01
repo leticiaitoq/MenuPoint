@@ -112,4 +112,20 @@ export async function estabelecimentosRoutes(app: FastifyInstance) {
       return reply.status(204).send()
     }
   )
+
+  app.patch(
+    '/:id/reativar',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string }
+      const user = request.user as JWTPayload
+
+      if (user.perfil !== 'ADMIN') {
+        throw new AppError('Apenas administradores podem reativar estabelecimentos', 403)
+      }
+
+      const estabelecimento = await service.reativar(id)
+      return reply.send(estabelecimento)
+    }
+  )
 }

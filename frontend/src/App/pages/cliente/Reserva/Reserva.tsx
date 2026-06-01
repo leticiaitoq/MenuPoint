@@ -123,14 +123,15 @@ const Reserva: React.FC = () => {
         {/* ── Formulário ── */}
         <div className="reserva__card">
 
-          {/* Imagem no canto superior direito — position absolute no CSS */}
-          <img
-            src="/images/mesa.png"
-            alt="Ilustração de mesa de restaurante"
-            className="reserva__ilustracao"
-          />
-
-          <h1 className="reserva__titulo">RESERVA DE MESAS</h1>
+          {/* Cabeçalho: título + imagem lado a lado em desktop, imagem acima em mobile */}
+          <div className="reserva__card-header">
+            <h1 className="reserva__titulo">RESERVA DE MESAS</h1>
+            <img
+              src="/images/Mesa.png"
+              alt="Ilustração de mesa de restaurante"
+              className="reserva__ilustracao"
+            />
+          </div>
 
           {/* Data */}
           <div className="reserva__campo">

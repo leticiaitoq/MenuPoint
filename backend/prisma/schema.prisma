@@ -26,6 +26,7 @@ model Empresa {
 
   estabelecimentos Estabelecimento[]
   usuarios         Usuario[]
+  assinaturas      Assinatura[]
 
   @@map("empresas")
 }
@@ -94,6 +95,7 @@ model Usuario {
   reservas_confirmadas Reserva[]   @relation("ConfirmadaPor")
   pagamentos_confirmados Pagamento[] @relation("ConfirmadoPor")
   tokens_recuperacao TokenRecuperacaoSenha[]
+  refresh_tokens     RefreshToken[]
 
   @@map("usuarios")
 }
@@ -237,6 +239,7 @@ model Pedido {
   mesa_id            String?       @db.Uuid
   reserva_id         String?       @db.Uuid
   atendido_por_id    String?       @db.Uuid
+  cliente_id         String?       @db.Uuid   // cliente cadastrado (opcional)
   numero_pedido      Int           @default(autoincrement())
   modalidade         Modalidade
   status             StatusPedido  @default(RECEBIDO)
@@ -260,6 +263,7 @@ model Pedido {
   mesa            Mesa?           @relation(fields: [mesa_id], references: [id])
   reserva         Reserva?        @relation(fields: [reserva_id], references: [id])
   atendido_por    Usuario?        @relation("AtendidoPor", fields: [atendido_por_id], references: [id])
+  cliente         Cliente?        @relation(fields: [cliente_id], references: [id])
   itens           ItemPedido[]
   pagamento       Pagamento?
 
@@ -324,8 +328,84 @@ model Pagamento {
 }
 
 // ============================================================
-// GRUPO - 8 - RECUPERAR SENHA
+// GRUPO - 9 - REFRESH TOKENS
 // ============================================================
+
+model RefreshToken {
+  id          String   @id @default(uuid()) @db.Uuid
+  usuario_id  String?  @db.Uuid
+  cliente_id  String?  @db.Uuid
+  token       String   @unique @db.VarChar(128)
+  expira_em   DateTime @db.Timestamptz
+  usado       Boolean  @default(false)
+  criado_em   DateTime @default(now()) @db.Timestamptz
+
+  usuario  Usuario? @relation(fields: [usuario_id], references: [id])
+  cliente  Cliente? @relation(fields: [cliente_id], references: [id])
+
+  @@map("refresh_tokens")
+}
+
+// ============================================================
+// GRUPO - 10 - CLIENTES (endusers do cardápio)
+// ============================================================
+
+model Cliente {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome       String   @db.VarChar(100)
+  telefone   String   @db.VarChar(20)
+  email      String?  @unique @db.VarChar(150)
+  senha_hash String?  @db.VarChar(255)
+  ativo      Boolean  @default(true)
+  criado_em  DateTime @default(now()) @db.Timestamptz
+
+  pedidos        Pedido[]
+  refresh_tokens RefreshToken[]
+  tokens_recuperacao TokenRecuperacaoSenhaCliente[]
+
+  @@map("clientes")
+}
+
+model TokenRecuperacaoSenhaCliente {
+  id         String   @id @default(uuid()) @db.Uuid
+  cliente_id String   @db.Uuid
+  cliente    Cliente  @relation(fields: [cliente_id], references: [id])
+  token      String   @unique @db.VarChar(64)
+  expira_em  DateTime @db.Timestamptz
+  usado      Boolean  @default(false)
+  criado_em  DateTime @default(now()) @db.Timestamptz
+
+  @@map("tokens_recuperacao_senha_cliente")
+}
+
+// ============================================================
+// GRUPO - 11 - ASSINATURAS (pagamento do plano)
+// ============================================================
+
+model Assinatura {
+  id                  String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  empresa_id          String           @db.Uuid
+  plano               Plano
+  status              StatusAssinatura @default(PENDENTE)
+  gateway             String           @db.VarChar(50)   // "stripe" | "asaas" | "mercadopago"
+  gateway_id          String?          @db.VarChar(200)  // ID externo da assinatura
+  gateway_customer_id String?          @db.VarChar(200)
+  checkout_url        String?          @db.VarChar(500)  // Link de pagamento enviado ao cliente
+  token_registro      String?          @unique @db.VarChar(128) // Token liberado após pagamento
+  valor               Decimal          @db.Decimal(10, 2)
+  periodo             PeriodoAssinatura @default(MENSAL)
+  inicia_em           DateTime?        @db.Timestamptz
+  expira_em           DateTime?        @db.Timestamptz
+  cancelada_em        DateTime?        @db.Timestamptz
+  criado_em           DateTime         @default(now()) @db.Timestamptz
+  atualizado_em       DateTime         @default(now()) @updatedAt @db.Timestamptz
+
+  empresa Empresa @relation(fields: [empresa_id], references: [id])
+
+  @@map("assinaturas")
+}
+
+
 
 model TokenRecuperacaoSenha {
   id          String   @id @default(uuid()) @db.Uuid
@@ -437,4 +517,21 @@ enum StatusPagamento {
   FALHOU
 
   @@map("status_pagamento")
+}
+
+enum StatusAssinatura {
+  PENDENTE
+  ATIVA
+  CANCELADA
+  EXPIRADA
+  FALHOU
+
+  @@map("status_assinatura")
+}
+
+enum PeriodoAssinatura {
+  MENSAL
+  ANUAL
+
+  @@map("periodo_assinatura")
 }

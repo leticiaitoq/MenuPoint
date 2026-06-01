@@ -104,7 +104,7 @@ async create(
     )
 
     const todasPertencem = encontradas.every(
-      (c) => c && (c as any).estabelecimento_id === estabelecimento_id
+      (c: unknown) => c && (c as any).estabelecimento_id === estabelecimento_id
     )
 
     if (!todasPertencem) {
@@ -129,5 +129,23 @@ async create(
     }
 
     await this.repository.update(id, { ativo: false } as any)
+  }
+
+  async reativar(id: string, estabelecimento_id: string): Promise<Categoria> {
+    const categoria = await this.repository.findById(id)
+
+    if (!categoria) {
+      throw new AppError('Categoria não encontrada', 404)
+    }
+
+    if ((categoria as any).estabelecimento_id !== estabelecimento_id) {
+      throw new AppError('Acesso não autorizado', 403)
+    }
+
+    if ((categoria as any).ativo) {
+      throw new AppError('Categoria já está ativa', 400)
+    }
+
+    return this.repository.update(id, { ativo: true } as any)
   }
 }

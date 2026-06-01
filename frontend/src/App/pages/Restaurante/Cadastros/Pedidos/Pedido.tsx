@@ -183,10 +183,10 @@ const Pedido: React.FC = () => {
                 ) : (
                   itens.map((item) => (
                     <tr key={item.id} className="pedido__tr">
-                      <td className="pedido__td">{item.nome}</td>
-                      <td className="pedido__td pedido__td--center">{item.quantidade}</td>
-                      <td className="pedido__td">R$ {item.preco.toFixed(2).replace('.', ',')}</td>
-                      <td className="pedido__td pedido__td--subtotal">
+                      <td className="pedido__td" data-label="Item">{item.nome}</td>
+                      <td className="pedido__td pedido__td--center" data-label="Qtd">{item.quantidade}</td>
+                      <td className="pedido__td" data-label="Preço">R$ {item.preco.toFixed(2).replace('.', ',')}</td>
+                      <td className="pedido__td pedido__td--subtotal" data-label="Subtotal">
                         R$ {(item.preco * item.quantidade).toFixed(2).replace('.', ',')}
                       </td>
                       <td className="pedido__td pedido__td--center">
