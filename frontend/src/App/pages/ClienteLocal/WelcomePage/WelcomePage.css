@@ -60,6 +60,23 @@
   text-align: center;
 }
 
+.welcome-page__continue-button {
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 16px 64px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.welcome-page__continue-button:hover {
+  background-color: #a93226;
+}
+
 /**
  * Overlay — cobre toda a tela com transparência.
  * position: fixed garante que cobre tudo, incluindo

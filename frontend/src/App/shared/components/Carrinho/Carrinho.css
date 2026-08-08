@@ -152,6 +152,63 @@
   color: #888888;
 }
 
+/* Linha com a quantidade + gatilho da observação */
+.carrinho__item-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* "Observação" — texto pequeno que revela a nota do cliente ao passar o mouse */
+.carrinho__item-obs {
+  position: relative;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c0392b;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: default;
+}
+
+.carrinho__item-obs-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: max-content;
+  max-width: 220px;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.carrinho__item-obs-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 14px;
+  border: 6px solid transparent;
+  border-bottom-color: #1a1a1a;
+}
+
+.carrinho__item-obs:hover .carrinho__item-obs-tooltip,
+.carrinho__item-obs:focus .carrinho__item-obs-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
 .carrinho__item-preco {
   font-size: 18px;
   font-weight: 700;

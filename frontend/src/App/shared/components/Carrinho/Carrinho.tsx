@@ -10,6 +10,8 @@ export interface ItemCarrinho {
   preco: number;
   quantidade: number;
   imagem: string;
+  /** Observação escrita pelo cliente na tela de personalização (opcional) */
+  observacao?: string;
 }
 
 interface CarrinhoProps {
@@ -66,7 +68,15 @@ const Carrinho: React.FC<CarrinhoProps> = ({ aberto, onFechar, itens, onFinaliza
                 <img src={item.imagem} alt={item.nome} className="carrinho__item-img" />
                 <div className="carrinho__item-info">
                   <span className="carrinho__item-nome">{item.nome}</span>
-                  <span className="carrinho__item-qtd">{item.quantidade}x</span>
+                  <div className="carrinho__item-meta">
+                    <span className="carrinho__item-qtd">{item.quantidade}x</span>
+                    {item.observacao && (
+                      <span className="carrinho__item-obs" tabIndex={0}>
+                        Observação
+                        <span className="carrinho__item-obs-tooltip">{item.observacao}</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <span className="carrinho__item-preco">
                   R${(item.preco * item.quantidade).toFixed(2).replace('.', ',')}

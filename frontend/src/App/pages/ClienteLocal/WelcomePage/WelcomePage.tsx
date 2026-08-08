@@ -94,6 +94,15 @@ const WelcomePage: React.FC = () => {
           {error && <span className="welcome-page__error">{error}</span>}
         </div>
 
+        {/* Botão para confirmar o nome e abrir o modal da mesa */}
+        <button
+          type="button"
+          className="welcome-page__continue-button"
+          onClick={handleConfirmName}
+        >
+          CONTINUAR
+        </button>
+
       </div>
 
       {/* Modal de confirmação de mesa */}

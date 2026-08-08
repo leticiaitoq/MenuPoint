@@ -1,5 +1,4 @@
 import React from 'react';
-import { FaShoppingCart } from 'react-icons/fa';
 import Navbar from './Navbar/Navbar';
 import Footer from './Footer/Footer';
 import CustomerSidebar, { CustomerSidebarItem } from './Sidebar/CustomerSidebar';
@@ -49,7 +48,9 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
       onClick={onCartClick}
       style={{ cursor: onCartClick ? 'pointer' : 'default' }}
     >
-      <FaShoppingCart className="cart-icon__svg" />
+      {/* Mesmo desenho do botão flutuante do modo logged (MenuCliente),
+          pra não ter dois "carrinhos" com cara diferente no app. */}
+      <span className="cart-icon__svg" role="img" aria-label="Carrinho">🛒</span>
       {cartCount > 0 && (
         <span className="cart-icon__badge">{cartCount}</span>
       )}

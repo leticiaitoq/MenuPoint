@@ -12,6 +12,7 @@ import RecoverPass from "../pages/auth/RecoverPass";
 import Reserva from "../pages/cliente/Reserva/Reserva";
 import ControlePedido from "../pages/cliente/ControlePedido/ControlePedido";
 import CadastroEndereco from "../pages/cliente/CadastroEnde/CadastroEndereço";
+import Persopedido from "../shared/components/PersonalizaPedido/Persopedido";
 
 /**
  * Novas telas = Novas rotas aqui (Obrigatorio)
@@ -32,6 +33,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/reserva" element={<Reserva />} />
         <Route path="/historico" element={<ControlePedido />} />
         <Route path="/endereço" element={<CadastroEndereco />} />
+         <Route path="/personaliza" element={<Persopedido />} />
       </Routes>
     </BrowserRouter>
   );
