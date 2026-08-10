@@ -528,3 +528,13 @@
 }
 
 .cad-end__sucesso-rua { font-size: 13px; color: #555555; line-height: 1.5; }
+
+@media (max-width: 768px) {
+  .cad-end {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    box-sizing: border-box;
+    flex-direction: column-reverse;
+  }
+}

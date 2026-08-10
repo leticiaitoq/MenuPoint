@@ -1,6 +1,5 @@
 @host = http://localhost:3333/api/v1
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZjA2ZmI0NS1jN2ExLTQwNWItODQ5My02MDU1NWM3ZTdhNmMiLCJub21lIjoiQWRtaW5nbG9iYWwiLCJlbWFpbCI6ImFkbWluZ2xvYmFsQGVtYWlsLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiZXNjb3BvIjoiR0xPQkFMIiwiZXN0YWJlbGVjaW1lbnRvX2lkIjoiZDMyNDY3NGQtYTc5NS00MGI4LTg4YWItODg1YWQxMWZiNWUyIiwiZW1wcmVzYV9pZCI6bnVsbCwiaWF0IjoxNzc1ODY1NDE4LCJleHAiOjE3NzY0NzAyMTh9.O5uanUkACltCw1E0If4mDGk7iHB8-b2unIi01MexKnY
-
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyN2MwNGI1Zi04NzViLTRkZmEtYmVkMy1hNWFiNjg2NTYwYmIiLCJub21lIjoiQWRtaW5nbG9iYWwiLCJlbWFpbCI6ImFkbWluZ2xvYmFsQGVtYWlsLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiZXNjb3BvIjoiR0xPQkFMIiwiZXN0YWJlbGVjaW1lbnRvX2lkIjoiMTIwZDNjMWMtZmI5Yi00MGQ0LWJlYjItNzU5M2IzMzhiODBlIiwiZW1wcmVzYV9pZCI6bnVsbCwiaWF0IjoxNzgwMzE2NDMwLCJleHAiOjE3ODA5MjEyMzB9.2YoZw6ywHBF17R9pc_50XgTzFFOj4goCZKK5nXjQwCI
 POST {{host}}/usuarios
 Content-Type: application/json
 
@@ -11,6 +10,20 @@ Content-Type: application/json
   "perfil": "ADMIN",
   "escopo": "LOCAL",
   "estabelecimento_id": "ID_DO_ESTABELECIMENTO_AQUI"
+}
+
+###
+
+POST {{host}}/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Teste3",
+  "email": "leticiaquadre@email.com",
+  "senha": "senha123!",
+  "perfil": "ADMIN",
+  "escopo": "LOCAL",
+  "estabelecimento_id": "120d3c1c-fb9b-40d4-beb2-7593b338b80e"
 }
 
 ###

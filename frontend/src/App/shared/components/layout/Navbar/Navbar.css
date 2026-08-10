@@ -60,3 +60,24 @@
   height: 100%;
   object-fit: contain;
 }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .navbar {
+    height: 60px;
+    padding: 0 10px;
+  }
+
+  .navbar__logo {
+    font-size: 20px;
+  }
+
+  .navbar__subtitle {
+    font-size: 12px;
+  }
+
+  .navbar__icon {
+    width: 56px;
+    height: 56px;
+  }
+}

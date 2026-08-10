@@ -1,5 +1,3 @@
-// src/modules/mesas/Mesa.controller.ts
-
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { MesaService } from './Mesa.service'
 import { MesaRepository } from './Mesa.repository'

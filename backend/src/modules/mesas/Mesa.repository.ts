@@ -7,7 +7,7 @@ type AtualizarMesaData = {
   capacidade?: number
   localizacao?: string
   ativo?: boolean
-  status?: StatusMesa        
+  status?: StatusMesa
   qr_code_url?: string
 }
 
@@ -100,7 +100,7 @@ async update(id: string, data: AtualizarMesaData): Promise<Mesa> {
       inativa: 0,
     }
 
-    resultado.forEach((item) => {
+    resultado.forEach((item: { status: string; _count: { status: number } }) => {
       const status = item.status.toLowerCase() as keyof typeof resumo
       resumo[status] = item._count.status
       resumo.total += item._count.status

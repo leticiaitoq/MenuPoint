@@ -31,6 +31,12 @@ CREATE TYPE "forma_pagamento" AS ENUM ('PIX_ONLINE', 'PIX_PRESENCIAL', 'DINHEIRO
 -- CreateEnum
 CREATE TYPE "status_pagamento" AS ENUM ('PENDENTE', 'CONFIRMADO', 'ESTORNADO', 'FALHOU');
 
+-- CreateEnum
+CREATE TYPE "status_assinatura" AS ENUM ('PENDENTE', 'ATIVA', 'CANCELADA', 'EXPIRADA', 'FALHOU');
+
+-- CreateEnum
+CREATE TYPE "periodo_assinatura" AS ENUM ('MENSAL', 'ANUAL');
+
 -- CreateTable
 CREATE TABLE "empresas" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -198,6 +204,7 @@ CREATE TABLE "pedidos" (
     "mesa_id" UUID,
     "reserva_id" UUID,
     "atendido_por_id" UUID,
+    "cliente_id" UUID,
     "numero_pedido" SERIAL NOT NULL,
     "modalidade" "modalidade" NOT NULL,
     "status" "status_pedido" NOT NULL DEFAULT 'RECEBIDO',
@@ -265,6 +272,78 @@ CREATE TABLE "pagamentos" (
     CONSTRAINT "pagamentos_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "refresh_tokens" (
+    "id" UUID NOT NULL,
+    "usuario_id" UUID,
+    "cliente_id" UUID,
+    "token" VARCHAR(128) NOT NULL,
+    "expira_em" TIMESTAMPTZ NOT NULL,
+    "usado" BOOLEAN NOT NULL DEFAULT false,
+    "criado_em" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "refresh_tokens_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "clientes" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "nome" VARCHAR(100) NOT NULL,
+    "telefone" VARCHAR(20) NOT NULL,
+    "email" VARCHAR(150),
+    "senha_hash" VARCHAR(255),
+    "ativo" BOOLEAN NOT NULL DEFAULT true,
+    "criado_em" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "clientes_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "tokens_recuperacao_senha_cliente" (
+    "id" UUID NOT NULL,
+    "cliente_id" UUID NOT NULL,
+    "token" VARCHAR(64) NOT NULL,
+    "expira_em" TIMESTAMPTZ NOT NULL,
+    "usado" BOOLEAN NOT NULL DEFAULT false,
+    "criado_em" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "tokens_recuperacao_senha_cliente_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "assinaturas" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "empresa_id" UUID NOT NULL,
+    "plano" "plano" NOT NULL,
+    "status" "status_assinatura" NOT NULL DEFAULT 'PENDENTE',
+    "gateway" VARCHAR(50) NOT NULL,
+    "gateway_id" VARCHAR(200),
+    "gateway_customer_id" VARCHAR(200),
+    "checkout_url" VARCHAR(500),
+    "token_registro" VARCHAR(128),
+    "valor" DECIMAL(10,2) NOT NULL,
+    "periodo" "periodo_assinatura" NOT NULL DEFAULT 'MENSAL',
+    "inicia_em" TIMESTAMPTZ,
+    "expira_em" TIMESTAMPTZ,
+    "cancelada_em" TIMESTAMPTZ,
+    "criado_em" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "atualizado_em" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "assinaturas_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "tokens_recuperacao_senha" (
+    "id" UUID NOT NULL,
+    "usuario_id" UUID NOT NULL,
+    "token" VARCHAR(64) NOT NULL,
+    "expira_em" TIMESTAMPTZ(0) NOT NULL,
+    "usado" BOOLEAN NOT NULL DEFAULT false,
+    "criado_em" TIMESTAMPTZ(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "tokens_recuperacao_senha_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "empresas_cnpj_key" ON "empresas"("cnpj");
 
@@ -285,6 +364,21 @@ CREATE UNIQUE INDEX "mesas_qr_code_token_key" ON "mesas"("qr_code_token");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "pagamentos_pedido_id_key" ON "pagamentos"("pedido_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "refresh_tokens_token_key" ON "refresh_tokens"("token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "clientes_email_key" ON "clientes"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "tokens_recuperacao_senha_cliente_token_key" ON "tokens_recuperacao_senha_cliente"("token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "assinaturas_token_registro_key" ON "assinaturas"("token_registro");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "tokens_recuperacao_senha_token_key" ON "tokens_recuperacao_senha"("token");
 
 -- AddForeignKey
 ALTER TABLE "estabelecimentos" ADD CONSTRAINT "estabelecimentos_empresa_id_fkey" FOREIGN KEY ("empresa_id") REFERENCES "empresas"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -335,6 +429,9 @@ ALTER TABLE "pedidos" ADD CONSTRAINT "pedidos_reserva_id_fkey" FOREIGN KEY ("res
 ALTER TABLE "pedidos" ADD CONSTRAINT "pedidos_atendido_por_id_fkey" FOREIGN KEY ("atendido_por_id") REFERENCES "usuarios"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "pedidos" ADD CONSTRAINT "pedidos_cliente_id_fkey" FOREIGN KEY ("cliente_id") REFERENCES "clientes"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "itens_pedido" ADD CONSTRAINT "itens_pedido_pedido_id_fkey" FOREIGN KEY ("pedido_id") REFERENCES "pedidos"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -354,3 +451,18 @@ ALTER TABLE "pagamentos" ADD CONSTRAINT "pagamentos_estabelecimento_id_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "pagamentos" ADD CONSTRAINT "pagamentos_confirmado_por_id_fkey" FOREIGN KEY ("confirmado_por_id") REFERENCES "usuarios"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_usuario_id_fkey" FOREIGN KEY ("usuario_id") REFERENCES "usuarios"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_cliente_id_fkey" FOREIGN KEY ("cliente_id") REFERENCES "clientes"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "tokens_recuperacao_senha_cliente" ADD CONSTRAINT "tokens_recuperacao_senha_cliente_cliente_id_fkey" FOREIGN KEY ("cliente_id") REFERENCES "clientes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "assinaturas" ADD CONSTRAINT "assinaturas_empresa_id_fkey" FOREIGN KEY ("empresa_id") REFERENCES "empresas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "tokens_recuperacao_senha" ADD CONSTRAINT "tokens_recuperacao_senha_usuario_id_fkey" FOREIGN KEY ("usuario_id") REFERENCES "usuarios"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

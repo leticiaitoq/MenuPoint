@@ -1,0 +1,211 @@
+.prod {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  padding: 8px 0;
+}
+
+/* Cabeçalho */
+.prod__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.prod__titulo {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.prod__subtitulo {
+  font-size: 14px;
+  color: #888;
+  margin: 4px 0 0 0;
+}
+
+.prod__btn-novo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 22px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.prod__btn-novo:hover { background-color: #a93226; }
+
+/* Filtros */
+.prod__filtros {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.prod__busca-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 12px;
+  flex: 1;
+  min-width: 180px;
+}
+
+.prod__busca-icon { color: #999; font-size: 16px; }
+
+.prod__busca {
+  border: none;
+  outline: none;
+  font-size: 14px;
+  width: 100%;
+  background: transparent;
+}
+
+.prod__select {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+}
+
+
+/* Scroll */
+.prod__tabela-scroll {
+  overflow-y: auto;
+  max-height: 420px; /* ajuste conforme sua tela */
+}
+
+.prod__tabela thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: #fdf0f0;
+}
+
+.prod__dica--bottom {
+  padding-top: 10px;
+  padding-bottom: 0;
+}
+
+/* Container da tabela */
+.prod__container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  padding: 16px 0 8px 0;
+}
+
+.prod__dica {
+  font-size: 13px;
+  color: #c0392b;
+  padding: 0 16px 10px 16px;
+  margin: 0;
+}
+
+/* Tabela */
+.prod__tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.prod__tabela thead tr {
+  background-color: #fdf0f0;
+}
+
+.prod__tabela tbody tr {
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.prod__tabela th {
+  text-align: left;
+  padding: 12px 16px;
+  color: #555;
+  font-weight: 600;
+}
+
+.prod__tabela td {
+ padding: 12px 16px;
+  color: #333;
+  border-bottom: none; 
+  vertical-align: middle;
+}
+
+.prod__td-ordem {
+  white-space: nowrap;
+  gap: 8px;
+  color: #888;
+}
+
+.prod__drag-icon {
+  font-size: 18px;
+  color: #bbb;
+  cursor: grab;
+    vertical-align: middle;
+  margin-right: 6px;
+}
+
+.prod__td-produto {
+  white-space: nowrap;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.prod__imagem {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #f0f0f0;
+    vertical-align: middle;
+  margin-right: 10px;
+}
+
+/* Badges */
+.prod__badge {
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.prod__badge--ativo   { background-color: #27ae60; }
+.prod__badge--inativo { background-color: #aaa; }
+
+/* Botões de ação */
+.prod__td-acoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 100%;
+}
+
+.prod__btn-acao {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: #888;
+  transition: color 0.2s;
+  padding: 4px;
+}
+
+.prod__btn-acao:hover               { color: #333; }
+.prod__btn-acao--pausar:hover       { color: #c0392b; }

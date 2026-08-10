@@ -203,3 +203,65 @@
 .wc__btn--reserva  { background-color: #c0392b; }
 .wc__btn--cardapio { background-color: #c0392b; }
 
+/* ── Responsividade Mobile ── */
+@media (max-width: 600px) {
+  .wc {
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .wc__left {
+    min-width: unset;
+    max-width: 100%;
+    width: 100%;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .wc__logo-wrap {
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+  }
+
+  .wc__horarios {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    align-content: center;
+  }
+
+  .wc__right {
+    width: 100%;
+  }
+
+  .wc__nome {
+    font-size: 36px;
+  }
+
+  .wc__info-card {
+    padding: 16px;
+    min-height: unset;
+    gap: 12px;
+  }
+
+  .wc__status {
+    font-size: 24px;
+  }
+
+  .wc__acoes {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .wc__ou {
+    display: none;
+  }
+
+  .wc__btn {
+    padding: 14px 12px;
+    font-size: 16px;
+  }
+}
+

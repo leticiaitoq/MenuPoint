@@ -8,39 +8,19 @@ import {
 } from './Produto.schema'
 import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
+import { authenticate } from '@shared/middlewares/authenticate'
+import { authorize } from '../../authorize'
+
 
 const repository = new ProdutoRepository()
-const service = new ProdutoService(repository)
+const service    = new ProdutoService(repository)
 
 export async function produtosRoutes(app: FastifyInstance): Promise<void> {
 
-  app.addHook('onRequest', async (request, reply) => {
-    await request.jwtVerify()
-  })
+  app.register(async (auth) => {
+    auth.addHook('onRequest', authenticate)
 
-  app.post(
-    '/',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = request.user as JWTPayload
-
-      if (user.perfil !== 'ADMIN') {
-        throw new AppError('Apenas administradores podem criar produtos', 403)
-      }
-
-      if (!user.estabelecimento_id) {
-        throw new AppError('Usuário não vinculado a um estabelecimento', 400)
-      }
-
-      const data = criarProdutoSchema.parse(request.body)
-      const produto = await service.create(data, user.estabelecimento_id)
-
-      return reply.status(201).send(produto)
-    }
-  )
-
-  app.get(
-    '/',
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    auth.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
       const user = request.user as JWTPayload
 
       if (!user.estabelecimento_id) {
@@ -57,64 +37,37 @@ export async function produtosRoutes(app: FastifyInstance): Promise<void> {
         user.estabelecimento_id,
         {
           ...(categoria_id && { categoria_id }),
-          ...(disponivel !== undefined && {
-            disponivel: disponivel === 'true',
-          }),
-          ...(destaque !== undefined && {
-            destaque: destaque === 'true',
-          }),
+          ...(disponivel !== undefined && { disponivel: disponivel === 'true' }),
+          ...(destaque   !== undefined && { destaque:   destaque   === 'true' }),
         }
       )
 
       return reply.send(produtos)
-    }
-  )
+    })
 
-  app.get(
-    '/mais-vendidos',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = request.user as JWTPayload
+    auth.get(
+      '/mais-vendidos',
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const user = request.user as JWTPayload
 
-      if (!user.estabelecimento_id) {
-        throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+        if (!user.estabelecimento_id) {
+          throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+        }
+
+        const { limite } = request.query as { limite?: string }
+
+        const produtos = await service.maisVendidos(
+          user.estabelecimento_id,
+          limite ? Number(limite) : undefined
+        )
+
+        return reply.send(produtos)
       }
+    )
 
-      const { limite } = request.query as { limite?: string }
-
-      const produtos = await service.maisVendidos(
-        user.estabelecimento_id,
-        limite ? Number(limite) : undefined
-      )
-
-      return reply.send(produtos)
-    }
-  )
-
-  app.patch(
-    '/reordenar',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = request.user as JWTPayload
-
-      if (user.perfil !== 'ADMIN') {
-        throw new AppError('Apenas administradores podem reordenar produtos', 403)
-      }
-
-      if (!user.estabelecimento_id) {
-        throw new AppError('Usuário não vinculado a um estabelecimento', 400)
-      }
-
-      const produtos = reordenarProdutosSchema.parse(request.body)
-      await service.reordenar(produtos, user.estabelecimento_id)
-
-      return reply.send({ message: 'Produtos reordenados com sucesso' })
-    }
-  )
-
-  app.get(
-    '/:id',
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    auth.get('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params as { id: string }
-      const user = request.user as JWTPayload
+      const user   = request.user as JWTPayload
 
       if (!user.estabelecimento_id) {
         throw new AppError('Usuário não vinculado a um estabelecimento', 400)
@@ -122,65 +75,106 @@ export async function produtosRoutes(app: FastifyInstance): Promise<void> {
 
       const produto = await service.findCompleto(id, user.estabelecimento_id)
       return reply.send(produto)
-    }
-  )
+    })
 
-  app.put(
-    '/:id',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const { id } = request.params as { id: string }
-      const user = request.user as JWTPayload
+    auth.patch(
+      '/:id/disponibilidade',
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { id } = request.params as { id: string }
+        const user   = request.user as JWTPayload
 
-      if (user.perfil !== 'ADMIN') {
-        throw new AppError('Apenas administradores podem atualizar produtos', 403)
+        if (!user.estabelecimento_id) {
+          throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+        }
+
+        const produto = await service.alternarDisponibilidade(
+          id,
+          user.estabelecimento_id
+        )
+
+        return reply.send(produto)
       }
+    )
+  })
+
+  app.register(async (adminRoutes) => {
+    adminRoutes.addHook('onRequest', authorize('ADMIN'))
+
+    // POST / — cria produto
+    adminRoutes.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = request.user as JWTPayload
 
       if (!user.estabelecimento_id) {
         throw new AppError('Usuário não vinculado a um estabelecimento', 400)
       }
 
-      const data = atualizarProdutoSchema.parse(request.body)
-      const produto = await service.update(id, data, user.estabelecimento_id)
+      const data    = criarProdutoSchema.parse(request.body)
+      const produto = await service.create(data, user.estabelecimento_id)
 
-      return reply.send(produto)
-    }
-  )
+      return reply.status(201).send(produto)
+    })
 
-  app.patch(
-    '/:id/disponibilidade',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const { id } = request.params as { id: string }
-      const user = request.user as JWTPayload
+    adminRoutes.patch(
+      '/reordenar',
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const user = request.user as JWTPayload
 
-      if (!user.estabelecimento_id) {
-        throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+        if (!user.estabelecimento_id) {
+          throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+        }
+
+        const produtos = reordenarProdutosSchema.parse(request.body)
+        await service.reordenar(produtos, user.estabelecimento_id)
+
+        return reply.send({ message: 'Produtos reordenados com sucesso' })
       }
+    )
 
-      const produto = await service.alternarDisponibilidade(
-        id,
-        user.estabelecimento_id
-      )
+    adminRoutes.put(
+      '/:id',
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { id } = request.params as { id: string }
+        const user   = request.user as JWTPayload
 
-      return reply.send(produto)
-    }
-  )
+        if (!user.estabelecimento_id) {
+          throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+        }
 
-  app.delete(
-    '/:id',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const { id } = request.params as { id: string }
-      const user = request.user as JWTPayload
+        const data    = atualizarProdutoSchema.parse(request.body)
+        const produto = await service.update(id, data, user.estabelecimento_id)
 
-      if (user.perfil !== 'ADMIN') {
-        throw new AppError('Apenas administradores podem desativar produtos', 403)
+        return reply.send(produto)
       }
+    )
 
-      if (!user.estabelecimento_id) {
-        throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+    adminRoutes.delete(
+      '/:id',
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { id } = request.params as { id: string }
+        const user   = request.user as JWTPayload
+
+        if (!user.estabelecimento_id) {
+          throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+        }
+
+        await service.remove(id, user.estabelecimento_id)
+        return reply.status(204).send()
       }
+    )
 
-      await service.remove(id, user.estabelecimento_id)
-      return reply.status(204).send()
-    }
-  )
+    adminRoutes.patch(
+      '/:id/reativar',
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { id } = request.params as { id: string }
+        const user   = request.user as JWTPayload
+
+        if (!user.estabelecimento_id) {
+          throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+        }
+
+        const produto = await service.reativar(id, user.estabelecimento_id)
+        return reply.send(produto)
+      }
+    )
+  })
 }

@@ -1,13 +1,14 @@
-/* ── Container principal  */
+/* ── Container principal ── */
 .reserva {
   display: flex;
   gap: 24px;
   align-items: flex-start;
   min-height: 100%;
+  width: 100%;
   box-sizing: border-box;
 }
 
-/* ── Card do formulário */
+/* ── Card do formulário ── */
 .reserva__card {
   flex: 1;
   min-width: 0;
@@ -15,36 +16,42 @@
   border-radius: 20px;
   padding: 32px 36px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  position: relative;                  /* ancora o absolute da imagem */
-  overflow: hidden;                    /* imagem não vaza do card */
 }
 
-/* Imagem fixada fica fora do fluxo (absolute) e não empurra nenhum elemento. */
+/* ── Cabeçalho do card: título à esquerda, imagem à direita ── */
+.reserva__card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* ── Ilustração como elemento real no fluxo ── */
 .reserva__ilustracao {
-  position: absolute;
-  top: 5;
-  right: 0;
-  width: 260px;
+  width: 220px;
   height: auto;
   object-fit: contain;
+  flex-shrink: 0;
   pointer-events: none;
+  display: block;
 }
 
-/* ── Título da seção */
+/* ── Título da seção ── */
 .reserva__titulo {
   font-size: 22px;
   font-weight: 700;
   color: #1a1a1a;
-  margin: 0 0 24px 0;   /* separa o título do formulário */
+  margin: 0;
   letter-spacing: 0.5px;
 }
 
-/* ── Campo genérico (label + input) */
+/* ── Campo genérico (label + input) ── */
 .reserva__campo {
   display: flex;
-   margin: 0 0 24px 0;
+  margin: 0 0 24px 0;
   flex-direction: column;
-  gap: 4px;              
+  gap: 4px;
 }
 
 .reserva__label {
@@ -54,9 +61,7 @@
   letter-spacing: 0.3px;
 }
 
-/* ── Input de data ────────────────────────────────────
-   Quando a data é selecionada, um span sobreposto exibe o texto em pt.
-   pointer-events:none no span deixa o clique chegar ao input. */
+/* ── Input de data ── */
 .reserva__input-wrapper {
   position: relative;
   display: inline-flex;
@@ -86,7 +91,6 @@
   color: #aaaaaa;
 }
 
-/* Cobre o valor nativo com texto pt, preserva ícone do calendário */
 .reserva__date-overlay {
   position: absolute;
   left: 20px;
@@ -101,7 +105,7 @@
   overflow: hidden;
 }
 
-/* ── Input de horário */
+/* ── Input de horário ── */
 .reserva__input {
   padding: 12px 20px;
   border: 1.5px solid #cccccc;
@@ -122,7 +126,7 @@
   width: 180px;
 }
 
-/* ── Controle de pessoas */
+/* ── Controle de pessoas ── */
 .reserva__pessoas {
   display: flex;
   align-items: center;
@@ -171,7 +175,7 @@
   color: #1a1a1a;
 }
 
-/* ── Textarea de observação */
+/* ── Textarea de observação ── */
 .reserva__textarea {
   padding: 12px 20px;
   border: 1.5px solid #cccccc;
@@ -196,15 +200,14 @@
   color: #aaaaaa;
 }
 
-/* ── Mensagem de erro*/
+/* ── Mensagem de erro ── */
 .reserva__erro {
   font-size: 13px;
   color: #c0392b;
   margin: 0;
 }
 
-/* ── Painel lateral de mesas 
-   Largura fixa à direita do card principal*/
+/* ── Painel lateral de mesas ── */
 .reserva__painel {
   width: 320px;
   flex-shrink: 0;
@@ -221,14 +224,14 @@
   margin: 0 0 2px 0;
 }
 
-/* ── Lista de botões de mesa */
+/* ── Lista de botões de mesa ── */
 .reserva__mesas {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-/* ── Botão de mesa individual */
+/* ── Botão de mesa individual ── */
 .reserva__mesa {
   display: flex;
   align-items: center;
@@ -248,7 +251,6 @@
   transform: translateX(-2px);
 }
 
-/* Mesa selecionada */
 .reserva__mesa--ativa {
   background-color: #f0a500;
 }
@@ -278,7 +280,7 @@
   color: #ffffff;
 }
 
-/* ── Botão reservar */
+/* ── Botão reservar ── */
 .reserva__btn-reservar {
   background-color: #c0392b;
   color: #ffffff;
@@ -299,24 +301,19 @@
   background-color: #a93226;
 }
 
-/* 
-   Modal de confirmação
-*/
-
+/* ── Modal de confirmação ── */
 .reserva__overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background-color: rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
-/* Borda gradiente */
 .reserva__modal {
   background: linear-gradient(135deg, #f1c40f, #c0392b, #6b0f1a);
   padding: 4px;
@@ -393,4 +390,105 @@
 
 .reserva__modal-btn:hover {
   background-color: #a93226;
+}
+
+/* ── Responsividade ── */
+
+/* Tablet */
+@media (max-width: 900px) {
+  .reserva {
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .reserva__card {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .reserva__painel {
+    width: 100%;
+  }
+
+  .reserva__painel-titulo {
+    text-align: center;
+  }
+
+  .reserva__mesas {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .reserva__btn-reservar {
+    width: 100%;
+    align-self: stretch;
+  }
+
+  /* Imagem menor em tablet */
+  .reserva__ilustracao {
+    width: 160px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .reserva__card {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 20px 16px;
+  }
+
+  /* Header vira coluna: imagem acima, título abaixo */
+  .reserva__card-header {
+    flex-direction: column-reverse;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 20px;
+    gap: 12px;
+  }
+
+  .reserva__ilustracao {
+    width: 140px;
+  }
+
+  /* Inputs ocupam largura total */
+  .reserva__date-input {
+    width: 100%;
+  }
+
+  .reserva__input--time {
+    width: 100%;
+  }
+
+  /* Mesas em grade 2 colunas */
+  .reserva__mesas {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .reserva__btn-reservar {
+    width: 100%;
+    align-self: stretch;
+  }
+
+  /* Modal compacto */
+  .reserva__modal-inner {
+    padding: 28px 20px;
+  }
+
+  .reserva__modal-btn {
+    padding: 14px 32px;
+    width: 100%;
+  }
+}
+
+/* Mobile pequeno */
+@media (max-width: 400px) {
+  .reserva__mesas {
+    grid-template-columns: 1fr;
+  }
+
+  .reserva__ilustracao {
+    width: 110px;
+  }
 }

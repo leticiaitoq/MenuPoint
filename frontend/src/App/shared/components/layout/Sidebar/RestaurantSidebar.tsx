@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   HiHome,
   HiClipboardList,
@@ -7,74 +7,178 @@ import {
   HiUserGroup,
   HiChartBar,
   HiCog,
+  HiChevronUp,
+  HiX,
 } from 'react-icons/hi';
 import { MdTableRestaurant } from 'react-icons/md';
 import './RestaurantSidebar.css';
 
-/**
- * Sidebar exclusiva do perfil restaurante.
- * Usa NavLink do React Router — ele aplica automaticamente
- * a classe "active" no item da rota atual, sem lógica manual.
- */
+interface NavItem {
+  to?: string;
+  icon: React.ReactNode;
+  label: string;
+  subitems?: { to: string; label: string }[];
+  bottom?: boolean;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { to: '/restaurante/home', icon: <HiHome />, label: 'Início' },
+  {
+    icon: <HiClipboardList />,
+    label: 'Pedidos',
+    to: '/restaurante/pedido',
+    subitems: [{ to: '/restaurante/historico', label: 'Histórico' }],
+  },
+  {
+    icon: <HiViewList />,
+    label: 'Produtos',
+    to: '/restaurante/produtos',
+    subitems: [{ to: '/restaurante/categories', label: 'Categorias' }],
+  },
+  { to: '/restaurante/mesas', icon: <MdTableRestaurant />, label: 'Mesas' },
+  { to: '/restaurante/fila', icon: <HiUserGroup />, label: 'Fila' },
+  { to: '/restaurante/relatorios', icon: <HiChartBar />, label: 'Relatórios' },
+  { to: '/restaurante/config', icon: <HiCog />, label: 'Configurações', bottom: true },
+];
+
 const RestaurantSidebar: React.FC = () => {
+  const location = useLocation();
+  // Controla qual item com submenu está aberto no drawer mobile
+  const [drawerItem, setDrawerItem] = useState<NavItem | null>(null);
+
+  const isGroupActive = (item: NavItem) =>
+    (item.to && location.pathname.startsWith(item.to)) ||
+    item.subitems?.some((s) => location.pathname.startsWith(s.to)) ||
+    false;
+
+  const handleMobileItemClick = (item: NavItem) => {
+    if (item.subitems && item.subitems.length > 0) {
+      setDrawerItem(item);
+    } else {
+      setDrawerItem(null);
+    }
+  };
+
+  const closeDrawer = () => setDrawerItem(null);
+
   return (
-    <aside className="sidebar">
-      <nav className="sidebar__nav">
+    <>
+      {/* ── DESKTOP: sidebar lateral ── */}
+      <aside className="sidebar">
+        <nav className="sidebar__nav">
+          {NAV_ITEMS.map((item) =>
+            item.subitems ? (
+              <div
+                key={item.label}
+                className={`sidebar__group${item.bottom ? ' sidebar__group--bottom' : ''}`}
+              >
+                <NavLink
+                  to={item.to!}
+                  className={({ isActive }) =>
+                    'sidebar__item' + (isActive || isGroupActive(item) ? ' active' : '')
+                  }
+                >
+                  <span className="sidebar__icon">{item.icon}</span>
+                  <span className="sidebar__item-label">{item.label}</span>
+                </NavLink>
+                <div className="sidebar__subitems">
+                  {item.subitems.map((sub) => (
+                    <NavLink key={sub.to} to={sub.to} className="sidebar__subitem">
+                      • {sub.label}
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <NavLink
+                key={item.label}
+                to={item.to!}
+                className={({ isActive }) =>
+                  'sidebar__item' +
+                  (isActive ? ' active' : '') +
+                  (item.bottom ? ' sidebar__item--bottom' : '')
+                }
+              >
+                <span className="sidebar__icon">{item.icon}</span>
+                <span className="sidebar__item-label">{item.label}</span>
+              </NavLink>
+            )
+          )}
+        </nav>
+      </aside>
 
-        <NavLink to="/restaurante/home" className="sidebar__item">
-          <HiHome className="sidebar__icon" />
-          <span className="sidebar__item-label">Início</span>
-        </NavLink>
-
-        <div className="sidebar__group">
-          <NavLink to="/restaurante/pedido" className="sidebar__item">
-            <HiClipboardList className="sidebar__icon" />
-            <span className="sidebar__item-label">Pedidos</span>
-          </NavLink>
-          <div className="sidebar__subitems">
-            <NavLink to="/restaurante/orders/history" className="sidebar__subitem">
-              • Histórico
-            </NavLink>
-          </div>
-        </div>
-
-        <div className="sidebar__group">
-          <NavLink to="/restaurante/menu" className="sidebar__item">
-            <HiViewList className="sidebar__icon" />
-            <span className="sidebar__item-label">Cardápio</span>
-          </NavLink>
-          <div className="sidebar__subitems">
-            <NavLink to="/restaurante/menu/products" className="sidebar__subitem">
-              • Produtos
-            </NavLink>
-            <NavLink to="/restaurante/menu/categories" className="sidebar__subitem">
-              • Categorias
-            </NavLink>
-          </div>
-        </div>
-
-        <NavLink to="/restaurante/tables" className="sidebar__item">
-          <MdTableRestaurant className="sidebar__icon" />
-          <span className="sidebar__item-label">Mesas</span>
-        </NavLink>
-
-        <NavLink to="/restaurante/queue" className="sidebar__item">
-          <HiUserGroup className="sidebar__icon" />
-          <span className="sidebar__item-label">Fila</span>
-        </NavLink>
-
-        <NavLink to="/restaurante/reports" className="sidebar__item">
-          <HiChartBar className="sidebar__icon" />
-          <span className="sidebar__item-label">Relatórios</span>
-        </NavLink>
-
-        <NavLink to="/restaurante/settings" className="sidebar__item sidebar__item--bottom">
-          <HiCog className="sidebar__icon" />
-          <span className="sidebar__item-label">Configurações</span>
-        </NavLink>
-
+      {/* ── MOBILE: bottom navigation bar ── */}
+      <nav className="mobile-nav">
+        {NAV_ITEMS.map((item) => {
+          const active = isGroupActive(item) || location.pathname === item.to;
+          return (
+            <button
+              key={item.label}
+              className={`mobile-nav__item${active ? ' active' : ''}`}
+              onClick={() => handleMobileItemClick(item)}
+              // Se não tem submenu, usa NavLink via wrapper (ver abaixo)
+            >
+              {item.subitems ? (
+                <>
+                  <span className="mobile-nav__icon">{item.icon}</span>
+                  <span className="mobile-nav__label">{item.label}</span>
+                  {active && <HiChevronUp className="mobile-nav__chevron" />}
+                </>
+              ) : (
+                <NavLink
+                  to={item.to!}
+                  className="mobile-nav__link"
+                  onClick={closeDrawer}
+                >
+                  <span className="mobile-nav__icon">{item.icon}</span>
+                  <span className="mobile-nav__label">{item.label}</span>
+                </NavLink>
+              )}
+            </button>
+          );
+        })}
       </nav>
-    </aside>
+
+      {/* ── MOBILE: drawer de subitens ── */}
+      {drawerItem && (
+        <>
+          <div className="mobile-drawer__overlay" onClick={closeDrawer} />
+          <div className="mobile-drawer">
+            <div className="mobile-drawer__header">
+              <span className="mobile-drawer__title">
+                <span className="mobile-drawer__title-icon">{drawerItem.icon}</span>
+                {drawerItem.label}
+              </span>
+              <button className="mobile-drawer__close" onClick={closeDrawer}>
+                <HiX />
+              </button>
+            </div>
+
+            {/* Link para a rota principal do grupo */}
+            <NavLink
+              to={drawerItem.to!}
+              className="mobile-drawer__main-link"
+              onClick={closeDrawer}
+            >
+              {drawerItem.label} (visão geral)
+            </NavLink>
+
+            <div className="mobile-drawer__subitems">
+              {drawerItem.subitems?.map((sub) => (
+                <NavLink
+                  key={sub.to}
+                  to={sub.to}
+                  className="mobile-drawer__subitem"
+                  onClick={closeDrawer}
+                >
+                  • {sub.label}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </>
   );
 };
 

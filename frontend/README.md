@@ -44,3 +44,16 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+
+//////frontend//////
+
+yarn init
+
+//////backend//////
+
+npm install
+npx prisma generate
+npx prisma migrate dev
+npm run prisma:seed
+npm run dev

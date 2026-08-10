@@ -31,7 +31,7 @@ export class UsuarioService
 
     return this.repository.create({
       ...resto,
-      senha: senha_hash,
+      senha_hash,
     } as any)
   }
 
@@ -55,6 +55,26 @@ export class UsuarioService
     }
 
     return this.repository.update(id, dadosParaSalvar)
+  }
+
+  async desativar(id: string): Promise<void> {
+    const usuario = await this.findById(id)
+
+    if (!(usuario as any).ativo) {
+      throw new AppError('Usuário já está desativado', 400)
+    }
+
+    await this.repository.update(id, { ativo: false } as any)
+  }
+
+  async reativar(id: string): Promise<Usuario> {
+    const usuario = await this.findById(id)
+
+    if ((usuario as any).ativo) {
+      throw new AppError('Usuário já está ativo', 400)
+    }
+
+    return this.repository.update(id, { ativo: true } as any)
   }
 
   async listarPorEstabelecimento(

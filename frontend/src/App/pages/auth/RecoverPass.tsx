@@ -8,14 +8,27 @@ const RecoverPass: React.FC = () => {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
+  const [erro, setErro] = useState<string | null>(null);
+  const [carregando, setCarregando] = useState(false);
 
   /**
    * Chamar API futuramente
    */
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ email });
-  };
+    setErro(null);
+    setCarregando(true);
+
+    try {
+      //NOVO
+      // TODO: await AuthService.enviarCodigoRecuperacao({ email });
+      navigate('/verify-code', { state: { email, mode: 'recover' } });
+    } catch (err: any) {
+      setErro(err?.response?.data?.message ?? 'Erro ao enviar o código. Tente novamente.');
+    } finally {
+      setCarregando(false);
+    }
+  };//NOVO
 
   return (
     <div
@@ -33,6 +46,13 @@ const RecoverPass: React.FC = () => {
           <p className="recover-pass__subtitle">Digite seu email para receber instruções</p>
 
           <form className="recover-pass__form" onSubmit={handleSubmit}>
+
+            {/* Mensagem de erro */}
+            {erro && (
+              <p style={{ color: 'red', fontSize: '14px', marginBottom: '8px' }}>
+                {erro}
+              </p>
+            )}
 
             {/* Campo Email */}
             <div className="recover-pass__field">
@@ -52,8 +72,8 @@ const RecoverPass: React.FC = () => {
               </div>
             </div>
 
-            <button className="recover-pass__submit">
-              Enviar link
+            <button className="recover-pass__submit" type="submit" disabled={carregando}>
+              {carregando ? 'Enviando...' : 'Enviar código'}
             </button>
 
           </form>

@@ -1,0 +1,612 @@
+.config {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  padding: 8px 0;
+}
+
+/* ── Título ── */
+.config__titulo {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333333;
+  margin: 0;
+}
+
+/* ── Cards brancos ── */
+.config__card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 28px 32px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.config__card-titulo {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333333;
+  margin: 0;
+}
+
+/* ── Linha de informações do restaurante ── */
+.config__info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+/* ── Avatar ── */
+.config__avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+/* ── Coluna de foto ── */
+.config__foto-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 160px;
+}
+
+/* ── Campos genéricos ── */
+.config__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.config__campo--flex {
+  flex: 1;
+  min-width: 220px;
+}
+
+/* ── Labels ── */
+.config__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333333;
+}
+
+/* ── Wrapper input com ícone ── */
+.config__input-icone-wrap {
+  position: relative;
+}
+
+.config__input-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: #aaaaaa;
+  pointer-events: none;
+}
+
+/* ── Inputs ── */
+.config__input {
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  padding: 10px 36px 10px 14px;
+  font-size: 14px;
+  outline: none;
+  color: #333333;
+  background: #fafafa;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.config__input:focus {
+  border-color: #aaaaaa;
+}
+
+/* UF */
+.config__input--uf {
+  padding: 10px 14px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 600;
+  text-align: center;
+}
+
+
+/* ── Select ── */
+.config__select {
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  color: #333333;
+  background: #fafafa;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.config__select:focus {
+  border-color: #aaaaaa;
+}
+
+/* ── Hint ── */
+.config__hint {
+  font-size: 12px;
+  color: #888888;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Botão Cadastrar Filial ── */
+.config__btn-filial {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 9px 18px;
+  border: 1.5px solid #c0392b;
+  border-radius: 8px;
+  background: transparent;
+  color: #c0392b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.config__btn-filial:hover {
+  background: #c0392b;
+  color: #ffffff;
+}
+
+/* ── Botão: Alterar Foto ── */
+.config__btn-foto {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #555555;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.config__btn-foto:hover {
+  background: #f5f5f5;
+  border-color: #aaaaaa;
+}
+
+/* ── Grid de endereço ── */
+.config__endereco-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 140px;
+  grid-template-rows: auto auto;
+  gap: 16px 20px;
+  align-items: end;
+}
+
+.config__campo--endereco { grid-column: 1; grid-row: 1; }
+.config__campo--bairro   { grid-column: 2; grid-row: 1; }
+.config__campo--cep      { grid-column: 3; grid-row: 1; }
+.config__campo--cidade   { grid-column: 1; grid-row: 2; }
+.config__campo--estado   { grid-column: 2; grid-row: 2; max-width: 80px; }
+
+/* ── Linha de horário ── */
+.config__horario-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.config__select--dia {
+  flex: 1;
+  min-width: 140px;
+  max-width: 220px;
+}
+
+.config__select--hora {
+  min-width: 90px;
+  max-width: 110px;
+}
+
+.config__horario-ate {
+  font-size: 14px;
+  color: #888888;
+  white-space: nowrap;
+}
+
+/* ── Botão Checar horario geral ── */
+.config__btn-checar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: 1.5px solid #333333;
+  border-radius: 8px;
+  background: transparent;
+  color: #333333;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-left: auto;
+  transition: background 0.2s, color 0.2s;
+}
+
+.config__btn-checar:hover {
+  background: #333333;
+  color: #ffffff;
+}
+
+/* ── Botão Salvar Configurações ── */
+.config__btn-salvar {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 36px;
+  background: #5a7a3a;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.config__btn-salvar:hover:not(:disabled) {
+  background: #4a6530;
+  transform: translateY(-1px);
+}
+
+.config__btn-salvar:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.config__btn-salvar:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ── Overlay compartilhado (modal + popup) ── */
+.config__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+/* ── Modal: Horário Geral ── */
+.config__modal {
+  background: #ffffff;
+  border-radius: 14px;
+  width: 420px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+.config__modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.config__modal-header-esq {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.config__modal-header-icon {
+  font-size: 22px;
+  color: #c0392b;
+}
+
+.config__modal-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333333;
+  margin: 0;
+}
+
+.config__modal-fechar {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #999999;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.config__modal-fechar:hover {
+  color: #333333;
+}
+
+.config__modal-corpo {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Item de horário no modal ── */
+.config__horario-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #eeeeee;
+}
+
+.config__horario-item-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333333;
+}
+
+.config__horario-item-horas {
+  font-size: 14px;
+  font-weight: 700;
+  color: #c0392b;
+}
+
+.config__modal-acoes {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.config__modal-btn-fechar {
+  background: #f0f0f0;
+  color: #555555;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.config__modal-btn-fechar:hover {
+  background: #dddddd;
+}
+
+/* ── Popup de sucesso ── */
+.config__popup {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 36px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  max-width: 380px;
+  text-align: center;
+}
+
+.config__popup-icon {
+  font-size: 48px;
+}
+
+.config__popup h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333333;
+  margin: 0;
+}
+
+.config__popup p {
+  font-size: 14px;
+  color: #777777;
+  margin: 0;
+}
+/* Responsividade do grid de endereço */
+
+/* 900px: sidebar comprime o conteúdo*/
+@media (max-width: 900px) {
+  
+  /* Card com menos padding lateral */
+  .config__card {
+    padding: 20px 20px;
+  }
+ 
+  /* Informações: avatar empilha com nome / foto */
+  .config__info-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+ 
+  .config__avatar {
+    align-self: flex-start;
+  }
+ 
+  .config__campo--flex {
+    min-width: 0;
+  }
+ 
+  .config__foto-col {
+    min-width: 0;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+ 
+  /* Endereço: 2 colunas, endereço ocupa a linha toda */
+  .config__endereco-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+  }
+ 
+  .config__campo--endereco { grid-column: 1 / -1; grid-row: 1; }
+  .config__campo--bairro   { grid-column: 1;      grid-row: 2; }
+  .config__campo--cep      { grid-column: 2;      grid-row: 2; }
+  .config__campo--cidade   { grid-column: 1;      grid-row: 3; }
+  .config__campo--estado   { grid-column: 2;      grid-row: 3; max-width: none; }
+ 
+  /* Horário: botão checar vai para nova linha */
+  .config__horario-row {
+    flex-wrap: wrap;
+  }
+ 
+  .config__select--dia {
+    max-width: none;
+  }
+ 
+  .config__btn-checar {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+}
+ 
+/* ── 600px ── */
+@media (max-width: 600px) {
+ 
+  .config__titulo {
+    font-size: 20px;
+  }
+ 
+  .config__card {
+    padding: 16px;
+    border-radius: 12px;
+    gap: 16px;
+  }
+ 
+  /* Informações: avatar centralizado, resto em coluna */
+  .config__info-row {
+    align-items: center;
+  }
+ 
+  .config__avatar {
+    align-self: center;
+    width: 96px;
+    height: 96px;
+  }
+ 
+  .config__campo--flex {
+    width: 100%;
+  }
+ 
+  .config__btn-filial {
+    width: 100%;
+    justify-content: center;
+  }
+ 
+  .config__foto-col {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+ 
+  .config__btn-foto {
+    width: 100%;
+    justify-content: center;
+  }
+ 
+  /* Endereço: coluna única */
+  .config__endereco-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: unset;
+    gap: 14px;
+  }
+ 
+  .config__campo--endereco,
+  .config__campo--bairro,
+  .config__campo--cep,
+  .config__campo--cidade,
+  .config__campo--estado {
+    grid-column: 1;
+    grid-row: unset;
+    max-width: none;
+  }
+ 
+  /* Horário: tudo em coluna */
+  .config__horario-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+ 
+  .config__select--dia,
+  .config__select--hora {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+ 
+  .config__horario-ate {
+    text-align: center;
+  }
+ 
+  .config__btn-checar {
+    width: 100%;
+    justify-content: center;
+  }
+ 
+  /* Salvar: ocupa a largura toda */
+  .config__btn-salvar {
+    width: 100%;
+    justify-content: center;
+    align-self: stretch;
+  }
+ 
+  /* Modal */
+  .config__modal-header {
+    padding: 16px 16px 12px 16px;
+  }
+ 
+  .config__modal-header h3 {
+    font-size: 15px;
+  }
+ 
+  .config__modal-corpo {
+    padding: 16px;
+  }
+ 
+  .config__modal-acoes {
+    padding: 12px 16px;
+  }
+ 
+  /* Popup */
+  .config__popup {
+    padding: 28px 20px;
+  }
+ 
+  .config__popup-icon {
+    font-size: 40px;
+  }
+ 
+  .config__popup h3 {
+    font-size: 18px;
+  }
+}
+ 

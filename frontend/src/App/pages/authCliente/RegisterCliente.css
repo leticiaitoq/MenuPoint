@@ -1,0 +1,210 @@
+/* Tela imagem de fundo */
+.register-cliente {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 24px;
+}
+
+.register-cliente__container {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  max-width: 1000px;
+  min-height: 580px;
+  height: auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  background-color: #ffffff;
+}
+
+/* Lado direito — formulário */
+.register-cliente__form-side {
+  flex: 1;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: #ffffff;
+}
+
+.register-cliente__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 24px;
+}
+
+.register-cliente__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.register-cliente__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.register-cliente__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.register-cliente__input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.register-cliente__input {
+  width: 100%;
+  padding: 11px 16px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #1a1a1a;
+  background-color: #fafafa;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.register-cliente__input--with-toggle {
+  padding-right: 44px;
+}
+
+.register-cliente__input:focus {
+  border-color: #c0392b;
+}
+
+.register-cliente__toggle-password {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888888;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+/**
+ * Desativamento do icone nativo do revelar senha (Edge/Chrome)
+ */
+.register-cliente__input::-ms-reveal,
+.register-cliente__input::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-textfield-decoration-container {
+  display: none;
+}
+
+/**
+ * Dois campos de senha lado a lado.
+ */
+.register-cliente__field-row {
+  display: flex;
+  gap: 16px;
+}
+
+.register-cliente__senha-regras {
+  list-style: none;
+  padding: 6px 0 0 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.register-cliente__regra {
+  font-size: 12px;
+  transition: color 0.2s;
+}
+
+.register-cliente__regra--ok {
+  color: #16a34a;
+}
+
+.register-cliente__regra--erro {
+  color: #dc2626;
+}
+
+.register-cliente__submit {
+  width: 100%;
+  padding: 14px;
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 4px;
+}
+
+.register-cliente__submit:hover {
+  background-color: #a93226;
+}
+
+.register-cliente__redirect {
+  text-align: center;
+  font-size: 14px;
+  color: #888888;
+  margin: 0;
+}
+
+.register-cliente__redirect-link {
+  background: none;
+  border: none;
+  color: #c0392b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.register-cliente__redirect-link:hover {
+  text-decoration: underline;
+}
+
+.register-cliente__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.register-cliente__modal-sucesso {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.register-cliente__btn {
+  margin-top: 16px;
+  padding: 10px 16px;
+  cursor: pointer;
+}

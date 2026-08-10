@@ -18,31 +18,31 @@ const HomeRestaurante: React.FC = () => {
   // ── Definição dos cards
   const cards = [
     {
-      id: 'pedidos',
+      id: 'pedidos (cadastre)',
       icon: <HiClipboardList className="home-rest__card-icon home-rest__card-icon--red" />,
       value: `${totalPedidos} Pedidos`,
-      route: '/restaurant/orders',
+      route: '/restaurante/pedido',
     },
     {
       id: 'fila',
       icon: <HiExclamation className="home-rest__card-icon home-rest__card-icon--yellow" />,
       value: 'Na fila',
       badge: pedidosNaFila > 0 ? pedidosNaFila : undefined,
-      route: '/restaurant/queue',
+      route: '/restaurante/fila',
     },
     {
       id: 'faturamento',
       icon: <BsCashCoin className="home-rest__card-icon home-rest__card-icon--green" />,
       value: 'Faturamento',
       sub: faturamento,
-      route: '/restaurant/reports',
+      route: '/restaurante/relatorios',
     },
     {
       id: 'mesas',
       icon: <MdTableRestaurant className="home-rest__card-icon home-rest__card-icon--red" />,
       value: 'Mesas Disponíveis',
       sub: `${mesasDisponiveis} mesas`,
-      route: '/restaurant/tables',
+      route: '/restaurante/mesas',
     },
   ];
  
