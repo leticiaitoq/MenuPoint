@@ -98,13 +98,14 @@ const VerifyCodePage: React.FC = () => {
     setCarregando(true);
 
     try {
-      // TODO: substituir pela chamada real da sua API
-      const resultado = await AuthService.verifyCode({ email, code });
+      await AuthService.verifyCode({
+        email,
+        code,
+        tipo: mode === 'register' ? 'registro' : 'recuperacao',
+      });
 
       if (mode === 'register') {
-        // Salva o token aqui, após o email ser confirmado
-        localStorage.setItem('@menupoint:token', resultado.token);
-        localStorage.setItem('@menupoint:usuario', JSON.stringify(resultado.usuario));
+        // A sessão já existe desde o cadastro — só precisava confirmar o e-mail.
         navigate('/restaurante/home');
       } else {
         navigate('/nova-senha', { state: { email, code } });
@@ -123,8 +124,7 @@ const VerifyCodePage: React.FC = () => {
     setErro(null);
 
     try {
-      // TODO: chamar serviço de reenvio
-      // await AuthService.resendCode({ email });
+      await AuthService.resendCode(email, mode === 'register' ? 'registro' : 'recuperacao');
     } catch {
       setErro('Não foi possível reenviar o código. Tente novamente.');
     }

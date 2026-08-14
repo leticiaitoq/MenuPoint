@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { HiEye, HiEyeOff } from 'react-icons/hi';
 import AuthCard from './AuthCard';
 import AuthService from '../../services/auth.service';
+import AssinaturaService from '../../services/assinatura.service';
 import './RegisterPage.css';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Se a pessoa veio do site institucional com um plano já escolhido
+  // (ex: menupoint-sistema.../?plano=pro), guardamos o slug aqui.
+  const planoDesejado = searchParams.get('plano'); // 'basico' | 'pro' | null
+  const [redirecionandoPagamento, setRedirecionandoPagamento] = useState(false);
 
   const [nome, setNome] = useState('');
   const [cnpj, setCnpj] = useState('');
@@ -68,6 +74,35 @@ const regrasSenha = [
       localStorage.setItem('@menupoint:token', resultado.token)
       localStorage.setItem('@menupoint:refresh_token', resultado.refresh_token)
       localStorage.setItem('@menupoint:usuario', JSON.stringify(resultado.usuario))
+
+      // Se a pessoa veio de um botão "Assinar plano X" no site, pula direto
+      // pro checkout do Mercado Pago em vez de mostrar o modal de boas-vindas.
+      if (planoDesejado) {
+        setCarregando(false);
+        setRedirecionandoPagamento(true);
+        try {
+          const planos = await AssinaturaService.listarPlanos();
+          const planoEscolhido = planos.find((p) => p.slug === planoDesejado);
+
+          if (!planoEscolhido) {
+            // Plano não reconhecido (link antigo ou slug errado): não trava o
+            // cadastro, só cai no fluxo normal de confirmação por e-mail.
+            setShowSucesso(true);
+            return;
+          }
+
+          const { init_point } = await AssinaturaService.criar(planoEscolhido.id, email);
+          window.location.href = init_point;
+        } catch (err: any) {
+          // Conta já foi criada com sucesso — não deixamos a pessoa perdida
+          // só porque a etapa de pagamento falhou. Ela pode assinar depois.
+          setRedirecionandoPagamento(false);
+          setErro('Sua conta foi criada, mas não foi possível iniciar o pagamento agora. Você pode assinar um plano dentro do sistema.');
+          setShowSucesso(true);
+        }
+        return;
+      }
+
       setShowSucesso(true);
       //navigate('/verify-code', { state: { email, mode: 'register' } });  <- parte de verificação de email
     } catch (err: any) {
@@ -79,7 +114,7 @@ const regrasSenha = [
 
       const handleIrParaConfirmacao = () => {
       setShowSucesso(false);
-      navigate('/verify-code');
+      navigate('/verify-code', { state: { email, mode: 'register' } });
     };
 
   return (
@@ -223,9 +258,13 @@ const regrasSenha = [
             <button
               className="register-page__submit"
               type="submit"
-              disabled={carregando}
+              disabled={carregando || redirecionandoPagamento}
             >
-              {carregando ? 'Criando conta...' : 'Criar conta'}
+              {redirecionandoPagamento
+                ? 'Levando você ao pagamento...'
+                : carregando
+                ? 'Criando conta...'
+                : 'Criar conta'}
             </button>
 
           </form>
@@ -249,7 +288,8 @@ const regrasSenha = [
             >
               <h2 className="register-page__sucesso-titulo">Cadastro realizado!</h2>
               <p className="register-page__sucesso-texto">
-                Enviamos um e-mail para você confirmar sua conta.
+                Enviamos um código de 6 dígitos para o seu e-mail. Digite ele
+                na próxima tela para confirmar sua conta.
               </p>
 
               <button

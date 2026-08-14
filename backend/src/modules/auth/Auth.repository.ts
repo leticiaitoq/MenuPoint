@@ -123,9 +123,85 @@ export class AuthRepository {
     })
   }
 
+  /** Gera um código numérico de 6 dígitos (ex: "042817") */
+  private gerarCodigo6Digitos(): string {
+    return crypto.randomInt(0, 1_000_000).toString().padStart(6, '0')
+  }
+
+  async criarTokenConfirmacaoEmail(
+    usuario_id: string,
+    expiracaoMinutos: number = 15
+  ): Promise<string> {
+
+    await prisma.tokenConfirmacaoEmail.updateMany({
+      where: {
+        usuario_id,
+        usado: false,
+      },
+      data: { usado: true },
+    })
+
+    const expira_em = new Date()
+    expira_em.setMinutes(expira_em.getMinutes() + expiracaoMinutos)
+
+    // Códigos de 6 dígitos podem colidir entre usuários diferentes
+    // (só 1 milhão de combinações) — tenta algumas vezes em caso de conflito.
+    for (let tentativa = 0; tentativa < 5; tentativa++) {
+      const codigo = this.gerarCodigo6Digitos()
+      try {
+        await prisma.tokenConfirmacaoEmail.create({
+          data: { usuario_id, token: codigo, expira_em },
+        })
+        return codigo
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          continue
+        }
+        throw err
+      }
+    }
+    throw new AppError('Não foi possível gerar o código. Tente novamente.', 500)
+  }
+
+  async findTokenConfirmacaoPorCodigo(email: string, codigo: string) {
+    return prisma.tokenConfirmacaoEmail.findFirst({
+      where: {
+        token: codigo,
+        usado: false,
+        expira_em: { gt: new Date() },
+        usuario: { email },
+      },
+      include: { usuario: true },
+    })
+  }
+
+  async findTokenConfirmacaoValido(token: string) {
+    return prisma.tokenConfirmacaoEmail.findFirst({
+      where: {
+        token,
+        usado: false,
+        expira_em: { gt: new Date() },
+      },
+      include: { usuario: true },
+    })
+  }
+
+  async confirmarEmailUsuario(usuario_id: string, tokenId: string): Promise<void> {
+    await prisma.$transaction([
+      prisma.usuario.update({
+        where: { id: usuario_id },
+        data: { email_verificado: true },
+      }),
+      prisma.tokenConfirmacaoEmail.update({
+        where: { id: tokenId },
+        data: { usado: true },
+      }),
+    ])
+  }
+
   async criarTokenRecuperacao(
     usuario_id: string,
-    expiracaoHoras: number = 2
+    expiracaoMinutos: number = 15
   ): Promise<string> {
 
     await prisma.tokenRecuperacaoSenha.updateMany({
@@ -136,20 +212,40 @@ export class AuthRepository {
       data: { usado: true },
     })
 
-    const token = crypto.randomBytes(32).toString('hex')
-
     const expira_em = new Date()
-    expira_em.setHours(expira_em.getHours() + expiracaoHoras)
+    expira_em.setMinutes(expira_em.getMinutes() + expiracaoMinutos)
 
-    await prisma.tokenRecuperacaoSenha.create({
-      data: {
-        usuario_id,
-        token,
-        expira_em,
+    for (let tentativa = 0; tentativa < 5; tentativa++) {
+      const codigo = this.gerarCodigo6Digitos()
+      try {
+        await prisma.tokenRecuperacaoSenha.create({
+          data: { usuario_id, token: codigo, expira_em },
+        })
+        return codigo
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          continue
+        }
+        throw err
+      }
+    }
+    throw new AppError('Não foi possível gerar o código. Tente novamente.', 500)
+  }
+
+  async findTokenRecuperacaoPorCodigo(email: string, codigo: string) {
+    return prisma.tokenRecuperacaoSenha.findFirst({
+      where: {
+        token: codigo,
+        usado: false,
+        expira_em: { gt: new Date() },
+        usuario: { email },
+      },
+      include: {
+        usuario: {
+          select: { id: true, nome: true, email: true, ativo: true },
+        },
       },
     })
-
-    return token
   }
 
   async findTokenValido(token: string) {

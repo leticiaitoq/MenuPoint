@@ -85,6 +85,7 @@ model Usuario {
   perfil               Perfil
   escopo               Escopo   @default(LOCAL)
   ativo                Boolean  @default(true)
+  email_verificado     Boolean  @default(false)
   ultimo_acesso        DateTime? @db.Timestamptz
   criado_em            DateTime @default(now()) @db.Timestamptz
 
@@ -95,9 +96,22 @@ model Usuario {
   reservas_confirmadas Reserva[]   @relation("ConfirmadaPor")
   pagamentos_confirmados Pagamento[] @relation("ConfirmadoPor")
   tokens_recuperacao TokenRecuperacaoSenha[]
+  tokens_confirmacao_email TokenConfirmacaoEmail[]
   refresh_tokens     RefreshToken[]
 
   @@map("usuarios")
+}
+
+model TokenConfirmacaoEmail {
+  id          String   @id @default(uuid()) @db.Uuid
+  usuario_id  String   @db.Uuid
+  usuario     Usuario  @relation(fields: [usuario_id], references: [id])
+  token       String   @unique @db.VarChar(64)
+  expira_em   DateTime @db.Timestamptz(0)
+  usado       Boolean  @default(false)
+  criado_em   DateTime @default(now()) @db.Timestamptz(0)
+
+  @@map("tokens_confirmacao_email")
 }
 
 // ============================================================

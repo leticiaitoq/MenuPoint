@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
 import AuthCard from './AuthCard';
+import AuthService from '../../services/auth.service';
 import './RecoverPass.css';
 
 const RecoverPass: React.FC = () => {
@@ -11,24 +12,20 @@ const RecoverPass: React.FC = () => {
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
 
-  /**
-   * Chamar API futuramente
-   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
     setCarregando(true);
 
     try {
-      //NOVO
-      // TODO: await AuthService.enviarCodigoRecuperacao({ email });
+      await AuthService.esqueciSenha(email);
       navigate('/verify-code', { state: { email, mode: 'recover' } });
     } catch (err: any) {
-      setErro(err?.response?.data?.message ?? 'Erro ao enviar o código. Tente novamente.');
+      setErro(err?.response?.data?.message ?? 'Erro ao enviar o e-mail. Tente novamente.');
     } finally {
       setCarregando(false);
     }
-  };//NOVO
+  };
 
   return (
     <div
@@ -43,7 +40,7 @@ const RecoverPass: React.FC = () => {
         {/*Formulário */}
         <div className="recover-pass__form-side">
           <h1 className="recover-pass__title">Recuperar senha</h1>
-          <p className="recover-pass__subtitle">Digite seu email para receber instruções</p>
+          <p className="recover-pass__subtitle">Digite seu email para receber o código</p>
 
           <form className="recover-pass__form" onSubmit={handleSubmit}>
 

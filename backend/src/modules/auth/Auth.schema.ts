@@ -49,9 +49,45 @@ export const esqueciSenhaSchema = z.object({
 
 export type EsqueciSenhaDTO = z.infer<typeof esqueciSenhaSchema>
 
+// ── CONFIRMAR E-MAIL / CÓDIGO ──────────────────────────────────────────────────
+
+export const verificarCodigoSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'E-mail é obrigatório')
+    .email('Formato de e-mail inválido')
+    .toLowerCase(),
+  codigo: z
+    .string()
+    .length(6, 'Código deve ter 6 dígitos')
+    .regex(/^\d{6}$/, 'Código deve conter apenas números'),
+  tipo: z.enum(['registro', 'recuperacao']),
+})
+
+export type VerificarCodigoDTO = z.infer<typeof verificarCodigoSchema>
+
+export const reenviarCodigoSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'E-mail é obrigatório')
+    .email('Formato de e-mail inválido')
+    .toLowerCase(),
+  tipo: z.enum(['registro', 'recuperacao']),
+})
+
+export type ReenviarCodigoDTO = z.infer<typeof reenviarCodigoSchema>
+
 // ── REDEFINIR SENHA ──────────────────────────────────────────────────────────
 export const redefinirSenhaSchema = z.object({
-  token: z.string().min(1, 'Token é obrigatório'),
+  email: z
+    .string()
+    .min(1, 'E-mail é obrigatório')
+    .email('Formato de e-mail inválido')
+    .toLowerCase(),
+  codigo: z
+    .string()
+    .length(6, 'Código deve ter 6 dígitos')
+    .regex(/^\d{6}$/, 'Código deve conter apenas números'),
   nova_senha: z.string().min(6, 'Nova senha deve ter no mínimo 6 caracteres'),
   confirmar_senha: z.string().min(1, 'Confirmação de senha é obrigatória'),
 }).refine((data) => data.nova_senha === data.confirmar_senha, {

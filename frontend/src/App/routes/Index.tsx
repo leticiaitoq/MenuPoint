@@ -2,6 +2,8 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
+import AssinaturaSucesso from "../pages/assinatura/AssinaturaSucesso";
+import NovaSenha from "../pages/auth/NovaSenha";
 import WelcomePage from "../pages/ClienteLocal/WelcomePage/WelcomePage";
 import HomeRestaurante from "../pages/Restaurante/Home/HomeRestaurante";
 import DWelcomePage from "../pages/cliente/Welcome/DWelcomePage";
@@ -42,6 +44,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/login/cliente" element={<LoginCliente />} />
         <Route path="/register/cliente" element={<RegisterCliente />} />
         <Route path="/" element={<RegisterPage />} />
+        <Route path="/assinatura/sucesso" element={<AssinaturaSucesso />} />
+        <Route path="/nova-senha" element={<NovaSenha />} />
         <Route path="/restaurante/home" element={<HomeRestaurante /> } />
         <Route path="/dwelcome" element={<DWelcomePage />} />
         <Route path="/menu" element={<MenuCliente />} />

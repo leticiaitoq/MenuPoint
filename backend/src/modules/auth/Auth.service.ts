@@ -11,13 +11,16 @@ import {
   JWTPayload,
   EsqueciSenhaDTO,
   RedefinirSenhaDTO,
+  VerificarCodigoDTO,
+  ReenviarCodigoDTO,
 } from './Auth.schema'
 import {
   templateRecuperacaoSenha,
   templateSenhaRedefinida,
+  templateConfirmacaoEmail,
 } from '@shared/emails/templates'
 
-const EXPIRACAO_TOKEN_HORAS = 2
+const EXPIRACAO_CODIGO_MINUTOS = 15
 
 export class AuthService {
 
@@ -59,6 +62,10 @@ export class AuthService {
 
     if (!usuario.ativo) {
       throw new AppError('Usuário inativo. Entre em contato com o administrador', 401)
+    }
+
+    if (!usuario.email_verificado) {
+      throw new AppError('Confirme seu e-mail antes de fazer login. Verifique sua caixa de entrada.', 403)
     }
 
     if (usuario.estabelecimento && !usuario.estabelecimento.ativo) {
@@ -122,6 +129,24 @@ export class AuthService {
       token_pagamento: data.token_pagamento,
     })
 
+    // E-mail de confirmação não bloqueia o cadastro se falhar — a conta
+    // já foi criada e a pessoa já está logada mesmo sem confirmar ainda.
+    try {
+      const codigo = await this.repository.criarTokenConfirmacaoEmail(
+        usuario.id,
+        EXPIRACAO_CODIGO_MINUTOS
+      )
+
+      await transporter.sendMail({
+        from: env.MAIL_FROM,
+        to: usuario.email,
+        subject: '✅ Confirme seu e-mail — Menupoint',
+        html: templateConfirmacaoEmail(usuario.nome, codigo, EXPIRACAO_CODIGO_MINUTOS),
+      })
+    } catch (err) {
+      console.error('Falha ao enviar e-mail de confirmação:', err)
+    }
+
     const payload: JWTPayload = {
       sub: usuario.id,
       nome: usuario.nome,
@@ -150,6 +175,73 @@ export class AuthService {
     }
   }
 
+  // ── VERIFICAR CÓDIGO (cadastro ou recuperação) ─────────────────────────────
+  async verificarCodigo(data: VerificarCodigoDTO): Promise<void> {
+    if (data.tipo === 'registro') {
+      const registro = await this.repository.findTokenConfirmacaoPorCodigo(
+        data.email,
+        data.codigo
+      )
+
+      if (!registro) {
+        throw new AppError('Código inválido ou expirado.', 400)
+      }
+
+      await this.repository.confirmarEmailUsuario(registro.usuario_id, registro.id)
+      return
+    }
+
+    // tipo === 'recuperacao': só valida a existência do código aqui.
+    // Ele é consumido de fato no passo de redefinirSenha, junto com a nova senha.
+    const registro = await this.repository.findTokenRecuperacaoPorCodigo(
+      data.email,
+      data.codigo
+    )
+
+    if (!registro) {
+      throw new AppError('Código inválido ou expirado.', 400)
+    }
+  }
+
+  // ── REENVIAR CÓDIGO (cadastro ou recuperação) ──────────────────────────────
+  async reenviarCodigo(data: ReenviarCodigoDTO): Promise<void> {
+    const usuario = await this.repository.findByEmail(data.email)
+
+    // Resposta sempre "silenciosa" — não revela se o e-mail existe ou não.
+    if (!usuario) return
+
+    if (data.tipo === 'registro') {
+      if (usuario.email_verificado) return
+
+      const codigo = await this.repository.criarTokenConfirmacaoEmail(
+        usuario.id,
+        EXPIRACAO_CODIGO_MINUTOS
+      )
+
+      await transporter.sendMail({
+        from: env.MAIL_FROM,
+        to: usuario.email,
+        subject: '✅ Confirme seu e-mail — Menupoint',
+        html: templateConfirmacaoEmail(usuario.nome, codigo, EXPIRACAO_CODIGO_MINUTOS),
+      })
+      return
+    }
+
+    if (!usuario.ativo) return
+
+    const codigo = await this.repository.criarTokenRecuperacao(
+      usuario.id,
+      EXPIRACAO_CODIGO_MINUTOS
+    )
+
+    await transporter.sendMail({
+      from: env.MAIL_FROM,
+      to: usuario.email,
+      subject: '🔐 Recuperação de senha — Menupoint',
+      html: templateRecuperacaoSenha(usuario.nome, codigo, EXPIRACAO_CODIGO_MINUTOS),
+    })
+  }
+
   // ── ESQUECI MINHA SENHA ──────────────────────────────────────────────────
   async esqueciSenha(data: EsqueciSenhaDTO): Promise<void> {
 
@@ -159,12 +251,10 @@ export class AuthService {
       return
     }
 
-    const token = await this.repository.criarTokenRecuperacao(
+    const codigo = await this.repository.criarTokenRecuperacao(
       usuario.id,
-      EXPIRACAO_TOKEN_HORAS
+      EXPIRACAO_CODIGO_MINUTOS
     )
-
-    const linkRedefinicao = `${env.FRONTEND_URL}/redefinir-senha?token=${token}`
 
     await transporter.sendMail({
       from: env.MAIL_FROM,
@@ -172,8 +262,8 @@ export class AuthService {
       subject: '🔐 Recuperação de senha — Menupoint',
       html: templateRecuperacaoSenha(
         usuario.nome,
-        linkRedefinicao,
-        EXPIRACAO_TOKEN_HORAS
+        codigo,
+        EXPIRACAO_CODIGO_MINUTOS
       ),
     })
   }
@@ -181,11 +271,14 @@ export class AuthService {
   // ── REDEFINIR SENHA ──────────────────────────────────────────────────────
   async redefinirSenha(data: RedefinirSenhaDTO): Promise<void> {
 
-    const tokenRegistro = await this.repository.findTokenValido(data.token)
+    const tokenRegistro = await this.repository.findTokenRecuperacaoPorCodigo(
+      data.email,
+      data.codigo
+    )
 
     if (!tokenRegistro) {
       throw new AppError(
-        'Token inválido ou expirado. Solicite um novo link de recuperação.',
+        'Código inválido ou expirado. Solicite um novo código de recuperação.',
         400
       )
     }

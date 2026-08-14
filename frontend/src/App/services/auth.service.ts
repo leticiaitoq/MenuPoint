@@ -17,12 +17,14 @@ export interface Usuario {
 
 export interface LoginResponse {
   token: string
+  refresh_token: string
   usuario: Usuario
 }
 
 export interface VerifyCodeDTO {
   email: string
   code: string
+  tipo: 'registro' | 'recuperacao'
 }
 
 export interface RegistrarDTO {
@@ -53,25 +55,29 @@ const AuthService = {
     return response.data
   },
 
-  // Verifica o código OTP recebido por e-mail (cadastro ou recuperação)
-  async verifyCode(data: VerifyCodeDTO): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>('/auth/verify-code', data)
-    return response.data
+  // Verifica o código de 6 dígitos recebido por e-mail (cadastro ou recuperação)
+  async verifyCode(data: VerifyCodeDTO): Promise<void> {
+    await api.post('/auth/verificar-codigo', {
+      email: data.email,
+      codigo: data.code,
+      tipo: data.tipo,
+    })
   },
 
-  // Reenvia o código OTP para o e-mail informado
-  async resendCode(email: string): Promise<void> {
-    await api.post('/auth/resend-code', { email })
+  // Reenvia o código de 6 dígitos para o e-mail informado
+  async resendCode(email: string, tipo: 'registro' | 'recuperacao'): Promise<void> {
+    await api.post('/auth/reenviar-codigo', { email, tipo })
   },
 
-  // Envia e-mail de recuperação de senha
+  // Envia e-mail de recuperação de senha (código de 6 dígitos)
   async esqueciSenha(email: string): Promise<void> {
     await api.post('/auth/esqueci-senha', { email })
   },
 
-  // Redefine a senha com o token recebido por e-mail
+  // Redefine a senha com o código de 6 dígitos recebido por e-mail
   async redefinirSenha(data: {
-    token: string
+    email: string
+    codigo: string
     nova_senha: string
     confirmar_senha: string
   }): Promise<void> {

@@ -41,7 +41,7 @@ export class AssinaturaService {
       const body: any = {
         preapproval_plan_id: data.plan_id,
         payer_email:         data.email,
-        back_url:            `${env.FRONTEND_URL}?assinatura=sucesso`,
+        back_url:            `${env.FRONTEND_URL}/assinatura/sucesso`,
         notification_url:    `${env.API_URL}/api/v1/assinatura/webhook`,
         status:              'pending',
         reason:              'Plano MenuPoint',

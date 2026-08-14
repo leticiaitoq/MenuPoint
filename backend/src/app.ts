@@ -39,12 +39,11 @@ export function buildApp(): FastifyInstance {
 app.register(cors, {
   origin: env.NODE_ENV === 'development'
     ? (origin, cb) => cb(null, true)  
-    : env.FRONTEND_URL,
+    : [env.FRONTEND_URL, 'http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 })
-
 // Rate limiting global — proteção contra brute-force
   app.register(rateLimit, {
     global: true,

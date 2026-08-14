@@ -7,6 +7,8 @@ import {
   redefinirSenhaSchema,
   registrarSchema,
   refreshTokenSchema,
+  verificarCodigoSchema,
+  reenviarCodigoSchema,
   JWTPayload,
 } from './Auth.schema'
 
@@ -55,7 +57,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
             timeWindow: RATE.register.timeWindow,
             errorResponseBuilder: (_req, context) => ({
               status: 'error',
-              message: `Muitas tentativas de registro. Tente novamente em ${Math.ceil(Number(context.after) / 60000)} minuto(s).`,
+              message: `Muitas tentativas de registro. Tente novamente em ${Math.ceil(Number(context.ttl) / 60000)} minuto(s).`,
               limite: context.max,
               resetEm: new Date(Date.now() + Number(context.ttl)).toISOString(),
             }),
@@ -119,6 +121,50 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     )
 
    pub.post(
+      '/verificar-codigo',
+      {
+        config: {
+          rateLimit: {
+            max: 8,
+            timeWindow: '15 minutes',
+            errorResponseBuilder: () => ({
+              status: 'error',
+              message: 'Muitas tentativas de verificação. Aguarde alguns minutos.',
+            }),
+          },
+        },
+      },
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const data = verificarCodigoSchema.parse(request.body)
+        await service.verificarCodigo(data)
+        return reply.status(200).send({ message: 'Código verificado com sucesso!' })
+      }
+    )
+
+    pub.post(
+      '/reenviar-codigo',
+      {
+        config: {
+          rateLimit: {
+            max: 3,
+            timeWindow: '10 minutes',
+            errorResponseBuilder: (_req, context) => ({
+              status: 'error',
+              message: `Muitas solicitações de reenvio. Tente novamente em ${Math.ceil(Number(context.ttl) / 60000)} minuto(s).`,
+            }),
+          },
+        },
+      },
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const data = reenviarCodigoSchema.parse(request.body)
+        await service.reenviarCodigo(data)
+        return reply.status(200).send({
+          message: 'Se os dados estiverem corretos, um novo código foi enviado.',
+        })
+      }
+    )
+
+   pub.post(
       '/esqueci-senha',
       {
         config: {
@@ -127,7 +173,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
             timeWindow: RATE.esqueciSenha.timeWindow,
             errorResponseBuilder: (_req, context) => ({
               status: 'error',
-              message: `Limite de recuperação de senha atingido. Tente novamente em ${Math.ceil(Number(context.after) / 3600000)} hora(s).`,
+              message: `Limite de recuperação de senha atingido. Tente novamente em ${Math.ceil(Number(context.ttl) / 60000)} minuto(s).`,
               resetEm: new Date(Date.now() + Number(context.ttl)).toISOString(),
             }),
           },
