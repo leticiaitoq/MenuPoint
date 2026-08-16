@@ -36,10 +36,14 @@ export function buildApp(): FastifyInstance {
   })
 
 //Registro de ligação com o backend
+// FRONTEND_URL aceita uma ou mais origens separadas por vírgula
+// (ex: "https://www.menupoint.space,https://menupoint.space")
+const origensPermitidas = env.FRONTEND_URL.split(',').map((url) => url.trim())
+
 app.register(cors, {
   origin: env.NODE_ENV === 'development'
-    ? (origin, cb) => cb(null, true)  
-    : [env.FRONTEND_URL, 'http://localhost:3000'],
+    ? (origin, cb) => cb(null, true)
+    : [...origensPermitidas, 'http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
