@@ -1,0 +1,196 @@
+.perso-pedido {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding-bottom: 16px;
+}
+
+/* ── Cabeçalho do produto ── */
+.perso-pedido__topo {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.perso-pedido__imagem {
+  width: 150px;
+  height: 150px;
+  border-radius: 16px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.perso-pedido__info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.perso-pedido__nome {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.perso-pedido__descricao {
+  font-size: 15px;
+  color: #888888;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.perso-pedido__preco {
+  font-size: 34px;
+  font-weight: 800;
+  color: #1a1a1a;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Grupos: Personalização e Adicionais lado a lado ── */
+.perso-pedido__grupos {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.perso-pedido__grupo-titulo {
+  font-size: 22px;
+  font-weight: 700;
+  color: #c0392b;
+  margin: 0 0 12px;
+}
+
+.perso-pedido__opcoes {
+  background-color: #e4e4e4;
+  border-radius: 16px;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px 16px;
+}
+
+/* ── Cada opção (ingrediente/adicional) ── */
+.perso-pedido__opcao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.perso-pedido__opcao-nome {
+  font-size: 16px;
+  color: #333333;
+  text-align: center;
+}
+
+.perso-pedido__opcao-controle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.perso-pedido__botao {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.perso-pedido__botao:hover  { transform: scale(1.08); }
+.perso-pedido__botao:active { transform: scale(0.95); }
+
+.perso-pedido__botao:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.perso-pedido__botao--menos { background-color: #c0392b; }
+.perso-pedido__botao--mais  { background-color: #2e9e5b; }
+
+.perso-pedido__opcao-qtd {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.perso-pedido__opcao-preco {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+/* ── Observação ── */
+.perso-pedido__observacao {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.perso-pedido__observacao-titulo {
+  font-size: 26px;
+  font-weight: 700;
+  color: #c0392b;
+  margin: 0;
+}
+
+.perso-pedido__observacao-campo {
+  border: 1.5px dashed #c0392b;
+  border-radius: 20px;
+  background-color: #fbf9f7;
+  padding: 20px 24px;
+  min-height: 140px;
+  font-size: 16px;
+  font-family: inherit;
+  color: #1a1a1a;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.perso-pedido__observacao-campo::placeholder {
+  color: #999999;
+}
+
+/* ── Botão de confirmação ── */
+.perso-pedido__botao-confirmar {
+  align-self: center;
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 18px 72px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.perso-pedido__botao-confirmar:hover {
+  background-color: #a93226;
+}

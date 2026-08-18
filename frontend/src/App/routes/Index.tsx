@@ -32,6 +32,7 @@ import RecoverPassCliente from "../pages/authCliente/RecoverPassCliente";
 import RegisterCliente from "../pages/authCliente/RegisterCliente";
 import VerifyCodeCliente from "../pages/authCliente/VerifyCodeCliente";
 import ControlePedidoLocal from "../pages/ClienteLocal/ControlePedido/Controlepedidolocal";
+import Persopedido from "../shared/components/PersonalizaPedido/Persopedido";
 /**
  * Novas telas = Novas rotas aqui (Obrigatorio)
  */
@@ -71,6 +72,7 @@ const AppRoutes: React.FC = () => {
          <Route path="/restaurante/fila" element={<Fila />} />
          <Route path="/restaurante/relatorios" element={<Relatorios />} />
          <Route path="/restaurante/config" element={<Config />} />
+         <Route path="/personaliza" element={<Persopedido />} />
       </Routes>
     </BrowserRouter>
   );

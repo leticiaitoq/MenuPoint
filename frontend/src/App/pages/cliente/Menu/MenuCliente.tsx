@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
-import Carrinho, { ItemCarrinho } from '../../../shared/components/Carrinho/Carrinho';
+import Carrinho from '../../../shared/components/Carrinho/Carrinho';
+import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
 import './MenuCliente.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -49,7 +50,7 @@ const MenuCliente: React.FC = () => {
 
   const [busca, setBusca]                     = useState('');
   const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
-  const [itensCarrinho, setItensCarrinho]     = useState<ItemCarrinho[]>([]);
+  const { itens: itensCarrinho, removerItem, limparCarrinho } = useCarrinho();
   const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
   const [modalTipoAberto, setModalTipoAberto] = useState(false);
 
@@ -63,22 +64,9 @@ const MenuCliente: React.FC = () => {
   const totalCarrinho = itensCarrinho.reduce((acc, i) => acc + i.quantidade, 0);
 
   // ── Handlers 
-  const adicionarAoCarrinho = (produto: Produto) => {
-    setItensCarrinho((prev) => {
-      const existente = prev.find((i) => i.id === produto.id);
-      if (existente) {
-        return prev.map((i) =>
-          i.id === produto.id ? { ...i, quantidade: i.quantidade + 1 } : i
-        );
-      }
-      return [...prev, { ...produto, quantidade: 1 }];
-    });
+  const abrirPersonalizacao = (produto: Produto) => {
+  navigate('/personaliza', { state: { produto, modoCliente: 'logged' } });
   };
-
-  const removerDoCarrinho = (id: string) => {
-    setItensCarrinho((prev) => prev.filter((i) => i.id !== id));
-  };
-
 
   const escolherTipo = (rota: string) => {
     navigate(rota);
@@ -137,8 +125,8 @@ const MenuCliente: React.FC = () => {
                     </span>
                     <button
                       className="menu__card-add"
-                      onClick={() => adicionarAoCarrinho(p)}
-                      aria-label={`Adicionar ${p.nome} ao carrinho`}
+                      onClick={() => abrirPersonalizacao(p)}
+                      aria-label={`Personalizar ${p.nome}`}
                     >
                       +
                     </button>
@@ -168,7 +156,7 @@ const MenuCliente: React.FC = () => {
         aberto={carrinhoAberto}
         onFechar={() => setCarrinhoAberto(false)}
         itens={itensCarrinho}
-        onRemover={removerDoCarrinho}
+        onRemover={removerItem}
         onFinalizar={() => {
           setCarrinhoAberto(false);
           setModalTipoAberto(true);

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
-import Carrinho, { ItemCarrinho } from '../../../shared/components/Carrinho/Carrinho';
+import Carrinho from '../../../shared/components/Carrinho/Carrinho';
+import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
 import './MenuLocal.css';
 
 // ── Tipos 
@@ -46,10 +48,11 @@ const PRODUTOS: Produto[] = [
 // ── Componente
 const MenuLocal: React.FC = () => {
   // ── Estados
-   const [busca, setBusca]                     = useState('');
-    const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
-    const [itensCarrinho, setItensCarrinho]     = useState<ItemCarrinho[]>([]);
-    const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
+  const navigate = useNavigate();
+  const { itens: itensCarrinho, removerItem, limparCarrinho } = useCarrinho();
+  const [busca, setBusca]                     = useState('');
+  const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
+  const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
 
   // ── Filtro
   const produtosFiltrados = PRODUTOS.filter((p) => {
@@ -61,26 +64,15 @@ const MenuLocal: React.FC = () => {
   const totalCarrinho = itensCarrinho.reduce((acc, i) => acc + i.quantidade, 0);
 
   // ── Handlers
-  const adicionarAoCarrinho = (produto: Produto) => {
-    setItensCarrinho((prev) => {
-      const existente = prev.find((i) => i.id === produto.id);
-      if (existente) {
-        return prev.map((i) =>
-          i.id === produto.id ? { ...i, quantidade: i.quantidade + 1 } : i
-        );
-      }
-      return [...prev, { ...produto, quantidade: 1 }];
-    });
-  };
-
-  const removerDoCarrinho = (id: string) => {
-    setItensCarrinho((prev) => prev.filter((i) => i.id !== id));
+  const abrirPersonalizacao = (produto: Produto) => {
+    navigate('/personaliza', { state: { produto, modoCliente: 'guest' } });
   };
 
   const finalizarPedido = () => {
-  setItensCarrinho([]);
-  setCarrinhoAberto(false);
-};
+    limparCarrinho();
+    setCarrinhoAberto(false);
+  };
+
   // ── Render
   return (
     <CustomerLayout
@@ -90,19 +82,17 @@ const MenuLocal: React.FC = () => {
     >
       <div className="menu" style={{ backgroundImage: 'url(/images/Fundo-menu.png)' }}>
 
-      {/* Botão flutuante do carrinho — igual ao MenuCliente */}
-      <button
-      className="menu__carrinho-fab"
-      onClick={() => setCarrinhoAberto(true)}
-      aria-label="Abrir carrinho"
-       >
-       🛒
-      {totalCarrinho > 0 && (
-      <span className="menu__carrinho-fab-badge">{totalCarrinho}</span>
-      )}
-      </button>
-
-
+        {/* Botão flutuante do carrinho — igual ao MenuCliente */}
+        <button
+          className="menu__carrinho-fab"
+          onClick={() => setCarrinhoAberto(true)}
+          aria-label="Abrir carrinho"
+        >
+          🛒
+          {totalCarrinho > 0 && (
+            <span className="menu__carrinho-fab-badge">{totalCarrinho}</span>
+          )}
+        </button>
 
         {/* Busca */}
         <div className="menu__busca-wrap">
@@ -131,7 +121,7 @@ const MenuLocal: React.FC = () => {
           ))}
         </div>
 
-         {/* Grid de produtos */}
+        {/* Grid de produtos */}
         <div className="menu__grid">
           {produtosFiltrados.length === 0 ? (
             <p className="menu__vazio">Nenhum produto encontrado.</p>
@@ -148,8 +138,8 @@ const MenuLocal: React.FC = () => {
                     </span>
                     <button
                       className="menu__card-add"
-                      onClick={() => adicionarAoCarrinho(p)}
-                      aria-label={`Adicionar ${p.nome} ao carrinho`}
+                      onClick={() => abrirPersonalizacao(p)}
+                      aria-label={`Personalizar ${p.nome}`}
                     >
                       +
                     </button>
@@ -165,7 +155,7 @@ const MenuLocal: React.FC = () => {
         aberto={carrinhoAberto}
         onFechar={() => setCarrinhoAberto(false)}
         itens={itensCarrinho}
-        onRemover={removerDoCarrinho}
+        onRemover={removerItem}
         onFinalizar={finalizarPedido}
       />
     </CustomerLayout>
