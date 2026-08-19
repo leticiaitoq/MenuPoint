@@ -50,7 +50,7 @@ const MenuCliente: React.FC = () => {
 
   const [busca, setBusca]                     = useState('');
   const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
-  const { itens: itensCarrinho, removerItem, limparCarrinho } = useCarrinho();
+  const { itens: itensCarrinho, removerItem } = useCarrinho();
   const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
   const [modalTipoAberto, setModalTipoAberto] = useState(false);
 
