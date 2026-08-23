@@ -142,3 +142,31 @@
 .welcome-page__modal-button:hover {
   background-color: #a93226;
 }
+
+.welcome-page__enter-btn {
+  width: 100%;
+  padding: 14px 24px;
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.15s;
+}
+
+.welcome-page__enter-btn:disabled {
+  background-color: #d9a9a3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.welcome-page__enter-btn:hover {
+  background-color: #a93226;
+}
+
+.welcome-page__enter-btn:active {
+  transform: scale(0.98);
+}

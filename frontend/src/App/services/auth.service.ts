@@ -29,8 +29,14 @@ export interface VerifyCodeDTO {
 
 export interface RegistrarDTO {
   nome_restaurante: string
+   nome_fantasia?: string
+  razao_social?: string
+  nome_responsavel?: string
+  cpf?: string
   cnpj?: string
   email: string
+  estado?: string
+  cidade?: string
   senha: string
   confirmar_senha: string
 }
@@ -82,6 +88,12 @@ const AuthService = {
     confirmar_senha: string
   }): Promise<void> {
     await api.post('/auth/redefinir-senha', data)
+  },
+
+    // Limpa os dados da sessão salvos localmente
+  logout(): void {
+    localStorage.removeItem('@menupoint:token')
+    localStorage.removeItem('@menupoint:usuario')
   },
 
 }

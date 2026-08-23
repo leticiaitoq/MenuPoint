@@ -195,17 +195,154 @@ input[type="password"]::-webkit-textfield-decoration-container {
   z-index: 999;
 }
 
-.register-page__modal-sucesso {
-  background: white;
-  padding: 24px;
-  border-radius: 12px;
-  text-align: center;
-  max-width: 400px;
-  width: 100%;
+.register-page__input:is(select) {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23888'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
 }
 
-.register-page__btn {
-  margin-top: 16px;
-  padding: 10px 16px;
+.register-page__termos {
+  background-color: #fdf1f0;
+  border: 1px solid #f3c8c4;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 4px;
+}
+
+.register-page__termos-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #333;
   cursor: pointer;
+}
+
+.register-page__termos-label input[type="checkbox"] {
+  margin-top: 2px;
+  accent-color: #c0392b;
+  cursor: pointer;
+}
+
+.register-page__termos-label a {
+  color: #c0392b;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.register-page__termos-label a:hover {
+  text-decoration: underline;
+}
+.register-page__input-icon {
+  position: absolute;
+  left: 14px;
+  color: #888888;
+  font-size: 18px;
+  display: flex;
+  pointer-events: none;
+}
+
+.register-page__input--with-icon {
+  padding-left: 42px;
+}
+
+/**
+ * Modal com moldura em gradiente — mesmo modelo do WelcomePage.
+ */
+.register-page__modal {
+  background: linear-gradient(135deg, #f1c40f, #c0392b, #6b0f1a);
+  padding: 4px;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 480px;
+}
+
+.register-page__modal-inner {
+  background-color: #ffffff;
+  border-radius: 21px;
+  padding: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+.register-page__modal-titulo {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-align: center;
+  margin: 0;
+}
+
+.register-page__modal-texto {
+  font-size: 15px;
+  color: #888888;
+  text-align: center;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.register-page__modal-button {
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 16px 48px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 8px;
+}
+
+.register-page__modal-button--inline {
+  display: block;
+  margin: 24px auto 4px;
+}
+
+.register-page__modal-button:hover {
+  background-color: #a93226;
+}
+
+/* Variação maior + texto alinhado à esquerda, só pro modal de Termos (texto longo) */
+.register-page__modal--termos {
+  max-width: 560px;
+}
+
+.register-page__modal-inner--termos {
+  align-items: stretch;
+}
+
+.register-page__modal-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #444;
+  text-align: left;
+  padding-right: 8px;
+}
+
+.register-page__termos-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #c0392b;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: inherit;
+}
+
+.register-page__termos-link:hover {
+  text-decoration: underline;
+}
+.register-page__contador {
+  font-size: 11px;
+  color: #aaaaaa;
+  text-align: right;
 }

@@ -27,19 +27,30 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ subtitle, rightIcon, leftIcon }) => {
   return (
     <header className="navbar">
-      <div className="navbar__left">
-        {leftIcon && <div className="navbar__icon">{leftIcon}</div>}
-      </div>
 
-      <div className="navbar__center">
-        <span className="navbar__logo">MenuPoint</span>
-        <span className="navbar__subtitle">{subtitle}</span>
-      </div>
+  <div className="navbar__left">
+    {leftIcon && (
+      <div className="navbar__icon navbar__logo-icon">
+  {leftIcon}
+</div>
+    )}
 
-      <div className="navbar__right">
-        <div className="navbar__icon">{rightIcon}</div>
-      </div>
-    </header>
+    <span className="navbar__logo" aria-label="MenuPoint">
+      <span className="navbar__menu">Menu</span><span className="navbar__point">Point</span>
+    </span>
+  </div>
+
+  <div className="navbar__center">
+    <span className="navbar__subtitle">{subtitle}</span>
+  </div>
+
+  <div className="navbar__right">
+    <div className="navbar__icon">
+      {rightIcon}
+    </div>
+  </div>
+
+</header>
   );
 };
 

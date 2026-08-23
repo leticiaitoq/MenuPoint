@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
+import { HiCheckCircle } from 'react-icons/hi';
 import AuthCard from './AuthCard';
 import AuthService from '../../services/auth.service';
 import './VerifyCodePage.css';
@@ -26,6 +27,8 @@ const VerifyCodePage: React.FC = () => {
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  const [showSucesso, setShowSucesso] = useState(false);
+
   /* ── Countdown para reenvio ── */
   useEffect(() => {
     if (segundos === 0) {
@@ -40,6 +43,12 @@ const VerifyCodePage: React.FC = () => {
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
+
+  useEffect(() => {
+  if (!showSucesso) return;
+  const timer = setTimeout(() => navigate('/restaurante/home'), 1800);
+  return () => clearTimeout(timer);
+}, [showSucesso, navigate]);
 
   const handleChange = (index: number, value: string) => {
     // Aceita apenas dígitos
@@ -97,24 +106,24 @@ const VerifyCodePage: React.FC = () => {
     setErro(null);
     setCarregando(true);
 
-    try {
-      await AuthService.verifyCode({
-        email,
-        code,
-        tipo: mode === 'register' ? 'registro' : 'recuperacao',
-      });
+   try {
+  await AuthService.verifyCode({
+    email,
+    code,
+    tipo: mode === 'register' ? 'registro' : 'recuperacao',
+  });
 
-      if (mode === 'register') {
-        // A sessão já existe desde o cadastro — só precisava confirmar o e-mail.
-        navigate('/restaurante/home');
-      } else {
-        navigate('/nova-senha', { state: { email, code } });
-      }
-    } catch (err: any) {
-      setErro(err?.response?.data?.message ?? 'Código inválido ou expirado.');
-    } finally {
-      setCarregando(false);
-    }
+  if (mode === 'register') {
+    // Mostra o aviso de sucesso e só navega depois de um tempinho
+    setShowSucesso(true);
+  } else {
+    navigate('/nova-senha', { state: { email, code } });
+  }
+} catch (err: any) {
+  setErro(err?.response?.data?.message ?? 'Código inválido ou expirado.');
+} finally {
+  setCarregando(false);
+}regando(false);
   };
 
   const handleReenviar = async () => {
@@ -227,6 +236,16 @@ const VerifyCodePage: React.FC = () => {
             </button>
           </p>
         </div>
+        {showSucesso && (
+  <div className="verify-page__toast-overlay">
+    <div className="verify-page__toast">
+      <div className="verify-page__toast-inner">
+        <HiCheckCircle className="verify-page__toast-icon" />
+        <p className="verify-page__toast-text">Email verificado com sucesso!</p>
+      </div>
+    </div>
+  </div>
+)}
       </div>
     </div>
   );

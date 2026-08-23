@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HiUpload, HiPencil, HiOfficeBuilding, HiX } from 'react-icons/hi';
+import { HiUpload, HiPencil, HiOfficeBuilding, HiX, HiLogout } from 'react-icons/hi';
+import AuthService from '../../../services/auth.service';
 import { MdAccessTime } from 'react-icons/md';
 import RestaurantLayout from '../../../shared/components/layout/Restaurantelayout';
 import './Config.css';
@@ -64,6 +65,7 @@ const Config: React.FC = () => {
   const [salvoComSucesso, setSalvoComSucesso] = useState(false);
   const [modalHorario, setModalHorario]       = useState(false);
   const inputFotoRef                          = useRef<HTMLInputElement>(null);
+  const [confirmarLogout, setConfirmarLogout] = useState(false);
 
   // ── Handlers genéricos
   const handleCampo = (campo: keyof ConfiguracaoRestaurante, valor: string) => {
@@ -98,12 +100,43 @@ const Config: React.FC = () => {
     setSalvoComSucesso(true);
   };
 
+    const handleLogout = () => {
+    AuthService.logout();
+    navigate('/login');
+  };
+
   // ── Render
   return (
     <RestaurantLayout>
       <div className="config">
+      <div className="config__header">
+       <h2 className="config__titulo">Configurações</h2>
+      <button
+         className="config__btn-logout"
+         type="button"
+        onClick={() => setConfirmarLogout(true)}>
+       <HiLogout /> Sair
+     </button>
 
-        <h2 className="config__titulo">Configurações</h2>
+     {confirmarLogout && (
+      <div className="config__overlay" onClick={() => setConfirmarLogout(false)}>
+     <div className="config__popup" onClick={(e) => e.stopPropagation()}>
+      <span className="config__popup-icon">🚪</span>
+      <h3>Sair da conta?</h3>
+      <p>Você precisará entrar novamente para acessar as configurações.</p>
+      <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+        <button className="config__modal-btn-fechar" onClick={() => setConfirmarLogout(false)}>
+          Cancelar
+        </button>
+        <button className="config__btn-sair-confirmar" onClick={handleLogout}>
+          Sair
+        </button>
+         </div>
+        </div>
+         </div>
+        )}
+
+      </div>
 
         {/* ── Informações do Restaurante ── */}
         <div className="config__card">

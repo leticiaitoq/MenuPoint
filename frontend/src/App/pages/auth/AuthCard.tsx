@@ -3,7 +3,7 @@ import './AuthCard.css';
 
 const MenuPointLogo: React.FC = () => (
   <span className="auth-card-mobile__title" aria-label="MenuPoint">
-    MenuPoint
+    Menu<span className="auth-card-mobile__point">Point</span>
   </span>
 );
 
@@ -28,7 +28,7 @@ const AuthCard: React.FC = () => {
           className="auth-card__logo"
         />
         <span className="auth-card__title" aria-label="MenuPoint">
-          MenuPoint
+          Menu<span className="auth-card__point">Point</span>
         </span>
       </div>
     </>

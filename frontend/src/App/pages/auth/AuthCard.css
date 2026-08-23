@@ -1,7 +1,7 @@
 /* ============================================================
-   AuthCard.css — Estilos do topo mobile e card desktop
+   AuthCard.css
    ============================================================ */
-/*Logo Escrita MenuPoint Caminho*/
+
 @font-face {
   font-family: 'Bukhari Script';
   src: url('../../../assets/fonts/BukhariScript-lemD.ttf') format('truetype');
@@ -13,54 +13,83 @@
 /* --------------------------------------------------------------
    GRADIENTE COMPARTILHADO
 -------------------------------------------------------------- */
+
 .auth-header-gradient {
   background: linear-gradient(
     to bottom,
-    #ffe385 0%,
-    #f35e61 45%,
-    #490e24 100%
+    #880003 0%,
+    #880003 45%,
+    #490e0e 100%,
+    #490e0e 100%
   );
+
   border-radius: 0 0 0 0;
   overflow: hidden;
 }
 
 /* --------------------------------------------------------------
-   DESKTOP CARD (painel esquerdo >= 769px)
+   DESKTOP CARD
 -------------------------------------------------------------- */
+
 .auth-card {
   flex: 0 0 44%;
   align-self: stretch;
   border-radius: 20px 0 0 20px;
   display: none;
-
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
+  gap: 20px;
 }
 
 .auth-card__logo {
-  width: 300px;
-  height: 300px;
+  width: 600px;
+  height: 600px;
   object-fit: contain;
   filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.3));
 }
-/* Logo Escrita MenuPoint Caracteristicas */
+
+/* --------------------------------------------------------------
+   LOGO ESCRITA MENUPOINT
+-------------------------------------------------------------- */
+
 .auth-card__title {
   font-family: 'Bukhari Script', 'Dancing Script', cursive;
   font-weight: normal;
   font-style: normal;
   font-size: 64px;
-  color: #ffbd59;
+
+  color: #f58400;
 
   text-decoration: underline;
-  text-decoration-color: #ffbd59;
+  text-decoration-color: #f58400;
   text-underline-offset: 8px;
   text-decoration-thickness: 2px;
 
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+
   line-height: 1;
   letter-spacing: 0.5px;
+
+  transform: translateY(-50px);
+}
+
+/* Mantém exatamente a mesma fonte do título */
+.auth-card__menu,
+.auth-card__point {
+  font-family: inherit;
+  font-weight: inherit;
+  font-style: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.auth-card__menu {
+  color: #f58400;
+}
+
+.auth-card__point {
+  color: #ffffff;
 }
 
 /* --------------------------------------------------------------
