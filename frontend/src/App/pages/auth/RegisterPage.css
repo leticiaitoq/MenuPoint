@@ -7,14 +7,14 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  padding: 24px;
+  padding: 16px;
 }
 
 .register-page__container {
   display: flex;
   align-items: stretch;
   width: 100%;
-  max-width: 1000px;
+  max-width: 1180px;
   min-height: 580px;
   height: auto;
   border-radius: 16px;
@@ -26,7 +26,7 @@
 /* Lado direito — formulário */
 .register-page__form-side {
   flex: 1;
-  padding: 40px;
+  padding: 28px 32px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -34,28 +34,33 @@
 }
 
 .register-page__title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: 24px;
+  margin-bottom: 4px;
 }
 
 .register-page__form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .register-page__field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
   flex: 1;
+  min-width: 0;
 }
 
 .register-page__label {
-  font-size: 14px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
   font-weight: 500;
   color: #1a1a1a;
 }
@@ -68,10 +73,10 @@
 
 .register-page__input {
   width: 100%;
-  padding: 11px 16px;
+  padding: 8px 14px;
   border: 1.5px solid #e0e0e0;
   border-radius: 8px;
-  font-size: 15px;
+  font-size: 14px;
   color: #1a1a1a;
   background-color: #fafafa;
   outline: none;
@@ -118,43 +123,57 @@ input[type="password"]::-webkit-textfield-decoration-container {
  */
 .register-page__field-row {
   display: flex;
-  gap: 16px;
+  gap: 14px;
 }
 
 .register-page__senha-regras {
   list-style: none;
-  padding: 6px 0 0 0;
-  margin: 0;
+  padding: 0;
+  margin: -4px 0 0 0;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-wrap: wrap;
+  column-gap: 16px;
+  row-gap: 2px;
 }
 
 .register-page__regra {
-  font-size: 12px;
+  font-size: 11px;
+  white-space: nowrap;
   transition: color 0.2s;
+}
+
+.register-page__regra--neutro {
+  color: #9ca3af; /* cinza */
 }
 
 .register-page__regra--ok {
   color: #16a34a; /* verde */
+  display: none;
 }
 
 .register-page__regra--erro {
   color: #dc2626; /* vermelho */
+  display: block;
 }
+
+.register-page__obrigatorio {
+  color: #c0392b;
+}
+
+
 
 .register-page__submit {
   width: 100%;
-  padding: 14px;
+  padding: 12px;
   background-color: #c0392b;
   color: #ffffff;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .register-page__submit:hover {
@@ -207,15 +226,15 @@ input[type="password"]::-webkit-textfield-decoration-container {
   background-color: #fdf1f0;
   border: 1px solid #f3c8c4;
   border-radius: 8px;
-  padding: 12px 14px;
-  margin-bottom: 4px;
+  padding: 8px 12px;
+  margin-bottom: 2px;
 }
 
 .register-page__termos-label {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 13px;
+  font-size: 12px;
   color: #333;
   cursor: pointer;
 }
@@ -311,7 +330,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
 
 /* Variação maior + texto alinhado à esquerda, só pro modal de Termos (texto longo) */
 .register-page__modal--termos {
-  max-width: 560px;
+  max-width: 60%;
 }
 
 .register-page__modal-inner--termos {
@@ -342,7 +361,8 @@ input[type="password"]::-webkit-textfield-decoration-container {
   text-decoration: underline;
 }
 .register-page__contador {
-  font-size: 11px;
+  font-size: 10px;
   color: #aaaaaa;
-  text-align: right;
+  font-weight: 400;
+  white-space: nowrap;
 }

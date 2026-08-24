@@ -71,6 +71,8 @@ const regrasSenha = [
   { label: 'Mínimo 8 caracteres', valido: senha.length >= 8 },
   { label: 'Pelo menos 1 letra maiúscula', valido: /[A-Z]/.test(senha) },
   { label: 'Pelo menos 1 número', valido: /[0-9]/.test(senha) },
+  { label: 'Pelo menos 1 caractere especial', valido: /[^A-Za-z0-9]/.test(senha) },
+  { label: 'Senhas iguais', valido: senha === confirmarSenha}
 ];
 
 const [showTermosModal, setShowTermosModal] = useState(false);
@@ -99,15 +101,14 @@ const [showTermosModal, setShowTermosModal] = useState(false);
     try {
       const resultado = await AuthService.registrar({
         nome_restaurante: nome,
-        nome_fantasia: nomeFantasia,
+        nome_fantasia: nomeFantasia || undefined,
         razao_social: razaoSocial,
         nome_responsavel: nomeCompleto,
         cpf,
-
-        cnpj: cnpj || undefined,
+        cnpj: cnpj,
         email,
-          estado,
-  cidade,
+        estado,
+        cidade,
         senha,
         confirmar_senha: confirmarSenha,
       });
@@ -147,7 +148,14 @@ const [showTermosModal, setShowTermosModal] = useState(false);
       setShowSucesso(true);
       //navigate('/verify-code', { state: { email, mode: 'register' } });  <- parte de verificação de email
     } catch (err: any) {
-      setErro(err?.response?.data?.message ?? 'Erro ao criar conta. Tente novamente.');
+      // Se o backend já mandou um motivo específico (ex: "Este e-mail já
+      // está cadastrado"), mostramos ele. Senão, caímos numa mensagem mais
+      // empática do que um erro genérico.
+      const mensagemDoServidor = err?.response?.data?.message;
+      setErro(
+        mensagemDoServidor ??
+        'Não foi possível criar sua conta. Tente novamente mais tarde. Se o problema persistir, entre em contato com nossa equipe.'
+      );
     } finally {
       setCarregando(false);
     }
@@ -173,120 +181,31 @@ const [showTermosModal, setShowTermosModal] = useState(false);
 
           <form className="register-page__form" onSubmit={handleSubmit}>
 
-            {/* Mensagem de erro */}
-              {erro && (
-              <p style={{ color: 'red', fontSize: '14px', marginBottom: '8px' }}>
-                {erro}
-              </p>
-            )}
-
-                        {/* Nome completo (quem está cadastrando) */}
-            <div className="register-page__field">
-              <label className="register-page__label" htmlFor="nomeCompleto">
-                Nome completo (quem está cadastrando)
-              </label>
-              <div className="register-page__input-wrapper">
-                <span className="register-page__input-icon"><HiOutlineUser /></span>
-                <input
-                  id="nomeCompleto"
-                  type="text"
-                  placeholder="Digite seu nome completo"
-                  className="register-page__input register-page__input--with-icon"
-                  value={nomeCompleto}
-                  onChange={(e) => setNomeCompleto(e.target.value)}
-                  maxLength={100}
-                  required
-                />
-              </div>
-               <span className="register-page__contador">{nomeCompleto.length}/100</span>
-            </div>
-
-            {/* Nome do restaurante */}
-            <div className="register-page__field">
-              <label className="register-page__label" htmlFor="nome">
-                Nome do restaurante
-              </label>
-              <div className="register-page__input-wrapper">
-                <span className="register-page__input-icon"><HiOutlineOfficeBuilding /></span>
-                <input
-                  id="nome"
-                  type="text"
-                  placeholder="Digite o nome do restaurante"
-                  className="register-page__input register-page__input--with-icon"
-                  value={nome}
-                  onChange={handleNomeChange}
-                  maxLength={100}
-                  required
-                />
-              </div>
-               <span className="register-page__contador">{nomeCompleto.length}/100</span>
-            </div>
-
-            {/* Nome fantasia */}
-            <div className="register-page__field">
-              <label className="register-page__label" htmlFor="nomeFantasia">
-                Nome fantasia do restaurante
-              </label>
-              <div className="register-page__input-wrapper">
-                <span className="register-page__input-icon"><HiOutlineTag /></span>
-                <input
-                  id="nomeFantasia"
-                  type="text"
-                  placeholder="Digite o nome fantasia do restaurante"
-                  className="register-page__input register-page__input--with-icon"
-                  value={nomeFantasia}
-                  onChange={(e) => setNomeFantasia(e.target.value)}
-                  maxLength={100}
-                  required
-                />
-              </div>
-               <span className="register-page__contador">{nomeCompleto.length}/100</span>
-            </div>
-
-            {/* Razão social */}
-            <div className="register-page__field">
-              <label className="register-page__label" htmlFor="razaoSocial">
-                Razão social
-              </label>
-              <div className="register-page__input-wrapper">
-                <span className="register-page__input-icon"><HiOutlineDocumentText /></span>
-                <input
-                  id="razaoSocial"
-                  type="text"
-                  placeholder="Digite a razão social da empresa"
-                  className="register-page__input register-page__input--with-icon"
-                  value={razaoSocial}
-                  onChange={(e) => setRazaoSocial(e.target.value)}
-                  maxLength={150}
-                  required
-                />
-              </div>
-               <span className="register-page__contador">{nomeCompleto.length}/150</span>
-            </div>
-
-            {/* CNPJ com máscara */}
-            <div className="register-page__field">
-              <label className="register-page__label" htmlFor="cnpj">
-                CNPJ
-              </label>
-              <div className="register-page__input-wrapper">
-                <span className="register-page__input-icon"><HiOutlineIdentification /></span>
-                <input
-                  id="cnpj"
-                  type="text"
-                  placeholder="00.000.000/0000-00"
-                  className="register-page__input register-page__input--with-icon"
-                  value={cnpj}
-                  onChange={handleCnpjChange}
-                />
-              </div>
-            </div>
-
-            {/* CPF + Email lado a lado */}
+            {/* Nome completo + CPF (dados de quem está cadastrando) */}
             <div className="register-page__field-row">
               <div className="register-page__field">
+                <label className="register-page__label" htmlFor="nomeCompleto">
+                  <span>Nome completo <span className="register-page__obrigatorio">*</span></span>
+                  <span className="register-page__contador">{nomeCompleto.length}/100</span>
+                </label>
+                <div className="register-page__input-wrapper">
+                  <span className="register-page__input-icon"><HiOutlineUser /></span>
+                  <input
+                    id="nomeCompleto"
+                    type="text"
+                    placeholder="Digite seu nome completo"
+                    className="register-page__input register-page__input--with-icon"
+                    value={nomeCompleto}
+                    onChange={(e) => setNomeCompleto(e.target.value)}
+                    maxLength={100}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="register-page__field">
                 <label className="register-page__label" htmlFor="cpf">
-                  CPF (quem está cadastrando)
+                  <span>CPF (quem cadastra) <span className="register-page__obrigatorio">*</span></span>
                 </label>
                 <div className="register-page__input-wrapper">
                   <span className="register-page__input-icon"><HiOutlineIdentification /></span>
@@ -301,10 +220,97 @@ const [showTermosModal, setShowTermosModal] = useState(false);
                   />
                 </div>
               </div>
+            </div>
 
+            {/* Nome do restaurante + Nome fantasia */}
+            <div className="register-page__field-row">
+              <div className="register-page__field">
+                <label className="register-page__label" htmlFor="nome">
+                  <span>Nome do restaurante <span className="register-page__obrigatorio">*</span></span>
+                  <span className="register-page__contador">{nome.length}/100</span>
+                </label>
+                <div className="register-page__input-wrapper">
+                  <span className="register-page__input-icon"><HiOutlineOfficeBuilding /></span>
+                  <input
+                    id="nome"
+                    type="text"
+                    placeholder="Digite o nome do restaurante"
+                    className="register-page__input register-page__input--with-icon"
+                    value={nome}
+                    onChange={handleNomeChange}
+                    maxLength={100}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="register-page__field">
+                <label className="register-page__label" htmlFor="cnpj">
+                  <span>CNPJ <span className="register-page__obrigatorio">*</span></span>
+                </label>
+                <div className="register-page__input-wrapper">
+                  <span className="register-page__input-icon"><HiOutlineIdentification /></span>
+                  <input
+                    id="cnpj"
+                    type="text"
+                    placeholder="00.000.000/0000-00"
+                    className="register-page__input register-page__input--with-icon"
+                    value={cnpj}
+                    onChange={handleCnpjChange}
+                    required
+                  />
+                </div>
+              </div>
+
+            </div>
+
+            {/* Razão social + CNPJ */}
+            <div className="register-page__field-row">
+               <div className="register-page__field">
+                <label className="register-page__label" htmlFor="nomeFantasia">
+                  <span>Nome fantasia</span>
+                  <span className="register-page__contador">{nomeFantasia.length}/100</span>
+                </label>
+                <div className="register-page__input-wrapper">
+                  <span className="register-page__input-icon"><HiOutlineTag /></span>
+                  <input
+                    id="nomeFantasia"
+                    type="text"
+                    placeholder="Digite o nome fantasia"
+                    className="register-page__input register-page__input--with-icon"
+                    value={nomeFantasia}
+                    onChange={(e) => setNomeFantasia(e.target.value)}
+                    maxLength={100}
+                  />
+                </div>
+              </div>
+              
+              <div className="register-page__field">
+                <label className="register-page__label" htmlFor="razaoSocial">
+                  <span>Razão social <span className="register-page__obrigatorio">*</span></span>
+                  <span className="register-page__contador">{razaoSocial.length}/150</span>
+                </label>
+                <div className="register-page__input-wrapper">
+                  <span className="register-page__input-icon"><HiOutlineDocumentText /></span>
+                  <input
+                    id="razaoSocial"
+                    type="text"
+                    placeholder="Digite a razão social"
+                    className="register-page__input register-page__input--with-icon"
+                    value={razaoSocial}
+                    onChange={(e) => setRazaoSocial(e.target.value)}
+                    maxLength={150}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Email + Estado */}
+            <div className="register-page__field-row">
               <div className="register-page__field">
                 <label className="register-page__label" htmlFor="email">
-                  Email
+                  <span>Email <span className="register-page__obrigatorio">*</span></span>
+                  <span className="register-page__contador">{email.length}/150</span>
                 </label>
                 <div className="register-page__input-wrapper">
                   <span className="register-page__input-icon"><HiOutlineMail /></span>
@@ -319,15 +325,36 @@ const [showTermosModal, setShowTermosModal] = useState(false);
                     required
                   />
                 </div>
-                 <span className="register-page__contador">{nomeCompleto.length}/150</span>
+              </div>
+              {/* Cidade */}
+              <div className="register-page__field">
+              <label className="register-page__label" htmlFor="cidade">
+                <span>Cidade <span className="register-page__obrigatorio">*</span></span>
+                <span className="register-page__contador">{cidade.length}/80</span>
+              </label>
+              <div className="register-page__input-wrapper">
+                <span className="register-page__input-icon"><HiOutlineLocationMarker /></span>
+                <input
+                  id="cidade"
+                  type="text"
+                  placeholder="Digite sua cidade"
+                  className="register-page__input register-page__input--with-icon"
+                  value={cidade}
+                  onChange={(e) => setCidade(e.target.value)}
+                  maxLength={80}
+                  required
+                />
               </div>
             </div>
+              
+            </div>
 
-            {/* Estado + Cidade lado a lado */}
+
+            {/* Senhas*/}
             <div className="register-page__field-row">
               <div className="register-page__field">
                 <label className="register-page__label" htmlFor="estado">
-                  Estado
+                  <span>Estado <span className="register-page__obrigatorio">*</span></span>
                 </label>
                 <div className="register-page__input-wrapper">
                   <span className="register-page__input-icon"><HiOutlineMap /></span>
@@ -338,41 +365,17 @@ const [showTermosModal, setShowTermosModal] = useState(false);
                     onChange={(e) => setEstado(e.target.value)}
                     required
                   >
-                    <option value="" disabled>Selecione o estado</option>
+                    <option value="" disabled>Selecione</option>
                     {ESTADOS_BR.map((uf) => (
                       <option key={uf} value={uf}>{uf}</option>
                     ))}
                   </select>
                 </div>
               </div>
-
-              <div className="register-page__field">
-                <label className="register-page__label" htmlFor="cidade">
-                  Cidade
-                </label>
-                <div className="register-page__input-wrapper">
-                  <span className="register-page__input-icon"><HiOutlineLocationMarker /></span>
-                  <input
-                    id="cidade"
-                    type="text"
-                    placeholder="Digite sua cidade"
-                    className="register-page__input register-page__input--with-icon"
-                    value={cidade}
-                    onChange={(e) => setCidade(e.target.value)}
-                    maxLength={80}
-                    required
-                  />
-                </div>
-                 <span className="register-page__contador">{nomeCompleto.length}/80</span>
-              </div>
-            </div>
-
-            {/* Senhas*/}
-            <div className="register-page__field-row">
-
               <div className="register-page__field">
                 <label className="register-page__label" htmlFor="senha">
-                  Senha
+                  <span>Senha <span className="register-page__obrigatorio">*</span></span>
+                  <span className="register-page__contador">{senha.length}/60</span>
                 </label>
                 <div className="register-page__input-wrapper">
                    <span className="register-page__input-icon"><HiOutlineLockClosed /></span>
@@ -395,26 +398,12 @@ const [showTermosModal, setShowTermosModal] = useState(false);
                     {showPassword ? <HiEyeOff /> : <HiEye />}
                   </button>
                 </div>
-                  <span className="register-page__contador">{nomeCompleto.length}/60</span>
-                  <ul className="register-page__senha-regras">
-                    {regrasSenha.map((regra) => (
-                      <li
-                        key={regra.label}
-                        className={regra.valido
-                          ? 'register-page__regra register-page__regra--ok'
-                          : 'register-page__regra register-page__regra--erro'
-                        }
-                      >
-                        {regra.valido ? '✔' : '✘'} {regra.label}
-                      </li>
-                    ))}
-                  </ul>
-                 
               </div>
 
               <div className="register-page__field">
                 <label className="register-page__label" htmlFor="confirmarSenha">
-                  Confirmar senha
+                  <span>Confirmar senha <span className="register-page__obrigatorio">*</span></span>
+                  <span className="register-page__contador">{confirmarSenha.length}/60</span>
                 </label>
                 <div className="register-page__input-wrapper">
                    <span className="register-page__input-icon"><HiOutlineLockClosed /></span>
@@ -437,9 +426,29 @@ const [showTermosModal, setShowTermosModal] = useState(false);
                     {showConfirm ? <HiEyeOff /> : <HiEye />}
                   </button>
                 </div>
-                 <span className="register-page__contador">{nomeCompleto.length}/60</span>
               </div>
             </div>
+
+            {/* Requisitos de senha — em linha (wrap), pra ocupar menos altura */}
+            <ul className="register-page__senha-regras">
+              {regrasSenha.map((regra) => {
+                // Antes de a pessoa digitar qualquer coisa, os requisitos
+                // ficam neutros (cinza). Só viram vermelho/verde depois
+                // que ela começa a digitar no campo de senha.
+                const aindaNaoDigitou = senha.length === 0;
+                const classeRegra = aindaNaoDigitou
+                  ? 'register-page__regra register-page__regra--neutro'
+                  : regra.valido
+                  ? 'register-page__regra register-page__regra--ok'
+                  : 'register-page__regra register-page__regra--erro';
+
+                return (
+                  <li key={regra.label} className={classeRegra}>
+                    {aindaNaoDigitou ? '•' : regra.valido ? '✔' : '✘'} {regra.label}
+                  </li>
+                );
+              })}
+            </ul>
 
             {/* Termos de uso */}
             <div className="register-page__termos">
@@ -466,6 +475,13 @@ const [showTermosModal, setShowTermosModal] = useState(false);
                 {' '}do MenuPoint.
               </label>
             </div>
+
+            {/* Mensagem de erro */}
+              {erro && (
+              <p style={{ color: 'red', fontSize: '14px', marginBottom: '8px' }}>
+                {erro}
+              </p>
+            )}
 
             <button
               className="register-page__submit"

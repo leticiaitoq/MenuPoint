@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
-import { HiEye, HiEyeOff } from 'react-icons/hi';
+import { HiEye, HiEyeOff, HiCheckCircle } from 'react-icons/hi';
 import AuthCard from './AuthCard';
 import AuthService from '../../services/auth.service'; 
 import './LoginPage.css';
@@ -14,6 +14,15 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [erro, setErro] = useState<string | null>(null);      
   const [carregando, setCarregando] = useState(false);       
+  const [showSucesso, setShowSucesso] = useState(false);
+
+  // Mesmo padrão usado na tela de verificação de código: mostra o toast de
+  // sucesso e só navega depois de um tempinho, pra pessoa ver a confirmação.
+  useEffect(() => {
+    if (!showSucesso) return;
+    const timer = setTimeout(() => navigate('/restaurante/home'), 1200);
+    return () => clearTimeout(timer);
+  }, [showSucesso, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {      
     e.preventDefault();
@@ -30,10 +39,10 @@ const LoginPage: React.FC = () => {
       localStorage.setItem('@menupoint:token', resultado.token);
       localStorage.setItem('@menupoint:usuario', JSON.stringify(resultado.usuario));
 
-      navigate('/restaurante/home');
+      setCarregando(false);
+      setShowSucesso(true);
     } catch (err: any) {
       setErro(err?.response?.data?.message ?? 'Email ou senha inválidos.');
-    } finally {
       setCarregando(false);
     }
   };
@@ -126,6 +135,17 @@ const LoginPage: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {showSucesso && (
+        <div className="login-page__toast-overlay">
+          <div className="login-page__toast">
+            <div className="login-page__toast-inner">
+              <HiCheckCircle className="login-page__toast-icon" />
+              <p className="login-page__toast-text">Login realizado com sucesso!</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
