@@ -33,6 +33,9 @@ import RegisterCliente from "../pages/authCliente/RegisterCliente";
 import VerifyCodeCliente from "../pages/authCliente/VerifyCodeCliente";
 import ControlePedidoLocal from "../pages/ClienteLocal/ControlePedido/Controlepedidolocal";
 import Persopedido from "../shared/components/PersonalizaPedido/Persopedido";
+import GerenPagamentos from "../pages/Restaurante/Gestão/Caixa/GerenPagamentos";
+import PagarMesa from "../pages/Restaurante/Gestão/Caixa/PagarMesa";
+import PagarParcial from "../pages/Restaurante/Gestão/Caixa/PagarParcial";
 /**
  * Novas telas = Novas rotas aqui (Obrigatorio)
  */
@@ -73,6 +76,10 @@ const AppRoutes: React.FC = () => {
          <Route path="/restaurante/relatorios" element={<Relatorios />} />
          <Route path="/restaurante/config" element={<Config />} />
          <Route path="/personaliza" element={<Persopedido />} />
+         <Route path="/restaurante/caixa" element={<GerenPagamentos />} />
+         <Route path="/restaurante/caixa/pagar" element={<PagarMesa />} />
+          <Route path="/restaurante/caixa/pagarParcial" element={<PagarParcial />} />
+
       </Routes>
     </BrowserRouter>
   );

@@ -10,7 +10,7 @@ import {
   HiChevronUp,
   HiX,
 } from 'react-icons/hi';
-import { MdTableRestaurant } from 'react-icons/md';
+import { MdTableRestaurant, MdPointOfSale } from 'react-icons/md';
 import './RestaurantSidebar.css';
 
 interface NavItem {
@@ -23,6 +23,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/restaurante/home', icon: <HiHome />, label: 'Início' },
+  { to: '/restaurante/caixa', icon: <MdPointOfSale />, label: 'Caixa' },
   {
     icon: <HiClipboardList />,
     label: 'Pedidos',
