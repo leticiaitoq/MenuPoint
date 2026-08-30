@@ -23,14 +23,13 @@
 }
 
 .navbar__right {
-  justify-content: flex-end;
+  justify-content: end;
 }
 
 /* Centro da navbar */
 .navbar__center {
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
 
   display: flex;
   align-items: center;
