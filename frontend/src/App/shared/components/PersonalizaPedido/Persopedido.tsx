@@ -50,21 +50,21 @@ const PRODUTO_MOCK: ProdutoPersonalizavel = {
 };
 
 const PERSONALIZACAO_MOCK: Omit<OpcaoAjuste, 'quantidade'>[] = [
-  { id: 'hamburguer', nome: 'hamburguer', precoUnitario: 0 },
-  { id: 'alface', nome: 'alface', precoUnitario: 0 },
-  { id: 'bacon', nome: 'bacon', precoUnitario: 0 },
-  { id: 'cebola', nome: 'cebola', precoUnitario: 0 },
-  { id: 'cheddar', nome: 'cheddar', precoUnitario: 0 },
-  { id: 'tomate', nome: 'tomate', precoUnitario: 0 },
+  { id: 'hamburguer', nome: 'hamburguer', precoUnitario: 5 },
+  { id: 'alface', nome: 'alface', precoUnitario: 5 },
+  { id: 'bacon', nome: 'bacon', precoUnitario: 5 },
+  { id: 'cebola', nome: 'cebola', precoUnitario: 5 },
+  { id: 'cheddar', nome: 'cheddar', precoUnitario: 5 },
+  { id: 'tomate', nome: 'tomate', precoUnitario: 5 },
 ];
 
 const ADICIONAIS_MOCK: Omit<OpcaoAjuste, 'quantidade'>[] = [
-  { id: 'maionese', nome: 'maionese', precoUnitario: 0 },
-  { id: 'azeitona', nome: 'azeitona', precoUnitario: 0 },
-  { id: 'milho', nome: 'milho', precoUnitario: 0 },
-  { id: 'pimenta', nome: 'pimenta', precoUnitario: 0 },
-  { id: 'mussarela', nome: 'mussarela', precoUnitario: 0 },
-  { id: 'palmito', nome: 'palmito', precoUnitario: 0 },
+  { id: 'maionese', nome: 'maionese', precoUnitario: 5 },
+  { id: 'azeitona', nome: 'azeitona', precoUnitario: 5 },
+  { id: 'milho', nome: 'milho', precoUnitario: 5 },
+  { id: 'pimenta', nome: 'pimenta', precoUnitario: 5 },
+  { id: 'mussarela', nome: 'mussarela', precoUnitario: 5 },
+  { id: 'palmito', nome: 'palmito', precoUnitario: 5 },
 ];
 
 const QTD_MIN = 0;
