@@ -224,7 +224,9 @@ const PagarParcial: React.FC = () => {
                         type="number"
                         step="0.01"
                         min="0"
-                        value={forma.valor}
+                        placeholder="0,00"
+                        value={forma.valor === 0 ? '' : forma.valor}
+                        onFocus={(e) => e.target.select()}
                         onChange={(e) => atualizarForma(forma.id, 'valor', e.target.value)}
                       />
                       <em className="pagar-parcial__percentual">{percentual(forma.valor)}%</em>

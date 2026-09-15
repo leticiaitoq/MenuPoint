@@ -36,6 +36,8 @@ import Persopedido from "../shared/components/PersonalizaPedido/Persopedido";
 import GerenPagamentos from "../pages/Restaurante/Gestão/Caixa/GerenPagamentos";
 import PagarMesa from "../pages/Restaurante/Gestão/Caixa/PagarMesa";
 import PagarParcial from "../pages/Restaurante/Gestão/Caixa/PagarParcial";
+import Despesas from "../pages/Restaurante/Gestão/Relatorios/Despesas/Despesa";
+import CadDespesa from "../pages/Restaurante/Gestão/Relatorios/Despesas/CadDespesa";
 /**
  * Novas telas = Novas rotas aqui (Obrigatorio)
  */
@@ -79,6 +81,10 @@ const AppRoutes: React.FC = () => {
          <Route path="/restaurante/caixa" element={<GerenPagamentos />} />
          <Route path="/restaurante/caixa/pagar" element={<PagarMesa />} />
           <Route path="/restaurante/caixa/pagarParcial" element={<PagarParcial />} />
+          <Route path="/restaurante/despesas" element={<Despesas />} />
+           <Route path="/restaurante/despesas/cadastrodespe" element={<CadDespesa />} />
+
+
 
       </Routes>
     </BrowserRouter>
