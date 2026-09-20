@@ -19,7 +19,6 @@ import RestProdutos from '../pages/Restaurante/Produtos/RestProdutos';
 import CadProdutos from '../pages/Restaurante/Cadastros/Produtos/CadProdutos';
 import EditProduto from '../pages/Restaurante/Cadastros/Produtos/EditProduto';
 import GestãoCate from '../pages/Restaurante/Produtos/Categoria/GestãoCate';
-import GestaoMesas from "../pages/Restaurante/Gestão/Mesas/GestaoMesas";
 import InfoRetirada from "../pages/cliente/Retirada/InfoRetirada";
 import PerfilCliente from "../pages/cliente/Perfil/PerfilCliente";
 import PerfilLocal from "../pages/ClienteLocal/Perfil/PerfilLocal";
@@ -38,6 +37,7 @@ import PagarMesa from "../pages/Restaurante/Gestão/Caixa/PagarMesa";
 import PagarParcial from "../pages/Restaurante/Gestão/Caixa/PagarParcial";
 import Despesas from "../pages/Restaurante/Gestão/Relatorios/Despesas/Despesa";
 import CadDespesa from "../pages/Restaurante/Gestão/Relatorios/Despesas/CadDespesa";
+import { EmBreve } from "../pages/Restaurante/Embreve/EmBreve";
 /**
  * Novas telas = Novas rotas aqui (Obrigatorio)
  */
@@ -70,7 +70,6 @@ const AppRoutes: React.FC = () => {
          <Route path="/restaurante/cadprodutos" element={<CadProdutos />} />
          <Route path="/restaurante/editprodutos" element={<EditProduto />} />
          <Route path="/restaurante/categories" element={<GestãoCate />} />
-         <Route path="/restaurante/mesas" element={<GestaoMesas />} />
          <Route path="/retirada" element={<InfoRetirada />} />
          <Route path="/perfil" element={<PerfilCliente />} />
           <Route path="/perfilLocal" element={<PerfilLocal />} />
@@ -83,6 +82,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/restaurante/caixa/pagarParcial" element={<PagarParcial />} />
           <Route path="/restaurante/despesas" element={<Despesas />} />
            <Route path="/restaurante/despesas/cadastrodespe" element={<CadDespesa />} />
+            <Route path="/restaurante/Embreve" element={<EmBreve />} />
 
 
 

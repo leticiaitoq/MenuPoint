@@ -37,10 +37,7 @@
   flex-wrap: wrap;
 }
 
-/* ── Chip informativo "Pedidos em aberto" ──────────────────────────────────
-   Propositalmente NÃO parece botão: fundo claro, sem sombra de elevação,
-   sem hover e sem cursor de ponteiro. O objetivo é comunicar "isto é uma
-   informação", diferente do botão "Histórico" ao lado. */
+/* ── Chip informativo "Pedidos em aberto" ────────────────────────────────── */
 .caixa__chip-info {
   display: flex;
   align-items: center;
@@ -81,9 +78,7 @@
   font-weight: 700;
 }
 
-/* ── Botão "Histórico" ──────────────────────────────────────────────────────
-   Este SIM é uma ação: botão sólido, com hover, sombra e cursor de ponteiro —
-   o contraste visual com o chip acima deixa claro o que é clicável. */
+/* ── Botão "Histórico" ────────────────────────────────────────────────────── */
 .caixa__btn-historico {
   background: #c0392b;
   color: #fff;
@@ -98,6 +93,28 @@
 }
 
 .caixa__btn-historico:hover {
+  background: #a53125;
+  transform: translateY(-1px);
+}
+
+/* ── Botão "Adicionar Mesa" (novo) ── */
+.caixa__btn-adicionar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(192, 57, 43, 0.35);
+  transition: background 0.2s, transform 0.15s;
+}
+
+.caixa__btn-adicionar:hover {
   background: #a53125;
   transform: translateY(-1px);
 }
@@ -218,8 +235,6 @@
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
 
-/* Só as mesas com pedido (aberta/fechada) parecem clicáveis.
-   Mesas livres não têm hover no card — a ação fica só no botão "Abrir mesa". */
 .caixa__card--clicavel {
   cursor: pointer;
 }
@@ -413,4 +428,199 @@
 
 .caixa__grid--lista .caixa__card-livre-label {
   flex: 1;
+}
+
+/* ═══════════════════════════════════════════════
+   MIGRADO DE GestaoMesas.css — Modal Adicionar Mesa
+   e Modal QR Code
+═══════════════════════════════════════════════ */
+
+.mesas__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.mesas__modal {
+  background: #fff;
+  border-radius: 14px;
+  width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+.mesas__modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.mesas__modal-header h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.mesas__modal-fechar {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.mesas__modal-fechar:hover {
+  color: #333;
+}
+
+.mesas__modal-corpo {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mesas__modal-info {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.mesas__modal-info strong {
+  color: #333;
+}
+
+.mesas__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mesas__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.mesas__input {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  width: 100px;
+  transition: border 0.2s;
+}
+
+.mesas__input:focus {
+  border-color: #aaa;
+}
+
+.mesas__erro {
+  font-size: 13px;
+  color: #c0392b;
+  margin: 0;
+}
+
+.mesas__modal-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.mesas__btn-cancelar {
+  background: #f0f0f0;
+  color: #555;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mesas__btn-cancelar:hover {
+  background: #ddd;
+}
+
+.mesas__btn-salvar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f58400;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+/* Modal específico do QR Code — largura maior pra caber o código */
+/* Ações do modal de QR — 3 botões não cabem numa linha só, então quebra */
+.mesas__modal--qr .mesas__modal-acoes {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mesas__modal--qr .mesas__btn-cancelar,
+.mesas__modal--qr .mesas__btn-imprimir,
+.mesas__modal--qr .mesas__btn-salvar {
+  flex: 1;
+  min-width: 90px;
+  justify-content: center;
+}
+
+.mesas__modal-corpo--qr {
+  align-items: center;
+  text-align: center;
+}
+
+.mesas__qr-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+}
+
+.mesas__qr-url {
+  font-size: 12px;
+  color: #999;
+  word-break: break-all;
+  margin: 0;
+}
+
+.mesas__btn-imprimir {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0f0f0;
+  color: #555;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mesas__btn-imprimir:hover {
+  background: #ddd;
 }
