@@ -1,0 +1,264 @@
+.perfil {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Card principal */
+.perfil__card {
+  background: #fdf5f5;
+  border-radius: 16px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.perfil__nome {
+  font-size: 28px;
+  font-weight: 800;
+  color: #c0392b;
+  margin: 0;
+  text-align: center;
+}
+
+/* Foto + dados lado a lado */
+.perfil__info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Foto */
+.perfil__foto-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.perfil__foto {
+  width: 130px;
+  height: 130px;
+  align-items: center;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #f0d0cc;
+}
+
+.perfil__foto-btn {
+  font-size: 11px;
+  background: none;
+  border: 1px solid #c0392b;
+  color: #c0392b;
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+/* Dados */
+.perfil__dados {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.perfil__detalhe {
+  font-size: 17px;
+  color: #444;
+  margin: 0;
+}
+
+/* Toggle tema */
+.perfil__tema {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.perfil__toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.perfil__toggle-input { display: none; }
+
+.perfil__toggle-slider {
+  width: 42px;
+  height: 24px;
+  background: #ccc;
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.perfil__toggle-slider::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+  transition: left 0.2s;
+}
+
+.perfil__toggle-input:checked + .perfil__toggle-slider { background: #555; }
+.perfil__toggle-input:checked + .perfil__toggle-slider::after { left: 21px; }
+
+.perfil__tema-icone { font-size: 16px; }
+
+/* Botões */
+.perfil__btn-editar {
+  background: #e8a838;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  width: fit-content;
+  transition: background 0.2s;
+}
+
+.perfil__btn-editar:hover { background: #d4952e; }
+
+/* Form de edição */
+.perfil__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.perfil__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+}
+
+.perfil__input {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+.perfil__acoes-edicao {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.perfil__btn-cancelar {
+  background: #f0f0f0;
+  color: #555;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.perfil__btn-salvar {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Endereços */
+.perfil__enderecos {
+  background: #fdf5f5;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.perfil__enderecos-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: #c0392b;
+  margin: 0 0 14px 0;
+  letter-spacing: 0.5px;
+}
+
+.perfil__enderecos-lista {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.perfil__endereco-card {
+  background: #e8e8e8;
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.perfil__endereco-tipo {
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.perfil__endereco-rua {
+  font-size: 13px;
+  color: #555;
+  margin: 0;
+}
+
+.perfil__endereco-acoes {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.perfil__btn-excluir {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.perfil__btn-excluir:hover { background: #a93226; }
+
+.perfil__btn-editar-end {
+  background: #e8a838;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.perfil__btn-editar-end:hover { background: #d4952e; }

@@ -1,0 +1,309 @@
+.assinatura-pendente-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 24px;
+}
+
+.assinatura-pendente-page__container {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  max-width: 1000px;
+  min-height: 520px;
+  height: auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  background-color: #ffffff;
+}
+
+.assinatura-pendente-page__form-side {
+  flex: 1;
+  padding: 48px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: #ffffff;
+}
+
+.assinatura-pendente-page__icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #fdecea;
+  margin-bottom: 20px;
+}
+
+.assinatura-pendente-page__icon {
+  font-size: 28px;
+  color: #c0392b;
+}
+
+.assinatura-pendente-page__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+}
+
+.assinatura-pendente-page__description {
+  font-size: 14px;
+  color: #888888;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.assinatura-pendente-page__error {
+  color: #c0392b;
+  font-size: 14px;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  background-color: #fdecea;
+  border-radius: 8px;
+  border-left: 3px solid #c0392b;
+}
+
+/* ── Botão principal (link de checkout) ── */
+.assinatura-pendente-page__submit {
+  width: 100%;
+  padding: 14px;
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 4px;
+  text-align: center;
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+.assinatura-pendente-page__submit:hover {
+  background-color: #a93226;
+}
+
+.assinatura-pendente-page__submit--link {
+  text-decoration: none;
+}
+
+.assinatura-pendente-page__hint {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  color: #aaaaaa;
+  margin-top: 16px;
+}
+
+/* ── Cards de plano ── */
+.assinatura-pendente-page__planos {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.assinatura-pendente-page__plano-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  transition: border-color 0.2s;
+}
+
+.assinatura-pendente-page__plano-card:hover {
+  border-color: #c0392b;
+}
+
+.assinatura-pendente-page__plano-nome {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  flex: 1;
+}
+
+.assinatura-pendente-page__plano-valor {
+  font-size: 18px;
+  font-weight: 700;
+  color: #c0392b;
+  white-space: nowrap;
+}
+
+.assinatura-pendente-page__plano-moeda {
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 2px;
+}
+
+.assinatura-pendente-page__plano-periodo {
+  font-size: 12px;
+  font-weight: 500;
+  color: #888888;
+}
+
+.assinatura-pendente-page__plano-btn {
+  padding: 10px 16px;
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.assinatura-pendente-page__plano-btn:hover:not(:disabled) {
+  background-color: #a93226;
+}
+
+.assinatura-pendente-page__plano-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.assinatura-pendente-page__plano-btn--outline {
+  background-color: transparent;
+  color: #c0392b;
+  border: 1.5px solid #c0392b;
+}
+
+.assinatura-pendente-page__plano-btn--outline:hover {
+  background-color: #fdecea;
+}
+
+.assinatura-pendente-page__plano-valor--sob-consulta {
+  font-size: 14px;
+  font-weight: 600;
+  color: #888888;
+  white-space: nowrap;
+}
+
+/* ── Linha divisória + sair ── */
+.assinatura-pendente-page__divider {
+  width: 100%;
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 24px 0 16px;
+}
+
+.assinatura-pendente-page__logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #888888;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  margin: 0 auto;
+  transition: color 0.2s;
+}
+
+.assinatura-pendente-page__logout:hover {
+  color: #c0392b;
+}
+
+/* ── Toast de sucesso (mesmo padrão do VerifyCodePage) ── */
+.assinatura-pendente-page__toast-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: assinatura-pendente-fade-in 0.2s ease;
+}
+
+.assinatura-pendente-page__toast {
+  background: linear-gradient(135deg, #f1c40f, #c0392b, #6b0f1a);
+  padding: 4px;
+  border-radius: 20px;
+  animation: assinatura-pendente-pop-in 0.25s ease;
+}
+
+.assinatura-pendente-page__toast-inner {
+  background-color: #ffffff;
+  border-radius: 17px;
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 260px;
+  box-sizing: border-box;
+}
+
+.assinatura-pendente-page__toast-icon {
+  color: #16a34a;
+  font-size: 48px;
+}
+
+.assinatura-pendente-page__toast-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  text-align: center;
+  margin: 0;
+}
+
+@keyframes assinatura-pendente-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes assinatura-pendente-pop-in {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVIDADE — Mobile (≤ 768px)
+   ══════════════════════════════════════ */
+@media (max-width: 768px) {
+  .assinatura-pendente-page {
+    padding: 0;
+    align-items: flex-start;
+  }
+
+  .assinatura-pendente-page__container {
+    flex-direction: column;
+    border-radius: 0;
+    min-height: 100vh;
+    box-shadow: none;
+  }
+
+  .assinatura-pendente-page__form-side {
+    padding: 32px 24px 40px;
+    flex: 1;
+  }
+
+  .assinatura-pendente-page__title {
+    font-size: 22px;
+  }
+
+  .assinatura-pendente-page__plano-card {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+}

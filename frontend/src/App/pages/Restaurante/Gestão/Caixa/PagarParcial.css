@@ -1,0 +1,339 @@
+.pagar-parcial {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  padding: 8px 0;
+}
+
+/* ═══════════════════════════════════════════════
+   Cabeçalho
+═══════════════════════════════════════════════ */
+.pagar-parcial__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pagar-parcial__voltar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  color: #555;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.pagar-parcial__voltar:hover {
+  background: #fdecea;
+  color: #c0392b;
+}
+
+.pagar-parcial__titulo-pagina {
+  font-size: 22px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.pagar-parcial__subtitulo-pagina {
+  font-size: 13px;
+  color: #888;
+  margin: 4px 0 0;
+}
+
+/* ═══════════════════════════════════════════════
+   Corpo — duas colunas
+═══════════════════════════════════════════════ */
+.pagar-parcial__corpo {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.pagar-parcial__card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pagar-parcial__card--itens {
+  flex: 1.3;
+  min-width: 0;
+}
+
+.pagar-parcial__card--pagamento {
+  flex: 1;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Coluna esquerda: abas + itens ── */
+.pagar-parcial__tabs {
+  display: flex;
+  gap: 20px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 8px;
+}
+
+.pagar-parcial__tab {
+  padding: 8px 2px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #999;
+}
+
+.pagar-parcial__tab--ativa {
+  color: #c0392b;
+  border-bottom: 2px solid #c0392b;
+}
+
+.pagar-parcial__lista-itens {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pagar-parcial__item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f2f2f2;
+  font-size: 14px;
+}
+
+.pagar-parcial__item:last-child {
+  border-bottom: none;
+}
+
+.pagar-parcial__item-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.pagar-parcial__checkbox {
+  width: 17px;
+  height: 17px;
+  accent-color: #c0392b;
+  cursor: pointer;
+}
+
+.pagar-parcial__item-nome {
+  color: #333;
+}
+
+.pagar-parcial__item-qtd {
+  color: #999;
+}
+
+.pagar-parcial__item-preco {
+  color: #333;
+  font-weight: 600;
+  min-width: 80px;
+  text-align: right;
+}
+
+.pagar-parcial__resumo-itens {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #eee;
+  font-size: 14px;
+  color: #555;
+}
+
+/* ── Coluna direita: divisão do pagamento ── */
+.pagar-parcial__titulo {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.pagar-parcial__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #555;
+}
+
+.pagar-parcial__linha--destaque {
+  background: #fdecea;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.pagar-parcial__subtitulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 4px;
+}
+
+.pagar-parcial__formas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pagar-parcial__forma {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+  gap: 10px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.pagar-parcial__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+}
+
+.pagar-parcial__campo select,
+.pagar-parcial__campo input {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #333;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.pagar-parcial__campo select:focus,
+.pagar-parcial__campo input:focus {
+  border-color: #c0392b;
+}
+
+.pagar-parcial__campo-valor {
+  position: relative;
+}
+
+.pagar-parcial__campo-valor input {
+  width: 100%;
+}
+
+.pagar-parcial__percentual {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: #999;
+  font-style: normal;
+  pointer-events: none;
+}
+
+.pagar-parcial__remover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  color: #c0392b;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pagar-parcial__remover:hover {
+  background: #fdecea;
+}
+
+.pagar-parcial__adicionar {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #c0392b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 2px;
+}
+
+.pagar-parcial__adicionar:hover {
+  text-decoration: underline;
+}
+
+.pagar-parcial__linha--total {
+  padding-top: 14px;
+  border-top: 1px solid #eee;
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+}
+
+.pagar-parcial__total-valor {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.pagar-parcial__total-valor em {
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+  font-style: normal;
+}
+
+.pagar-parcial__aviso {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c0392b;
+  background: #fdecea;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.pagar-parcial__concluir {
+  background: #8f1f16;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pagar-parcial__concluir:hover:not(:disabled) {
+  background: #711509;
+}
+
+.pagar-parcial__concluir:disabled {
+  background: #e6b3ac;
+  cursor: not-allowed;
+}
+

@@ -1,0 +1,34 @@
+@host = http://localhost:3333/api/v1
+
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyN2MwNGI1Zi04NzViLTRkZmEtYmVkMy1hNWFiNjg2NTYwYmIiLCJub21lIjoiQWRtaW5nbG9iYWwiLCJlbWFpbCI6ImFkbWluZ2xvYmFsQGVtYWlsLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiZXNjb3BvIjoiR0xPQkFMIiwiZXN0YWJlbGVjaW1lbnRvX2lkIjoiMTIwZDNjMWMtZmI5Yi00MGQ0LWJlYjItNzU5M2IzMzhiODBlIiwiZW1wcmVzYV9pZCI6bnVsbCwiaWF0IjoxNzgwMzE2NDMwLCJleHAiOjE3ODA5MjEyMzB9.2YoZw6ywHBF17R9pc_50XgTzFFOj4goCZKK5nXjQwCI
+@estabelecimento_id = 120d3c1c-fb9b-40d4-beb2-7593b338b80e
+
+### Buscar cardápio público pelo slug (sem token)
+GET {{host}}/estabelecimentos/publico/estabelecimento-padrao
+
+###
+
+GET {{host}}/estabelecimentos
+Authorization: Bearer {{token}}
+
+###
+
+### Buscar estabelecimento por ID
+GET {{host}}/estabelecimentos/{{estabelecimento_id}}
+Authorization: Bearer {{token}}
+
+###
+
+### Atualizar estabelecimento
+PUT {{host}}/estabelecimentos/{{estabelecimento_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Meu Restaurante2",
+  "taxa_entrega": 5.90,
+  "pedido_minimo": 30.00,
+  "tempo_entrega_min": 25,
+  "tempo_entrega_max": 45,
+  "tema": "ESCURO"
+}

@@ -1,0 +1,313 @@
+.cadprod {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  padding: 8px 0;
+}
+
+/* Cabeçalho */
+.cadprod__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.cadprod__titulo {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.cadprod__breadcrumb {
+  font-size: 13px;
+  color: #999;
+  margin: 4px 0 0 0;
+}
+
+.cadprod__breadcrumb strong { color: #555; }
+
+.cadprod__header-acoes {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.cadprod__btn-cancelar {
+  background: #e0e0e0;
+  color: #555;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cadprod__btn-cancelar:hover { background: #ccc; }
+
+.cadprod__btn-salvar {
+  background: #e8a838;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cadprod__btn-salvar:hover { background: #d4952e; }
+
+/* Card principal — duas colunas */
+.cadprod__card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 40px;
+}
+
+/* Campos */
+.cadprod__col-esquerda,
+.cadprod__col-direita {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cadprod__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cadprod__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.cadprod__input,
+.cadprod__select,
+.cadprod__textarea {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  color: #333;
+  transition: border 0.2s;
+}
+
+.cadprod__input:focus,
+.cadprod__select:focus,
+.cadprod__textarea:focus { border-color: #aaa; }
+
+.cadprod__textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.cadprod__input--mini {
+  padding: 5px 8px;
+  font-size: 13px;
+  width: 100px;
+}
+
+/* Linha categoria + preço */
+.cadprod__linha {
+  display: flex;
+  gap: 16px;
+}
+
+.cadprod__linha .cadprod__campo { flex: 1; }
+
+/* Toggle */
+.cadprod__toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cadprod__toggle-input { display: none; }
+
+.cadprod__toggle-slider {
+  width: 42px;
+  height: 24px;
+  background: #ccc;
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.cadprod__toggle-slider::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+  transition: left 0.2s;
+}
+
+.cadprod__toggle-input:checked + .cadprod__toggle-slider { background: #27ae60; }
+.cadprod__toggle-input:checked + .cadprod__toggle-slider::after { left: 21px; }
+
+/* Checkbox destaque */
+.cadprod__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+}
+
+/* Erro */
+.cadprod__erro {
+  color: #c0392b;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Foto */
+.cadprod__foto-wrap {
+  width: 100%;
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cadprod__foto-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cadprod__foto-placeholder {
+  font-size: 13px;
+  color: #bbb;
+}
+
+.cadprod__btn-foto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cadprod__btn-foto:hover { background: #ebebeb; }
+
+/* Chips de categorias */
+.cadprod__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.cadprod__chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #fdecea;
+  color: #c0392b;
+  border: 1px solid #f5c6c2;
+}
+
+.cadprod__chip-novo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  background: #f5f5f5;
+  color: #555;
+  border: 1px dashed #ccc;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cadprod__chip-novo:hover { background: #ebebeb; }
+
+.cadprod__nova-cat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cadprod__chip-confirmar {
+  background: #27ae60;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.cadprod__popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.cadprod__popup {
+  background: #fff;
+  border-radius: 16px;
+  padding: 36px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  max-width: 360px;
+  text-align: center;
+}
+
+.cadprod__popup-icon { font-size: 48px; }
+
+.cadprod__popup h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.cadprod__popup p {
+  font-size: 14px;
+  color: #777;
+  margin: 0;
+}

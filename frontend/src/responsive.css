@@ -1,0 +1,1128 @@
+/* ============================================================
+   MenuPoint — Responsividade Global
+   Arquivo único: adicione no index.css ou importe no App.tsx
+   Cobre: Auth (Login, Register, Recover), Layouts, Navbar,
+          Sidebar, Home Restaurante, Menu Cliente, Pedido,
+          Carrinho, Welcome Pages
+   ============================================================ */
+
+/* ──────────────────────────────────────────────────────────
+   VARIÁVEIS GLOBAIS
+────────────────────────────────────────────────────────── */
+:root {
+  --mp-red: #c0392b;
+  --mp-red-dark: #a93226;
+  --mp-yellow: #f1c40f;
+  --mp-bg: #ececec;
+  --mp-white: #ffffff;
+  --mp-sidebar-w: 200px;
+  --mp-sidebar-icon-w: 72px;
+  --mp-navbar-h: 80px;
+}
+
+/* ──────────────────────────────────────────────────────────
+   1. AUTH PAGES — LOGIN / REGISTER / RECOVER
+   Layout mobile-first: card vertical (como imagem 1)
+   Desktop: split horizontal (como imagem 2)
+────────────────────────────────────────────────────────── */
+
+/* --- Containers de página auth --- */
+.login-page,
+.register-page,
+.recover-pass {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 16px;
+}
+
+/* Container principal: coluna no mobile, linha no desktop */
+.login-page__container,
+.register-page__container,
+.recover-pass__container {
+  display: flex;
+  width: 100%;
+  max-width: 1000px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.22);
+  background-color: var(--mp-white);
+
+  /* Mobile: coluna — AuthCard em cima, formulário embaixo */
+  flex-direction: column;
+  min-height: unset;
+}
+
+/* ── AuthCard desktop (painel esquerdo do split) ──
+   Visível apenas em ≥ 769px — controlado pelos @media abaixo
+────────────────────────────────────────────────────────── */
+.auth-card {
+  flex: 0 0 44%;
+  overflow: hidden;
+  align-self: stretch;
+  border-radius: 20px 0 0 20px;
+  display: none; /* escondido no mobile */
+}
+
+.auth-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ──────────────────────────────────────────────────────────
+   AUTH CARD MOBILE — estilos em AuthCard.css
+   (fonte Bukhari Script, gradiente, logo e nome)
+   Os breakpoints de show/hide ficam em AuthCard.css
+────────────────────────────────────────────────────────── */
+
+/* ── Lado do formulário ── */
+.login-page__form-side,
+.register-page__form-side,
+.recover-pass__form-side {
+  flex: 1;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: var(--mp-white);
+}
+
+/* ── Títulos ── */
+.login-page__title,
+.register-page__title,
+.recover-pass__title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 22px;
+}
+
+.recover-pass__title {
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 32px;
+}
+
+/* ── Formulários ── */
+.login-page__form,
+.register-page__form,
+.recover-pass__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+/* ── Campos ── */
+.login-page__field,
+.register-page__field,
+.recover-pass__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+/* No mobile, campos de senha lado a lado viram coluna */
+.register-page__field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Inputs ── */
+.login-page__input,
+.register-page__input,
+.recover-pass__input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #1a1a1a;
+  background-color: #fafafa;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  /* touch-friendly */
+  min-height: 48px;
+}
+
+.login-page__input:focus,
+.register-page__input:focus,
+.recover-pass__input:focus {
+  border-color: var(--mp-red);
+}
+
+/* ── Botão principal ── */
+.login-page__submit,
+.register-page__submit,
+.recover-pass__submit {
+  width: 100%;
+  padding: 14px;
+  background-color: var(--mp-red);
+  color: var(--mp-white);
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 4px;
+  min-height: 50px;
+  letter-spacing: 0.3px;
+}
+
+.login-page__submit:hover,
+.register-page__submit:hover,
+.recover-pass__submit:hover {
+  background-color: var(--mp-red-dark);
+}
+
+/* ── Textos de navegação ── */
+.login-page__forgot {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+  margin-top: 8px;
+  padding: 4px;
+  width: 100%;
+}
+
+.login-page__redirect,
+.register-page__redirect,
+.recover-pass__redirect {
+  text-align: center;
+  font-size: 14px;
+  color: #888;
+  margin: 0;
+}
+
+.login-page__redirect-link,
+.register-page__redirect-link,
+.recover-pass__redirect-link {
+  background: none;
+  border: none;
+  color: var(--mp-red);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.login-page__divider,
+.recover-pass__divider {
+  width: 100%;
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 14px 0;
+}
+
+/* ──────────────────────────────────────────────────────────
+   2. NAVBAR
+────────────────────────────────────────────────────────── */
+.navbar {
+  width: 100%;
+  height: var(--mp-navbar-h);
+  padding: 0 16px;
+  background: linear-gradient(to right, #490e24, #f35e61, #ffe385);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 100;
+}
+
+.navbar__logo {
+  font-size: 24px;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--mp-yellow);
+  text-decoration: underline;
+  line-height: 1.1;
+}
+
+.navbar__subtitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mp-white);
+  margin-top: 2px;
+}
+
+.navbar__icon {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.navbar__icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ──────────────────────────────────────────────────────────
+   3. LAYOUTS DE RESTAURANTE E CLIENTE
+────────────────────────────────────────────────────────── */
+.restaurant-layout,
+.customer-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--mp-bg);
+}
+
+.restaurant-layout__body,
+.customer-layout__body {
+  flex: 1;
+  display: flex;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* No mobile, body vira coluna com sidebar embaixo como bottom nav */
+  flex-direction: row;
+}
+
+.restaurant-layout__content,
+.customer-layout__content {
+  flex: 1;
+  padding: 20px 16px;
+  overflow-y: auto;
+}
+
+/* ──────────────────────────────────────────────────────────
+   4. SIDEBAR RESTAURANTE
+────────────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--mp-sidebar-w);
+  background-color: #dddcdcf1;
+  padding: 24px 0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-radius: 0 40px 40px 0;
+  transition: width 0.25s ease;
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  text-decoration: none;
+  color: #888;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar__item:hover { color: var(--mp-red); }
+.sidebar__item.active { color: var(--mp-red); font-weight: 700; }
+
+.sidebar__icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.sidebar__item--bottom { margin-top: auto; }
+
+/* ──────────────────────────────────────────────────────────
+   5. SIDEBAR CLIENTE (ícones)
+────────────────────────────────────────────────────────── */
+.customer-sidebar {
+  width: var(--mp-sidebar-icon-w);
+  min-height: 100%;
+  background-color: #f5f5f5;
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: 0 40px 40px 0;
+}
+
+.customer-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.customer-sidebar__item {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: none;
+  background: none;
+  text-decoration: none;
+  color: #bbb;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.customer-sidebar__item:hover { background-color: #ebebeb; color: var(--mp-red); }
+.customer-sidebar__item.active { background-color: #fdecea; color: var(--mp-red); }
+.customer-sidebar__icon { font-size: 24px; }
+
+/* ──────────────────────────────────────────────────────────
+   6. HOME RESTAURANTE
+────────────────────────────────────────────────────────── */
+.home-rest {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  padding: 8px 0;
+}
+
+.home-rest__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+/* Grid 2×2 — vira 1 coluna no mobile */
+.home-rest__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  width: 100%;
+}
+
+.home-rest__card {
+  background-color: #ffffffc9;
+  border: none;
+  border-radius: 20px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  position: relative;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  min-height: 120px;
+  cursor: pointer;
+  text-align: left;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.home-rest__card:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.13); transform: translateY(-2px); }
+
+.home-rest__card-icon { font-size: 28px; }
+.home-rest__card-icon--red { color: var(--mp-red); }
+.home-rest__card-icon--yellow { color: #e6a817; }
+.home-rest__card-icon--green { color: #27ae60; }
+
+.home-rest__card-value { font-size: 20px; font-weight: 600; color: var(--mp-red); }
+.home-rest__card-sub { font-size: 13px; color: #888; font-weight: 400; }
+
+.home-rest__card-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background-color: #e6a817;
+  color: var(--mp-white);
+  font-size: 16px;
+  font-weight: 700;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-rest__alert {
+  background-color: var(--mp-white);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.home-rest__alert-icon { font-size: 24px; color: #e6a817; flex-shrink: 0; }
+
+.home-rest__alert span {
+  font-size: 15px;
+  font-weight: 500;
+  color: #555;
+}
+
+/* ──────────────────────────────────────────────────────────
+   7. MENU CLIENTE
+────────────────────────────────────────────────────────── */
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 80px; /* espaço para FAB */
+  background-repeat: repeat-y;
+  background-size: 100% auto;
+  margin: -20px -16px;
+  padding: 20px 16px;
+  box-sizing: border-box;
+}
+
+.menu__busca-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #e0e0e0;
+  border-radius: 30px;
+  padding: 10px 18px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.menu__busca-icon { font-size: 18px; color: #888; flex-shrink: 0; }
+.menu__busca {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 16px;
+  color: #333;
+  width: 100%;
+  min-height: 28px;
+}
+
+.menu__categorias {
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.menu__categorias::-webkit-scrollbar { display: none; }
+
+.menu__cat-btn {
+  width: 68px;
+  height: 68px;
+  min-width: 68px;
+  border-radius: 18px;
+  border: none;
+  background-color: var(--mp-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+
+.menu__cat-icon { font-size: 28px; }
+.menu__cat-btn--ativo { background-color: #fdecea; box-shadow: 0 0 0 2px var(--mp-red); }
+
+/* Grid de produtos: 3 colunas → 2 → 1 */
+.menu__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.menu__card {
+  background-color: var(--mp-white);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.menu__card-img { width: 100%; height: 160px; object-fit: cover; }
+.menu__card-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
+.menu__card-nome { font-size: 15px; font-weight: 700; color: #222; margin: 0; }
+.menu__card-desc { font-size: 12px; color: #666; margin: 0; line-height: 1.4; flex: 1; }
+
+.menu__card-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.menu__card-preco { font-size: 20px; font-weight: 800; color: var(--mp-red); }
+
+.menu__card-add {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--mp-red);
+  color: var(--mp-white);
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s, transform 0.15s;
+}
+
+.menu__card-add:hover { background-color: var(--mp-red-dark); transform: scale(1.08); }
+.menu__card-add:active { transform: scale(0.95); }
+
+/* FAB carrinho */
+.menu__carrinho-fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--mp-red);
+  color: var(--mp-white);
+  border: none;
+  font-size: 26px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  z-index: 99;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.menu__carrinho-fab:hover { transform: scale(1.08); background-color: var(--mp-red-dark); }
+
+.menu__carrinho-fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: var(--mp-white);
+  color: var(--mp-red);
+  font-size: 11px;
+  font-weight: 700;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--mp-red);
+}
+
+/* Modal tipo pedido */
+.mtp__overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,0.55);
+  z-index: 200;
+  cursor: pointer;
+}
+
+.mtp__modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 201;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  width: 90%;
+  max-width: 560px;
+}
+
+.mtp__card {
+  background-color: var(--mp-red);
+  border: none;
+  border-radius: 20px;
+  flex: 1;
+  max-width: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  cursor: pointer;
+  padding: 20px 16px;
+  transition: background-color 0.2s, transform 0.15s;
+}
+
+.mtp__card-img { width: 120px; height: 120px; object-fit: contain; }
+.mtp__card-label { font-size: 28px; font-weight: 800; color: var(--mp-white); text-align: center; }
+
+/* ──────────────────────────────────────────────────────────
+   8. PEDIDO (RESTAURANTE)
+────────────────────────────────────────────────────────── */
+.pedido__card {
+  background-color: var(--mp-white);
+  border-radius: 16px;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.pedido__linha {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.pedido__rodape {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pedido__acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+  flex-wrap: wrap;
+}
+
+/* Tabela responsiva */
+.pedido__tabela-wrap {
+  border-radius: 8px;
+  overflow-x: auto;
+  border: 1px solid #eee;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pedido__tabela { width: 100%; min-width: 480px; border-collapse: collapse; }
+
+/* ──────────────────────────────────────────────────────────
+   9. FOOTER
+────────────────────────────────────────────────────────── */
+.footer {
+  width: 100%;
+  padding: 12px 0;
+  background: linear-gradient(to right, #490e24, #f35e61, #ffe385);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer__text {
+  color: var(--mp-white);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-align: center;
+  padding: 0 16px;
+}
+
+/* ──────────────────────────────────────────────────────────
+   10. CARRINHO (drawer lateral ou modal)
+────────────────────────────────────────────────────────── */
+/* Garante que o drawer do carrinho não extrapole a tela */
+[class*="carrinho"] {
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+/* ──────────────────────────────────────────────────────────
+   BREAKPOINTS — TABLET (≤ 768px)
+────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* ── Auth: layout de login estilo imagem 1 (mobile card) ── */
+  .login-page,
+  .register-page,
+  .recover-pass {
+    padding: 0;
+    align-items: flex-start;
+    background-color: #c0392b; /* fallback enquanto imagem carrega */
+  }
+
+  .login-page__container,
+  .register-page__container,
+  .recover-pass__container {
+    flex-direction: column;
+    min-height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+    max-width: 100%;
+  }
+
+  /* Topo mobile: mostra o header com gradiente+logo+nome */
+  .auth-card-mobile {
+    display: flex;
+  }
+
+  /* Esconde o card desktop */
+  .auth-card {
+    display: none;
+  }
+
+  /* Formulário ocupa o resto */
+  .login-page__form-side,
+  .register-page__form-side,
+  .recover-pass__form-side {
+    padding: 28px 24px 40px;
+    flex: 1;
+    border-radius: 0;
+  }
+
+  /* Campos de senha lado a lado → coluna */
+  .register-page__field-row {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* ── Navbar: logo menor ── */
+  .navbar {
+    height: 64px;
+  }
+  .navbar__logo { font-size: 20px; }
+  .navbar__icon { width: 64px; height: 64px; }
+
+  /* ── Sidebar restaurante → bottom navigation ── */
+  .restaurant-layout__body {
+    flex-direction: column;
+    position: relative;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    border-radius: 20px 20px 0 0;
+    padding: 8px 0 env(safe-area-inset-bottom);
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    background-color: #e8e8e8f5;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.10);
+  }
+
+  .sidebar__nav {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    width: 100%;
+    gap: 0;
+    padding: 4px 8px;
+  }
+
+  .sidebar__item {
+    flex-direction: column;
+    padding: 8px 12px;
+    gap: 4px;
+    font-size: 10px;
+    text-align: center;
+    border-radius: 12px;
+    white-space: normal;
+  }
+
+  .sidebar__icon { font-size: 22px; }
+
+  /* Esconde subitems no mobile */
+  .sidebar__subitems { display: none; }
+
+  .sidebar__item--bottom { margin-top: 0; }
+
+  /* Adiciona padding na área de conteúdo para não ficar atrás da bottom nav */
+  .restaurant-layout__content {
+    padding-bottom: 90px;
+  }
+
+  /* ── Sidebar cliente: também vira bottom nav ── */
+  .customer-layout__body {
+    flex-direction: column;
+  }
+
+  .customer-sidebar {
+    width: 100%;
+    height: auto;
+    min-height: unset;
+    border-radius: 20px 20px 0 0;
+    padding: 8px 0 env(safe-area-inset-bottom);
+    flex-direction: row;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    background-color: #f5f5f5;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+  }
+
+  .customer-sidebar__nav {
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+    padding: 4px 8px;
+    gap: 0;
+  }
+
+  .customer-sidebar__item {
+    width: 52px;
+    height: 52px;
+  }
+
+  .customer-layout__content {
+    padding-bottom: 90px;
+  }
+
+  /* FAB carrinho — reposicionado para não conflitar com bottom nav */
+  .menu__carrinho-fab {
+    bottom: 80px;
+    right: 16px;
+  }
+
+  /* ── Home restaurante: grid 1 coluna ── */
+  .home-rest__grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Menu cliente: grid 2 colunas ── */
+  .menu__grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .menu__card-img { height: 130px; }
+
+  /* Modal tipo pedido — colunas empilhadas */
+  .mtp__modal {
+    flex-direction: column;
+    gap: 12px;
+    width: 85%;
+  }
+
+  .mtp__card { max-width: 100%; width: 100%; }
+  .mtp__card-img { width: 100px; height: 100px; }
+  .mtp__card-label { font-size: 24px; }
+
+  /* ── Pedido: simplifica layout ── */
+  .pedido__linha,
+  .pedido__rodape {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pedido__acoes {
+    justify-content: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .pedido__btn-salvar,
+  .pedido__btn-cancelar {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   BREAKPOINTS — MOBILE PEQUENO (≤ 480px)
+────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+
+  /* Menu: 1 coluna no celular pequeno */
+  .menu__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .menu__card-img { height: 180px; }
+
+  /* Navbar título menor */
+  .navbar__subtitle { display: none; }
+  .navbar__icon { width: 56px; height: 56px; }
+
+  /* Home cards menores */
+  .home-rest__card { padding: 20px 16px; }
+  .home-rest__card-value { font-size: 18px; }
+
+  /* Título do pedido */
+  .pedido__titulo { font-size: 20px; }
+
+  /* Popup de sucesso full-width */
+  .pedido__popup {
+    margin: 16px;
+    padding: 28px 20px;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   DESKTOP GRANDE (≥ 1024px) — Restaura layout horizontal
+────────────────────────────────────────────────────────── */
+@media (min-width: 769px) {
+
+  /* Auth: layout split (imagem 2) */
+  .login-page__container,
+  .register-page__container,
+  .recover-pass__container {
+    flex-direction: row;
+    min-height: 520px;
+  }
+
+  /* Desktop: mostra o card com imagem, esconde o header mobile */
+  .auth-card {
+    display: block;
+    flex: 0 0 44%;
+    height: auto;
+    border-radius: 20px 0 0 20px;
+  }
+
+  .auth-card-mobile {
+    display: none;
+  }
+
+  .login-page__form-side,
+  .register-page__form-side,
+  .recover-pass__form-side {
+    padding: 48px 40px;
+  }
+
+  /* Campos de senha lado a lado */
+  .register-page__field-row {
+    flex-direction: row;
+  }
+
+  /* Sidebar restaurante lateral */
+  .restaurant-layout__body {
+    flex-direction: row;
+  }
+
+  .sidebar {
+    position: static;
+    width: var(--mp-sidebar-w);
+    height: auto;
+    flex-direction: column;
+    border-radius: 0 40px 40px 0;
+    padding: 24px 0;
+    box-shadow: none;
+  }
+
+  .sidebar__nav {
+    flex-direction: column;
+    padding: 0;
+    gap: 12px;
+  }
+
+  .sidebar__item {
+    flex-direction: row;
+    font-size: 15px;
+    padding: 10px 20px;
+  }
+
+  .sidebar__subitems { display: flex; }
+  .sidebar__item--bottom { margin-top: auto; }
+
+  .restaurant-layout__content {
+    padding: 24px;
+    padding-bottom: 24px;
+  }
+
+  /* Sidebar cliente lateral */
+  .customer-layout__body {
+    flex-direction: row;
+  }
+
+  .customer-sidebar {
+    position: static;
+    width: var(--mp-sidebar-icon-w);
+    min-height: 100%;
+    height: auto;
+    border-radius: 0 40px 40px 0;
+    flex-direction: column;
+    padding: 16px 0;
+    box-shadow: none;
+  }
+
+  .customer-sidebar__nav {
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 0;
+    gap: 8px;
+  }
+
+  .customer-layout__content {
+    padding: 24px;
+    padding-bottom: 24px;
+  }
+
+  /* FAB volta ao canto superior direito */
+  .menu__carrinho-fab {
+    top: calc(var(--mp-navbar-h) + 6px);
+    right: 35px;
+    bottom: auto;
+  }
+
+  /* Menu grid: 3 colunas */
+  .menu__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Home grid: 2 colunas */
+  .home-rest__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Pedido layout normal */
+  .pedido__linha,
+  .pedido__rodape {
+    flex-direction: row;
+  }
+
+  .pedido__acoes {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   TOQUE E ACESSIBILIDADE
+────────────────────────────────────────────────────────── */
+@media (hover: none) {
+  /* Remove hover states em touch screens para evitar sticky hover */
+  .home-rest__card:hover,
+  .menu__card:hover,
+  .menu__cat-btn:hover {
+    transform: none;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+}
+
+/* Área segura para dispositivos com notch */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) {
+    .sidebar,
+    .customer-sidebar {
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+  }
+}

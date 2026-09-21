@@ -1,0 +1,102 @@
+@host = http://localhost:3333/api/v1
+
+# Depois de rodar "Criar assinatura", cola o id retornado aqui
+@assinatura_id = COLE_O_ID_AQUI
+
+
+### 1 — Listar planos disponíveis (sem autenticação)
+GET {{host}}/assinatura/planos
+
+
+###
+
+
+### 2 — Criar assinatura Básico
+# Retorna um "init_point" — abre a URL no navegador para ver o checkout
+POST {{host}}/assinatura/criar
+Content-Type: application/json
+
+{
+  "plan_id": "01e36c02b42e4b158ea538d3c692770b",
+  "email": "teste@teste.com"
+}
+
+
+###
+
+
+### 3 — Criar assinatura Pro
+POST {{host}}/assinatura/criar
+Content-Type: application/json
+
+{
+  "plan_id": "01c20d4f59594546a568a8b2a5129323",
+  "email": "teste@teste.com"
+}
+
+
+###
+
+
+### 4 — Simular webhook do Mercado Pago (assinatura aprovada)
+# Troque @assinatura_id pelo id retornado na criação acima
+POST {{host}}/assinatura/webhook
+Content-Type: application/json
+
+{
+  "type": "subscription_preapproval",
+  "data": {
+    "id": "01c20d4f59594546a568a8b2a5129323"
+  }
+}
+
+
+###
+
+### Simular webhook tipo ignorado (não chama o MP)
+POST http://localhost:3333/api/v1/assinatura/webhook
+Content-Type: application/json
+
+{
+  "type": "payment",
+  "data": {
+    "id": "qualquer"
+  }
+}
+
+###
+
+
+### 5 — Simular webhook — tipo ignorado (deve retornar { ignorado: true })
+POST {{host}}/assinatura/webhook
+Content-Type: application/json
+
+{
+  "type": "payment",
+  "data": {
+    "id": "qualquer"
+  }
+}
+
+
+###
+
+
+### 6 — Validação: body vazio (deve retornar erro 400)
+POST {{host}}/assinatura/criar
+Content-Type: application/json
+
+{}
+
+
+###
+
+
+### 7 — Validação: e-mail inválido (deve retornar erro 400)
+POST {{host}}/assinatura/criar
+Content-Type: application/json
+
+{
+  "plan_id": "68070d05852a4886834463e8ca318441",
+  "email": "isso-nao-e-um-email"
+}
