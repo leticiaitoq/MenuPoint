@@ -621,7 +621,7 @@ const RegisterPage: React.FC = () => {
                 error={erros.numero} layout={span(3, 5, 12)}>
                 <input id="rp-numero" type="text" className="register-page__input"
                   placeholder="Ex: 123" value={numero}
-                  onChange={(e) => { setNumero(e.target.value.replace(/[^\w/\-]/g, '')); limparErro('numero'); }}
+                  onChange={(e) => { setNumero(e.target.value.replace(/[^\w/-]/g, '')); limparErro('numero'); }}
                   maxLength={10} aria-invalid={!!erros.numero} />
               </Field>
 
