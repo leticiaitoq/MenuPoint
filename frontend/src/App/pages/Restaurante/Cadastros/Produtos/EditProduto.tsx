@@ -1,53 +1,100 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { HiUpload } from 'react-icons/hi';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
+import CategoriaService, { Categoria } from '../../../../services/categoria.service';
+import ProdutoService from '../../../../services/produto.service';
 import './EditProduto.css';
 
 // ── Tipos
 interface FormEdicao {
   nome: string;
   descricao: string;
-  categoria: string;
+  categoria_id: string;
   preco: string;
-  estoqueIlimitado: boolean;
-  quantidadeEstoque: string;
   disponivel: boolean;
   imagemPreview: string;
   imagem: File | null;
 }
 
-const CATEGORIAS = ['Entradas', 'Pratos Principais', 'Bebidas', 'Sobremesas'];
-
-// ── Mock do produto carregado (substituir por chamada à API usando o id)
-const PRODUTO_MOCK: FormEdicao = {
-  nome:              'Pizza Calabresa',
-  descricao:         'Deliciosa pizza de calabresa com queijo derretido e cebola.',
-  categoria:         'Pratos Principais',
-  preco:             'R$ 49,90',
-  estoqueIlimitado:  false,
-  quantidadeEstoque: '20',
-  disponivel:        true,
-  imagemPreview:     '/images/pizza.png',
-  imagem:            null,
+const FORM_VAZIO: FormEdicao = {
+  nome:          '',
+  descricao:     '',
+  categoria_id:  '',
+  preco:         '',
+  disponivel:    true,
+  imagemPreview: '',
+  imagem:        null,
 };
+
+const precoParaNumero = (preco: string): number =>
+  Number(preco.replace(/[^\d,]/g, '').replace(',', '.'));
+
+const formatarPreco = (valor: number): string =>
+  `R$ ${valor.toFixed(2).replace('.', ',')}`;
 
 const EditProduto: React.FC = () => {
   const navigate  = useNavigate();
   const { id }    = useParams(); // id vindo da rota /editar/:id
   const fotoRef   = useRef<HTMLInputElement>(null);
 
-  // Carrega o mock — futuramente buscar da API pelo id
-  const [form, setForm]     = useState<FormEdicao>(PRODUTO_MOCK);
-  const [erro, setErro]     = useState('');
+  const [form, setForm]     = useState<FormEdicao>(FORM_VAZIO);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [erro, setErro]       = useState('');
   const [sucesso, setSucesso] = useState(false);
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando]     = useState(false);
+
+  // ── Carrega o produto real e as categorias do estabelecimento
+  useEffect(() => {
+    if (!id) {
+      setErro('Produto não informado.');
+      setCarregando(false);
+      return;
+    }
+
+    (async () => {
+      try {
+        const [produto, listaCategorias] = await Promise.all([
+          ProdutoService.buscarPorId(id),
+          CategoriaService.listar(),
+        ]);
+
+        setCategorias(listaCategorias);
+        setForm({
+          nome:          produto.nome,
+          descricao:     produto.descricao ?? '',
+          categoria_id:  produto.categoria_id,
+          preco:         formatarPreco(produto.preco),
+          disponivel:    produto.disponivel,
+          imagemPreview: produto.imagem_url ?? '',
+          imagem:        null,
+        });
+      } catch (err: any) {
+        setErro(err?.response?.data?.message ?? 'Não foi possível carregar o produto.');
+      } finally {
+        setCarregando(false);
+      }
+    })();
+  }, [id]);
 
   const atualizarForm = (campo: Partial<FormEdicao>) =>
     setForm((prev) => ({ ...prev, ...campo }));
 
-const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const arquivo = e.target.files?.[0];
     if (!arquivo) return;
+
+    if (!['image/png', 'image/jpeg', 'image/jpg'].includes(arquivo.type)) {
+      setErro('A imagem deve ser JPG ou PNG.');
+      return;
+    }
+    if (arquivo.size > 5 * 1024 * 1024) {
+      setErro('A imagem deve ter no máximo 5MB.');
+      return;
+    }
+
+    setErro('');
     atualizarForm({
       imagem: arquivo,
       imagemPreview: URL.createObjectURL(arquivo),
@@ -61,19 +108,51 @@ const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     atualizarForm({ preco: formatado });
   };
 
-  const handleSalvar = () => {
-    if (!form.nome.trim())     { setErro('Informe o nome do produto.'); return; }
-    if (!form.categoria)       { setErro('Selecione uma categoria.'); return; }
-    if (!form.preco)           { setErro('Informe o preço.'); return; }
-    if (!form.estoqueIlimitado && !form.quantidadeEstoque) {
-      setErro('Informe a quantidade em estoque.');
-      return;
-    }
+  const handleSalvar = async () => {
+    if (!id) return;
+
+    if (!form.nome.trim())  { setErro('Informe o nome do produto.'); return; }
+    if (!form.categoria_id) { setErro('Selecione uma categoria.'); return; }
+
+    const preco = precoParaNumero(form.preco);
+    if (!form.preco || !(preco > 0)) { setErro('Informe um preço válido.'); return; }
 
     setErro('');
-    console.log({ id, ...form }); // substituir por chamada à API
-    setSucesso(true);
+    setSalvando(true);
+
+    try {
+      let imagem_url: string | undefined;
+
+      if (form.imagem) {
+        imagem_url = await ProdutoService.uploadImagem(form.imagem);
+      }
+
+      await ProdutoService.atualizar(id, {
+        nome: form.nome.trim(),
+        descricao: form.descricao.trim() || undefined,
+        categoria_id: form.categoria_id,
+        preco,
+        disponivel: form.disponivel,
+        ...(imagem_url && { imagem_url }),
+      });
+
+      setSucesso(true);
+    } catch (err: any) {
+      setErro(err?.response?.data?.message ?? 'Não foi possível salvar as alterações.');
+    } finally {
+      setSalvando(false);
+    }
   };
+
+  if (carregando) {
+    return (
+      <RestaurantLayout>
+        <div className="editprod">
+          <p>Carregando produto...</p>
+        </div>
+      </RestaurantLayout>
+    );
+  }
 
   return (
     <RestaurantLayout>
@@ -117,7 +196,7 @@ const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
               <input
                 ref={fotoRef}
                 type="file"
-                accept="image/*"
+                accept="image/png, image/jpeg"
                 style={{ display: 'none' }}
                 onChange={handleFoto}
               />
@@ -142,11 +221,13 @@ const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
                 <p className="editprod__label">Categoria</p>
                 <select
                   className="editprod__select"
-                  value={form.categoria}
-                  onChange={(e) => atualizarForm({ categoria: e.target.value })}
+                  value={form.categoria_id}
+                  onChange={(e) => atualizarForm({ categoria_id: e.target.value })}
                 >
                   <option value="">Selecione</option>
-                  {CATEGORIAS.map((c) => <option key={c}>{c}</option>)}
+                  {categorias.map((c) => (
+                    <option key={c.id} value={c.id}>{c.nome}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -162,45 +243,6 @@ const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
               value={form.preco}
               onChange={handlePreco}
             />
-          </div>
-
-          {/* Estoque */}
-          <div className="editprod__estoque">
-            <span className="editprod__label">Estoque:</span>
-
-            <label className="editprod__radio-label">
-              <input
-                type="radio"
-                name="estoque"
-                checked={form.estoqueIlimitado}
-                onChange={() => atualizarForm({ estoqueIlimitado: true })}
-              />
-              Ilimitado
-            </label>
-
-            <label className="editprod__toggle-label">
-              <input
-                type="checkbox"
-                className="editprod__toggle-input"
-                checked={!form.estoqueIlimitado}
-                onChange={(e) => atualizarForm({ estoqueIlimitado: !e.target.checked })}
-              />
-              <span className="editprod__toggle-slider" />
-              Limitado
-            </label>
-
-            {!form.estoqueIlimitado && (
-              <>
-               <span className="editprod__label editprod__label--direita">Estoque de Produtos</span>
-                <input
-                  className="editprod__input-qtd"
-                  type="number"
-                  value={form.quantidadeEstoque}
-                  onChange={(e) => atualizarForm({ quantidadeEstoque: e.target.value })}
-                />
-                <span className="editprod__label">Em estoque</span>
-              </>
-            )}
           </div>
 
           {/* Disponível */}
@@ -222,11 +264,11 @@ const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
 
           {/* Ações */}
           <div className="editprod__acoes">
-            <button className="editprod__btn-cancelar" onClick={() => navigate('/restaurante/menu/products')}>
+            <button className="editprod__btn-cancelar" onClick={() => navigate('/restaurante/produtos')} disabled={salvando}>
               Cancelar
             </button>
-            <button className="editprod__btn-salvar" onClick={handleSalvar}>
-              Salvar
+            <button className="editprod__btn-salvar" onClick={handleSalvar} disabled={salvando}>
+              {salvando ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
 

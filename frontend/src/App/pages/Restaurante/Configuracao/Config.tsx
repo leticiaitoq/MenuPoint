@@ -17,6 +17,7 @@ import { useAuth } from '../../../shared/contexts/Authcontext';
 import AuthService from '../../../services/auth.service';
 import EstabelecimentoService, {
   AtualizarEstabelecimentoDTO,
+  AtualizarPixDTO,
   DiaSemana,
   Estabelecimento,
   HorarioFuncionamento,
@@ -339,30 +340,34 @@ const payloadAtendimento = (v: AtendimentoForm): AtualizarEstabelecimentoDTO => 
   pedido_minimo: paraNumero(v.pedido_minimo),
 });
 
-// ── PIX ──────────────────────────────────────────────────────────────────────
-
-interface PixForm {
-  tipo_chave_pix: TipoChavePix | '';
-  chave_pix: string;
+// ── PIX é dado sensível: não usa o hook useSecao (que salva sem senha).
+// A leitura para exibição usa os campos crus do Estabelecimento; a edição
+// passa pelo ModalPix (senha → editar) definido mais abaixo.
+function mascararChavePix(chave: string | null, tipo: TipoChavePix | null): string {
+  if (!chave) return 'Nenhuma chave cadastrada';
+  if (tipo === 'EMAIL' || tipo === 'ALEATORIA') {
+    return chave.length <= 4 ? '••••' : `${'•'.repeat(chave.length - 4)}${chave.slice(-4)}`;
+  }
+  // CPF/CNPJ/telefone: mostra só os 4 últimos dígitos
+  const digitos = chave.replace(/\D/g, '');
+  return digitos.length <= 4 ? '••••' : `${'•'.repeat(digitos.length - 4)}${digitos.slice(-4)}`;
 }
 
-const PIX_PADRAO: PixForm = { tipo_chave_pix: '', chave_pix: '' };
+// ── Customização do site (tema) ───────────────────────────────────────────────
 
-const extrairPix = (e: Estabelecimento): PixForm => ({
-  tipo_chave_pix: e.tipo_chave_pix ?? '',
-  chave_pix: e.chave_pix ?? '',
-});
-
-function validarPix(v: PixForm): Erros {
-  const erros: Erros = {};
-  if (v.chave_pix.trim() && !v.tipo_chave_pix) erros.chave_pix = 'Escolha o tipo da chave PIX.';
-  return erros;
+interface TemaForm {
+  tema: 'CLARO' | 'ESCURO';
 }
 
-const payloadPix = (v: PixForm): AtualizarEstabelecimentoDTO => {
-  const chave = v.chave_pix.trim();
-  return { chave_pix: chave, tipo_chave_pix: chave && v.tipo_chave_pix ? v.tipo_chave_pix : null };
-};
+const TEMA_PADRAO: TemaForm = { tema: 'CLARO' };
+
+const extrairTema = (e: Estabelecimento): TemaForm => ({ tema: e.tema ?? 'CLARO' });
+
+function validarTema(_v: TemaForm): Erros {
+  return {};
+}
+
+const payloadTema = (v: TemaForm): AtualizarEstabelecimentoDTO => ({ tema: v.tema });
 
 // ────────────────────────────────────────────────────────────────────────────
 // Hook: uma seção completa (valor, validação, salvar, descartar)
@@ -943,6 +948,168 @@ const ModalDadosSensiveis: React.FC<{
   );
 };
 
+// ── Alterar chave PIX (dado sensível: exige senha + só quem tem permissão) ──
+
+type PassoPix = 'senha' | 'editar';
+
+const PassoEditarPix: React.FC<{
+  estabelecimentoId: string;
+  tipoAtual: TipoChavePix | '';
+  chaveAtual: string;
+  senha: string;
+  onVoltar: () => void;
+  onFechar: () => void;
+  onSucesso: (tipo: TipoChavePix | null, chave: string | null) => void;
+}> = ({ estabelecimentoId, tipoAtual, chaveAtual, senha, onVoltar, onFechar, onSucesso }) => {
+  const [tipo, setTipo] = useState<TipoChavePix | ''>(tipoAtual);
+  const [chave, setChave] = useState(chaveAtual);
+  const [erros, setErros] = useState<Erros>({});
+  const [erroGeral, setErroGeral] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
+  const primeiroCampoRef = useRef<HTMLSelectElement>(null);
+
+  useEffect(() => {
+    primeiroCampoRef.current?.focus();
+  }, []);
+
+  const confirmar = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const chaveLimpa = chave.trim();
+    const encontrados: Erros = {};
+    if (chaveLimpa && !tipo) encontrados.chave_pix = 'Escolha o tipo da chave PIX.';
+    if (Object.keys(encontrados).length > 0) {
+      setErros(encontrados);
+      return;
+    }
+
+    setEnviando(true);
+    setErroGeral(null);
+    try {
+      const payload: AtualizarPixDTO = {
+        senha_atual: senha,
+        chave_pix: chaveLimpa || null,
+        tipo_chave_pix: chaveLimpa && tipo ? tipo : null,
+      };
+      const estab = await EstabelecimentoService.atualizarPix(estabelecimentoId, payload);
+      onSucesso(estab.tipo_chave_pix, estab.chave_pix);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 403 && /senha/i.test(err?.response?.data?.message ?? '')) {
+        setErroGeral('Sua senha não pôde ser confirmada. Volte e digite a senha de novo.');
+      } else {
+        setErroGeral(mensagemDeErro(err, 'Não foi possível alterar a chave PIX.'));
+      }
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <form className="config__dialogo-form" onSubmit={confirmar} noValidate>
+      <div className="config__dialogo-topo">
+        <button className="config__dialogo-voltar" type="button" onClick={onVoltar} disabled={enviando} aria-label="Voltar">
+          <HiArrowLeft />
+        </button>
+        <span className="config__dialogo-selo-ok">
+          <HiCheckCircle /> Senha confirmada
+        </span>
+        <button className="config__dialogo-x" type="button" onClick={onFechar} aria-label="Fechar" disabled={enviando}>
+          <HiX />
+        </button>
+      </div>
+
+      <h3 className="config__card-titulo">Alterar chave PIX</h3>
+      <p className="config__hint">É para esta chave que os pagamentos do seu cardápio caem.</p>
+
+      <Campo id="m-tipo-pix" rotulo="Tipo da chave">
+        <select
+          id="m-tipo-pix"
+          ref={primeiroCampoRef}
+          className="config__input config__select"
+          value={tipo}
+          disabled={enviando}
+          onChange={(e) => { setTipo(e.target.value as TipoChavePix | ''); setErros({}); }}
+        >
+          <option value="">Sem chave PIX</option>
+          {TIPOS_PIX.map((t) => (
+            <option key={t.valor} value={t.valor}>{t.rotulo}</option>
+          ))}
+        </select>
+      </Campo>
+      <Campo id="m-chave-pix" rotulo="Chave PIX" erro={erros.chave_pix}>
+        <input
+          id="m-chave-pix"
+          className="config__input"
+          value={chave}
+          maxLength={150}
+          disabled={enviando}
+          onChange={(e) => { setChave(e.target.value); setErros({}); }}
+        />
+      </Campo>
+
+      {erroGeral && <p className="config__erro" role="alert">{erroGeral}</p>}
+
+      <div className="config__acoes config__acoes--fim">
+        <button className="config__btn" type="button" onClick={onFechar} disabled={enviando}>
+          Cancelar
+        </button>
+        <button className="config__btn config__btn--primario" type="submit" disabled={enviando}>
+          {enviando ? 'Salvando…' : 'Salvar chave PIX'}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+const ModalPix: React.FC<{
+  estabelecimentoId: string;
+  tipoAtual: TipoChavePix | '';
+  chaveAtual: string;
+  onFechar: () => void;
+  onSucesso: (tipo: TipoChavePix | null, chave: string | null) => void;
+}> = ({ estabelecimentoId, tipoAtual, chaveAtual, onFechar, onSucesso }) => {
+  const [passo, setPasso] = useState<PassoPix>('senha');
+  const [senhaConfirmada, setSenhaConfirmada] = useState('');
+
+  const verificarSenha = async (senha: string): Promise<string | null> => {
+    try {
+      await AuthService.verificarSenha({ senha });
+      setSenhaConfirmada(senha);
+      setPasso('editar');
+      return null;
+    } catch (err: any) {
+      if (err?.response?.status === 403) return 'Senha incorreta.';
+      return mensagemDeErro(err, 'Não foi possível verificar a senha.');
+    }
+  };
+
+  return (
+    <Dialogo titulo="Alterar chave PIX" onFechar={onFechar}>
+      <div className="config__dialogo-passos" aria-hidden="true">
+        <span className={`config__dialogo-passo ${passo === 'senha' ? 'config__dialogo-passo--ativo' : 'config__dialogo-passo--feito'}`} />
+        <span className={`config__dialogo-passo ${passo === 'editar' ? 'config__dialogo-passo--ativo' : ''}`} />
+      </div>
+
+      <div key={passo} className={`config__dialogo-tela config__dialogo-tela--${passo === 'senha' ? 'entra-dir' : 'entra-esq'}`}>
+        {passo === 'senha' ? (
+          <PassoSenha onConfirmar={verificarSenha} onFechar={onFechar} />
+        ) : (
+          <PassoEditarPix
+            estabelecimentoId={estabelecimentoId}
+            tipoAtual={tipoAtual}
+            chaveAtual={chaveAtual}
+            senha={senhaConfirmada}
+            onVoltar={() => setPasso('senha')}
+            onFechar={onFechar}
+            onSucesso={onSucesso}
+          />
+        )}
+      </div>
+    </Dialogo>
+  );
+};
+
 // ────────────────────────────────────────────────────────────────────────────
 // Tela
 // ────────────────────────────────────────────────────────────────────────────
@@ -956,12 +1123,16 @@ const Config: React.FC = () => {
   const empresa = perfil?.empresa ?? null;
   const usuario = perfil?.usuario ?? null;
   const podeEditar = usuario?.perfil === 'ADMIN';
+  // PIX é dado sensível: além de ADMIN, exige escopo GLOBAL (o dono da
+  // empresa, não um admin restrito a um único estabelecimento).
+  const podePix = podeEditar && usuario?.escopo === 'GLOBAL';
 
   const [enviandoLogo, setEnviandoLogo] = useState(false);
   const [logoAviso, setLogoAviso] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
   const inputLogoRef = useRef<HTMLInputElement>(null);
   const [avisoGeral, setAvisoGeral] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
   const [modalSensivel, setModalSensivel] = useState(false);
+  const [modalPix, setModalPix] = useState(false);
   const [saidaPendente, setSaidaPendente] = useState<null | (() => void)>(null);
   const [salvandoSaida, setSalvandoSaida] = useState(false);
 
@@ -970,34 +1141,33 @@ const Config: React.FC = () => {
     void recarregar();
   }, [recarregar]);
 
-  // Cada seção do formulário cuida de si mesma — ver useSecao().
+  // Cada seção do formulário cuida de si mesma — ver useSecao(). PIX não
+  // entra aqui: é dado sensível e usa o fluxo do ModalPix (senha + permissão).
   const mesclar = (payload: AtualizarEstabelecimentoDTO) => mesclarEstabelecimento(payload as Partial<Estabelecimento>);
   const identidade = useSecao(estab, IDENTIDADE_PADRAO, extrairIdentidade, validarIdentidade, payloadIdentidade, mesclar);
   const contato = useSecao(estab, CONTATO_PADRAO, extrairContato, validarContato, payloadContato, mesclar);
   const endereco = useSecao(estab, ENDERECO_PADRAO, extrairEndereco, validarEndereco, payloadEndereco, mesclar);
   const horario = useSecao(estab, HORARIO_PADRAO, extrairHorario, validarHorario, payloadHorario, mesclar);
   const atendimento = useSecao(estab, ATENDIMENTO_PADRAO, extrairAtendimento, validarAtendimento, payloadAtendimento, mesclar);
-  const pix = useSecao(estab, PIX_PADRAO, extrairPix, validarPix, payloadPix, mesclar);
+  const customizacao = useSecao(estab, TEMA_PADRAO, extrairTema, validarTema, payloadTema, mesclar);
 
   const secoes = useMemo(
-    () => [identidade, contato, endereco, horario, atendimento, pix],
-    [identidade, contato, endereco, horario, atendimento, pix]
+    () => [identidade, contato, endereco, horario, atendimento, customizacao],
+    [identidade, contato, endereco, horario, atendimento, customizacao]
   );
   const algumAlterado = secoes.some((s) => s.alterado);
   const totalPendentes = secoes.filter((s) => s.alterado).length;
 
-  // ── Abas: como na tela de Caixa, só uma seção fica visível por vez ─────────
+  // ── Abas: Identidade fica fora, fixa no topo — só o resto vira aba ─────────
   const ABAS = [
-    { id: 'identidade', titulo: 'Identidade', alterado: identidade.alterado },
     { id: 'empresa', titulo: 'Dados da empresa', alterado: false },
-    { id: 'contato', titulo: 'Contato', alterado: contato.alterado },
-    { id: 'endereco', titulo: 'Endereço', alterado: endereco.alterado },
-    { id: 'horario', titulo: 'Horário', alterado: horario.alterado },
-    { id: 'atendimento', titulo: 'Atendimento', alterado: atendimento.alterado },
-    { id: 'pix', titulo: 'PIX', alterado: pix.alterado },
+    { id: 'contato', titulo: 'Contato e Endereço', alterado: contato.alterado || endereco.alterado },
+    { id: 'horario', titulo: 'Horário de funcionamento', alterado: horario.alterado },
+    { id: 'atendimento', titulo: 'Atendimento, entrega e PIX', alterado: atendimento.alterado },
+    { id: 'customizacao', titulo: 'Customização do site', alterado: customizacao.alterado },
   ] as const;
   type AbaId = (typeof ABAS)[number]['id'];
-  const [abaAtiva, setAbaAtiva] = useState<AbaId>('identidade');
+  const [abaAtiva, setAbaAtiva] = useState<AbaId>('empresa');
 
   // Some sozinho o aviso de sucesso
   useEffect(() => {
@@ -1159,6 +1329,24 @@ const Config: React.FC = () => {
     setAvisoGeral({ tipo: 'ok', texto: 'Dados alterados com sucesso.' });
   };
 
+  const abrirModalPix = () => {
+    if (algumAlterado) {
+      setAvisoGeral({
+        tipo: 'erro',
+        texto: 'Salve ou descarte as alterações pendentes antes de mudar a chave PIX.',
+      });
+      return;
+    }
+    setAvisoGeral(null);
+    setModalPix(true);
+  };
+
+  const aoAlterarPix = (tipo: TipoChavePix | null, chave: string | null) => {
+    setModalPix(false);
+    mesclarEstabelecimento({ tipo_chave_pix: tipo, chave_pix: chave });
+    setAvisoGeral({ tipo: 'ok', texto: 'Chave PIX atualizada com sucesso.' });
+  };
+
   // ── Estados de carregamento / erro ────────────────────────────────────────
 
   if (!perfil && carregando) {
@@ -1228,6 +1416,75 @@ const Config: React.FC = () => {
           </div>
         </header>
 
+        {/* Identidade — fora das seções: sempre visível no topo, centralizada */}
+        <section className="config__identidade-topo" aria-labelledby="sec-identidade">
+          <div className="config__identidade-avatar-col">
+            <img
+              className="config__avatar config__avatar--grande"
+              src={estab.logo_url ?? LOGO_PADRAO}
+              alt={`Logo de ${estab.nome}`}
+              onError={(e) => {
+                e.currentTarget.src = LOGO_PADRAO;
+              }}
+            />
+            {podeEditar && (
+              <button
+                className="config__btn config__btn--pequeno"
+                type="button"
+                onClick={() => inputLogoRef.current?.click()}
+                disabled={enviandoLogo}
+              >
+                <HiUpload /> {enviandoLogo ? 'Enviando…' : 'Alterar logo'}
+              </button>
+            )}
+            {logoAviso && (
+              <p className={logoAviso.tipo === 'erro' ? 'config__erro' : 'config__hint'} role={logoAviso.tipo === 'erro' ? 'alert' : undefined}>
+                {logoAviso.texto}
+              </p>
+            )}
+            <input
+              ref={inputLogoRef}
+              type="file"
+              accept="image/jpeg,image/png"
+              className="config__arquivo"
+              onChange={escolherLogo}
+            />
+          </div>
+
+          <div className="config__identidade-nome-col">
+            <input
+              id="nome-identidade"
+              className="config__input config__input--nome-topo"
+              value={identidade.valor.nome}
+              maxLength={150}
+              disabled={!podeEditar || identidade.salvando}
+              onChange={(e) => identidade.definir('nome', e.target.value)}
+              aria-label="Nome do restaurante"
+            />
+            {identidade.erros.nome && <p className="config__erro" role="alert">{identidade.erros.nome}</p>}
+            {identidade.erroGeral && <p className="config__erro" role="alert">{identidade.erroGeral}</p>}
+
+            {podeEditar && identidade.alterado && (
+              <div className="config__secao-acoes config__secao-acoes--centro">
+                <button className="config__btn config__btn--pequeno" type="button" onClick={identidade.descartar} disabled={identidade.salvando}>
+                  Descartar
+                </button>
+                <button
+                  className="config__btn config__btn--primario config__btn--pequeno"
+                  type="button"
+                  onClick={() => void identidade.salvar()}
+                  disabled={identidade.salvando}
+                >
+                  {identidade.salvando ? 'Salvando…' : 'Salvar'}
+                </button>
+              </div>
+            )}
+            {identidade.salvoRecente && (
+              <span className="config__secao-status config__secao-status--ok"><HiCheckCircle /> Salvo</span>
+            )}
+          </div>
+        </section>
+
         {!podeEditar && (
           <p className="config__aviso config__aviso--info" role="status">
             Seu acesso é de {usuario.perfil.toLowerCase()}. Apenas administradores editam o perfil.
@@ -1266,68 +1523,6 @@ const Config: React.FC = () => {
             ))}
           </div>
 
-        {/* Identidade */}
-        {abaAtiva === 'identidade' && (
-        <section className="config__card" aria-labelledby="sec-identidade">
-          <SecaoCabecalho titulo="Identidade" id="sec-identidade" secao={identidade} podeEditar={podeEditar} />
-
-          {identidade.erroGeral && <p className="config__erro" role="alert">{identidade.erroGeral}</p>}
-
-          <div className="config__identidade">
-            <div className="config__logo-col">
-              <img
-                className="config__avatar"
-                src={estab.logo_url ?? LOGO_PADRAO}
-                alt={`Logo de ${estab.nome}`}
-                onError={(e) => {
-                  e.currentTarget.src = LOGO_PADRAO;
-                }}
-              />
-              <button
-                className="config__btn"
-                type="button"
-                onClick={() => inputLogoRef.current?.click()}
-                disabled={!podeEditar || enviandoLogo}
-              >
-                <HiUpload /> {enviandoLogo ? 'Enviando…' : 'Alterar logo'}
-              </button>
-              <p className="config__hint">JPG ou PNG, até 5MB. A logo é salva assim que é enviada.</p>
-              {logoAviso && (
-                <p className={logoAviso.tipo === 'erro' ? 'config__erro' : 'config__hint'} role={logoAviso.tipo === 'erro' ? 'alert' : undefined}>
-                  {logoAviso.texto}
-                </p>
-              )}
-              <input
-                ref={inputLogoRef}
-                type="file"
-                accept="image/jpeg,image/png"
-                className="config__arquivo"
-                onChange={escolherLogo}
-              />
-            </div>
-
-            <div className="config__grade config__grade--identidade">
-              <Campo
-                id="nome"
-                rotulo="Nome do restaurante"
-                erro={identidade.erros.nome}
-                dica="É o nome que seus clientes veem."
-                className="config__span-2"
-              >
-                <input
-                  id="nome"
-                  className="config__input"
-                  value={identidade.valor.nome}
-                  maxLength={150}
-                  disabled={!podeEditar || identidade.salvando}
-                  onChange={(e) => identidade.definir('nome', e.target.value)}
-                />
-              </Campo>
-            </div>
-          </div>
-        </section>
-        )}
-
         {/* Dados da empresa: alterar exige a senha */}
         {abaAtiva === 'empresa' && (
         <section className="config__card" aria-labelledby="sec-cadastro">
@@ -1354,6 +1549,7 @@ const Config: React.FC = () => {
 
         {/* Contato */}
         {abaAtiva === 'contato' && (
+        <>
         <section className="config__card" aria-labelledby="sec-contato">
           <SecaoCabecalho titulo="Contato" id="sec-contato" secao={contato} podeEditar={podeEditar} />
           {contato.erroGeral && <p className="config__erro" role="alert">{contato.erroGeral}</p>}
@@ -1405,10 +1601,8 @@ const Config: React.FC = () => {
             </Campo>
           </div>
         </section>
-        )}
 
-        {/* Endereço */}
-        {abaAtiva === 'endereco' && (
+        {/* Endereço — mesma aba de Contato, card separado (salva por conta própria) */}
         <section className="config__card" aria-labelledby="sec-endereco">
           <SecaoCabecalho titulo="Endereço" id="sec-endereco" secao={endereco} podeEditar={podeEditar} />
           {endereco.erroGeral && <p className="config__erro" role="alert">{endereco.erroGeral}</p>}
@@ -1492,6 +1686,7 @@ const Config: React.FC = () => {
             </Campo>
           </div>
         </section>
+        </>
         )}
 
         {/* Horários */}
@@ -1650,37 +1845,68 @@ const Config: React.FC = () => {
         </section>
         )}
 
-        {/* PIX */}
-        {abaAtiva === 'pix' && (
+        {/* PIX — dado sensível: mesma aba de Atendimento, card separado */}
+        {abaAtiva === 'atendimento' && (
         <section className="config__card" aria-labelledby="sec-pix">
-          <SecaoCabecalho titulo="Recebimento por PIX" id="sec-pix" secao={pix} podeEditar={podeEditar} />
-          {pix.erroGeral && <p className="config__erro" role="alert">{pix.erroGeral}</p>}
-
+          <div className="config__card-cabecalho">
+            <h3 className="config__card-titulo" id="sec-pix">Recebimento por PIX</h3>
+            {podePix && (
+              <button className="config__btn config__btn--pequeno" type="button" onClick={abrirModalPix}>
+                <HiPencil /> Alterar chave PIX
+              </button>
+            )}
+          </div>
           <div className="config__grade">
-            <Campo id="tipo-pix" rotulo="Tipo da chave">
-              <select
-                id="tipo-pix"
-                className="config__input config__select"
-                value={pix.valor.tipo_chave_pix}
-                disabled={!podeEditar || pix.salvando}
-                onChange={(e) => pix.definir('tipo_chave_pix', e.target.value as TipoChavePix | '')}
-              >
-                <option value="">Sem chave PIX</option>
-                {TIPOS_PIX.map((t) => (
-                  <option key={t.valor} value={t.valor}>{t.rotulo}</option>
-                ))}
-              </select>
-            </Campo>
-            <Campo id="chave-pix" rotulo="Chave PIX" erro={pix.erros.chave_pix} dica="Opcional.">
-              <input
-                id="chave-pix"
-                className="config__input"
-                value={pix.valor.chave_pix}
-                maxLength={150}
-                disabled={!podeEditar || pix.salvando}
-                onChange={(e) => pix.definir('chave_pix', e.target.value)}
-              />
-            </Campo>
+            <Bloqueado
+              id="pix-tipo"
+              rotulo="Tipo da chave"
+              valor={estab.tipo_chave_pix ? TIPOS_PIX.find((t) => t.valor === estab.tipo_chave_pix)?.rotulo : null}
+            />
+            <Bloqueado
+              id="pix-chave"
+              rotulo="Chave PIX"
+              valor={mascararChavePix(estab.chave_pix, estab.tipo_chave_pix)}
+            />
+          </div>
+          <p className="config__hint">
+            {podePix
+              ? 'Dado sensível: para alterar, confirme sua senha atual.'
+              : 'Dado sensível — apenas o dono da empresa pode alterar a chave PIX.'}
+          </p>
+        </section>
+        )}
+
+        {/* Customização do site */}
+        {abaAtiva === 'customizacao' && (
+        <section className="config__card" aria-labelledby="sec-customizacao">
+          <SecaoCabecalho titulo="Customização do site" id="sec-customizacao" secao={customizacao} podeEditar={podeEditar} />
+          {customizacao.erroGeral && <p className="config__erro" role="alert">{customizacao.erroGeral}</p>}
+
+          <div className="config__campo">
+            <label className="config__label">Tema do cardápio</label>
+            <div className="config__radio-grupo">
+              <label className="config__radio-label">
+                <input
+                  type="radio"
+                  name="tema"
+                  checked={customizacao.valor.tema === 'CLARO'}
+                  disabled={!podeEditar || customizacao.salvando}
+                  onChange={() => customizacao.definir('tema', 'CLARO')}
+                />
+                Tema claro
+              </label>
+              <label className="config__radio-label">
+                <input
+                  type="radio"
+                  name="tema"
+                  checked={customizacao.valor.tema === 'ESCURO'}
+                  disabled={!podeEditar || customizacao.salvando}
+                  onChange={() => customizacao.definir('tema', 'ESCURO')}
+                />
+                Tema escuro
+              </label>
+            </div>
+            <p className="config__hint">Define a aparência do cardápio público do seu restaurante.</p>
           </div>
         </section>
         )}
@@ -1698,6 +1924,16 @@ const Config: React.FC = () => {
           podeEmpresa={podeEditar && Boolean(empresa)}
           onFechar={() => setModalSensivel(false)}
           onSucesso={aoAlterarDadosSensiveis}
+        />
+      )}
+
+      {modalPix && (
+        <ModalPix
+          estabelecimentoId={estab.id}
+          tipoAtual={estab.tipo_chave_pix ?? ''}
+          chaveAtual={estab.chave_pix ?? ''}
+          onFechar={() => setModalPix(false)}
+          onSucesso={aoAlterarPix}
         />
       )}
 

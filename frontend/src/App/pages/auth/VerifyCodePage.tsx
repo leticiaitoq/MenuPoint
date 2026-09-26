@@ -4,6 +4,7 @@ import { MdEmail } from 'react-icons/md';
 import { HiCheckCircle } from 'react-icons/hi';
 import AuthCard from './AuthCard';
 import AuthService from '../../services/auth.service';
+import { ROTA_APOS_LOGIN } from '../../shared/contexts/Authcontext';
 import './VerifyCodePage.css';
 
 interface LocationState {
@@ -46,7 +47,7 @@ const VerifyCodePage: React.FC = () => {
 
   useEffect(() => {
   if (!showSucesso) return;
-  const timer = setTimeout(() => navigate('/restaurante/home'), 1800);
+  const timer = setTimeout(() => navigate(ROTA_APOS_LOGIN), 1800);
   return () => clearTimeout(timer);
 }, [showSucesso, navigate]);
 
@@ -123,7 +124,7 @@ const VerifyCodePage: React.FC = () => {
   setErro(err?.response?.data?.message ?? 'Código inválido ou expirado.');
 } finally {
   setCarregando(false);
-}regando(false);
+}
   };
 
   const handleReenviar = async () => {

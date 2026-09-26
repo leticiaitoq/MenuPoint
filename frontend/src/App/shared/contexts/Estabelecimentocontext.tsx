@@ -1,42 +1,114 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+import AuthService, { PerfilResponse } from '../../services/auth.service'
+import type { Estabelecimento } from '../../services/estabelecimento.service'
+import { useAuth } from './Authcontext'
 
 /**
- * A logo do restaurante precisa aparecer tanto na tela de Configurações
- * quanto no cantinho esquerdo da Navbar (em qualquer página). Por isso ela
- * vive num Context (e não num useState local do Config) — assim, assim que
- * o usuário troca a foto, a Navbar já reflete a mudança em qualquer rota,
- * e o valor persiste entre sessões via localStorage.
+ * Perfil do restaurante logado (usuário + empresa + estabelecimento).
  *
- * TODO: quando o endpoint de estabelecimento.service.ts existir, trocar a
- * persistência em localStorage por uma chamada real à API e usar a URL
- * retornada pelo backend em vez do base64 salvo localmente.
+ * Tudo vem do BANCO via GET /auth/me — nada é guardado no localStorage.
+ * A Navbar e a tela de Perfil leem daqui, então o nome e a logo que aparecem
+ * são sempre os que estão salvos de verdade.
  */
 interface EstabelecimentoContextData {
+  perfil: PerfilResponse | null
+  carregando: boolean
+  erro: string | null
+  /** Contador que sobe a cada leitura completa do banco (a tela de Perfil usa para recarregar o formulário). */
+  versao: number
+  /** Lê tudo de novo do banco. */
+  recarregar: () => Promise<PerfilResponse | null>
+  /** Aplica no perfil campos que o servidor acabou de devolver (ex.: logo_url), sem reler tudo. */
+  mesclarEstabelecimento: (parcial: Partial<Estabelecimento>) => void
   logoUrl: string | null
-  setLogoUrl: (url: string | null) => void
+  nomeRestaurante: string | null
 }
 
-const EstabelecimentoContext = createContext<EstabelecimentoContextData>({} as EstabelecimentoContextData)
+const EstabelecimentoContext = createContext<EstabelecimentoContextData>(
+  {} as EstabelecimentoContextData
+)
 
 export const EstabelecimentoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [logoUrl, setLogoUrlState] = useState<string | null>(
-    localStorage.getItem('@menupoint:logoUrl')
-  )
+  const { token } = useAuth()
+  const [perfil, setPerfil] = useState<PerfilResponse | null>(null)
+  const [carregando, setCarregando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+  const [versao, setVersao] = useState(0)
 
-  const setLogoUrl = (url: string | null) => {
-    if (url) {
-      localStorage.setItem('@menupoint:logoUrl', url)
+  // Evita duas leituras simultâneas (ex.: o provider e a tela pedindo ao mesmo tempo)
+  const emAndamento = useRef<Promise<PerfilResponse | null> | null>(null)
+
+  const recarregar = useCallback((): Promise<PerfilResponse | null> => {
+    if (emAndamento.current) return emAndamento.current
+
+    setCarregando(true)
+    setErro(null)
+
+    const requisicao = AuthService.me()
+      .then((dados) => {
+        // O servidor devolve um token novo com os dados atuais (cura sessões antigas)
+        if (dados.token) localStorage.setItem('@menupoint:token', dados.token)
+        setPerfil(dados)
+        setVersao((v) => v + 1)
+        return dados
+      })
+      .catch((err: any) => {
+        setErro(
+          err?.response?.data?.message ??
+            'Não foi possível carregar os dados do cadastro. Verifique a conexão com o servidor.'
+        )
+        return null
+      })
+      .finally(() => {
+        emAndamento.current = null
+        setCarregando(false)
+      })
+
+    emAndamento.current = requisicao
+    return requisicao
+  }, [])
+
+  const mesclarEstabelecimento = useCallback((parcial: Partial<Estabelecimento>) => {
+    setPerfil((atual) =>
+      atual && atual.estabelecimento
+        ? { ...atual, estabelecimento: { ...atual.estabelecimento, ...parcial } }
+        : atual
+    )
+  }, [])
+
+  // Entrou (ou trocou de conta) → busca do banco. Saiu → limpa.
+  useEffect(() => {
+    if (token) {
+      void recarregar()
     } else {
-      localStorage.removeItem('@menupoint:logoUrl')
+      setPerfil(null)
+      setErro(null)
     }
-    setLogoUrlState(url)
-  }
+  }, [token, recarregar])
 
-  return (
-    <EstabelecimentoContext.Provider value={{ logoUrl, setLogoUrl }}>
-      {children}
-    </EstabelecimentoContext.Provider>
+  const value = useMemo<EstabelecimentoContextData>(
+    () => ({
+      perfil,
+      carregando,
+      erro,
+      versao,
+      recarregar,
+      mesclarEstabelecimento,
+      logoUrl: perfil?.estabelecimento?.logo_url ?? null,
+      nomeRestaurante: perfil?.estabelecimento?.nome ?? null,
+    }),
+    [perfil, carregando, erro, versao, recarregar, mesclarEstabelecimento]
   )
+
+  return <EstabelecimentoContext.Provider value={value}>{children}</EstabelecimentoContext.Provider>
 }
 
 export const useEstabelecimento = () => useContext(EstabelecimentoContext)

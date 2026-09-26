@@ -74,6 +74,10 @@ const CategoriaService = {
     await api.delete(`categorias/${id}`)
   },
 
+  async reordenar(itens: { id: string; ordem: number }[]): Promise<void> {
+    await api.patch('categorias/reordenar', itens)
+  },
+
 }
 
 export default CategoriaService

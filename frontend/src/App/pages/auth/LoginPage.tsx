@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
 import { HiEye, HiEyeOff } from 'react-icons/hi';
 import AuthCard from './AuthCard';
-import AuthService from '../../services/auth.service'; 
+import AuthService from '../../services/auth.service';
+import { useAuth, ROTA_APOS_LOGIN } from '../../shared/contexts/Authcontext';
 import './LoginPage.css';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { entrar } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,11 +28,14 @@ const LoginPage: React.FC = () => {
         senha: password,
       });
 
-      // Salva token e usuário com as chaves corretas
-      localStorage.setItem('@menupoint:token', resultado.token);
-      localStorage.setItem('@menupoint:usuario', JSON.stringify(resultado.usuario));
+      // Guarda a sessão; o perfil completo é buscado do banco logo em seguida
+      entrar({
+        token: resultado.token,
+        refresh_token: resultado.refresh_token,
+        usuario: resultado.usuario,
+      });
 
-      navigate('/restaurante/home');
+      navigate(ROTA_APOS_LOGIN);
     } catch (err: any) {
       setErro(err?.response?.data?.message ?? 'Email ou senha inválidos.');
     } finally {

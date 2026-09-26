@@ -2,6 +2,31 @@ import { Prisma, Plano } from '@prisma/client'
 import prisma from '@config/prisma'
 import crypto from 'crypto'
 import { AppError } from '@shared/errors/AppError'
+import { gerarSlug } from '@shared/utils/slug'
+
+export type EnderecoEstabelecimento = {
+  rua: string
+  numero: string
+  complemento?: string
+  bairro: string
+  cidade: string
+  estado: string
+  cep: string
+}
+
+export interface RegistrarInput {
+  // restaurante
+  nome_empresa: string
+  razao_social: string
+  cnpj: string
+  endereco: EnderecoEstabelecimento
+  // responsável
+  nome_responsavel: string
+  cpf: string
+  email: string
+  senha_hash: string
+  token_pagamento?: string
+}
 
 export class AuthRepository {
 
@@ -51,13 +76,96 @@ export class AuthRepository {
     })
   }
 
-  async registrar(data: {
-    nome_empresa: string
-    cnpj?: string
-    email: string
-    senha_hash: string
-    token_pagamento?: string
-  }) {
+  // ── PERFIL DO USUÁRIO LOGADO ──────────────────────────────────────────────
+  // Usuário + empresa + estabelecimento lidos do BANCO (não do token).
+  // É o que a tela de perfil exibe logo após o login.
+  async findPerfilPorId(id: string) {
+    return prisma.usuario.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        nome: true,
+        cpf: true,
+        email: true,
+        perfil: true,
+        escopo: true,
+        ativo: true,
+        email_verificado: true,
+        ultimo_acesso: true,
+        criado_em: true,
+        empresa_id: true,
+        estabelecimento_id: true,
+        empresa: {
+          select: {
+            id: true,
+            nome: true,
+            razao_social: true,
+            cnpj: true,
+            plano: true,
+            ativo: true,
+            criado_em: true,
+          },
+        },
+        estabelecimento: true,
+      },
+    })
+  }
+
+  // ── CNPJ já usado? (empresa ou estabelecimento) ───────────────────────────
+  async cnpjEmUso(cnpj: string): Promise<boolean> {
+    const [empresa, estabelecimento] = await Promise.all([
+      prisma.empresa.findUnique({ where: { cnpj }, select: { id: true } }),
+      prisma.estabelecimento.findUnique({ where: { cnpj }, select: { id: true } }),
+    ])
+    return Boolean(empresa || estabelecimento)
+  }
+
+  // ── Slug único para a URL do cardápio ─────────────────────────────────────
+  // "sabor-da-vila", "sabor-da-vila-2", "sabor-da-vila-3"...
+  private async gerarSlugUnico(
+    tx: Prisma.TransactionClient,
+    nome: string,
+    forcarSufixoAleatorio: boolean
+  ): Promise<string> {
+    const base = gerarSlug(nome)
+
+    if (forcarSufixoAleatorio) {
+      return `${base}-${crypto.randomBytes(3).toString('hex')}`
+    }
+
+    let candidato = base
+    for (let n = 2; n <= 50; n++) {
+      const existe = await tx.estabelecimento.findUnique({
+        where: { slug: candidato },
+        select: { id: true },
+      })
+      if (!existe) return candidato
+      candidato = `${base}-${n}`
+    }
+    return `${base}-${crypto.randomBytes(3).toString('hex')}`
+  }
+
+  // ── REGISTRO: Empresa + Estabelecimento + Usuário (tudo ou nada) ───────────
+  async registrar(data: RegistrarInput) {
+    // Se dois cadastros com o mesmo nome acontecerem no mesmo instante, o slug pode
+    // colidir mesmo depois da checagem: nesse caso tentamos de novo com sufixo aleatório.
+    for (let tentativa = 0; tentativa < 3; tentativa++) {
+      try {
+        return await this.registrarEmTransacao(data, tentativa > 0)
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          const alvo = String(err.meta?.target ?? '')
+          if (alvo.includes('slug')) continue
+          if (alvo.includes('cnpj')) throw new AppError('Este CNPJ já está cadastrado', 409)
+          if (alvo.includes('email')) throw new AppError('Este e-mail já está cadastrado', 409)
+        }
+        throw err
+      }
+    }
+    throw new AppError('Não foi possível concluir o cadastro. Tente novamente.', 500)
+  }
+
+  private async registrarEmTransacao(data: RegistrarInput, forcarSufixoAleatorio: boolean) {
     return prisma.$transaction(async (tx) => {
       let plano: Plano = Plano.STARTER
       let assinaturaId: string | undefined
@@ -86,9 +194,11 @@ export class AuthRepository {
         assinaturaId = assinatura.id
       }
 
+      // 1) Empresa (pessoa jurídica: nome fantasia, razão social e CNPJ)
       const empresa = await tx.empresa.create({
         data: {
           nome: data.nome_empresa,
+          razao_social: data.razao_social,
           cnpj: data.cnpj,
           plano,
         },
@@ -101,20 +211,86 @@ export class AuthRepository {
         })
       }
 
-      const usuario = await tx.usuario.create({
+      // 2) Estabelecimento — criado SEMPRE junto com a empresa.
+      //    Telefone, WhatsApp, horários etc. ficam para o "completar perfil".
+      const slug = await this.gerarSlugUnico(tx, data.nome_empresa, forcarSufixoAleatorio)
+
+      const estabelecimento = await tx.estabelecimento.create({
         data: {
           empresa_id: empresa.id,
           nome: data.nome_empresa,
-          email: data.email,
-          senha_hash: data.senha_hash,
-          perfil: 'ADMIN',
-          escopo: 'GLOBAL',
+          slug,
+          cnpj: data.cnpj,
+          endereco: data.endereco, // mesmo formato do enderecoSchema de Estabelecimento
+          perfil_completo: false,
         },
       })
 
-      return { empresa, usuario }
+      // 3) Usuário dono — já vinculado à empresa E ao estabelecimento.
+      //    Escopo LOCAL: ele administra o próprio estabelecimento, sem acesso
+      //    às rotas de plataforma (listar todas as empresas etc.).
+      const usuario = await tx.usuario.create({
+        data: {
+          empresa_id: empresa.id,
+          estabelecimento_id: estabelecimento.id,
+          nome: data.nome_responsavel,
+          cpf: data.cpf,
+          email: data.email,
+          senha_hash: data.senha_hash,
+          perfil: 'ADMIN',
+          escopo: 'LOCAL',
+        },
+      })
+
+      return { empresa, estabelecimento, usuario }
     })
-  } 
+  }
+
+  // ── ALTERAR DADOS SENSÍVEIS: usuário + empresa numa transação ──────────────
+  async atualizarDadosSensiveis(
+    usuario_id: string,
+    empresa_id: string | null,
+    d: {
+      nome_responsavel?: string
+      email?: string
+      razao_social?: string
+      nome_empresa?: string
+    }
+  ) {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const dadosUsuario: Prisma.UsuarioUncheckedUpdateInput = {}
+        if (d.nome_responsavel !== undefined) dadosUsuario.nome = d.nome_responsavel
+        if (d.email !== undefined) {
+          dadosUsuario.email = d.email
+          // e-mail novo precisa ser confirmado de novo
+          dadosUsuario.email_verificado = false
+        }
+
+        const usuario = await tx.usuario.update({
+          where: { id: usuario_id },
+          data: dadosUsuario,
+        })
+
+        if (empresa_id && (d.razao_social !== undefined || d.nome_empresa !== undefined)) {
+          await tx.empresa.update({
+            where: { id: empresa_id },
+            data: {
+              ...(d.razao_social !== undefined ? { razao_social: d.razao_social } : {}),
+              ...(d.nome_empresa !== undefined ? { nome: d.nome_empresa } : {}),
+            },
+          })
+        }
+
+        return usuario
+      })
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        throw new AppError('Este e-mail já está cadastrado', 409)
+      }
+      throw err
+    }
+  }
 
   async atualizarUltimoAcesso(id: string): Promise<void> {
     await prisma.usuario.update({

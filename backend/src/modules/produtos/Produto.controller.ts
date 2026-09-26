@@ -100,6 +100,41 @@ export async function produtosRoutes(app: FastifyInstance): Promise<void> {
   app.register(async (adminRoutes) => {
     adminRoutes.addHook('onRequest', authorize('ADMIN'))
 
+    // POST /upload-imagem — multipart (campo "arquivo"), JPG/PNG até 5MB
+    // Usada antes do POST / (criação) já que o produto ainda não tem id.
+    adminRoutes.post(
+      '/upload-imagem',
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const user = request.user as JWTPayload
+
+        if (!user.estabelecimento_id) {
+          throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+        }
+
+        const arquivo = await request.file()
+        if (!arquivo) {
+          throw new AppError('Envie uma imagem', 400)
+        }
+
+        let buffer: Buffer
+        try {
+          buffer = await arquivo.toBuffer()
+        } catch (err: any) {
+          if (err?.code === 'FST_REQ_FILE_TOO_LARGE') {
+            throw new AppError('Imagem muito grande (máximo 5MB)', 413)
+          }
+          throw err
+        }
+
+        const imagem_url = await service.uploadImagem(user.estabelecimento_id, {
+          buffer,
+          mimetype: arquivo.mimetype,
+        })
+
+        return reply.send({ imagem_url })
+      }
+    )
+
     // POST / — cria produto
     adminRoutes.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
       const user = request.user as JWTPayload
