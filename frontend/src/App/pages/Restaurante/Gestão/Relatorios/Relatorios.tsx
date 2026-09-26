@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   BarChart,
   Bar,
@@ -133,8 +134,11 @@ const LabelPizza = ({ cx, cy, midAngle, innerRadius, outerRadius, value }: any) 
 
 // ── Componente principal ─────────────────────────────────────────────────
 const Relatorios: React.FC = () => {
+  const navigate = useNavigate();
+
   const [estabelecimento, setEstabelecimento] = useState(ESTABELECIMENTOS[0]);
-  const maxProduto                            = PRODUTOS_MAIS_VENDIDOS[0].quantidade;
+
+  const maxProduto = PRODUTOS_MAIS_VENDIDOS[0].quantidade;
 
   return (
     <RestaurantLayout>
@@ -305,7 +309,8 @@ const Relatorios: React.FC = () => {
           </div>
 
           {/* Despesas */}
-          <div className="relatorios__painel relatorios__painel--despesas">
+         <div className="relatorios__painel relatorios__painel--despesas"
+            >
             <div className="relatorios__despesas-titulo">
               <HiCurrencyDollar className="relatorios__despesas-icone" />
               <h3>Despesas do Estabelecimento</h3>
@@ -331,6 +336,13 @@ const Relatorios: React.FC = () => {
                 <strong>{formatarPreco(LUCRO_LIQUIDO)}</strong>
               </div>
             </div>
+
+                  <button
+                className="relatorios__despesas-ver-mais"
+               onClick={() => navigate('/restaurante/despesas')}
+                            >
+                  Ver mais
+               </button>
           </div>
 
         </div>

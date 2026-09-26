@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { telefoneValido, formatarTelefone } from '@shared/utils/telefone'
 
 const enderecoSchema = z.object({
   rua: z.string().min(1, 'Rua é obrigatória'),
@@ -15,11 +16,18 @@ const enderecoSchema = z.object({
     .regex(/^\d{5}-?\d{3}$/, 'CEP inválido'),
 })
 
-const diaSchema = z.object({
-  aberto: z.boolean(),
-  abertura: z.string().nullable(),
-  fechamento: z.string().nullable(),
-})
+const hora = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Horário inválido (use HH:MM)')
+
+const diaSchema = z
+  .object({
+    aberto: z.boolean(),
+    abertura: hora.nullable(),
+    fechamento: hora.nullable(),
+  })
+  .refine((d) => !d.aberto || (d.abertura !== null && d.fechamento !== null), {
+    message: 'Informe abertura e fechamento dos dias abertos',
+    path: ['abertura'],
+  })
 
 const horarioSchema = z.object({
   segunda: diaSchema,
@@ -120,32 +128,81 @@ export const criarEstabelecimentoSchema = z.object({
 
 export type CriarEstabelecimentoDTO = z.infer<typeof criarEstabelecimentoSchema>
 
-export const atualizarEstabelecimentoSchema = z.object({
-  nome: z.string().min(3).max(150).optional(),
-  cnpj: z
+// Telefone/WhatsApp: aceita com ou sem máscara, grava sempre formatado.
+// Texto vazio apaga o valor (vira null) — são campos opcionais.
+const telefoneBR = (rotulo: string) =>
+  z
     .string()
-    .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, 'CNPJ inválido')
-    .optional(),
-  telefone: z.string().max(20).optional(),
-  whatsapp: z.string().max(20).optional(),
-  email: z.string().email().toLowerCase().optional(),
-  endereco: enderecoSchema.optional(),
-  logo_url: z.string().url().optional(),
-  banner_url: z.string().url().optional(),
-  tema: z.enum(['CLARO', 'ESCURO']).optional(),
-  chave_pix: z.string().max(150).optional(),
-  tipo_chave_pix: z
-    .enum(['CPF', 'CNPJ', 'EMAIL', 'TELEFONE', 'ALEATORIA'])
-    .optional(),
-  tempo_entrega_min: z.number().int().min(1).optional(),
-  tempo_entrega_max: z.number().int().min(1).optional(),
-  taxa_entrega: z.number().min(0).optional(),
-  pedido_minimo: z.number().min(0).optional(),
-  aceita_entrega: z.boolean().optional(),
-  aceita_retirada: z.boolean().optional(),
-  aceita_mesa: z.boolean().optional(),
-  horario_funcionamento: horarioSchema.optional(),
-  ativo: z.boolean().optional(),
-})
+    .trim()
+    .refine((v) => v === '' || telefoneValido(v), `${rotulo} inválido — informe DDD + número`)
+    .transform((v) => (v === '' ? null : formatarTelefone(v)))
+
+// Texto opcional que o usuário pode limpar: "" vira null (apaga o valor no banco).
+const textoOuNulo = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((v) => (v === '' ? null : v))
+    .nullable()
+
+export const atualizarEstabelecimentoSchema = z
+  .object({
+    nome: z.string().trim().min(2, 'Nome é obrigatório').max(150).optional(),
+    cnpj: z
+      .string()
+      .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, 'CNPJ inválido')
+      .optional(),
+    telefone: telefoneBR('Telefone').optional(),
+    whatsapp: telefoneBR('WhatsApp').optional(),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .transform((v) => (v === '' ? null : v))
+      .pipe(z.string().email('E-mail inválido').nullable())
+      .optional(),
+    endereco: enderecoSchema.optional(),
+    logo_url: z.string().url().nullable().optional(),
+    banner_url: z.string().url().nullable().optional(),
+    tema: z.enum(['CLARO', 'ESCURO']).optional(),
+    tempo_entrega_min: z.number().int().min(1).optional(),
+    tempo_entrega_max: z.number().int().min(1).optional(),
+    taxa_entrega: z.number().min(0).optional(),
+    pedido_minimo: z.number().min(0).optional(),
+    aceita_entrega: z.boolean().optional(),
+    aceita_retirada: z.boolean().optional(),
+    aceita_mesa: z.boolean().optional(),
+    horario_funcionamento: horarioSchema.optional(),
+    ativo: z.boolean().optional(),
+  })
+  .refine(
+    (d) =>
+      d.tempo_entrega_min === undefined ||
+      d.tempo_entrega_max === undefined ||
+      d.tempo_entrega_max >= d.tempo_entrega_min,
+    {
+      message: 'Tempo máximo de entrega deve ser maior ou igual ao mínimo',
+      path: ['tempo_entrega_max'],
+    }
+  )
 
 export type AtualizarEstabelecimentoDTO = z.infer<typeof atualizarEstabelecimentoSchema>
+
+// ── PIX é dado sensível: schema próprio, sempre exigindo a senha atual do
+// usuário (verificada no service). Nunca aceito pelo PUT genérico acima.
+export const atualizarPixSchema = z
+  .object({
+    senha_atual: z.string().min(1, 'Informe sua senha'),
+    chave_pix: textoOuNulo(150).optional(),
+    tipo_chave_pix: z
+      .enum(['CPF', 'CNPJ', 'EMAIL', 'TELEFONE', 'ALEATORIA'])
+      .nullable()
+      .optional(),
+  })
+  .refine((d) => !d.chave_pix || d.tipo_chave_pix, {
+    message: 'Informe o tipo da chave PIX',
+    path: ['tipo_chave_pix'],
+  })
+
+export type AtualizarPixDTO = z.infer<typeof atualizarPixSchema>

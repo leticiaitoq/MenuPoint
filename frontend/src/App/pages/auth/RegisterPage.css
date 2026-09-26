@@ -1,57 +1,255 @@
-/* Tela imagem de fundo */
+/* ============================================================
+   RegisterPage.css — cadastro em 2 etapas
+   Mobile-first: o layout base segue o modelo mobile (faixa da marca
+   à esquerda + formulário). A partir de 769px vira o layout desktop.
+   ============================================================ */
+
+@font-face {
+  font-family: 'Bukhari Script';
+  src: url('../../../assets/fonts/BukhariScript-lemD.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --------------------------------------------------------------
+   Página + cartão
+-------------------------------------------------------------- */
 .register-page {
+  --rp-red: #a91e22;
+  --rp-red-dark: #8c171b;
+  --rp-ink: #111827;
+  --rp-muted: #6b7280;
+  --rp-line: #e5e7eb;
+  --rp-field: #f4f4f5;
+  --rp-error: #dc2626;
+  --rp-ok: #16a34a;
+
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 12px;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  padding: 16px;
 }
 
-.register-page__container {
+.register-page__card {
   display: flex;
-  align-items: stretch;
+  flex-direction: column;
   width: 100%;
-  max-width: 1180px;
-  min-height: 580px;
-  height: auto;
+  max-width: 1080px;
+  min-height: calc(100dvh - 24px);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-  background-color: #ffffff;
+  background: #fdfcfb;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
 
-/* Lado direito — formulário */
-.register-page__form-side {
-  flex: 1;
-  padding: 28px 32px;
+/* --------------------------------------------------------------
+   Marca — MOBILE: cabeçalho vermelho no topo (mesmo estilo do AuthCard antigo)
+   Desktop: vira a lateral (ver bloco @media (min-width: 769px))
+-------------------------------------------------------------- */
+.register-page__brand {
+  position: relative;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
-  background-color: #ffffff;
+  gap: 6px;
+  padding: 28px 24px 24px;
+  background: linear-gradient(to bottom, #880003 0%, #880003 45%, #490e0e 100%);
+  color: #fff;
+  overflow: hidden;
 }
 
-.register-page__title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 4px;
+.register-page__logo {
+  width: 150px;
+  height: 150px;
+  object-fit: cover; /* a arte é 16:9 com o emblema centralizado: corta as laterais vazias */
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.22));
 }
 
-.register-page__form {
+.register-page__wordmark {
+  display: block;
+  white-space: nowrap;
+  font-family: 'Bukhari Script', 'Dancing Script', cursive;
+  font-size: 42px;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  color: #ffbd59;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+/* O index.css aplica "* { font-family: Arimo }", que vence a herança: reforçamos aqui */
+.register-page__wordmark span {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* Detalhes que só existem na lateral do desktop */
+.register-page__divider,
+.register-page__tagline,
+.register-page__hat {
+  display: none;
+}
+
+/* --------------------------------------------------------------
+   Conteúdo
+-------------------------------------------------------------- */
+.register-page__content {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 12px;
+  padding: 28px 16px 28px;
+}
+
+/* ── Indicador de etapas ── */
+.register-page__step-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rp-ink);
+  margin-bottom: 10px;
+}
+
+.register-page__stepper {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 26px;
+}
+
+.register-page__step-line {
+  position: absolute;
+  top: 15px;
+  left: 25%;
+  right: 25%;
+  height: 2px;
+  background: #d1d5db;
+}
+
+.register-page__step-line > span {
+  display: block;
+  height: 100%;
+  background: var(--rp-red);
+  transition: width 0.35s ease;
+}
+
+.register-page__step {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.register-page__step-dot {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 0;
+  background: #b4b8bf;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  transition: background 0.25s;
+}
+
+.register-page__step-dot svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
+.register-page__step-dot.is-active,
+.register-page__step-dot.is-done {
+  background: var(--rp-red);
+}
+
+button.register-page__step-dot.is-done {
+  cursor: pointer;
+}
+
+button.register-page__step-dot.is-done:hover {
+  background: var(--rp-red-dark);
+}
+
+.register-page__step-label {
+  font-size: 12px;
+  line-height: 1.3;
+  color: #9ca3af;
+}
+
+.register-page__step-label.is-active {
+  color: var(--rp-red);
+  font-weight: 500;
+}
+
+/* ── Títulos ── */
+.register-page__title {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--rp-ink);
+  margin-bottom: 6px;
+}
+
+.register-page__subtitle {
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--rp-muted);
+  margin-bottom: 20px;
+}
+
+.register-page__alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.register-page__alert svg {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+/* --------------------------------------------------------------
+   Formulário (grade de 12 colunas)
+   Cada campo define --span-d (desktop), --span-m (mobile) e,
+   opcionalmente, --span-xs (telas ≤ 480px) via inline style.
+-------------------------------------------------------------- */
+.register-page__form {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px 12px;
 }
 
 .register-page__field {
+  grid-column: span var(--span-m, 12);
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  flex: 1;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -62,98 +260,282 @@
   gap: 8px;
   font-size: 13px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--rp-ink);
 }
 
-.register-page__input-wrapper {
+.register-page__req {
+  color: var(--rp-red);
+}
+
+.register-page__control {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.register-page__input {
-  width: 100%;
-  padding: 8px 14px;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #1a1a1a;
-  background-color: #fafafa;
-  outline: none;
-  transition: border-color 0.2s;
-  box-sizing: border-box;
+.register-page__icon {
+  position: absolute;
+  left: 13px;
+  display: flex;
+  color: #6b7280;
+  pointer-events: none;
 }
 
-.register-page__input--with-toggle {
-  padding-right: 44px;
+.register-page__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.register-page__input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px 0 44px;
+  border: 1px solid var(--rp-line);
+  border-radius: 10px;
+  background: var(--rp-field);
+  color: var(--rp-ink);
+  font-size: 16px; /* 16px evita o zoom automático do iOS */
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.register-page__input::placeholder {
+  color: #9ca3af;
 }
 
 .register-page__input:focus {
-  border-color: #c0392b;
+  border-color: var(--rp-red);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(169, 30, 34, 0.12);
 }
 
-.register-page__toggle-password {
+.register-page__control--error .register-page__input {
+  border-color: var(--rp-error);
+}
+
+.register-page__control--error .register-page__input:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.14);
+}
+
+.register-page__input--select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 36px;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.register-page__input--select:has(option[value=""]:checked) {
+  color: #9ca3af;
+}
+
+.register-page__input--select:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.register-page__chevron {
   position: absolute;
   right: 12px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #888888;
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  padding: 0;
+  width: 18px;
+  height: 18px;
+  color: #6b7280;
+  pointer-events: none;
 }
 
-/**
- * Desativamento do icone nativo do revelar senha, que vem com o edge ou chrome
- */
+.register-page__input--toggle {
+  padding-right: 44px;
+}
+
+/* esconde o "olhinho" nativo do Edge/Chrome */
 .register-page__input::-ms-reveal,
 .register-page__input::-ms-clear {
   display: none;
 }
 
-input[type="password"]::-webkit-textfield-decoration-container {
+input[type='password']::-webkit-textfield-decoration-container {
   display: none;
 }
 
-/**
- * Dois campos de senha lado a lado.
- * gap ta separando os dois campos.
- */
-.register-page__field-row {
+.register-page__toggle {
+  position: absolute;
+  right: 6px;
+  width: 36px;
+  height: 36px;
   display: flex;
-  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #6b7280;
+  cursor: pointer;
 }
 
-.register-page__senha-regras {
+.register-page__toggle:hover {
+  color: var(--rp-ink);
+}
+
+.register-page__toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.register-page__error {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--rp-error);
+}
+
+/* spinner do CEP */
+.register-page__spinner {
+  position: absolute;
+  right: 14px;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e5e7eb;
+  border-top-color: var(--rp-red);
+  border-radius: 50%;
+  animation: register-page-spin 0.7s linear infinite;
+}
+
+@keyframes register-page-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --------------------------------------------------------------
+   Dica de senha + termos
+-------------------------------------------------------------- */
+.register-page__hint {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--rp-line);
+  border-radius: 10px;
+  background: var(--rp-field);
+  color: #4b5563;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.register-page__hint svg {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  color: var(--rp-ink);
+}
+
+.register-page__hint p {
+  font-size: 13px;
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+
+/* Lista de requisitos: vermelho = falta atender · verde = atendido */
+.register-page__rules {
   list-style: none;
-  padding: 0;
-  margin: -4px 0 0 0;
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: 16px;
-  row-gap: 2px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px 16px;
 }
 
-.register-page__regra {
-  font-size: 11px;
-  white-space: nowrap;
+.register-page__rules li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.3;
   transition: color 0.2s;
 }
 
-.register-page__regra--neutro {
-  color: #9ca3af; /* cinza */
+.register-page__rules li svg {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  color: inherit;
 }
 
-.register-page__regra--ok {
-  color: #16a34a; /* verde */
-  display: none;
+.register-page__rules li.is-missing {
+  color: var(--rp-error);
 }
 
-.register-page__regra--erro {
-  color: #dc2626; /* vermelho */
-  display: block;
+.register-page__rules li.is-ok {
+  color: var(--rp-ok);
+}
+
+.register-page__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (min-width: 481px) {
+  .register-page__rules {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.register-page__hint.is-valid {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.register-page__hint.is-valid svg {
+  color: var(--rp-ok);
+}
+
+.register-page__terms {
+  grid-column: 1 / -1;
+}
+
+.register-page__terms label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #374151;
+  cursor: pointer;
+}
+
+.register-page__terms input[type='checkbox'] {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: var(--rp-red);
+  cursor: pointer;
+}
+
+.register-page__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--rp-red);
+  font-size: inherit;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.register-page__link:hover {
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------------------
+   Botões
+-------------------------------------------------------------- */
+.register-page__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 6px;
 }
 
 .register-page__obrigatorio {
@@ -164,205 +546,314 @@ input[type="password"]::-webkit-textfield-decoration-container {
 
 .register-page__submit {
   width: 100%;
-  padding: 12px;
-  background-color: #c0392b;
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--rp-red);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
   cursor: pointer;
-  transition: background-color 0.2s;
-  margin-top: 2px;
+  transition: background 0.2s, transform 0.1s;
 }
 
-.register-page__submit:hover {
-  background-color: #a93226;
+.register-page__submit svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+.register-page__submit:hover:not(:disabled) {
+  background: var(--rp-red-dark);
+}
+
+.register-page__submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.register-page__submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.register-page__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px;
+  border: 0;
+  background: none;
+  color: var(--rp-red);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.register-page__back svg {
+  width: 18px;
+  height: 18px;
+}
+
+.register-page__back:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.register-page__back:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .register-page__redirect {
   text-align: center;
   font-size: 14px;
-  color: #888888;
-  margin: 0;
+  color: var(--rp-muted);
 }
 
-.register-page__redirect-link {
-  background: none;
-  border: none;
-  color: #c0392b;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
+.register-page__submit:focus-visible,
+.register-page__back:focus-visible,
+.register-page__link:focus-visible,
+.register-page__toggle:focus-visible,
+button.register-page__step-dot:focus-visible {
+  outline: 2px solid var(--rp-red);
+  outline-offset: 2px;
 }
 
-.register-page__redirect-link:hover {
-  text-decoration: underline;
-}
-
+/* --------------------------------------------------------------
+   Modal de sucesso (mesmo modelo do WelcomePage)
+-------------------------------------------------------------- */
 .register-page__overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
+  inset: 0;
+  z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.5);
 }
 
-.register-page__input:is(select) {
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23888'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-}
-
-.register-page__termos {
-  background-color: #fdf1f0;
-  border: 1px solid #f3c8c4;
-  border-radius: 8px;
-  padding: 8px 12px;
-  margin-bottom: 2px;
-}
-
-.register-page__termos-label {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 12px;
-  color: #333;
-  cursor: pointer;
-}
-
-.register-page__termos-label input[type="checkbox"] {
-  margin-top: 2px;
-  accent-color: #c0392b;
-  cursor: pointer;
-}
-
-.register-page__termos-label a {
-  color: #c0392b;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.register-page__termos-label a:hover {
-  text-decoration: underline;
-}
-.register-page__input-icon {
-  position: absolute;
-  left: 14px;
-  color: #888888;
-  font-size: 18px;
-  display: flex;
-  pointer-events: none;
-}
-
-.register-page__input--with-icon {
-  padding-left: 42px;
-}
-
-/**
- * Modal com moldura em gradiente — mesmo modelo do WelcomePage.
- */
 .register-page__modal {
-  background: linear-gradient(135deg, #f1c40f, #c0392b, #6b0f1a);
-  padding: 4px;
-  border-radius: 24px;
   width: 100%;
   max-width: 480px;
+  padding: 4px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #f1c40f, #c0392b, #6b0f1a);
 }
 
 .register-page__modal-inner {
-  background-color: #ffffff;
-  border-radius: 21px;
-  padding: 40px 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
-  box-sizing: border-box;
+  padding: 40px 32px;
+  border-radius: 21px;
+  background: #fff;
 }
 
 .register-page__modal-titulo {
+  margin: 0;
   font-size: 22px;
   font-weight: 700;
-  color: #1a1a1a;
   text-align: center;
-  margin: 0;
+  color: #1a1a1a;
 }
 
 .register-page__modal-texto {
-  font-size: 15px;
-  color: #888888;
-  text-align: center;
-  line-height: 1.6;
   margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  text-align: center;
+  color: #6b7280;
 }
 
 .register-page__modal-button {
-  background-color: #c0392b;
-  color: #ffffff;
+  margin-top: 8px;
+  padding: 16px 40px;
+  border: 0;
+  border-radius: 50px;
+  background: var(--rp-red, #a91e22);
+  color: #fff;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 1px;
-  padding: 16px 48px;
-  border: none;
-  border-radius: 50px;
   cursor: pointer;
-  transition: background-color 0.2s;
-  margin-top: 8px;
-}
-
-.register-page__modal-button--inline {
-  display: block;
-  margin: 24px auto 4px;
+  transition: background 0.2s;
 }
 
 .register-page__modal-button:hover {
-  background-color: #a93226;
+  background: #8c171b;
 }
 
-/* Variação maior + texto alinhado à esquerda, só pro modal de Termos (texto longo) */
-.register-page__modal--termos {
-  max-width: 60%;
+/* --------------------------------------------------------------
+   Mobile ≥ 481px: mantém colunas lado a lado da grade
+   Telas muito estreitas (≤ 480px): campos marcados com --span-xs
+   passam a ocupar a linha inteira (ex.: Estado/Cidade, Bairro/Número, Senhas).
+-------------------------------------------------------------- */
+@media (max-width: 480px) {
+  .register-page__brand {
+    padding: 24px 20px 20px;
+  }
+
+  .register-page__logo {
+    width: 130px;
+    height: 130px;
+  }
+
+  .register-page__wordmark {
+    font-size: 38px;
+  }
+
+  .register-page__field {
+    grid-column: span var(--span-xs, var(--span-m, 12));
+  }
 }
 
-.register-page__modal-inner--termos {
-  align-items: stretch;
+/* --------------------------------------------------------------
+   Tablet pequeno (421–768px): dá mais respiro ao conteúdo
+-------------------------------------------------------------- */
+@media (min-width: 560px) and (max-width: 768px) {
+  .register-page {
+    padding: 24px;
+  }
+
+  .register-page__card {
+    min-height: 0;
+  }
+
+  .register-page__content {
+    padding: 36px 32px;
+  }
+
+  .register-page__title {
+    font-size: 30px;
+  }
 }
 
-.register-page__modal-scroll {
-  max-height: 320px;
-  overflow-y: auto;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #444;
-  text-align: left;
-  padding-right: 8px;
-}
+/* --------------------------------------------------------------
+   DESKTOP (≥ 769px)
+-------------------------------------------------------------- */
+@media (min-width: 769px) {
+  .register-page {
+    padding: 32px 24px;
+  }
 
-.register-page__termos-link {
-  background: none;
-  border: none;
-  padding: 0;
-  color: #c0392b;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: inherit;
-}
+  .register-page__card {
+    display: grid;
+    grid-template-columns: minmax(300px, 38%) minmax(0, 1fr);
+    min-height: 680px;
+    border-radius: 20px;
+  }
 
-.register-page__termos-link:hover {
-  text-decoration: underline;
-}
-.register-page__contador {
-  font-size: 10px;
-  color: #aaaaaa;
-  font-weight: 400;
-  white-space: nowrap;
+  /* Lateral da marca */
+  .register-page__brand {
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 48px 36px 190px;
+    background: linear-gradient(180deg, #7a0509 0%, #5a070b 55%, #430a0c 100%);
+  }
+
+  .register-page__logo {
+    width: 100%;
+    height: auto;
+    max-width: 230px;
+    aspect-ratio: 1 / 1;
+  }
+
+  .register-page__wordmark {
+    margin-top: 8px;
+    font-size: 52px;
+    color: #ffa62b;
+    text-decoration: none;
+    text-shadow: none;
+  }
+
+  .register-page__wordmark span {
+    color: #ffffff;
+  }
+
+  .register-page__divider {
+    display: block;
+    width: 58%;
+    height: 1px;
+    margin: 22px 0 20px;
+    border: 0;
+    background: #f0a030;
+  }
+
+  .register-page__tagline {
+    display: block;
+    max-width: 240px;
+    font-size: 18px;
+    line-height: 1.45;
+    text-align: center;
+    color: #fff;
+  }
+
+  .register-page__hat {
+    display: block;
+    position: absolute;
+    left: 50%;
+    bottom: 36px;
+    width: 46%;
+    max-width: 150px;
+    transform: translateX(-50%);
+    color: #a3262b;
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  /* Conteúdo */
+  .register-page__content {
+    justify-content: center;
+    padding: 40px 56px;
+  }
+
+  .register-page__stepper {
+    max-width: 520px;
+    margin-bottom: 30px;
+  }
+
+  .register-page__step-dot {
+    width: 34px;
+    height: 34px;
+  }
+
+  .register-page__step-line {
+    top: 16px;
+  }
+
+  .register-page__step-label {
+    font-size: 13px;
+  }
+
+  .register-page__title {
+    font-size: 34px;
+  }
+
+  .register-page__subtitle {
+    max-width: 480px;
+    font-size: 16px;
+    margin-bottom: 26px;
+  }
+
+  .register-page__form {
+    gap: 16px 18px;
+  }
+
+  .register-page__field {
+    grid-column: span var(--span-d, 12);
+  }
+
+  .register-page__input {
+    height: 46px;
+    font-size: 15px;
+  }
 }

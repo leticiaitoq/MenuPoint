@@ -7,6 +7,7 @@ import {
   ReordenarProdutosDTO,
 } from './Produto.schema'
 import prisma from '@config/prisma'
+import { enviarImagemPublica, extensaoDeImagem } from '@shared/storage/supabase'
 
 export class ProdutoService {
 
@@ -152,5 +153,22 @@ export class ProdutoService {
     }
 
     return this.repository.update(id, { ativo: true } as any)
+  }
+
+  // Envia a imagem do produto para o Storage e devolve a URL pública.
+  // Não exige que o produto já exista — usada tanto na criação (o form
+  // sobe a imagem antes de enviar o restante dos dados) quanto na edição.
+  async uploadImagem(
+    estabelecimento_id: string,
+    arquivo: { buffer: Buffer; mimetype: string }
+  ): Promise<string> {
+    const ext = extensaoDeImagem(arquivo.buffer, arquivo.mimetype)
+    if (!ext) throw new AppError('Envie uma imagem JPG ou PNG', 422)
+
+    return enviarImagemPublica(
+      `${estabelecimento_id}/produtos/${Date.now()}.${ext}`,
+      arquivo.buffer,
+      arquivo.mimetype
+    )
   }
 }

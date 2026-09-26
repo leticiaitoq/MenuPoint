@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { AuthService } from './Auth.service'
 import { AuthRepository } from './Auth.repository'
+import { AppError } from '@shared/errors/AppError'
 import {
   loginSchema,
   esqueciSenhaSchema,
@@ -9,6 +10,8 @@ import {
   refreshTokenSchema,
   verificarCodigoSchema,
   reenviarCodigoSchema,
+  atualizarDadosSensiveisSchema,
+  verificarSenhaSchema,
   JWTPayload,
 } from './Auth.schema'
 
@@ -227,14 +230,99 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     })
 
     // GET /auth/me
+    // Perfil do usuário logado — usuário, empresa e estabelecimento — lido do
+    // BANCO (não do JWT). Assim a tela de perfil mostra o que realmente foi
+    // cadastrado e dá para conferir o vínculo usuário → estabelecimento → empresa.
+    // Também devolve um token novo com os dados atuais: sessões antigas (sem
+    // estabelecimento_id, por exemplo) se "curam" sem exigir novo login.
     priv.get('/me', async (request: FastifyRequest, reply: FastifyReply) => {
-      const {
-        sub, nome, email, perfil, escopo, estabelecimento_id, empresa_id,
-      } = request.user as JWTPayload
+      const { sub } = request.user as JWTPayload
+
+      const dados = await repository.findPerfilPorId(sub)
+
+      if (!dados) {
+        throw new AppError('Usuário não encontrado', 404)
+      }
+
+      if (!dados.ativo) {
+        throw new AppError('Usuário inativo', 401)
+      }
+
+      const { empresa, estabelecimento, ...usuario } = dados
+
+      const payloadAtualizado: JWTPayload = {
+        sub: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        perfil: usuario.perfil,
+        escopo: usuario.escopo,
+        estabelecimento_id: usuario.estabelecimento_id,
+        empresa_id: usuario.empresa_id,
+      }
 
       return reply.status(200).send({
-        usuario: { sub, nome, email, perfil, escopo, estabelecimento_id, empresa_id },
+        token: app.jwt.sign(payloadAtualizado),
+        usuario: { ...usuario, sub: usuario.id },
+        empresa,
+        estabelecimento,
+        // true = usuário → estabelecimento → empresa apontam uns para os outros.
+        vinculo_ok: Boolean(
+          empresa &&
+            estabelecimento &&
+            estabelecimento.empresa_id === empresa.id &&
+            usuario.estabelecimento_id === estabelecimento.id
+        ),
       })
     })
+    // POST /auth/verificar-senha
+    // Só confirma a senha atual (não altera nada). Usado antes de abrir a edição
+    // de dados sensíveis, para o usuário não preencher tudo e só então descobrir
+    // que errou a senha. Mesmo limite de tentativas da rota que altera de fato.
+    priv.post(
+      '/verificar-senha',
+      {
+        config: {
+          rateLimit: {
+            max: 5,
+            timeWindow: '15 minutes',
+            errorResponseBuilder: () => ({
+              status: 'error',
+              message: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
+            }),
+          },
+        },
+      },
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { sub } = request.user as JWTPayload
+        const data = verificarSenhaSchema.parse(request.body)
+        await service.verificarSenha(sub, data)
+        return reply.status(200).send({ valido: true })
+      }
+    )
+
+    // PUT /auth/me/dados
+    // Altera nome do responsável, e-mail de acesso, razão social e nome da empresa.
+    // Exige a senha atual. Limite: 5 tentativas a cada 15 minutos (evita adivinhar a senha).
+    priv.put(
+      '/me/dados',
+      {
+        config: {
+          rateLimit: {
+            max: 5,
+            timeWindow: '15 minutes',
+            errorResponseBuilder: () => ({
+              status: 'error',
+              message: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
+            }),
+          },
+        },
+      },
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { sub } = request.user as JWTPayload
+        const data = atualizarDadosSensiveisSchema.parse(request.body)
+        const resultado = await service.atualizarDadosSensiveis(sub, data, (p) => app.jwt.sign(p))
+        return reply.status(200).send(resultado)
+      }
+    )
   })
 }

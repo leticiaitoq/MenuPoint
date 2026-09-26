@@ -3,28 +3,30 @@ import { useNavigate } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
 import { HiEye, HiEyeOff, HiCheckCircle } from 'react-icons/hi';
 import AuthCard from './AuthCard';
-import AuthService from '../../services/auth.service'; 
+import AuthService from '../../services/auth.service';
+import { useAuth, ROTA_APOS_LOGIN } from '../../shared/contexts/Authcontext';
 import './LoginPage.css';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { entrar } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);      
-  const [carregando, setCarregando] = useState(false);       
+  const [erro, setErro] = useState<string | null>(null);
+  const [carregando, setCarregando] = useState(false);
   const [showSucesso, setShowSucesso] = useState(false);
 
   // Mesmo padrão usado na tela de verificação de código: mostra o toast de
   // sucesso e só navega depois de um tempinho, pra pessoa ver a confirmação.
   useEffect(() => {
     if (!showSucesso) return;
-    const timer = setTimeout(() => navigate('/restaurante/home'), 1200);
+    const timer = setTimeout(() => navigate(ROTA_APOS_LOGIN), 1200);
     return () => clearTimeout(timer);
   }, [showSucesso, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {      
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
     setCarregando(true);
@@ -35,9 +37,12 @@ const LoginPage: React.FC = () => {
         senha: password,
       });
 
-      // Salva token e usuário com as chaves corretas
-      localStorage.setItem('@menupoint:token', resultado.token);
-      localStorage.setItem('@menupoint:usuario', JSON.stringify(resultado.usuario));
+      // Guarda a sessão; o perfil completo é buscado do banco logo em seguida
+      entrar({
+        token: resultado.token,
+        refresh_token: resultado.refresh_token,
+        usuario: resultado.usuario,
+      });
 
       setCarregando(false);
       setShowSucesso(true);

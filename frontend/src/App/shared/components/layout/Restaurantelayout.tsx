@@ -12,12 +12,12 @@ interface RestaurantLayoutProps {
 
 const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
-  const { logoUrl } = useEstabelecimento();
+  const { logoUrl, nomeRestaurante } = useEstabelecimento();
 
   /**
    * Ícone direito clicável — navega para as configurações do restaurante.
-   * Mostra a foto que o restaurante enviou em Configurações (com fallback
-   * pro avatar padrão enquanto nenhuma foto foi enviada ainda).
+   * Mostra a logo salva no banco (com fallback pro avatar padrão enquanto
+   * nenhuma foto foi enviada ainda).
    */
   const rightIcon = (
     <button
@@ -35,7 +35,7 @@ const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
 
   return (
     <div className="restaurant-layout">
-      <Navbar subtitle="(Restaurante)" rightIcon={rightIcon} leftIcon={leftIcon} />
+      <Navbar subtitle={nomeRestaurante ?? '(Restaurante)'} rightIcon={rightIcon} leftIcon={leftIcon} />
 
       <div className="restaurant-layout__body">
         <RestaurantSidebar />

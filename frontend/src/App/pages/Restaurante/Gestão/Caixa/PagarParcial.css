@@ -235,6 +235,19 @@
 
 .pagar-parcial__campo-valor input {
   width: 100%;
+  padding-right: 42px; /* espaço pra badge de % não sobrepor o texto digitado */
+}
+
+/* remove as setinhas nativas de incremento do input number */
+.pagar-parcial__campo-valor input::-webkit-outer-spin-button,
+.pagar-parcial__campo-valor input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.pagar-parcial__campo-valor input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .pagar-parcial__percentual {

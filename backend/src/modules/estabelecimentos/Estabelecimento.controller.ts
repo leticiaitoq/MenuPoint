@@ -4,6 +4,7 @@ import { EstabelecimentoRepository } from './Estabelecimento.repository'
 import {
   criarEstabelecimentoSchema,
   atualizarEstabelecimentoSchema,
+  atualizarPixSchema,
 } from './Estabelecimento.schema'
 import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
@@ -94,6 +95,66 @@ export async function estabelecimentosRoutes(app: FastifyInstance) {
       const estabelecimento = await service.update(id, data)
 
       return reply.send(estabelecimento)
+    }
+  )
+
+  // PATCH /:id/pix — chave PIX é dado sensível: exige senha atual e só o
+  // dono da empresa (ADMIN + escopo GLOBAL) pode alterar.
+  app.patch(
+    '/:id/pix',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string }
+      const user = request.user as JWTPayload
+
+      if (user.escopo === 'LOCAL' && user.estabelecimento_id !== id) {
+        throw new AppError('Acesso não autorizado', 403)
+      }
+
+      const data = atualizarPixSchema.parse(request.body)
+      const estabelecimento = await service.atualizarPix(
+        id,
+        { id: user.sub, perfil: user.perfil, escopo: user.escopo },
+        data
+      )
+
+      return reply.send(estabelecimento)
+    }
+  )
+
+  // POST /estabelecimentos/:id/logo — multipart (campo "arquivo"), JPG/PNG até 5MB
+  app.post(
+    '/:id/logo',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string }
+      const user = request.user as JWTPayload
+
+      if (user.escopo === 'LOCAL' && user.estabelecimento_id !== id) {
+        throw new AppError('Acesso não autorizado', 403)
+      }
+
+      if (user.perfil !== 'ADMIN') {
+        throw new AppError('Apenas administradores podem alterar a logo', 403)
+      }
+
+      const arquivo = await request.file()
+      if (!arquivo) {
+        throw new AppError('Envie uma imagem', 400)
+      }
+
+      let buffer: Buffer
+      try {
+        buffer = await arquivo.toBuffer()
+      } catch (err: any) {
+        if (err?.code === 'FST_REQ_FILE_TOO_LARGE') {
+          throw new AppError('Imagem muito grande (máximo 5MB)', 413)
+        }
+        throw err
+      }
+
+      const logo_url = await service.atualizarLogo(id, { buffer, mimetype: arquivo.mimetype })
+      return reply.send({ logo_url })
     }
   )
 

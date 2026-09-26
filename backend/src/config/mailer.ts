@@ -15,6 +15,10 @@ export const transporter = nodemailer.createTransport({
     user: env.MAIL_USER,
     pass: env.MAIL_PASS,
   },
+  // Sem isso o nodemailer espera minutos por um SMTP que não responde
+  connectionTimeout: 10_000,
+  greetingTimeout: 10_000,
+  socketTimeout: 20_000,
 })
 
 // Verifica se a conexão com o servidor de e-mail está funcionando
