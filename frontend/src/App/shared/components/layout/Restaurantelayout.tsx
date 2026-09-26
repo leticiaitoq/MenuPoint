@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar/Navbar';
 import Footer from './Footer/Footer';
 import RestaurantSidebar from './Sidebar/RestaurantSidebar';
+import { useEstabelecimento } from '../../contexts/Estabelecimentocontext';
 import './Restaurantelayout.css';
 
 interface RestaurantLayoutProps {
@@ -11,10 +12,12 @@ interface RestaurantLayoutProps {
 
 const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
+  const { logoUrl, nomeRestaurante } = useEstabelecimento();
 
   /**
    * Ícone direito clicável — navega para as configurações do restaurante.
-   * Mesmo padrão do CustomerLayout onde o avatar navega para o perfil.
+   * Mostra a logo salva no banco (com fallback pro avatar padrão enquanto
+   * nenhuma foto foi enviada ainda).
    */
   const rightIcon = (
     <button
@@ -22,7 +25,7 @@ const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
       onClick={() => navigate('/restaurante/config')}
       aria-label="Ir para configurações"
     >
-      <img src="/icons/restaurant-avatar.png" alt="Configurações do restaurante" />
+      <img src={logoUrl ?? '/icons/restaurant-avatar.png'} alt="Foto do restaurante" />
     </button>
   );
 
@@ -32,7 +35,7 @@ const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
 
   return (
     <div className="restaurant-layout">
-      <Navbar subtitle="(Restaurante)" rightIcon={rightIcon} leftIcon={leftIcon} />
+      <Navbar subtitle={nomeRestaurante ?? '(Restaurante)'} rightIcon={rightIcon} leftIcon={leftIcon} />
 
       <div className="restaurant-layout__body">
         <RestaurantSidebar />

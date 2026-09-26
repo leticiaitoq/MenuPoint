@@ -1,20 +1,71 @@
+/* ─────────────────────────────────────────────────────────────
+   Perfil do restaurante
+   Mesma linguagem do resto do sistema: fundo cinza, cards brancos,
+   verde para ação principal, vermelho para destaque/erro.
+   ───────────────────────────────────────────────────────────── */
+
 .config {
+  --cfg-texto: #333333;
+  --cfg-suave: #777777;
+  --cfg-borda: #dddddd;
+  --cfg-campo: #fafafa;
+  --cfg-verde: #5a7a3a;
+  --cfg-verde-escuro: #4a6530;
+  --cfg-verde-fundo: #e8f0df;
+  --cfg-vermelho: #c0392b;
+  --cfg-vermelho-fundo: #fbe9e7;
+
   display: flex;
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  padding: 8px 0;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 8px 0 96px; /* espaço para o botão flutuante não cobrir o fim da página */
+  color: var(--cfg-texto);
 }
 
-/* ── Título ── */
+/* ── Cabeçalho ── */
+.config__cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .config__titulo {
   font-size: 24px;
   font-weight: 700;
-  color: #333333;
   margin: 0;
 }
 
-/* ── Cards brancos ── */
+.config__subtitulo {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--cfg-suave);
+  max-width: 60ch;
+}
+
+/* ── Avisos ── */
+.config__aviso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.config__aviso svg { flex-shrink: 0; font-size: 20px; }
+
+.config__aviso--ok   { background: var(--cfg-verde-fundo);     color: #3f5a26; }
+.config__aviso--erro { background: var(--cfg-vermelho-fundo);  color: #a93226; }
+.config__aviso--info { background: #ffffff; color: var(--cfg-suave); border: 1px solid var(--cfg-borda); }
+
+/* ── Cards ── */
 .config__card {
   background: #ffffff;
   border-radius: 16px;
@@ -28,154 +79,161 @@
 .config__card-titulo {
   font-size: 18px;
   font-weight: 600;
-  color: #333333;
   margin: 0;
 }
 
-/* ── Linha de informações do restaurante ── */
-.config__info-row {
-  display: flex;
+.config__card--vazio {
   align-items: flex-start;
-  gap: 24px;
-  flex-wrap: wrap;
+  gap: 14px;
 }
 
-/* ── Avatar ── */
+.config__estado {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--cfg-suave);
+  font-size: 15px;
+}
+
+.config__estado-icone {
+  font-size: 32px;
+  color: var(--cfg-vermelho);
+}
+
+/* ── Grades de campos ── */
+.config__grade {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 20px;
+}
+
+.config__grade--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.config__span-2   { grid-column: span 2; }
+
+/* Endereço em 12 colunas */
+.config__grade--endereco { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+.config__col-cep    { grid-column: span 3; }
+.config__col-rua    { grid-column: span 7; }
+.config__col-numero { grid-column: span 2; }
+.config__col-compl  { grid-column: span 3; }
+.config__col-bairro { grid-column: span 3; }
+.config__col-cidade { grid-column: span 4; }
+.config__col-uf     { grid-column: span 2; }
+
+/* ── Campos ── */
+.config__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.config__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.config__cadeado {
+  font-size: 13px;
+  color: #999999;
+}
+
+.config__input {
+  width: 100%;
+  border: 1px solid var(--cfg-borda);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--cfg-texto);
+  background: var(--cfg-campo);
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.config__input:focus-visible,
+.config__btn:focus-visible,
+.config__link:focus-visible {
+  outline: 2px solid var(--cfg-verde);
+  outline-offset: 2px;
+}
+
+.config__input:focus { border-color: var(--cfg-verde); }
+
+.config__input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.config__input--bloqueado {
+  background: #f0f0ee;
+  color: #666666;
+  cursor: default;
+  text-overflow: ellipsis;
+}
+
+.config__input--bloqueado:focus { border-color: var(--cfg-borda); }
+
+.config__select { cursor: pointer; }
+
+.config__input--hora {
+  width: 120px;
+}
+
+.config__hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--cfg-suave);
+}
+
+.config__erro {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--cfg-vermelho);
+}
+
+/* ── Identidade ── */
+.config__identidade {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+.config__logo-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 168px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
 .config__avatar {
   width: 120px;
   height: 120px;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid #e0e0e0;
-  flex-shrink: 0;
+  background: #f3f3f3;
 }
 
-/* ── Coluna de foto ── */
-.config__foto-col {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 160px;
-}
+.config__arquivo { display: none; }
 
-/* ── Campos genéricos ── */
-.config__campo {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.config__grade--identidade { flex: 1; min-width: 0; }
 
-.config__campo--flex {
-  flex: 1;
-  min-width: 220px;
-}
-
-/* ── Labels ── */
-.config__label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333333;
-}
-
-/* ── Wrapper input com ícone ── */
-.config__input-icone-wrap {
-  position: relative;
-}
-
-.config__input-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 16px;
-  color: #aaaaaa;
-  pointer-events: none;
-}
-
-/* ── Inputs ── */
-.config__input {
-  border: 1px solid #dddddd;
-  border-radius: 8px;
-  padding: 10px 36px 10px 14px;
-  font-size: 14px;
-  outline: none;
-  color: #333333;
-  background: #fafafa;
-  width: 100%;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
-}
-
-.config__input:focus {
-  border-color: #aaaaaa;
-}
-
-/* UF */
-.config__input--uf {
-  padding: 10px 14px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  font-weight: 600;
-  text-align: center;
-}
-
-
-/* ── Select ── */
-.config__select {
-  border: 1px solid #dddddd;
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 14px;
-  outline: none;
-  color: #333333;
-  background: #fafafa;
-  cursor: pointer;
-  width: 100%;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
-}
-
-.config__select:focus {
-  border-color: #aaaaaa;
-}
-
-/* ── Hint ── */
-.config__hint {
-  font-size: 12px;
-  color: #888888;
-  margin: 0;
-  line-height: 1.5;
-}
-
-/* ── Botão Cadastrar Filial ── */
-.config__btn-filial {
-  display: flex;
+/* ── Botões ── */
+.config__btn {
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  align-self: flex-start;
   padding: 9px 18px;
-  border: 1.5px solid #c0392b;
-  border-radius: 8px;
-  background: transparent;
-  color: #c0392b;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-
-.config__btn-filial:hover {
-  background: #c0392b;
-  color: #ffffff;
-}
-
-/* ── Botão: Alterar Foto ── */
-.config__btn-foto {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 16px;
-  border: 1px solid #dddddd;
+  border: 1px solid var(--cfg-borda);
   border-radius: 8px;
   background: #ffffff;
   color: #555555;
@@ -185,428 +243,511 @@
   transition: background 0.2s, border-color 0.2s;
 }
 
-.config__btn-foto:hover {
+.config__btn:hover:not(:disabled) {
   background: #f5f5f5;
   border-color: #aaaaaa;
 }
 
-/* ── Grid de endereço ── */
-.config__endereco-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 140px;
-  grid-template-rows: auto auto;
-  gap: 16px 20px;
-  align-items: end;
+.config__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
-.config__campo--endereco { grid-column: 1; grid-row: 1; }
-.config__campo--bairro   { grid-column: 2; grid-row: 1; }
-.config__campo--cep      { grid-column: 3; grid-row: 1; }
-.config__campo--cidade   { grid-column: 1; grid-row: 2; }
-.config__campo--estado   { grid-column: 2; grid-row: 2; max-width: 80px; }
+.config__btn--primario {
+  background: var(--cfg-verde);
+  border-color: var(--cfg-verde);
+  color: #ffffff;
+}
 
-/* ── Linha de horário ── */
-.config__horario-row {
+.config__btn--primario:hover:not(:disabled) {
+  background: var(--cfg-verde-escuro);
+  border-color: var(--cfg-verde-escuro);
+}
+
+.config__btn--sair {
+  color: var(--cfg-vermelho);
+  border-color: var(--cfg-vermelho);
+  flex-shrink: 0;
+}
+
+.config__btn--sair:hover:not(:disabled) {
+  background: var(--cfg-vermelho);
+  border-color: var(--cfg-vermelho);
+  color: #ffffff;
+}
+
+.config__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.config__link {
+  background: none;
+  border: none;
+  padding: 4px 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cfg-verde);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.config__link:disabled {
+  color: #aaaaaa;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+/* ── Interruptores (switch) ── */
+.config__switch input,
+.config__dia-check {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.config__switch-trilho {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #c9c9c9;
+  transition: background 0.2s;
+}
+
+.config__switch-trilho::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s;
+}
+
+input:checked + .config__switch-trilho { background: var(--cfg-verde); }
+input:checked + .config__switch-trilho::after { transform: translateX(18px); }
+input:focus-visible + .config__switch-trilho { outline: 2px solid var(--cfg-verde); outline-offset: 2px; }
+input:disabled + .config__switch-trilho { opacity: 0.55; }
+
+.config__interruptores {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.config__switch {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #eeeeee;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.config__switch-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+}
+
+.config__switch-texto small {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--cfg-suave);
+}
+
+/* ── Horários ── */
+.config__dias {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.config__dia {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 16px;
+  padding: 12px 0;
+  border-top: 1px solid #f0f0f0;
+}
+
+.config__dia:first-child { border-top: none; }
+
+.config__dia > .config__erro,
+.config__dia > .config__hint { grid-column: 2; }
+
+.config__dia-nome {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.config__dia:not(.config__dia--aberto) .config__dia-nome { color: var(--cfg-suave); }
+
+.config__dia-horas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.config__ate { font-size: 14px; color: var(--cfg-suave); }
+
+.config__dia-fechado {
+  font-size: 14px;
+  color: #999999;
+}
+
+/* ── Cada seção cuida de si: selo de status + Salvar/Descartar no cabeçalho ──
+   Mesma ideia dos badges "Aberta/Fechada" e das abas da tela de Caixa: um
+   selo curto (pill) mostra o estado, e as ações ficam coladas nele. */
+.config__secao-controles {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.config__select--dia {
-  flex: 1;
-  min-width: 140px;
-  max-width: 220px;
-}
-
-.config__select--hora {
-  min-width: 90px;
-  max-width: 110px;
-}
-
-.config__horario-ate {
-  font-size: 14px;
-  color: #888888;
+.config__secao-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
   white-space: nowrap;
 }
 
-/* ── Botão Checar horario geral ── */
-.config__btn-checar {
+.config__secao-status svg { font-size: 14px; }
+
+.config__secao-status--pendente { background: #fff4e5; color: #9a6400; }
+.config__secao-status--salvando { background: #f0f0f0; color: #666666; }
+.config__secao-status--ok       { background: var(--cfg-verde-fundo); color: #3f5a26; }
+.config__secao-status--erro     { background: var(--cfg-vermelho-fundo); color: #a93226; }
+
+.config__secao-acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.config__btn--pequeno {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+/* ── Cabeçalho: chip informativo + botão Sair, igual à tela de Caixa ── */
+.config__cabecalho-acoes {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 18px;
-  border: 1.5px solid #333333;
-  border-radius: 8px;
-  background: transparent;
-  color: #333333;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  margin-left: auto;
-  transition: background 0.2s, color 0.2s;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.config__btn-checar:hover {
-  background: #333333;
-  color: #ffffff;
-}
-
-/* ── Botão Salvar Configurações ── */
-.config__btn-salvar {
-  align-self: center;
+/* "Pendentes" é só informação (contador), não uma ação — por isso é uma
+   <div role="status">, sem cursor de clique e sem hover, igual ao chip
+   "Pedidos em aberto" da tela de Caixa. */
+.config__chip-info {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 36px;
-  background: #5a7a3a;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
+  background: #fdecea;
+  border: 1px solid #f3c8c2;
+  color: #c0392b;
+  border-radius: 20px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: default;
+  user-select: none;
 }
 
-.config__btn-salvar:hover:not(:disabled) {
-  background: #4a6530;
-  transform: translateY(-1px);
+.config__chip-info-icone { font-size: 16px; opacity: 0.8; }
+
+.config__chip-info-texto {
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.3px;
 }
 
-.config__btn-salvar:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.config__btn-salvar:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-/* ── Overlay compartilhado (modal + popup) ── */
-.config__overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
+.config__chip-info-numero {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  background: #c0392b;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
 }
 
-/* ── Modal: Horário Geral ── */
-.config__modal {
-  background: #ffffff;
-  border-radius: 14px;
-  width: 420px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+/* ── Painel com abas, igual à tela de Caixa ── */
+.config__painel {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  padding: 20px 24px 28px;
+  backdrop-filter: blur(4px);
   display: flex;
   flex-direction: column;
+  gap: 20px;
 }
 
-.config__modal-header {
+.config__abas {
   display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.config__aba {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 16px 24px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.config__modal-header-esq {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.config__modal-header-icon {
-  font-size: 22px;
-  color: #c0392b;
-}
-
-.config__modal-header h3 {
-  font-size: 16px;
-  font-weight: 700;
-  color: #333333;
-  margin: 0;
-}
-
-.config__modal-fechar {
+  gap: 6px;
   background: none;
   border: none;
-  font-size: 20px;
-  color: #999999;
+  border-bottom: 2px solid transparent;
+  padding: 10px 2px 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #999;
   cursor: pointer;
-  line-height: 1;
   transition: color 0.2s;
 }
 
-.config__modal-fechar:hover {
-  color: #333333;
+.config__aba:hover { color: var(--cfg-verde); }
+
+.config__aba--ativa {
+  color: var(--cfg-verde);
+  border-bottom-color: var(--cfg-verde);
 }
 
-.config__modal-corpo {
-  padding: 20px 24px;
+/* Bolinha que sinaliza "essa seção tem alteração não salva", assim como
+   os números entre parênteses nas abas "Abertas (3)" da tela de Caixa. */
+.config__aba-ponto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e08a00;
+}
+
+/* Dentro do painel, cada seção some seu próprio contorno de card — o
+   painel já é o "card" visualmente. */
+.config__painel > .config__card {
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* ── Diálogos (senha / salvar ao sair) ── */
+.config__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(20, 20, 18, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+/* Retangular, com uma faixa de cor no topo para dar identidade ao card —
+   nada de bordas exageradamente arredondadas nem formato oval. */
+.config__dialogo {
+  width: min(460px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: hidden;
+  background: #ffffff;
+  color: #333333;
+  border-radius: 14px;
+  border: 1px solid #eceae4;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.08);
+  animation: config-dialogo-entra 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.config__dialogo::before {
+  content: '';
+  display: block;
+  height: 4px;
+  background: linear-gradient(90deg, var(--cfg-verde) 0%, #7fa855 100%);
+}
+
+@keyframes config-dialogo-entra {
+  from { opacity: 0; transform: scale(0.97) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.config__dialogo-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 18px;
+  padding: 26px 28px 28px;
 }
 
-/* ── Item de horário no modal ── */
-.config__horario-item {
+.config__dialogo-topo {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: #fafafa;
-  border-radius: 8px;
-  border: 1px solid #eeeeee;
+  gap: 12px;
 }
 
-.config__horario-item-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333333;
-}
-
-.config__horario-item-horas {
-  font-size: 14px;
-  font-weight: 700;
-  color: #c0392b;
-}
-
-.config__modal-acoes {
-  display: flex;
-  justify-content: flex-end;
-  padding: 16px 24px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.config__modal-btn-fechar {
-  background: #f0f0f0;
-  color: #555555;
+.config__dialogo-x,
+.config__dialogo-voltar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border: none;
   border-radius: 8px;
-  padding: 9px 20px;
-  font-size: 14px;
+  background: none;
+  font-size: 18px;
+  color: #8a8a86;
   cursor: pointer;
-  transition: background 0.2s;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
 }
 
-.config__modal-btn-fechar:hover {
-  background: #dddddd;
-}
+.config__dialogo-x:hover:not(:disabled),
+.config__dialogo-voltar:hover:not(:disabled) { background: #f2f1ec; color: #333333; }
 
-/* ── Popup de sucesso ── */
-.config__popup {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 36px 40px;
-  display: flex;
-  flex-direction: column;
+/* Ícone do passo 1 (senha) — quadrado com cantos suaves, não um círculo,
+   pra manter a linguagem retangular do card. */
+.config__dialogo-icone {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  max-width: 380px;
-  text-align: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--cfg-verde-fundo);
+  color: var(--cfg-verde-escuro);
+  font-size: 21px;
 }
 
-.config__popup-icon {
-  font-size: 48px;
+.config__dialogo-form .config__card-titulo {
+  font-size: 19px;
 }
 
-.config__popup h3 {
-  font-size: 20px;
+/* Selo "Senha confirmada" no topo do passo 2 */
+.config__dialogo-selo-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--cfg-verde-fundo);
+  font-size: 12px;
   font-weight: 700;
-  color: #333333;
-  margin: 0;
+  color: #3f5a26;
 }
 
-.config__popup p {
-  font-size: 14px;
-  color: #777777;
-  margin: 0;
-}
-/* Responsividade do grid de endereço */
+.config__dialogo-selo-ok svg { font-size: 15px; }
 
-/* 900px: sidebar comprime o conteúdo*/
-@media (max-width: 900px) {
-  
-  /* Card com menos padding lateral */
-  .config__card {
-    padding: 20px 20px;
-  }
- 
-  /* Informações: avatar empilha com nome / foto */
-  .config__info-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
- 
-  .config__avatar {
-    align-self: flex-start;
-  }
- 
-  .config__campo--flex {
-    min-width: 0;
-  }
- 
-  .config__foto-col {
-    min-width: 0;
-    flex-direction: row;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
- 
-  /* Endereço: 2 colunas, endereço ocupa a linha toda */
-  .config__endereco-grid {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto auto;
-  }
- 
-  .config__campo--endereco { grid-column: 1 / -1; grid-row: 1; }
-  .config__campo--bairro   { grid-column: 1;      grid-row: 2; }
-  .config__campo--cep      { grid-column: 2;      grid-row: 2; }
-  .config__campo--cidade   { grid-column: 1;      grid-row: 3; }
-  .config__campo--estado   { grid-column: 2;      grid-row: 3; max-width: none; }
- 
-  /* Horário: botão checar vai para nova linha */
-  .config__horario-row {
-    flex-wrap: wrap;
-  }
- 
-  .config__select--dia {
-    max-width: none;
-  }
- 
-  .config__btn-checar {
-    margin-left: 0;
-    width: 100%;
-    justify-content: center;
-  }
+/* Indicador de passo (duas barrinhas no topo do modal) */
+.config__dialogo-passos {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 0 0;
 }
- 
-/* ── 600px ── */
-@media (max-width: 600px) {
- 
-  .config__titulo {
-    font-size: 20px;
-  }
- 
-  .config__card {
-    padding: 16px;
-    border-radius: 12px;
-    gap: 16px;
-  }
- 
-  /* Informações: avatar centralizado, resto em coluna */
-  .config__info-row {
-    align-items: center;
-  }
- 
-  .config__avatar {
-    align-self: center;
-    width: 96px;
-    height: 96px;
-  }
- 
-  .config__campo--flex {
-    width: 100%;
-  }
- 
-  .config__btn-filial {
-    width: 100%;
-    justify-content: center;
-  }
- 
-  .config__foto-col {
-    width: 100%;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
- 
-  .config__btn-foto {
-    width: 100%;
-    justify-content: center;
-  }
- 
-  /* Endereço: coluna única */
-  .config__endereco-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: unset;
-    gap: 14px;
-  }
- 
-  .config__campo--endereco,
-  .config__campo--bairro,
-  .config__campo--cep,
-  .config__campo--cidade,
-  .config__campo--estado {
-    grid-column: 1;
-    grid-row: unset;
-    max-width: none;
-  }
- 
-  /* Horário: tudo em coluna */
-  .config__horario-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
- 
-  .config__select--dia,
-  .config__select--hora {
-    min-width: 0;
-    max-width: none;
-    width: 100%;
-  }
- 
-  .config__horario-ate {
-    text-align: center;
-  }
- 
-  .config__btn-checar {
-    width: 100%;
-    justify-content: center;
-  }
- 
-  /* Salvar: ocupa a largura toda */
-  .config__btn-salvar {
-    width: 100%;
-    justify-content: center;
-    align-self: stretch;
-  }
- 
-  /* Modal */
-  .config__modal-header {
-    padding: 16px 16px 12px 16px;
-  }
- 
-  .config__modal-header h3 {
-    font-size: 15px;
-  }
- 
-  .config__modal-corpo {
-    padding: 16px;
-  }
- 
-  .config__modal-acoes {
-    padding: 12px 16px;
-  }
- 
-  /* Popup */
-  .config__popup {
-    padding: 28px 20px;
-  }
- 
-  .config__popup-icon {
-    font-size: 40px;
-  }
- 
-  .config__popup h3 {
-    font-size: 18px;
-  }
+
+.config__dialogo-passo {
+  width: 26px;
+  height: 4px;
+  border-radius: 999px;
+  background: #e9e8e2;
+  transition: background 0.25s, width 0.25s;
 }
- 
+
+.config__dialogo-passo--ativo { background: var(--cfg-verde); width: 34px; }
+.config__dialogo-passo--feito { background: #b8cba0; }
+
+/* Entrada de cada passo (o passo anterior sai do DOM, não fica só escondido) */
+.config__dialogo-tela--entra-dir { animation: config-passo-entra-dir 0.24s cubic-bezier(0.16, 1, 0.3, 1); }
+.config__dialogo-tela--entra-esq { animation: config-passo-entra-esq 0.24s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes config-passo-entra-dir {
+  from { transform: translateX(18px); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes config-passo-entra-esq {
+  from { transform: translateX(-18px); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .config__dialogo,
+  .config__dialogo-tela { animation: none; transition: none; }
+}
+
+@media (max-width: 520px) {
+  .config__dialogo-form { padding: 22px 20px 24px; }
+}
+
+.config__acoes--fim { justify-content: flex-end; }
+
+.config__card-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* ── Telas menores ── */
+@media (max-width: 860px) {
+  .config__grade--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .config__interruptores { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .config__card { padding: 20px 18px; }
+
+  .config__cabecalho { flex-direction: column; }
+
+  .config__identidade { flex-direction: column; align-items: stretch; }
+  .config__logo-col { width: 100%; }
+
+  .config__grade,
+  .config__grade--4 { grid-template-columns: 1fr; }
+  .config__span-2 { grid-column: auto; }
+
+  .config__grade--endereco { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .config__col-cep,
+  .config__col-rua,
+  .config__col-compl,
+  .config__col-bairro,
+  .config__col-cidade { grid-column: span 6; }
+  .config__col-numero,
+  .config__col-uf { grid-column: span 3; }
+
+  .config__dia { grid-template-columns: 1fr; }
+  .config__dia > .config__erro,
+  .config__dia > .config__hint { grid-column: 1; }
+
+  .config__card-cabecalho { flex-direction: column; align-items: flex-start; }
+  .config__secao-controles { width: 100%; justify-content: space-between; }
+  .config__secao-acoes .config__btn { flex: 1; }
+}

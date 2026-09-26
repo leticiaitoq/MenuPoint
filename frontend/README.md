@@ -47,13 +47,16 @@ To learn React, check out the [React documentation](https://reactjs.org/).
 
 
 //////frontend//////
-
-yarn init
+cd frontend
+yarn start
 
 //////backend//////
-
+cd backend
 npm install
 npx prisma generate
 npx prisma migrate dev
 npm run prisma:seed
+npm run dev
+
+cd backend
 npm run dev

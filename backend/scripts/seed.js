@@ -4,6 +4,13 @@ const bcrypt = require('bcryptjs')
 const prisma = new PrismaClient()
 
 async function main() {
+  // Este seed cria dados de MENTIRA (estabelecimento "padrão" sem empresa e um admin GLOBAL).
+  // Nunca deve rodar em produção — cadastros reais nascem pela tela de registro.
+  if (process.env.NODE_ENV === 'production') {
+    console.log('⛔ Seed bloqueado em produção.')
+    return
+  }
+
   console.log('🌱 Iniciando seed...')
 
   // Cria o hash da senha

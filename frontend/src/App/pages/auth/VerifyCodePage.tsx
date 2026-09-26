@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
+import { HiCheckCircle } from 'react-icons/hi';
 import AuthCard from './AuthCard';
 import AuthService from '../../services/auth.service';
+import { ROTA_APOS_LOGIN } from '../../shared/contexts/Authcontext';
 import './VerifyCodePage.css';
 
 interface LocationState {
@@ -26,6 +28,8 @@ const VerifyCodePage: React.FC = () => {
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  const [showSucesso, setShowSucesso] = useState(false);
+
   /* ── Countdown para reenvio ── */
   useEffect(() => {
     if (segundos === 0) {
@@ -40,6 +44,12 @@ const VerifyCodePage: React.FC = () => {
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
+
+  useEffect(() => {
+  if (!showSucesso) return;
+  const timer = setTimeout(() => navigate(ROTA_APOS_LOGIN), 1800);
+  return () => clearTimeout(timer);
+}, [showSucesso, navigate]);
 
   const handleChange = (index: number, value: string) => {
     // Aceita apenas dígitos
@@ -97,23 +107,24 @@ const VerifyCodePage: React.FC = () => {
     setErro(null);
     setCarregando(true);
 
-    try {
-      // TODO: substituir pela chamada real da sua API
-      const resultado = await AuthService.verifyCode({ email, code });
+   try {
+  await AuthService.verifyCode({
+    email,
+    code,
+    tipo: mode === 'register' ? 'registro' : 'recuperacao',
+  });
 
-      if (mode === 'register') {
-        // Salva o token aqui, após o email ser confirmado
-        localStorage.setItem('@menupoint:token', resultado.token);
-        localStorage.setItem('@menupoint:usuario', JSON.stringify(resultado.usuario));
-        navigate('/restaurante/home');
-      } else {
-        navigate('/nova-senha', { state: { email, code } });
-      }
-    } catch (err: any) {
-      setErro(err?.response?.data?.message ?? 'Código inválido ou expirado.');
-    } finally {
-      setCarregando(false);
-    }
+  if (mode === 'register') {
+    // Mostra o aviso de sucesso e só navega depois de um tempinho
+    setShowSucesso(true);
+  } else {
+    navigate('/nova-senha', { state: { email, code } });
+  }
+} catch (err: any) {
+  setErro(err?.response?.data?.message ?? 'Código inválido ou expirado.');
+} finally {
+  setCarregando(false);
+}
   };
 
   const handleReenviar = async () => {
@@ -123,8 +134,7 @@ const VerifyCodePage: React.FC = () => {
     setErro(null);
 
     try {
-      // TODO: chamar serviço de reenvio
-      // await AuthService.resendCode({ email });
+      await AuthService.resendCode(email, mode === 'register' ? 'registro' : 'recuperacao');
     } catch {
       setErro('Não foi possível reenviar o código. Tente novamente.');
     }
@@ -227,6 +237,16 @@ const VerifyCodePage: React.FC = () => {
             </button>
           </p>
         </div>
+        {showSucesso && (
+  <div className="verify-page__toast-overlay">
+    <div className="verify-page__toast">
+      <div className="verify-page__toast-inner">
+        <HiCheckCircle className="verify-page__toast-icon" />
+        <p className="verify-page__toast-text">Email verificado com sucesso!</p>
+      </div>
+    </div>
+  </div>
+)}
       </div>
     </div>
   );

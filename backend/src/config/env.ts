@@ -23,6 +23,11 @@ const envSchema = z.object({
   WHATSAPP_NOTIFICACOES: z.string().optional(),
 
 
+  // Supabase Storage — logo do restaurante (opcional: sem isso o upload avisa que não está configurado)
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_SERVICE_KEY: z.string().optional(),
+  SUPABASE_BUCKET: z.string().default('logos'),
+
   // Mercado Pago — Assinaturas (site)
   MP_ACCESS_TOKEN:  z.string().min(1, 'MP_ACCESS_TOKEN é obrigatório'),
   MP_PUBLIC_KEY:    z.string().min(1, 'MP_PUBLIC_KEY é obrigatório'),

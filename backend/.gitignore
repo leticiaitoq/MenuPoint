@@ -4,3 +4,5 @@ dist
 prisma/migrations/dev.db 
 .DS_Store 
 /src/generated/prisma
+logs.txt
+.log

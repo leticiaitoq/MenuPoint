@@ -29,7 +29,10 @@ export const criarCategoriaSchema = z.object({
 
   ativo: z.boolean().default(true),
 
-  estabelecimento_id: z.string().uuid("ID do estabelecimento inválido"),
+  // Sempre sobrescrito pelo controller com o estabelecimento do usuário
+  // logado (nunca confiar no valor vindo do cliente) — por isso é opcional
+  // aqui, senão o parse falha quando o frontend simplesmente não o envia.
+  estabelecimento_id: z.string().uuid("ID do estabelecimento inválido").optional(),
 })
 
 export type CriarCategoriaDTO = z.infer<typeof criarCategoriaSchema>

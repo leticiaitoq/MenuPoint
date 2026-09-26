@@ -2,12 +2,13 @@
   width: 100%;
   height: 80px;
   padding: 0 16px;
-  background: linear-gradient(to right, #490e24, #f35e61, #ffe385);
+  background: linear-gradient(to right, #880003, #880003, #490e0e, #490e0e);
   display: flex;
   align-items: center;
   justify-content: space-between;
   overflow: hidden;
   flex-shrink: 0;
+  position: relative;
 }
 
 .navbar__left,
@@ -17,34 +18,52 @@
   align-items: center;
 }
 
+.navbar__left {
+  justify-content: flex-start;
+}
+
 .navbar__right {
   justify-content: flex-end;
 }
 
+/* Centro da navbar */
 .navbar__center {
-  flex: 1;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
+/* MenuPoint */
 .navbar__logo {
   font-size: 28px;
   font-weight: 700;
   font-style: italic;
-  color: #f1c40f;
-  text-decoration: underline;
   line-height: 1.1;
+  text-decoration: underline;
+  margin-left: 8px;
 }
 
+/* "Menu" */
+.navbar__menu {
+  color: #f58400;
+}
+
+/* "Point" */
+.navbar__point {
+  color: #ffffff;
+}
+
+/* Subtítulo — Cliente / Restaurante */
 .navbar__subtitle {
   font-size: 16px;
   font-weight: 500;
   color: #ffffff;
   margin-top: 2px;
 }
-
 
 .navbar__icon {
   width: 100px;
@@ -55,6 +74,11 @@
   flex-shrink: 0;
 }
 
+.navbar__logo-icon {
+  width: 130px;
+  height: 130px;
+}
+
 .navbar__icon img {
   width: 100%;
   height: 100%;
@@ -62,7 +86,9 @@
 }
 
 /* ── Mobile ── */
+
 @media (max-width: 600px) {
+
   .navbar {
     height: 60px;
     padding: 0 10px;
@@ -70,6 +96,7 @@
 
   .navbar__logo {
     font-size: 20px;
+    margin-left: 5px;
   }
 
   .navbar__subtitle {

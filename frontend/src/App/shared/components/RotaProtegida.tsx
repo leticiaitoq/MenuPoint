@@ -1,25 +1,29 @@
 import React from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/Authcontext'
 
 interface RotaProtegidaProps {
-  children: React.ReactNode
-  perfisPermitidos?: Array<"ADMIN" | "ATENDENTE" | "CAIXA">
+  children?: React.ReactNode
+  perfisPermitidos?: Array<'ADMIN' | 'ATENDENTE' | 'CAIXA'>
 }
 
-export function RotaProtegida({
-  children,
-  perfisPermitidos,
-}: RotaProtegidaProps) {
-  const { isAuthenticated, user } = useAuth()
+/**
+ * Uso 1 (agrupando rotas):  <Route element={<RotaProtegida />}> ...rotas... </Route>
+ * Uso 2 (uma tela):         <RotaProtegida><Tela /></RotaProtegida>
+ */
+export function RotaProtegida({ children, perfisPermitidos }: RotaProtegidaProps) {
+  const { isAuthenticated, usuario } = useAuth()
+  const location = useLocation()
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
-  if (perfisPermitidos && user && !perfisPermitidos.includes(user.role)) {
-    return <Navigate to="/sem-permissao" replace />
+  if (perfisPermitidos && usuario && !perfisPermitidos.includes(usuario.perfil)) {
+    return <Navigate to="/restaurante/home" replace />
   }
 
-  return <>{children}</>
+  return children ? <>{children}</> : <Outlet />
 }
+
+export default RotaProtegida

@@ -592,6 +592,24 @@
   }
 }
 
+.relatorios__despesas-ver-mais {
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #8B1A1A;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.relatorios__despesas-ver-mais:hover {
+  opacity: 0.9;
+}
+
 /* Mobile */
 @media (max-width: 480px) {
   .relatorios__titulo {

@@ -92,6 +92,16 @@ const WelcomePage: React.FC = () => {
             autoFocus
           />
           {error && <span className="welcome-page__error">{error}</span>}
+        
+          <button
+        type="button"
+        className="welcome-page__enter-btn"
+        onClick={handleConfirmName}
+         disabled={name.trim() === ''}
+          >
+            Entrar
+          </button>
+
         </div>
 
       </div>

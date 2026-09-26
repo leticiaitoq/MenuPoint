@@ -1,14 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiUpload, HiPlus } from 'react-icons/hi';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
+import CategoriaService, { Categoria } from '../../../../services/categoria.service';
+import ProdutoService from '../../../../services/produto.service';
 import './CadProdutos.css';
 
 // ── Tipos
 interface FormProduto {
   nome: string;
   descricao: string;
-  categoria: string;
+  categoria_id: string;
   preco: string;
   disponivel: boolean;
   destaque: boolean;
@@ -16,70 +18,143 @@ interface FormProduto {
   imagemPreview: string;
 }
 
-// ── Categorias iniciais (mock)
-const CATEGORIAS_INICIAIS = ['Lanches', 'Bebidas', 'Sobremesas'];
+const FORM_INICIAL: FormProduto = {
+  nome:          '',
+  descricao:     '',
+  categoria_id:  '',
+  preco:         '',
+  disponivel:    true,
+  destaque:      false,
+  imagem:        null,
+  imagemPreview: '',
+};
+
+// Converte "R$ 49,90" -> 49.9
+const precoParaNumero = (preco: string): number =>
+  Number(preco.replace(/[^\d,]/g, '').replace(',', '.'));
 
 const CadProdutos: React.FC = () => {
   const navigate = useNavigate();
   const inputFotoRef = useRef<HTMLInputElement>(null);
 
-  const [form, setForm] = useState<FormProduto>({
-    nome:          '',
-    descricao:     '',
-    categoria:     '',
-    preco:         '',
-    disponivel:    true,
-    destaque:      false,
-    imagem:        null,
-    imagemPreview: '',
-  });
+  const [form, setForm] = useState<FormProduto>(FORM_INICIAL);
 
-  const [categorias, setCategorias]         = useState<string[]>(CATEGORIAS_INICIAIS);
+  const [categorias, setCategorias]         = useState<Categoria[]>([]);
   const [novaCategoria, setNovaCategoria]   = useState('');
   const [adicionandoCat, setAdicionandoCat] = useState(false);
+  const [criandoCategoria, setCriandoCategoria] = useState(false);
+
   const [sucesso, setSucesso] = useState(false);
-  const [erro, setErro]                     = useState('');
+  const [erro, setErro]       = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [carregandoCategorias, setCarregandoCategorias] = useState(true);
+
+  // ── Carrega as categorias reais do estabelecimento logado
+  useEffect(() => {
+    (async () => {
+      try {
+        const lista = await CategoriaService.listar();
+        setCategorias(lista);
+      } catch {
+        setErro('Não foi possível carregar as categorias.');
+      } finally {
+        setCarregandoCategorias(false);
+      }
+    })();
+  }, []);
 
   // ── Atualiza qualquer campo do form de uma vez
   const atualizarForm = (campo: Partial<FormProduto>) => {
     setForm((prev) => ({ ...prev, ...campo }));
   };
 
-  // ── Lida com o upload da foto
+  // ── Lida com o upload da foto (só guarda o arquivo; o envio ao storage
+  // acontece no momento de salvar, junto com a criação do produto)
   const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const arquivo = e.target.files?.[0];
     if (!arquivo) return;
+
+    if (!['image/png', 'image/jpeg', 'image/jpg'].includes(arquivo.type)) {
+      setErro('A imagem deve ser JPG ou PNG.');
+      return;
+    }
+    if (arquivo.size > 5 * 1024 * 1024) {
+      setErro('A imagem deve ter no máximo 5MB.');
+      return;
+    }
+
+    setErro('');
     atualizarForm({
       imagem: arquivo,
       imagemPreview: URL.createObjectURL(arquivo),
     });
   };
 
-  // ── Adiciona nova categoria
-  const handleNovaCategoria = () => {
+  // ── Cria uma nova categoria de verdade no backend
+  const handleNovaCategoria = async () => {
     const nome = novaCategoria.trim();
-    if (!nome || categorias.includes(nome)) return;
-    setCategorias((prev) => [...prev, nome]);
-    setNovaCategoria('');
-    setAdicionandoCat(false);
+    if (!nome) return;
+    if (categorias.some((c) => c.nome.toLowerCase() === nome.toLowerCase())) {
+      setErro('Já existe uma categoria com esse nome.');
+      return;
+    }
+
+    setCriandoCategoria(true);
+    setErro('');
+    try {
+      const categoria = await CategoriaService.criar({ nome });
+      setCategorias((prev) => [...prev, categoria]);
+      atualizarForm({ categoria_id: categoria.id });
+      setNovaCategoria('');
+      setAdicionandoCat(false);
+    } catch (err: any) {
+      setErro(err?.response?.data?.message ?? 'Não foi possível criar a categoria.');
+    } finally {
+      setCriandoCategoria(false);
+    }
   };
 
   // ── Validação e envio
-  const handleSalvar = () => {
-    if (!form.nome.trim()) { setErro('Informe o nome do produto.'); return; }
-    if (!form.categoria)   { setErro('Selecione uma categoria.'); return; }
-    if (!form.preco)       { setErro('Informe o preço.'); return; }
+  const handleSalvar = async () => {
+    if (!form.nome.trim())        { setErro('Informe o nome do produto.'); return; }
+    if (!form.categoria_id)       { setErro('Selecione uma categoria.'); return; }
 
-  setErro('');
-  console.log(form); // substituir por chamada à API
-  setSucesso(true);  // abre o popup
-};
+    const preco = precoParaNumero(form.preco);
+    if (!form.preco || !(preco > 0)) { setErro('Informe um preço válido.'); return; }
+
+    setErro('');
+    setSalvando(true);
+
+    try {
+      let imagem_url: string | undefined;
+
+      if (form.imagem) {
+        imagem_url = await ProdutoService.uploadImagem(form.imagem);
+      }
+
+      await ProdutoService.criar({
+        nome: form.nome.trim(),
+        descricao: form.descricao.trim() || undefined,
+        categoria_id: form.categoria_id,
+        preco,
+        disponivel: form.disponivel,
+        destaque: form.destaque,
+        ...(imagem_url && { imagem_url }),
+      });
+
+      setSucesso(true);
+    } catch (err: any) {
+      setErro(err?.response?.data?.message ?? 'Não foi possível salvar o produto.');
+    } finally {
+      setSalvando(false);
+    }
+  };
 
   const handlePreco = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const digits = e.target.value.replace(/\D/g, '');
-  const valor = (Number(digits) / 100).toFixed(2);
-  const formatado = `R$ ${valor.replace('.', ',')}`;
-  atualizarForm({ preco: formatado });
+    const digits = e.target.value.replace(/\D/g, '');
+    const valor = (Number(digits) / 100).toFixed(2);
+    const formatado = `R$ ${valor.replace('.', ',')}`;
+    atualizarForm({ preco: formatado });
   };
 
   return (
@@ -95,11 +170,11 @@ const CadProdutos: React.FC = () => {
             </p>
           </div>
           <div className="cadprod__header-acoes">
-            <button className="cadprod__btn-cancelar" onClick={() => navigate('/restaurante/produtos')}>
+            <button className="cadprod__btn-cancelar" onClick={() => navigate('/restaurante/produtos')} disabled={salvando}>
               Cancelar
             </button>
-            <button className="cadprod__btn-salvar" onClick={handleSalvar}>
-              Salvar Produto
+            <button className="cadprod__btn-salvar" onClick={handleSalvar} disabled={salvando}>
+              {salvando ? 'Salvando...' : 'Salvar Produto'}
             </button>
           </div>
         </div>
@@ -139,11 +214,16 @@ const CadProdutos: React.FC = () => {
                 <label className="cadprod__label">Categoria Principal</label>
                 <select
                   className="cadprod__select"
-                  value={form.categoria}
-                  onChange={(e) => atualizarForm({ categoria: e.target.value })}
+                  value={form.categoria_id}
+                  onChange={(e) => atualizarForm({ categoria_id: e.target.value })}
+                  disabled={carregandoCategorias}
                 >
-                  <option value="">Selecione</option>
-                  {categorias.map((c) => <option key={c}>{c}</option>)}
+                  <option value="">
+                    {carregandoCategorias ? 'Carregando...' : 'Selecione'}
+                  </option>
+                  {categorias.map((c) => (
+                    <option key={c.id} value={c.id}>{c.nome}</option>
+                  ))}
                 </select>
               </div>
 
@@ -207,7 +287,7 @@ const CadProdutos: React.FC = () => {
               <input
                 ref={inputFotoRef}
                 type="file"
-                accept="image/*"
+                accept="image/png, image/jpeg"
                 style={{ display: 'none' }}
                 onChange={handleFoto}
               />
@@ -221,7 +301,13 @@ const CadProdutos: React.FC = () => {
               <label className="cadprod__label">Categorias</label>
               <div className="cadprod__chips">
                 {categorias.map((c) => (
-                  <span key={c} className="cadprod__chip">{c}</span>
+                  <span
+                    key={c.id}
+                    className={`cadprod__chip${form.categoria_id === c.id ? ' cadprod__chip--ativo' : ''}`}
+                    onClick={() => atualizarForm({ categoria_id: c.id })}
+                  >
+                    {c.nome}
+                  </span>
                 ))}
 
                 {adicionandoCat ? (
@@ -233,8 +319,9 @@ const CadProdutos: React.FC = () => {
                       onChange={(e) => setNovaCategoria(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleNovaCategoria()}
                       autoFocus
+                      disabled={criandoCategoria}
                     />
-                    <button className="cadprod__chip-confirmar" onClick={handleNovaCategoria}>✔</button>
+                    <button className="cadprod__chip-confirmar" onClick={handleNovaCategoria} disabled={criandoCategoria}>✔</button>
                   </div>
                 ) : (
                   <button className="cadprod__chip-novo" onClick={() => setAdicionandoCat(true)}>
