@@ -1,3 +1,11 @@
+@font-face {
+  font-family: 'Bukhari Script';
+  src: url('../../../../../assets/fonts/BukhariScript-lemD.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 .navbar {
   width: 100%;
   height: 80px;
@@ -38,9 +46,10 @@
 
 /* MenuPoint */
 .navbar__logo {
-  font-size: 28px;
-  font-weight: 700;
-  font-style: italic;
+  font-family: 'Bukhari Script', 'Dancing Script', cursive;
+  font-size: 32px;
+  font-weight: normal;
+  font-style: normal;
   line-height: 1.1;
   text-decoration: underline;
   margin-left: 8px;
