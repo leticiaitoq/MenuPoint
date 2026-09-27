@@ -2,14 +2,24 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   HiArrowLeft,
+  HiCash,
   HiCheckCircle,
   HiClipboardList,
+  HiClock,
   HiExclamationCircle,
+  HiLocationMarker,
   HiLockClosed,
   HiLogout,
+  HiOfficeBuilding,
   HiPencil,
+  HiPhone,
+  HiShoppingBag,
+  HiTruck,
   HiUpload,
+  HiUserGroup,
   HiX,
+  HiEye,
+  HiEyeOff
 } from 'react-icons/hi';
 import RestaurantLayout from '../../../shared/components/layout/Restaurantelayout';
 import { useEstabelecimento } from '../../../shared/contexts/Estabelecimentocontext';
@@ -138,25 +148,10 @@ function normalizarHorario(bruto: unknown): HorarioFuncionamento {
 // ────────────────────────────────────────────────────────────────────────────
 // Seções — cada uma tem seu próprio pedaço do formulário, sua validação e
 // o que ela manda pro backend. É isso que permite salvar cada uma sozinha.
+// A antiga seção "Identidade" (nome livre do estabelecimento) foi removida:
+// o nome exibido no cabeçalho agora vem da empresa e só muda pelo fluxo de
+// "Alterar dados" (senha), dentro da aba "Dados da empresa".
 // ────────────────────────────────────────────────────────────────────────────
-
-// ── Identidade (só o nome — a logo tem upload próprio, fora daqui) ──────────
-
-interface IdentidadeForm {
-  nome: string;
-}
-
-const IDENTIDADE_PADRAO: IdentidadeForm = { nome: '' };
-
-const extrairIdentidade = (e: Estabelecimento): IdentidadeForm => ({ nome: e.nome ?? '' });
-
-function validarIdentidade(v: IdentidadeForm): Erros {
-  const erros: Erros = {};
-  if (v.nome.trim().length < 2) erros.nome = 'Informe o nome do restaurante.';
-  return erros;
-}
-
-const payloadIdentidade = (v: IdentidadeForm): AtualizarEstabelecimentoDTO => ({ nome: v.nome.trim() });
 
 // ── Contato ──────────────────────────────────────────────────────────────────
 
@@ -340,34 +335,29 @@ const payloadAtendimento = (v: AtendimentoForm): AtualizarEstabelecimentoDTO => 
   pedido_minimo: paraNumero(v.pedido_minimo),
 });
 
-// ── PIX é dado sensível: não usa o hook useSecao (que salva sem senha).
-// A leitura para exibição usa os campos crus do Estabelecimento; a edição
-// passa pelo ModalPix (senha → editar) definido mais abaixo.
-function mascararChavePix(chave: string | null, tipo: TipoChavePix | null): string {
-  if (!chave) return 'Nenhuma chave cadastrada';
-  if (tipo === 'EMAIL' || tipo === 'ALEATORIA') {
-    return chave.length <= 4 ? '••••' : `${'•'.repeat(chave.length - 4)}${chave.slice(-4)}`;
-  }
-  // CPF/CNPJ/telefone: mostra só os 4 últimos dígitos
-  const digitos = chave.replace(/\D/g, '');
-  return digitos.length <= 4 ? '••••' : `${'•'.repeat(digitos.length - 4)}${digitos.slice(-4)}`;
+// ── PIX ──────────────────────────────────────────────────────────────────────
+
+interface PixForm {
+  tipo_chave_pix: TipoChavePix | '';
+  chave_pix: string;
 }
 
-// ── Customização do site (tema) ───────────────────────────────────────────────
+const PIX_PADRAO: PixForm = { tipo_chave_pix: '', chave_pix: '' };
 
-interface TemaForm {
-  tema: 'CLARO' | 'ESCURO';
+const extrairPix = (e: Estabelecimento): PixForm => ({
+  tipo_chave_pix: e.tipo_chave_pix ?? '',
+  chave_pix: e.chave_pix ?? '',
+});
+
+function validarPix(v: PixForm): Erros {
+  const erros: Erros = {};
+  if (v.chave_pix.trim() && !v.tipo_chave_pix) erros.chave_pix = 'Escolha o tipo da chave PIX.';
+  return erros;
 }
 
-const TEMA_PADRAO: TemaForm = { tema: 'CLARO' };
-
-const extrairTema = (e: Estabelecimento): TemaForm => ({ tema: e.tema ?? 'CLARO' });
-
-function validarTema(_v: TemaForm): Erros {
-  return {};
-}
-
-const payloadTema = (v: TemaForm): AtualizarEstabelecimentoDTO => ({ tema: v.tema });
+// PIX tem endpoint e DTO próprios (PATCH /estabelecimentos/:id/pix, que exige
+// senha_atual) — por isso não usa o useSecao genérico nem o
+// AtualizarEstabelecimentoDTO. Ver usePix logo abaixo.
 
 // ────────────────────────────────────────────────────────────────────────────
 // Hook: uma seção completa (valor, validação, salvar, descartar)
@@ -403,9 +393,6 @@ function useSecao<T>(
   const hidratadoId = useRef<string | null>(null);
   const estabIdRef = useRef<string | null>(null);
 
-  // Carrega os dados do banco uma única vez por estabelecimento — nunca por
-  // cima de uma edição em andamento, mesmo que outra seção seja salva e o
-  // contexto avise sobre uma leitura nova.
   useEffect(() => {
     if (!estab) return;
     estabIdRef.current = estab.id;
@@ -466,6 +453,92 @@ function useSecao<T>(
   return { valor, definir, erros, limparErro, alterado, salvando, salvoRecente, erroGeral, salvar, descartar };
 }
 
+// ── PIX: hook dedicado, sem salvar automático ───────────────────────────────
+// Diferente do useSecao, não chama EstabelecimentoService.atualizar. Ele só
+// guarda o valor e valida; quem efetivamente salva é confirmarComSenha,
+// chamada depois que o usuário confirma a senha no modal (o endpoint de PIX
+// exige senha_atual a cada alteração).
+
+interface ResultadoPix {
+  ok: boolean;
+  mensagem?: string;
+}
+
+function usePix(estab: Estabelecimento | null) {
+  const [valor, setValor] = useState<PixForm>(PIX_PADRAO);
+  const [baseline, setBaseline] = useState<PixForm>(PIX_PADRAO);
+  const [erros, setErros] = useState<Erros>({});
+  const [salvando, setSalvando] = useState(false);
+  const [salvoRecente, setSalvoRecente] = useState(false);
+  const [erroGeral, setErroGeral] = useState<string | null>(null);
+  const hidratadoId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!estab) return;
+    if (hidratadoId.current === estab.id) return;
+    hidratadoId.current = estab.id;
+    const v = extrairPix(estab);
+    setValor(v);
+    setBaseline(v);
+    setErros({});
+    setErroGeral(null);
+    setSalvoRecente(false);
+  }, [estab]);
+
+  const alterado = useMemo(() => JSON.stringify(valor) !== JSON.stringify(baseline), [valor, baseline]);
+
+  const definir = <K extends keyof PixForm>(campo: K, v: PixForm[K]) => {
+    setValor((atual) => ({ ...atual, [campo]: v }));
+    if (erroGeral) setErroGeral(null);
+    if (salvoRecente) setSalvoRecente(false);
+  };
+
+  const descartar = () => {
+    setValor(baseline);
+    setErros({});
+    setErroGeral(null);
+  };
+
+  // Só valida o formato (tipo + chave); não salva nada ainda.
+  const validar = (): boolean => {
+    const encontrados = validarPix(valor);
+    setErros(encontrados);
+    return Object.keys(encontrados).length === 0;
+  };
+
+  // Chamada pelo modal de senha, já com a senha em mãos.
+  const confirmarComSenha = async (id: string, senhaAtual: string): Promise<ResultadoPix> => {
+    setSalvando(true);
+    setErroGeral(null);
+    try {
+      const chave = valor.chave_pix.trim();
+      const payload: AtualizarPixDTO = {
+        senha_atual: senhaAtual,
+        chave_pix: chave ? chave : null,
+        tipo_chave_pix: chave && valor.tipo_chave_pix ? valor.tipo_chave_pix : null,
+      };
+      const atualizado = await EstabelecimentoService.atualizarPix(id, payload);
+      const novoValor = extrairPix(atualizado);
+      setValor(novoValor);
+      setBaseline(novoValor);
+      setSalvoRecente(true);
+      window.setTimeout(() => setSalvoRecente(false), 2500);
+      return { ok: true };
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        return { ok: false, mensagem: 'Senha incorreta.' };
+      }
+      const mensagem = mensagemDeErro(err, 'Não foi possível salvar a chave PIX.');
+      setErroGeral(mensagem);
+      return { ok: false, mensagem };
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  return { valor, definir, erros, alterado, salvando, salvoRecente, erroGeral, validar, confirmarComSenha, descartar };
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Peças de interface
 // ────────────────────────────────────────────────────────────────────────────
@@ -512,33 +585,33 @@ const Bloqueado: React.FC<{ id: string; rotulo: string; valor: string | null | u
   </Campo>
 );
 
-const Interruptor: React.FC<{
+// Cartão de opção clicável usado em "Entrega / Retirada / Pedido na mesa".
+// Substitui o antigo switch: mostra o ícone, o rótulo e uma pill de estado.
+const CartaoOpcao: React.FC<{
   id: string;
   rotulo: string;
-  descricao: string;
+  icone: React.ReactNode;
   marcado: boolean;
   desabilitado: boolean;
   onChange: (v: boolean) => void;
-}> = ({ id, rotulo, descricao, marcado, desabilitado, onChange }) => (
-  <label className="config__switch" htmlFor={id}>
-    <input
-      id={id}
-      type="checkbox"
-      role="switch"
-      checked={marcado}
-      disabled={desabilitado}
-      onChange={(e) => onChange(e.target.checked)}
-    />
-    <span className="config__switch-trilho" aria-hidden="true" />
-    <span className="config__switch-texto">
-      <strong>{rotulo}</strong>
-      <small>{descricao}</small>
+}> = ({ id, rotulo, icone, marcado, desabilitado, onChange }) => (
+  <button
+    id={id}
+    type="button"
+    className={`config__cartao-opcao ${marcado ? 'config__cartao-opcao--ativo' : ''}`}
+    disabled={desabilitado}
+    aria-pressed={marcado}
+    onClick={() => onChange(!marcado)}
+  >
+    <span className="config__cartao-opcao-icone">{icone}</span>
+    <span className="config__cartao-opcao-rotulo">{rotulo}</span>
+    <span className={`config__pill ${marcado ? 'config__pill--ativo' : 'config__pill--inativo'}`}>
+      {marcado ? 'Ativo' : 'Inativo'}
     </span>
-  </label>
+  </button>
 );
 
-// Selo de status no canto do card — mesma ideia dos badges "Aberta/Fechada"
-// da tela de Caixa, só que aqui é sobre a própria seção do formulário.
+// Selo de status no canto do card.
 const SecaoStatus: React.FC<{ alterado: boolean; salvando: boolean; salvoRecente: boolean; comErro: boolean }> = ({
   alterado,
   salvando,
@@ -564,17 +637,19 @@ const SecaoStatus: React.FC<{ alterado: boolean; salvando: boolean; salvoRecente
   return null;
 };
 
-// Cabeçalho padrão de cada seção: título à esquerda, selo + botões à direita.
-// É esse par (selo + Salvar/Descartar) que muda de uma seção pra outra —
-// o resto do card é conteúdo livre (os campos).
+// Cabeçalho padrão de cada (sub)seção: título à esquerda, selo + botões à direita.
 const SecaoCabecalho: React.FC<{
   titulo: string;
   id: string;
   secao: Pick<Secao<unknown>, 'alterado' | 'salvando' | 'salvoRecente' | 'erroGeral' | 'salvar' | 'descartar'>;
   podeEditar: boolean;
-}> = ({ titulo, id, secao, podeEditar }) => (
+  icone?: React.ReactNode;
+}> = ({ titulo, id, secao, podeEditar, icone }) => (
   <div className="config__card-cabecalho">
-    <h3 className="config__card-titulo" id={id}>{titulo}</h3>
+    <h3 className="config__card-titulo" id={id}>
+      {icone && <span className="config__card-titulo-icone">{icone}</span>}
+      {titulo}
+    </h3>
     {podeEditar && (
       <div className="config__secao-controles">
         <SecaoStatus
@@ -644,6 +719,9 @@ const Dialogo: React.FC<{
 };
 
 // ── Alterar dados sensíveis (exige a senha) ─────────────────────────────────
+// Este é o ÚNICO fluxo de edição do nome exibido no cabeçalho: não existe
+// mais um botão "Editar perfil" separado — ele cumpriria a mesma função
+// deste modal, então foi removido.
 
 interface DadosSensiveis {
   nome_empresa: string;
@@ -654,13 +732,14 @@ interface DadosSensiveis {
 
 type PassoDadosSensiveis = 'senha' | 'editar';
 
-// Passo 1: só a senha. Foca sozinho e confirma com Enter.
 const PassoSenha: React.FC<{
-  onConfirmar: (senha: string) => Promise<string | null>; // devolve a mensagem de erro, ou null se deu certo
+  onConfirmar: (senha: string) => Promise<string | null>;
   onFechar: () => void;
 }> = ({ onConfirmar, onFechar }) => {
   const [senha, setSenha] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [chacoalhar, setChacoalhar] = useState(false);
   const [verificando, setVerificando] = useState(false);
   const campoRef = useRef<HTMLInputElement>(null);
 
@@ -668,21 +747,25 @@ const PassoSenha: React.FC<{
     campoRef.current?.focus();
   }, []);
 
+  const dispararErro = (mensagem: string) => {
+    setErro(mensagem);
+    setChacoalhar(true);
+    window.setTimeout(() => setChacoalhar(false), 400);
+    campoRef.current?.focus();
+    campoRef.current?.select();
+  };
+
   const confirmar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!senha) {
-      setErro('Digite sua senha para continuar.');
+      dispararErro('Digite sua senha para continuar.');
       return;
     }
     setVerificando(true);
     setErro(null);
     const mensagem = await onConfirmar(senha);
     setVerificando(false);
-    if (mensagem) {
-      setErro(mensagem);
-      campoRef.current?.focus();
-      campoRef.current?.select();
-    }
+    if (mensagem) dispararErro(mensagem);
   };
 
   return (
@@ -701,35 +784,51 @@ const PassoSenha: React.FC<{
         Para alterar dados como e-mail de acesso e razão social, primeiro confirme que é você.
       </p>
 
-      <Campo id="m-senha" rotulo="Sua senha atual" erro={erro ?? undefined}>
-        <input
-          id="m-senha"
-          ref={campoRef}
-          className="config__input"
-          type="password"
-          autoComplete="current-password"
-          value={senha}
-          disabled={verificando}
-          onChange={(e) => {
-            setSenha(e.target.value);
-            setErro(null);
-          }}
-        />
+      <Campo
+        id="m-senha"
+        rotulo="Sua senha atual"
+        erro={erro ?? undefined}
+        className={chacoalhar ? 'config__campo--chacoalha' : undefined}
+      >
+        <div className="config__campo-senha">
+          <input
+            id="m-senha"
+            ref={campoRef}
+            className="config__input"
+            type={mostrarSenha ? 'text' : 'password'}
+            autoComplete="current-password"
+            value={senha}
+            disabled={verificando}
+            onChange={(e) => {
+              setSenha(e.target.value);
+              setErro(null);
+            }}
+          />
+          <button
+            type="button"
+            className="config__campo-senha-olho"
+            onClick={() => setMostrarSenha((v) => !v)}
+            disabled={verificando}
+            aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+            tabIndex={-1}
+          >
+            {mostrarSenha ? <HiEyeOff /> : <HiEye />}
+          </button>
+        </div>
       </Campo>
 
-      <div className="config__acoes config__acoes--fim">
-        <button className="config__btn" type="button" onClick={onFechar} disabled={verificando}>
-          Cancelar
-        </button>
-        <button className="config__btn config__btn--primario" type="submit" disabled={verificando}>
+      <div className="config__acoes config__acoes--modal">
+        <button className="config__btn config__btn--primario config__btn--bloco" type="submit" disabled={verificando}>
           {verificando ? 'Verificando…' : 'Confirmar senha'}
+        </button>
+        <button className="config__btn config__btn--fantasma" type="button" onClick={onFechar} disabled={verificando}>
+          Cancelar
         </button>
       </div>
     </form>
   );
 };
 
-// Passo 2: edição liberada, com a senha já confirmada guardada em memória.
 const PassoEditar: React.FC<{
   atuais: DadosSensiveis;
   podeEmpresa: boolean;
@@ -770,7 +869,6 @@ const PassoEditar: React.FC<{
     if (novos.nome_responsavel.length < 3) encontrados.nome_responsavel = 'Informe o nome completo.';
     if (!/^\S+@\S+\.\S+$/.test(novos.email)) encontrados.email = 'E-mail inválido.';
 
-    // Só envia o que realmente mudou
     const mudou: Partial<DadosSensiveis> = {};
     (Object.keys(novos) as (keyof DadosSensiveis)[]).forEach((k) => {
       const ehEmpresa = k === 'nome_empresa' || k === 'razao_social';
@@ -797,7 +895,6 @@ const PassoEditar: React.FC<{
     } catch (err: any) {
       const status = err?.response?.status;
       if (status === 403 && /senha/i.test(err?.response?.data?.message ?? '')) {
-        // A senha era válida no passo 1, mas pode ter sido trocada nesse meio-tempo (raro)
         setErroGeral('Sua senha não pôde ser confirmada. Volte e digite a senha de novo.');
       } else {
         setErroGeral(mensagemDeErro(err, 'Não foi possível alterar os dados.'));
@@ -822,14 +919,16 @@ const PassoEditar: React.FC<{
       </div>
 
       <h3 className="config__card-titulo">Alterar dados da empresa</h3>
-      <p className="config__hint">Altere apenas o que precisa. O resto continua como está.</p>
+      <p className="config__hint">
+        Altere apenas o que precisa. É este mesmo formulário que atualiza o nome exibido no topo da tela.
+      </p>
 
       <Campo
         id="m-empresa"
         rotulo="Nome da empresa"
         erro={erros.nome_empresa}
         bloqueado={!podeEmpresa}
-        dica={!podeEmpresa ? 'Somente administradores podem alterar.' : undefined}
+        dica={!podeEmpresa ? 'Somente administradores podem alterar.' : 'Este é o nome mostrado no cabeçalho do seu perfil.'}
       >
         <input
           id="m-empresa"
@@ -924,12 +1023,16 @@ const ModalDadosSensiveis: React.FC<{
   return (
     <Dialogo titulo="Alterar dados da empresa e do responsável" onFechar={onFechar}>
       <div className="config__dialogo-passos" aria-hidden="true">
-        <span className={`config__dialogo-passo ${passo === 'senha' ? 'config__dialogo-passo--ativo' : 'config__dialogo-passo--feito'}`} />
-        <span className={`config__dialogo-passo ${passo === 'editar' ? 'config__dialogo-passo--ativo' : ''}`} />
+        <div className="config__dialogo-passo-item">
+          <span className={`config__dialogo-passo ${passo === 'senha' ? 'config__dialogo-passo--ativo' : 'config__dialogo-passo--feito'}`} />
+          <small>Senha</small>
+        </div>
+        <div className="config__dialogo-passo-item">
+          <span className={`config__dialogo-passo ${passo === 'editar' ? 'config__dialogo-passo--ativo' : ''}`} />
+          <small>Dados</small>
+        </div>
       </div>
 
-      {/* Só o passo ativo fica no DOM — evita que campos escondidos continuem
-          alcançáveis pelo teclado e some com a duplicidade de rótulos. */}
       <div key={passo} className={`config__dialogo-tela config__dialogo-tela--${passo === 'senha' ? 'entra-dir' : 'entra-esq'}`}>
         {passo === 'senha' ? (
           <PassoSenha onConfirmar={verificarSenha} onFechar={onFechar} />
@@ -948,164 +1051,82 @@ const ModalDadosSensiveis: React.FC<{
   );
 };
 
-// ── Alterar chave PIX (dado sensível: exige senha + só quem tem permissão) ──
+// ── Confirmação de senha para salvar o PIX ──────────────────────────────────
+// O endpoint de PIX exige senha_atual em toda alteração (diferente do fluxo
+// de dados sensíveis, que confirma a senha uma vez e libera a edição).
 
-type PassoPix = 'senha' | 'editar';
-
-const PassoEditarPix: React.FC<{
-  estabelecimentoId: string;
-  tipoAtual: TipoChavePix | '';
-  chaveAtual: string;
-  senha: string;
-  onVoltar: () => void;
+const ModalSenhaPix: React.FC<{
+  onConfirmar: (senha: string) => Promise<ResultadoPix>;
   onFechar: () => void;
-  onSucesso: (tipo: TipoChavePix | null, chave: string | null) => void;
-}> = ({ estabelecimentoId, tipoAtual, chaveAtual, senha, onVoltar, onFechar, onSucesso }) => {
-  const [tipo, setTipo] = useState<TipoChavePix | ''>(tipoAtual);
-  const [chave, setChave] = useState(chaveAtual);
-  const [erros, setErros] = useState<Erros>({});
-  const [erroGeral, setErroGeral] = useState<string | null>(null);
+}> = ({ onConfirmar, onFechar }) => {
+  const [senha, setSenha] = useState('');
+  const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
-  const primeiroCampoRef = useRef<HTMLSelectElement>(null);
+  const campoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    primeiroCampoRef.current?.focus();
+    campoRef.current?.focus();
   }, []);
 
   const confirmar = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const chaveLimpa = chave.trim();
-    const encontrados: Erros = {};
-    if (chaveLimpa && !tipo) encontrados.chave_pix = 'Escolha o tipo da chave PIX.';
-    if (Object.keys(encontrados).length > 0) {
-      setErros(encontrados);
+    if (!senha) {
+      setErro('Digite sua senha para continuar.');
       return;
     }
-
     setEnviando(true);
-    setErroGeral(null);
-    try {
-      const payload: AtualizarPixDTO = {
-        senha_atual: senha,
-        chave_pix: chaveLimpa || null,
-        tipo_chave_pix: chaveLimpa && tipo ? tipo : null,
-      };
-      const estab = await EstabelecimentoService.atualizarPix(estabelecimentoId, payload);
-      onSucesso(estab.tipo_chave_pix, estab.chave_pix);
-    } catch (err: any) {
-      const status = err?.response?.status;
-      if (status === 403 && /senha/i.test(err?.response?.data?.message ?? '')) {
-        setErroGeral('Sua senha não pôde ser confirmada. Volte e digite a senha de novo.');
-      } else {
-        setErroGeral(mensagemDeErro(err, 'Não foi possível alterar a chave PIX.'));
-      }
-    } finally {
-      setEnviando(false);
+    setErro(null);
+    const resultado = await onConfirmar(senha);
+    setEnviando(false);
+    if (!resultado.ok) {
+      setErro(resultado.mensagem ?? 'Não foi possível confirmar.');
+      campoRef.current?.focus();
+      campoRef.current?.select();
+      return;
     }
+    onFechar();
   };
 
   return (
-    <form className="config__dialogo-form" onSubmit={confirmar} noValidate>
-      <div className="config__dialogo-topo">
-        <button className="config__dialogo-voltar" type="button" onClick={onVoltar} disabled={enviando} aria-label="Voltar">
-          <HiArrowLeft />
-        </button>
-        <span className="config__dialogo-selo-ok">
-          <HiCheckCircle /> Senha confirmada
-        </span>
-        <button className="config__dialogo-x" type="button" onClick={onFechar} aria-label="Fechar" disabled={enviando}>
-          <HiX />
-        </button>
-      </div>
+    <Dialogo titulo="Confirmar alteração do PIX" onFechar={onFechar} fecharComEsc={!enviando}>
+      <form className="config__dialogo-form" onSubmit={confirmar} noValidate>
+        <div className="config__dialogo-topo">
+          <div className="config__dialogo-icone">
+            <HiLockClosed />
+          </div>
+          <button className="config__dialogo-x" type="button" onClick={onFechar} aria-label="Fechar" disabled={enviando}>
+            <HiX />
+          </button>
+        </div>
 
-      <h3 className="config__card-titulo">Alterar chave PIX</h3>
-      <p className="config__hint">É para esta chave que os pagamentos do seu cardápio caem.</p>
+        <h3 className="config__card-titulo">Confirme sua senha</h3>
+        <p className="config__hint">Por segurança, confirme sua senha para salvar a nova chave PIX.</p>
 
-      <Campo id="m-tipo-pix" rotulo="Tipo da chave">
-        <select
-          id="m-tipo-pix"
-          ref={primeiroCampoRef}
-          className="config__input config__select"
-          value={tipo}
-          disabled={enviando}
-          onChange={(e) => { setTipo(e.target.value as TipoChavePix | ''); setErros({}); }}
-        >
-          <option value="">Sem chave PIX</option>
-          {TIPOS_PIX.map((t) => (
-            <option key={t.valor} value={t.valor}>{t.rotulo}</option>
-          ))}
-        </select>
-      </Campo>
-      <Campo id="m-chave-pix" rotulo="Chave PIX" erro={erros.chave_pix}>
-        <input
-          id="m-chave-pix"
-          className="config__input"
-          value={chave}
-          maxLength={150}
-          disabled={enviando}
-          onChange={(e) => { setChave(e.target.value); setErros({}); }}
-        />
-      </Campo>
-
-      {erroGeral && <p className="config__erro" role="alert">{erroGeral}</p>}
-
-      <div className="config__acoes config__acoes--fim">
-        <button className="config__btn" type="button" onClick={onFechar} disabled={enviando}>
-          Cancelar
-        </button>
-        <button className="config__btn config__btn--primario" type="submit" disabled={enviando}>
-          {enviando ? 'Salvando…' : 'Salvar chave PIX'}
-        </button>
-      </div>
-    </form>
-  );
-};
-
-const ModalPix: React.FC<{
-  estabelecimentoId: string;
-  tipoAtual: TipoChavePix | '';
-  chaveAtual: string;
-  onFechar: () => void;
-  onSucesso: (tipo: TipoChavePix | null, chave: string | null) => void;
-}> = ({ estabelecimentoId, tipoAtual, chaveAtual, onFechar, onSucesso }) => {
-  const [passo, setPasso] = useState<PassoPix>('senha');
-  const [senhaConfirmada, setSenhaConfirmada] = useState('');
-
-  const verificarSenha = async (senha: string): Promise<string | null> => {
-    try {
-      await AuthService.verificarSenha({ senha });
-      setSenhaConfirmada(senha);
-      setPasso('editar');
-      return null;
-    } catch (err: any) {
-      if (err?.response?.status === 403) return 'Senha incorreta.';
-      return mensagemDeErro(err, 'Não foi possível verificar a senha.');
-    }
-  };
-
-  return (
-    <Dialogo titulo="Alterar chave PIX" onFechar={onFechar}>
-      <div className="config__dialogo-passos" aria-hidden="true">
-        <span className={`config__dialogo-passo ${passo === 'senha' ? 'config__dialogo-passo--ativo' : 'config__dialogo-passo--feito'}`} />
-        <span className={`config__dialogo-passo ${passo === 'editar' ? 'config__dialogo-passo--ativo' : ''}`} />
-      </div>
-
-      <div key={passo} className={`config__dialogo-tela config__dialogo-tela--${passo === 'senha' ? 'entra-dir' : 'entra-esq'}`}>
-        {passo === 'senha' ? (
-          <PassoSenha onConfirmar={verificarSenha} onFechar={onFechar} />
-        ) : (
-          <PassoEditarPix
-            estabelecimentoId={estabelecimentoId}
-            tipoAtual={tipoAtual}
-            chaveAtual={chaveAtual}
-            senha={senhaConfirmada}
-            onVoltar={() => setPasso('senha')}
-            onFechar={onFechar}
-            onSucesso={onSucesso}
+        <Campo id="pix-senha" rotulo="Sua senha atual" erro={erro ?? undefined}>
+          <input
+            id="pix-senha"
+            ref={campoRef}
+            className="config__input"
+            type="password"
+            autoComplete="current-password"
+            value={senha}
+            disabled={enviando}
+            onChange={(e) => {
+              setSenha(e.target.value);
+              setErro(null);
+            }}
           />
-        )}
-      </div>
+        </Campo>
+
+        <div className="config__acoes config__acoes--fim">
+          <button className="config__btn" type="button" onClick={onFechar} disabled={enviando}>
+            Cancelar
+          </button>
+          <button className="config__btn config__btn--primario" type="submit" disabled={enviando}>
+            {enviando ? 'Salvando…' : 'Confirmar e salvar'}
+          </button>
+        </div>
+      </form>
     </Dialogo>
   );
 };
@@ -1113,6 +1134,8 @@ const ModalPix: React.FC<{
 // ────────────────────────────────────────────────────────────────────────────
 // Tela
 // ────────────────────────────────────────────────────────────────────────────
+
+type AbaId = 'dados-empresa' | 'contato-endereco' | 'horario' | 'atendimento';
 
 const Config: React.FC = () => {
   const navigate = useNavigate();
@@ -1123,53 +1146,55 @@ const Config: React.FC = () => {
   const empresa = perfil?.empresa ?? null;
   const usuario = perfil?.usuario ?? null;
   const podeEditar = usuario?.perfil === 'ADMIN';
-  // PIX é dado sensível: além de ADMIN, exige escopo GLOBAL (o dono da
-  // empresa, não um admin restrito a um único estabelecimento).
-  const podePix = podeEditar && usuario?.escopo === 'GLOBAL';
 
   const [enviandoLogo, setEnviandoLogo] = useState(false);
   const [logoAviso, setLogoAviso] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
   const inputLogoRef = useRef<HTMLInputElement>(null);
   const [avisoGeral, setAvisoGeral] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
   const [modalSensivel, setModalSensivel] = useState(false);
-  const [modalPix, setModalPix] = useState(false);
   const [saidaPendente, setSaidaPendente] = useState<null | (() => void)>(null);
   const [salvandoSaida, setSalvandoSaida] = useState(false);
 
-  // Sempre que a tela abre, relê o cadastro do banco
   useEffect(() => {
     void recarregar();
   }, [recarregar]);
 
-  // Cada seção do formulário cuida de si mesma — ver useSecao(). PIX não
-  // entra aqui: é dado sensível e usa o fluxo do ModalPix (senha + permissão).
   const mesclar = (payload: AtualizarEstabelecimentoDTO) => mesclarEstabelecimento(payload as Partial<Estabelecimento>);
-  const identidade = useSecao(estab, IDENTIDADE_PADRAO, extrairIdentidade, validarIdentidade, payloadIdentidade, mesclar);
   const contato = useSecao(estab, CONTATO_PADRAO, extrairContato, validarContato, payloadContato, mesclar);
   const endereco = useSecao(estab, ENDERECO_PADRAO, extrairEndereco, validarEndereco, payloadEndereco, mesclar);
   const horario = useSecao(estab, HORARIO_PADRAO, extrairHorario, validarHorario, payloadHorario, mesclar);
   const atendimento = useSecao(estab, ATENDIMENTO_PADRAO, extrairAtendimento, validarAtendimento, payloadAtendimento, mesclar);
-  const customizacao = useSecao(estab, TEMA_PADRAO, extrairTema, validarTema, payloadTema, mesclar);
+  const pix = usePix(estab);
+  const [pixModalAberto, setPixModalAberto] = useState(false);
 
-  const secoes = useMemo(
-    () => [identidade, contato, endereco, horario, atendimento, customizacao],
-    [identidade, contato, endereco, horario, atendimento, customizacao]
+  // PIX fica fora da lista de seções "auto-salváveis": ele exige senha a
+  // cada alteração, então não pode ser salvo sozinho no fluxo de saída.
+  const secoesAutoSalvaveis = useMemo(
+    () => [contato, endereco, horario, atendimento],
+    [contato, endereco, horario, atendimento]
   );
-  const algumAlterado = secoes.some((s) => s.alterado);
-  const totalPendentes = secoes.filter((s) => s.alterado).length;
+  const algumAlterado = secoesAutoSalvaveis.some((s) => s.alterado) || pix.alterado;
+  const totalPendentes = secoesAutoSalvaveis.filter((s) => s.alterado).length + (pix.alterado ? 1 : 0);
 
-  // ── Abas: Identidade fica fora, fixa no topo — só o resto vira aba ─────────
-  const ABAS = [
-    { id: 'empresa', titulo: 'Dados da empresa', alterado: false },
-    { id: 'contato', titulo: 'Contato e Endereço', alterado: contato.alterado || endereco.alterado },
-    { id: 'horario', titulo: 'Horário de funcionamento', alterado: horario.alterado },
-    { id: 'atendimento', titulo: 'Atendimento, entrega e PIX', alterado: atendimento.alterado },
-    { id: 'customizacao', titulo: 'Customização do site', alterado: customizacao.alterado },
-  ] as const;
-  type AbaId = (typeof ABAS)[number]['id'];
-  const [abaAtiva, setAbaAtiva] = useState<AbaId>('empresa');
+  const iniciarSalvarPix = () => {
+    if (!pix.validar()) return;
+    setPixModalAberto(true);
+  };
 
-  // Some sozinho o aviso de sucesso
+  const confirmarPix = (senha: string) => {
+    if (!estab) return Promise.resolve<ResultadoPix>({ ok: false, mensagem: 'Estabelecimento não encontrado.' });
+    return pix.confirmarComSenha(estab.id, senha);
+  };
+
+  // ── Abas ─────────────────────────────────────────────────────────────────
+  const ABAS: { id: AbaId; titulo: string; icone: React.ReactNode; alterado: boolean }[] = [
+    { id: 'dados-empresa', titulo: 'Dados da empresa', icone: <HiOfficeBuilding />, alterado: false },
+    { id: 'contato-endereco', titulo: 'Contato e Endereço', icone: <HiLocationMarker />, alterado: contato.alterado || endereco.alterado },
+    { id: 'horario', titulo: 'Horário de funcionamento', icone: <HiClock />, alterado: horario.alterado },
+    { id: 'atendimento', titulo: 'Atendimento, entrega e PIX', icone: <HiTruck />, alterado: atendimento.alterado || pix.alterado },
+  ];
+  const [abaAtiva, setAbaAtiva] = useState<AbaId>('dados-empresa');
+
   useEffect(() => {
     if (avisoGeral?.tipo !== 'ok') return;
     const t = window.setTimeout(() => setAvisoGeral(null), 6000);
@@ -1182,7 +1207,6 @@ const Config: React.FC = () => {
     return () => window.clearTimeout(t);
   }, [logoAviso]);
 
-  // Alterações não salvas em qualquer seção: avisa antes de fechar a aba
   useEffect(() => {
     if (!algumAlterado) return;
     const antes = (e: BeforeUnloadEvent) => {
@@ -1199,7 +1223,6 @@ const Config: React.FC = () => {
   };
 
   const alternarDia = (dia: DiaSemana, aberto: boolean) => {
-    // Ao abrir um dia pela primeira vez, já sugere um horário para não ficar vazio
     const atual = horario.valor.horario[dia];
     horario.definir('horario', {
       ...horario.valor.horario,
@@ -1253,13 +1276,11 @@ const Config: React.FC = () => {
     navigate('/login');
   };
 
-  // Se há alterações não salvas em alguma seção, pergunta antes de sair
   const sairDaConta = () => {
     if (algumAlterado) setSaidaPendente(() => executarSaida);
     else executarSaida();
   };
 
-  // Clique em qualquer link do menu com alterações pendentes → pergunta se quer salvar
   useEffect(() => {
     if (!algumAlterado) return;
     const aoClicar = (e: MouseEvent) => {
@@ -1276,20 +1297,26 @@ const Config: React.FC = () => {
     return () => document.removeEventListener('click', aoClicar, true);
   }, [algumAlterado, navigate]);
 
-  // Salva todas as seções que estiverem pendentes e só então sai
   const salvarESair = async () => {
     if (!saidaPendente) return;
     setSalvandoSaida(true);
-    const pendentes = secoes.filter((s) => s.alterado);
+    const pendentes = secoesAutoSalvaveis.filter((s) => s.alterado);
     const resultados = await Promise.all(pendentes.map((s) => s.salvar()));
     setSalvandoSaida(false);
-    if (resultados.every(Boolean)) {
-      const ir = saidaPendente;
-      setSaidaPendente(null);
-      ir();
-    } else {
-      setSaidaPendente(null); // fica na tela para corrigir; o erro de cada seção já aparece nela
+    setSaidaPendente(null);
+
+    if (!resultados.every(Boolean)) return; // erro já aparece na seção que falhou
+
+    if (pix.alterado) {
+      setAvisoGeral({
+        tipo: 'erro',
+        texto: 'Você tem uma alteração de PIX pendente. Confirme sua senha na aba de PIX antes de sair.',
+      });
+      return;
     }
+
+    const ir = saidaPendente;
+    ir();
   };
 
   const abrirDadosSensiveis = () => {
@@ -1322,29 +1349,10 @@ const Config: React.FC = () => {
     }
     void recarregar();
     if (emailAlterado) {
-      // O e-mail novo precisa ser confirmado com o código enviado
       navigate('/verify-code', { state: { email: novos.email, mode: 'register' } });
       return;
     }
     setAvisoGeral({ tipo: 'ok', texto: 'Dados alterados com sucesso.' });
-  };
-
-  const abrirModalPix = () => {
-    if (algumAlterado) {
-      setAvisoGeral({
-        tipo: 'erro',
-        texto: 'Salve ou descarte as alterações pendentes antes de mudar a chave PIX.',
-      });
-      return;
-    }
-    setAvisoGeral(null);
-    setModalPix(true);
-  };
-
-  const aoAlterarPix = (tipo: TipoChavePix | null, chave: string | null) => {
-    setModalPix(false);
-    mesclarEstabelecimento({ tipo_chave_pix: tipo, chave_pix: chave });
-    setAvisoGeral({ tipo: 'ok', texto: 'Chave PIX atualizada com sucesso.' });
   };
 
   // ── Estados de carregamento / erro ────────────────────────────────────────
@@ -1386,19 +1394,75 @@ const Config: React.FC = () => {
     );
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // Nome exibido no cabeçalho: vem da empresa (dado protegido) — não existe
+  // mais um campo de "nome do restaurante" livre, editável fora do fluxo de
+  // senha. Ver ModalDadosSensiveis / PassoEditar.
+  const nomeExibido = empresa?.nome ?? estab.nome ?? 'Restaurante';
+  // `ativo` ainda não existe no tipo Estabelecimento — adicionar no service
+  // quando o backend expuser esse campo. Até lá, assume true.
+  const estabAtivo = (estab as unknown as { ativo?: boolean }).ativo ?? true;
 
   return (
     <RestaurantLayout>
       <div className="config">
         {/* Cabeçalho */}
         <header className="config__cabecalho">
-          <div>
-            <h2 className="config__titulo">Perfil do restaurante</h2>
-            <p className="config__subtitulo">
-              Cada seção é salva por conta própria. Campos com cadeado vêm do cadastro e não podem ser alterados aqui.
-            </p>
+          <div className="config__cabecalho-perfil">
+            <div className="config__avatar-col">
+              <img
+                className="config__avatar"
+                src={estab.logo_url ?? LOGO_PADRAO}
+                alt={`Logo de ${nomeExibido}`}
+                onError={(e) => {
+                  e.currentTarget.src = LOGO_PADRAO;
+                }}
+              />
+              {podeEditar && (
+                <button
+                  className="config__btn config__btn--pequeno"
+                  type="button"
+                  onClick={() => inputLogoRef.current?.click()}
+                  disabled={enviandoLogo}
+                >
+                  <HiUpload /> {enviandoLogo ? 'Enviando…' : 'Alterar logo'}
+                </button>
+              )}
+              <input
+                ref={inputLogoRef}
+                type="file"
+                accept="image/jpeg,image/png"
+                className="config__arquivo"
+                onChange={escolherLogo}
+              />
+              {logoAviso && (
+                <p className={logoAviso.tipo === 'erro' ? 'config__erro' : 'config__hint'} role={logoAviso.tipo === 'erro' ? 'alert' : undefined}>
+                  {logoAviso.texto}
+                </p>
+              )}
+            </div>
+
+            <div className="config__cabecalho-info">
+              <div className="config__cabecalho-titulo-linha">
+                <h2 className="config__titulo">{nomeExibido}</h2>
+                <span className={`config__status-badge ${estabAtivo ? 'config__status-badge--ativo' : 'config__status-badge--inativo'}`}>
+                  <span className="config__status-ponto" aria-hidden="true" />
+                  {estabAtivo ? 'Restaurante ativo' : 'Restaurante inativo'}
+                </span>
+              </div>
+              <p className="config__cabecalho-linha">
+                <HiLocationMarker aria-hidden="true" /> Restaurante
+                {estab.endereco?.cidade ? ` • ${estab.endereco.cidade}` : ''}
+                {estab.endereco?.estado ? `/${estab.endereco.estado}` : ''}
+              </p>
+              <p className="config__cabecalho-linha config__cabecalho-linha--muted">
+                CNPJ: {empresa?.cnpj ?? estab.cnpj ?? '—'}
+              </p>
+              <p className="config__subtitulo">
+                Cada seção é salva por conta própria. Campos com cadeado vêm do cadastro e não podem ser alterados aqui.
+              </p>
+            </div>
           </div>
+
           <div className="config__cabecalho-acoes">
             <div
               className="config__chip-info"
@@ -1415,75 +1479,6 @@ const Config: React.FC = () => {
             </button>
           </div>
         </header>
-
-        {/* Identidade — fora das seções: sempre visível no topo, centralizada */}
-        <section className="config__identidade-topo" aria-labelledby="sec-identidade">
-          <div className="config__identidade-avatar-col">
-            <img
-              className="config__avatar config__avatar--grande"
-              src={estab.logo_url ?? LOGO_PADRAO}
-              alt={`Logo de ${estab.nome}`}
-              onError={(e) => {
-                e.currentTarget.src = LOGO_PADRAO;
-              }}
-            />
-            {podeEditar && (
-              <button
-                className="config__btn config__btn--pequeno"
-                type="button"
-                onClick={() => inputLogoRef.current?.click()}
-                disabled={enviandoLogo}
-              >
-                <HiUpload /> {enviandoLogo ? 'Enviando…' : 'Alterar logo'}
-              </button>
-            )}
-            {logoAviso && (
-              <p className={logoAviso.tipo === 'erro' ? 'config__erro' : 'config__hint'} role={logoAviso.tipo === 'erro' ? 'alert' : undefined}>
-                {logoAviso.texto}
-              </p>
-            )}
-            <input
-              ref={inputLogoRef}
-              type="file"
-              accept="image/jpeg,image/png"
-              className="config__arquivo"
-              onChange={escolherLogo}
-            />
-          </div>
-
-          <div className="config__identidade-nome-col">
-            <input
-              id="nome-identidade"
-              className="config__input config__input--nome-topo"
-              value={identidade.valor.nome}
-              maxLength={150}
-              disabled={!podeEditar || identidade.salvando}
-              onChange={(e) => identidade.definir('nome', e.target.value)}
-              aria-label="Nome do restaurante"
-            />
-            {identidade.erros.nome && <p className="config__erro" role="alert">{identidade.erros.nome}</p>}
-            {identidade.erroGeral && <p className="config__erro" role="alert">{identidade.erroGeral}</p>}
-
-            {podeEditar && identidade.alterado && (
-              <div className="config__secao-acoes config__secao-acoes--centro">
-                <button className="config__btn config__btn--pequeno" type="button" onClick={identidade.descartar} disabled={identidade.salvando}>
-                  Descartar
-                </button>
-                <button
-                  className="config__btn config__btn--primario config__btn--pequeno"
-                  type="button"
-                  onClick={() => void identidade.salvar()}
-                  disabled={identidade.salvando}
-                >
-                  {identidade.salvando ? 'Salvando…' : 'Salvar'}
-                </button>
-              </div>
-            )}
-            {identidade.salvoRecente && (
-              <span className="config__secao-status config__secao-status--ok"><HiCheckCircle /> Salvo</span>
-            )}
-          </div>
-        </section>
 
         {!podeEditar && (
           <p className="config__aviso config__aviso--info" role="status">
@@ -1505,8 +1500,9 @@ const Config: React.FC = () => {
           </p>
         )}
 
-        {/* Painel com abas — a mesma ideia da tela de Caixa: uma barra de
-            abas em cima, e só o conteúdo da aba ativa aparece embaixo. */}
+        {/* Painel com abas: só o conteúdo da aba ativa aparece — os cards da
+            referência visual ficam empilhados na mesma tela só para fins de
+            ilustração; aqui cada um vive dentro da sua própria aba. */}
         <div className="config__painel">
           <div className="config__abas" role="tablist" aria-label="Seções do perfil">
             {ABAS.map((aba) => (
@@ -1517,399 +1513,400 @@ const Config: React.FC = () => {
                 className={`config__aba${abaAtiva === aba.id ? ' config__aba--ativa' : ''}`}
                 onClick={() => setAbaAtiva(aba.id)}
               >
+                <span className="config__aba-icone">{aba.icone}</span>
                 {aba.titulo}
                 {aba.alterado && <span className="config__aba-ponto" aria-hidden="true" />}
               </button>
             ))}
           </div>
 
-        {/* Dados da empresa: alterar exige a senha */}
-        {abaAtiva === 'empresa' && (
-        <section className="config__card" aria-labelledby="sec-cadastro">
-          <div className="config__card-cabecalho">
-            <h3 className="config__card-titulo" id="sec-cadastro">Dados da empresa</h3>
-            <button className="config__btn config__btn--pequeno" type="button" onClick={abrirDadosSensiveis}>
-              <HiPencil /> Alterar dados
-            </button>
-          </div>
-          <div className="config__grade">
-            <Bloqueado id="cad-empresa" rotulo="Nome da empresa" valor={empresa?.nome} />
-            <Bloqueado id="cad-razao" rotulo="Razão social" valor={empresa?.razao_social} />
-            <Bloqueado id="cad-resp" rotulo="Responsável" valor={usuario.nome} />
-            <Bloqueado id="cad-email" rotulo="E-mail de acesso" valor={usuario.email} />
-            <Bloqueado id="cad-cnpj" rotulo="CNPJ" valor={empresa?.cnpj ?? estab.cnpj} />
-            <Bloqueado id="cad-cpf" rotulo="CPF do responsável" valor={usuario.cpf} />
-          </div>
-          <p className="config__hint">
-            Para mudar nome da empresa, razão social, responsável ou e-mail, confirme sua senha.
-            CNPJ e CPF não podem ser alterados.
-          </p>
-        </section>
-        )}
+          {/* Dados da empresa */}
+          {abaAtiva === 'dados-empresa' && (
+            <section className="config__card" aria-labelledby="sec-cadastro">
+              <div className="config__card-cabecalho">
+                <h3 className="config__card-titulo" id="sec-cadastro">
+                  <span className="config__card-titulo-icone"><HiOfficeBuilding /></span>
+                  Dados da empresa
+                </h3>
+                <button className="config__btn config__btn--pequeno" type="button" onClick={abrirDadosSensiveis}>
+                  <HiPencil /> Alterar dados
+                </button>
+              </div>
+              <p className="config__hint">
+                <HiLockClosed aria-hidden="true" /> Alguns dados são protegidos e não podem ser alterados aqui.
+              </p>
+              <div className="config__grade">
+                <Bloqueado id="cad-empresa" rotulo="Nome da empresa" valor={empresa?.nome} />
+                <Bloqueado id="cad-razao" rotulo="Razão social" valor={empresa?.razao_social} />
+                <Bloqueado id="cad-resp" rotulo="Responsável" valor={usuario.nome} />
+                <Bloqueado id="cad-email" rotulo="E-mail de acesso" valor={usuario.email} />
+                <Bloqueado id="cad-cnpj" rotulo="CNPJ" valor={empresa?.cnpj ?? estab.cnpj} />
+                <Bloqueado id="cad-cpf" rotulo="CPF do responsável" valor={usuario.cpf} />
+              </div>
+              <p className="config__hint">
+                Para mudar nome da empresa, razão social, responsável ou e-mail — incluindo o nome exibido no
+                topo desta tela — confirme sua senha em "Alterar dados". CNPJ e CPF não podem ser alterados.
+              </p>
+            </section>
+          )}
 
-        {/* Contato */}
-        {abaAtiva === 'contato' && (
-        <>
-        <section className="config__card" aria-labelledby="sec-contato">
-          <SecaoCabecalho titulo="Contato" id="sec-contato" secao={contato} podeEditar={podeEditar} />
-          {contato.erroGeral && <p className="config__erro" role="alert">{contato.erroGeral}</p>}
-
-          <div className="config__grade">
-            <Campo id="telefone" rotulo="Telefone" erro={contato.erros.telefone} dica="Opcional. Aparece no seu cardápio.">
-              <input
-                id="telefone"
-                className="config__input"
-                inputMode="tel"
-                placeholder="(11) 3456-7890"
-                value={contato.valor.telefone}
-                disabled={!podeEditar || contato.salvando}
-                onChange={(e) => contato.definir('telefone', mascaraTelefone(e.target.value))}
-              />
-            </Campo>
-            <Campo
-              id="whatsapp"
-              rotulo="WhatsApp"
-              erro={contato.erros.whatsapp}
-              dica="Opcional. É para este número que vão os avisos de novo pedido."
-            >
-              <input
-                id="whatsapp"
-                className="config__input"
-                inputMode="tel"
-                placeholder="(11) 91234-5678"
-                value={contato.valor.whatsapp}
-                disabled={!podeEditar || contato.salvando}
-                onChange={(e) => contato.definir('whatsapp', mascaraTelefone(e.target.value))}
-              />
-            </Campo>
-            <Campo
-              id="email-contato"
-              rotulo="E-mail de contato"
-              erro={contato.erros.email}
-              dica="Opcional. Diferente do e-mail de acesso, este é o que seus clientes veem."
-              className="config__span-2"
-            >
-              <input
-                id="email-contato"
-                className="config__input"
-                type="email"
-                placeholder="contato@seurestaurante.com.br"
-                value={contato.valor.email}
-                disabled={!podeEditar || contato.salvando}
-                onChange={(e) => contato.definir('email', e.target.value)}
-              />
-            </Campo>
-          </div>
-        </section>
-
-        {/* Endereço — mesma aba de Contato, card separado (salva por conta própria) */}
-        <section className="config__card" aria-labelledby="sec-endereco">
-          <SecaoCabecalho titulo="Endereço" id="sec-endereco" secao={endereco} podeEditar={podeEditar} />
-          {endereco.erroGeral && <p className="config__erro" role="alert">{endereco.erroGeral}</p>}
-
-          <div className="config__grade config__grade--endereco">
-            <Campo id="cep" rotulo="CEP" erro={endereco.erros.cep} className="config__col-cep">
-              <input
-                id="cep"
-                className="config__input"
-                inputMode="numeric"
-                placeholder="00000-000"
-                value={endereco.valor.cep}
-                disabled={!podeEditar || endereco.salvando}
-                onChange={(e) => endereco.definir('cep', mascaraCep(e.target.value))}
-              />
-            </Campo>
-            <Campo id="rua" rotulo="Rua" erro={endereco.erros.rua} className="config__col-rua">
-              <input
-                id="rua"
-                className="config__input"
-                value={endereco.valor.rua}
-                maxLength={150}
-                disabled={!podeEditar || endereco.salvando}
-                onChange={(e) => endereco.definir('rua', e.target.value)}
-              />
-            </Campo>
-            <Campo id="numero" rotulo="Número" erro={endereco.erros.numero} className="config__col-numero">
-              <input
-                id="numero"
-                className="config__input"
-                value={endereco.valor.numero}
-                maxLength={10}
-                disabled={!podeEditar || endereco.salvando}
-                onChange={(e) => endereco.definir('numero', e.target.value)}
-              />
-            </Campo>
-            <Campo id="complemento" rotulo="Complemento" className="config__col-compl">
-              <input
-                id="complemento"
-                className="config__input"
-                placeholder="Sala, andar, referência… (opcional)"
-                value={endereco.valor.complemento}
-                maxLength={80}
-                disabled={!podeEditar || endereco.salvando}
-                onChange={(e) => endereco.definir('complemento', e.target.value)}
-              />
-            </Campo>
-            <Campo id="bairro" rotulo="Bairro" erro={endereco.erros.bairro} className="config__col-bairro">
-              <input
-                id="bairro"
-                className="config__input"
-                value={endereco.valor.bairro}
-                maxLength={80}
-                disabled={!podeEditar || endereco.salvando}
-                onChange={(e) => endereco.definir('bairro', e.target.value)}
-              />
-            </Campo>
-            <Campo id="cidade" rotulo="Cidade" erro={endereco.erros.cidade} className="config__col-cidade">
-              <input
-                id="cidade"
-                className="config__input"
-                value={endereco.valor.cidade}
-                maxLength={80}
-                disabled={!podeEditar || endereco.salvando}
-                onChange={(e) => endereco.definir('cidade', e.target.value)}
-              />
-            </Campo>
-            <Campo id="estado" rotulo="Estado" erro={endereco.erros.estado} className="config__col-uf">
-              <select
-                id="estado"
-                className="config__input config__select"
-                value={endereco.valor.estado}
-                disabled={!podeEditar || endereco.salvando}
-                onChange={(e) => endereco.definir('estado', e.target.value)}
-              >
-                <option value="">UF</option>
-                {UFS.map((uf) => (
-                  <option key={uf} value={uf}>{uf}</option>
-                ))}
-              </select>
-            </Campo>
-          </div>
-        </section>
-        </>
-        )}
-
-        {/* Horários */}
-        {abaAtiva === 'horario' && (
-        <section className="config__card" aria-labelledby="sec-horarios">
-          <SecaoCabecalho titulo="Horário de funcionamento" id="sec-horarios" secao={horario} podeEditar={podeEditar} />
-          {horario.erroGeral && <p className="config__erro" role="alert">{horario.erroGeral}</p>}
-          <p className="config__hint">
-            Todos os dias começam fechados. Abra os dias em que você atende e defina o horário.
-          </p>
-
-          <ul className="config__dias">
-            {DIAS.map(({ chave, nome }) => {
-              const dia = horario.valor.horario[chave];
-              const erroDia = horario.erros[`horario_${chave}`];
-              const viraNoite =
-                dia.aberto && dia.abertura && dia.fechamento && dia.fechamento <= dia.abertura;
-
-              return (
-                <li key={chave} className={`config__dia ${dia.aberto ? 'config__dia--aberto' : ''}`}>
-                  <label className="config__dia-nome" htmlFor={`dia-${chave}`}>
+          {/* Contato e Endereço */}
+          {abaAtiva === 'contato-endereco' && (
+            <div className="config__duas-colunas">
+              <section className="config__subcard" aria-labelledby="sec-contato">
+                <SecaoCabecalho titulo="Contato" id="sec-contato" secao={contato} podeEditar={podeEditar} icone={<HiPhone />} />
+                {contato.erroGeral && <p className="config__erro" role="alert">{contato.erroGeral}</p>}
+                <div className="config__grade config__grade--1col">
+                  <Campo id="telefone" rotulo="Telefone" erro={contato.erros.telefone} dica="Opcional. Aparece no seu cardápio.">
                     <input
-                      id={`dia-${chave}`}
-                      type="checkbox"
-                      role="switch"
-                      className="config__dia-check"
-                      checked={dia.aberto}
-                      disabled={!podeEditar || horario.salvando}
-                      onChange={(e) => alternarDia(chave, e.target.checked)}
+                      id="telefone"
+                      className="config__input"
+                      inputMode="tel"
+                      placeholder="(11) 3456-7890"
+                      value={contato.valor.telefone}
+                      disabled={!podeEditar || contato.salvando}
+                      onChange={(e) => contato.definir('telefone', mascaraTelefone(e.target.value))}
                     />
-                    <span className="config__switch-trilho" aria-hidden="true" />
-                    <span>{nome}</span>
-                  </label>
+                  </Campo>
+                  <Campo
+                    id="whatsapp"
+                    rotulo="WhatsApp"
+                    erro={contato.erros.whatsapp}
+                    dica="Opcional. É para este número que vão os avisos de novo pedido."
+                  >
+                    <input
+                      id="whatsapp"
+                      className="config__input"
+                      inputMode="tel"
+                      placeholder="(11) 91234-5678"
+                      value={contato.valor.whatsapp}
+                      disabled={!podeEditar || contato.salvando}
+                      onChange={(e) => contato.definir('whatsapp', mascaraTelefone(e.target.value))}
+                    />
+                  </Campo>
+                  <Campo
+                    id="email-contato"
+                    rotulo="E-mail de contato"
+                    erro={contato.erros.email}
+                    dica="Opcional. Diferente do e-mail de acesso, este é o que seus clientes veem."
+                  >
+                    <input
+                      id="email-contato"
+                      className="config__input"
+                      type="email"
+                      placeholder="contato@seurestaurante.com.br"
+                      value={contato.valor.email}
+                      disabled={!podeEditar || contato.salvando}
+                      onChange={(e) => contato.definir('email', e.target.value)}
+                    />
+                  </Campo>
+                </div>
+              </section>
 
-                  {dia.aberto ? (
-                    <div className="config__dia-horas">
-                      <input
-                        type="time"
-                        className="config__input config__input--hora"
-                        aria-label={`Abertura de ${nome}`}
-                        value={dia.abertura ?? ''}
-                        disabled={!podeEditar || horario.salvando}
-                        onChange={(e) => definirDia(chave, { abertura: e.target.value || null })}
-                      />
-                      <span className="config__ate">até</span>
-                      <input
-                        type="time"
-                        className="config__input config__input--hora"
-                        aria-label={`Fechamento de ${nome}`}
-                        value={dia.fechamento ?? ''}
-                        disabled={!podeEditar || horario.salvando}
-                        onChange={(e) => definirDia(chave, { fechamento: e.target.value || null })}
-                      />
-                      <button
-                        className="config__link"
-                        type="button"
-                        disabled={!podeEditar || horario.salvando || !dia.abertura || !dia.fechamento}
-                        onClick={() => copiarParaTodos(chave)}
-                      >
-                        Repetir em todos os dias
-                      </button>
-                    </div>
-                  ) : (
-                    <span className="config__dia-fechado">Fechado</span>
-                  )}
-
-                  {(erroDia || viraNoite) && (
-                    <p className={erroDia ? 'config__erro' : 'config__hint'} role={erroDia ? 'alert' : undefined}>
-                      {erroDia ?? 'Fecha depois da meia-noite, já no dia seguinte.'}
-                    </p>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-        )}
-
-        {/* Atendimento */}
-        {abaAtiva === 'atendimento' && (
-        <section className="config__card" aria-labelledby="sec-atendimento">
-          <SecaoCabecalho titulo="Atendimento e entrega" id="sec-atendimento" secao={atendimento} podeEditar={podeEditar} />
-          {atendimento.erroGeral && <p className="config__erro" role="alert">{atendimento.erroGeral}</p>}
-
-          <div className="config__interruptores">
-            <Interruptor
-              id="aceita-entrega"
-              rotulo="Entrega"
-              descricao="Clientes podem pedir para receber em casa."
-              marcado={atendimento.valor.aceita_entrega}
-              desabilitado={!podeEditar || atendimento.salvando}
-              onChange={(v) => atendimento.definir('aceita_entrega', v)}
-            />
-            <Interruptor
-              id="aceita-retirada"
-              rotulo="Retirada"
-              descricao="Clientes buscam o pedido no balcão."
-              marcado={atendimento.valor.aceita_retirada}
-              desabilitado={!podeEditar || atendimento.salvando}
-              onChange={(v) => atendimento.definir('aceita_retirada', v)}
-            />
-            <Interruptor
-              id="aceita-mesa"
-              rotulo="Pedido na mesa"
-              descricao="Clientes pedem pelo cardápio da mesa."
-              marcado={atendimento.valor.aceita_mesa}
-              desabilitado={!podeEditar || atendimento.salvando}
-              onChange={(v) => atendimento.definir('aceita_mesa', v)}
-            />
-          </div>
-
-          <div className="config__grade config__grade--4">
-            <Campo id="tempo-min" rotulo="Tempo mínimo (min)" erro={atendimento.erros.tempo}>
-              <input
-                id="tempo-min"
-                className="config__input"
-                type="number"
-                min={1}
-                value={atendimento.valor.tempo_entrega_min}
-                disabled={!podeEditar || atendimento.salvando}
-                onChange={(e) => atendimento.definir('tempo_entrega_min', e.target.value)}
-              />
-            </Campo>
-            <Campo id="tempo-max" rotulo="Tempo máximo (min)">
-              <input
-                id="tempo-max"
-                className="config__input"
-                type="number"
-                min={1}
-                value={atendimento.valor.tempo_entrega_max}
-                disabled={!podeEditar || atendimento.salvando}
-                onChange={(e) => atendimento.definir('tempo_entrega_max', e.target.value)}
-              />
-            </Campo>
-            <Campo id="taxa" rotulo="Taxa de entrega (R$)" erro={atendimento.erros.taxa_entrega}>
-              <input
-                id="taxa"
-                className="config__input"
-                inputMode="decimal"
-                value={atendimento.valor.taxa_entrega}
-                disabled={!podeEditar || atendimento.salvando}
-                onChange={(e) => atendimento.definir('taxa_entrega', e.target.value)}
-              />
-            </Campo>
-            <Campo id="minimo" rotulo="Pedido mínimo (R$)" erro={atendimento.erros.pedido_minimo}>
-              <input
-                id="minimo"
-                className="config__input"
-                inputMode="decimal"
-                value={atendimento.valor.pedido_minimo}
-                disabled={!podeEditar || atendimento.salvando}
-                onChange={(e) => atendimento.definir('pedido_minimo', e.target.value)}
-              />
-            </Campo>
-          </div>
-        </section>
-        )}
-
-        {/* PIX — dado sensível: mesma aba de Atendimento, card separado */}
-        {abaAtiva === 'atendimento' && (
-        <section className="config__card" aria-labelledby="sec-pix">
-          <div className="config__card-cabecalho">
-            <h3 className="config__card-titulo" id="sec-pix">Recebimento por PIX</h3>
-            {podePix && (
-              <button className="config__btn config__btn--pequeno" type="button" onClick={abrirModalPix}>
-                <HiPencil /> Alterar chave PIX
-              </button>
-            )}
-          </div>
-          <div className="config__grade">
-            <Bloqueado
-              id="pix-tipo"
-              rotulo="Tipo da chave"
-              valor={estab.tipo_chave_pix ? TIPOS_PIX.find((t) => t.valor === estab.tipo_chave_pix)?.rotulo : null}
-            />
-            <Bloqueado
-              id="pix-chave"
-              rotulo="Chave PIX"
-              valor={mascararChavePix(estab.chave_pix, estab.tipo_chave_pix)}
-            />
-          </div>
-          <p className="config__hint">
-            {podePix
-              ? 'Dado sensível: para alterar, confirme sua senha atual.'
-              : 'Dado sensível — apenas o dono da empresa pode alterar a chave PIX.'}
-          </p>
-        </section>
-        )}
-
-        {/* Customização do site */}
-        {abaAtiva === 'customizacao' && (
-        <section className="config__card" aria-labelledby="sec-customizacao">
-          <SecaoCabecalho titulo="Customização do site" id="sec-customizacao" secao={customizacao} podeEditar={podeEditar} />
-          {customizacao.erroGeral && <p className="config__erro" role="alert">{customizacao.erroGeral}</p>}
-
-          <div className="config__campo">
-            <label className="config__label">Tema do cardápio</label>
-            <div className="config__radio-grupo">
-              <label className="config__radio-label">
-                <input
-                  type="radio"
-                  name="tema"
-                  checked={customizacao.valor.tema === 'CLARO'}
-                  disabled={!podeEditar || customizacao.salvando}
-                  onChange={() => customizacao.definir('tema', 'CLARO')}
-                />
-                Tema claro
-              </label>
-              <label className="config__radio-label">
-                <input
-                  type="radio"
-                  name="tema"
-                  checked={customizacao.valor.tema === 'ESCURO'}
-                  disabled={!podeEditar || customizacao.salvando}
-                  onChange={() => customizacao.definir('tema', 'ESCURO')}
-                />
-                Tema escuro
-              </label>
+              <section className="config__subcard" aria-labelledby="sec-endereco">
+                <SecaoCabecalho titulo="Endereço" id="sec-endereco" secao={endereco} podeEditar={podeEditar} icone={<HiLocationMarker />} />
+                {endereco.erroGeral && <p className="config__erro" role="alert">{endereco.erroGeral}</p>}
+                <div className="config__grade config__grade--endereco-compacta">
+                  <Campo id="cep" rotulo="CEP" erro={endereco.erros.cep} className="config__col-cep">
+                    <input
+                      id="cep"
+                      className="config__input"
+                      inputMode="numeric"
+                      placeholder="00000-000"
+                      value={endereco.valor.cep}
+                      disabled={!podeEditar || endereco.salvando}
+                      onChange={(e) => endereco.definir('cep', mascaraCep(e.target.value))}
+                    />
+                  </Campo>
+                  <Campo id="rua" rotulo="Rua" erro={endereco.erros.rua} className="config__col-rua">
+                    <input
+                      id="rua"
+                      className="config__input"
+                      value={endereco.valor.rua}
+                      maxLength={150}
+                      disabled={!podeEditar || endereco.salvando}
+                      onChange={(e) => endereco.definir('rua', e.target.value)}
+                    />
+                  </Campo>
+                  <Campo id="numero" rotulo="Número" erro={endereco.erros.numero} className="config__col-numero">
+                    <input
+                      id="numero"
+                      className="config__input"
+                      value={endereco.valor.numero}
+                      maxLength={10}
+                      disabled={!podeEditar || endereco.salvando}
+                      onChange={(e) => endereco.definir('numero', e.target.value)}
+                    />
+                  </Campo>
+                  <Campo id="complemento" rotulo="Complemento" className="config__col-bairro">
+                    <input
+                      id="complemento"
+                      className="config__input"
+                      placeholder="Sala, andar… (opcional)"
+                      value={endereco.valor.complemento}
+                      maxLength={80}
+                      disabled={!podeEditar || endereco.salvando}
+                      onChange={(e) => endereco.definir('complemento', e.target.value)}
+                    />
+                  </Campo>
+                  <Campo id="bairro" rotulo="Bairro" erro={endereco.erros.bairro} className="config__col-bairro">
+                    <input
+                      id="bairro"
+                      className="config__input"
+                      value={endereco.valor.bairro}
+                      maxLength={80}
+                      disabled={!podeEditar || endereco.salvando}
+                      onChange={(e) => endereco.definir('bairro', e.target.value)}
+                    />
+                  </Campo>
+                  <Campo id="cidade" rotulo="Cidade" erro={endereco.erros.cidade} className="config__col-cidade">
+                    <input
+                      id="cidade"
+                      className="config__input"
+                      value={endereco.valor.cidade}
+                      maxLength={80}
+                      disabled={!podeEditar || endereco.salvando}
+                      onChange={(e) => endereco.definir('cidade', e.target.value)}
+                    />
+                  </Campo>
+                  <Campo id="estado" rotulo="Estado" erro={endereco.erros.estado} className="config__col-uf">
+                    <select
+                      id="estado"
+                      className="config__input config__select"
+                      value={endereco.valor.estado}
+                      disabled={!podeEditar || endereco.salvando}
+                      onChange={(e) => endereco.definir('estado', e.target.value)}
+                    >
+                      <option value="">UF</option>
+                      {UFS.map((uf) => (
+                        <option key={uf} value={uf}>{uf}</option>
+                      ))}
+                    </select>
+                  </Campo>
+                </div>
+              </section>
             </div>
-            <p className="config__hint">Define a aparência do cardápio público do seu restaurante.</p>
-          </div>
-        </section>
-        )}
+          )}
+
+          {/* Horário */}
+          {abaAtiva === 'horario' && (
+            <section className="config__card" aria-labelledby="sec-horarios">
+              <SecaoCabecalho titulo="Horário de funcionamento" id="sec-horarios" secao={horario} podeEditar={podeEditar} icone={<HiClock />} />
+              {horario.erroGeral && <p className="config__erro" role="alert">{horario.erroGeral}</p>}
+              <p className="config__hint">
+                Todos os dias começam fechados. Abra os dias em que você atende e defina o horário.
+              </p>
+
+              <ul className="config__dias config__dias--duas-colunas">
+                {DIAS.map(({ chave, nome }) => {
+                  const dia = horario.valor.horario[chave];
+                  const erroDia = horario.erros[`horario_${chave}`];
+                  const viraNoite =
+                    dia.aberto && dia.abertura && dia.fechamento && dia.fechamento <= dia.abertura;
+
+                  return (
+                    <li key={chave} className={`config__dia ${dia.aberto ? 'config__dia--aberto' : ''}`}>
+                      <label className="config__dia-nome" htmlFor={`dia-${chave}`}>
+                        <input
+                          id={`dia-${chave}`}
+                          type="checkbox"
+                          role="switch"
+                          className="config__dia-check"
+                          checked={dia.aberto}
+                          disabled={!podeEditar || horario.salvando}
+                          onChange={(e) => alternarDia(chave, e.target.checked)}
+                        />
+                        <span className="config__switch-trilho" aria-hidden="true" />
+                        <span>{nome}</span>
+                      </label>
+
+                      {dia.aberto ? (
+                        <div className="config__dia-horas">
+                          <input
+                            type="time"
+                            className="config__input config__input--hora"
+                            aria-label={`Abertura de ${nome}`}
+                            value={dia.abertura ?? ''}
+                            disabled={!podeEditar || horario.salvando}
+                            onChange={(e) => definirDia(chave, { abertura: e.target.value || null })}
+                          />
+                          <span className="config__ate">até</span>
+                          <input
+                            type="time"
+                            className="config__input config__input--hora"
+                            aria-label={`Fechamento de ${nome}`}
+                            value={dia.fechamento ?? ''}
+                            disabled={!podeEditar || horario.salvando}
+                            onChange={(e) => definirDia(chave, { fechamento: e.target.value || null })}
+                          />
+                          <button
+                            className="config__link"
+                            type="button"
+                            disabled={!podeEditar || horario.salvando || !dia.abertura || !dia.fechamento}
+                            onClick={() => copiarParaTodos(chave)}
+                          >
+                            Repetir em todos os dias
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="config__dia-fechado">Fechado</span>
+                      )}
+
+                      {(erroDia || viraNoite) && (
+                        <p className={erroDia ? 'config__erro' : 'config__hint'} role={erroDia ? 'alert' : undefined}>
+                          {erroDia ?? 'Fecha depois da meia-noite, já no dia seguinte.'}
+                        </p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          {/* Atendimento, entrega e PIX */}
+          {abaAtiva === 'atendimento' && (
+            <div className="config__duas-colunas">
+              <section className="config__subcard" aria-labelledby="sec-atendimento">
+                <SecaoCabecalho titulo="Configurações de entrega" id="sec-atendimento" secao={atendimento} podeEditar={podeEditar} icone={<HiTruck />} />
+                {atendimento.erroGeral && <p className="config__erro" role="alert">{atendimento.erroGeral}</p>}
+
+                <div className="config__cartoes-opcao">
+                  <CartaoOpcao
+                    id="aceita-entrega"
+                    rotulo="Entrega"
+                    icone={<HiTruck />}
+                    marcado={atendimento.valor.aceita_entrega}
+                    desabilitado={!podeEditar || atendimento.salvando}
+                    onChange={(v) => atendimento.definir('aceita_entrega', v)}
+                  />
+                  <CartaoOpcao
+                    id="aceita-retirada"
+                    rotulo="Retirada"
+                    icone={<HiShoppingBag />}
+                    marcado={atendimento.valor.aceita_retirada}
+                    desabilitado={!podeEditar || atendimento.salvando}
+                    onChange={(v) => atendimento.definir('aceita_retirada', v)}
+                  />
+                  <CartaoOpcao
+                    id="aceita-mesa"
+                    rotulo="Pedido na mesa"
+                    icone={<HiUserGroup />}
+                    marcado={atendimento.valor.aceita_mesa}
+                    desabilitado={!podeEditar || atendimento.salvando}
+                    onChange={(v) => atendimento.definir('aceita_mesa', v)}
+                  />
+                </div>
+
+                <div className="config__grade config__grade--2col">
+                  <Campo id="tempo-min" rotulo="Tempo mínimo (min)" erro={atendimento.erros.tempo}>
+                    <input
+                      id="tempo-min"
+                      className="config__input"
+                      type="number"
+                      min={1}
+                      value={atendimento.valor.tempo_entrega_min}
+                      disabled={!podeEditar || atendimento.salvando}
+                      onChange={(e) => atendimento.definir('tempo_entrega_min', e.target.value)}
+                    />
+                  </Campo>
+                  <Campo id="tempo-max" rotulo="Tempo máximo (min)">
+                    <input
+                      id="tempo-max"
+                      className="config__input"
+                      type="number"
+                      min={1}
+                      value={atendimento.valor.tempo_entrega_max}
+                      disabled={!podeEditar || atendimento.salvando}
+                      onChange={(e) => atendimento.definir('tempo_entrega_max', e.target.value)}
+                    />
+                  </Campo>
+                  <Campo id="taxa" rotulo="Taxa de entrega (R$)" erro={atendimento.erros.taxa_entrega}>
+                    <input
+                      id="taxa"
+                      className="config__input"
+                      inputMode="decimal"
+                      value={atendimento.valor.taxa_entrega}
+                      disabled={!podeEditar || atendimento.salvando}
+                      onChange={(e) => atendimento.definir('taxa_entrega', e.target.value)}
+                    />
+                  </Campo>
+                  <Campo id="minimo" rotulo="Pedido mínimo (R$)" erro={atendimento.erros.pedido_minimo}>
+                    <input
+                      id="minimo"
+                      className="config__input"
+                      inputMode="decimal"
+                      value={atendimento.valor.pedido_minimo}
+                      disabled={!podeEditar || atendimento.salvando}
+                      onChange={(e) => atendimento.definir('pedido_minimo', e.target.value)}
+                    />
+                  </Campo>
+                </div>
+              </section>
+
+              <section className="config__subcard" aria-labelledby="sec-pix">
+                <div className="config__card-cabecalho">
+                  <h3 className="config__card-titulo" id="sec-pix">
+                    <span className="config__card-titulo-icone"><HiCash /></span>
+                    Recebimento por PIX
+                  </h3>
+                  {podeEditar && (
+                    <div className="config__secao-controles">
+                      <SecaoStatus
+                        alterado={pix.alterado}
+                        salvando={pix.salvando}
+                        salvoRecente={pix.salvoRecente}
+                        comErro={Boolean(pix.erroGeral)}
+                      />
+                      {pix.alterado && (
+                        <div className="config__secao-acoes">
+                          <button className="config__btn config__btn--pequeno" type="button" onClick={pix.descartar} disabled={pix.salvando}>
+                            Descartar
+                          </button>
+                          <button
+                            className="config__btn config__btn--primario config__btn--pequeno"
+                            type="button"
+                            onClick={iniciarSalvarPix}
+                            disabled={pix.salvando}
+                          >
+                            {pix.salvando ? 'Salvando…' : 'Salvar'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {pix.erroGeral && <p className="config__erro" role="alert">{pix.erroGeral}</p>}
+
+                <div className="config__grade config__grade--1col">
+                  <Campo id="tipo-pix" rotulo="Tipo da chave">
+                    <select
+                      id="tipo-pix"
+                      className="config__input config__select"
+                      value={pix.valor.tipo_chave_pix}
+                      disabled={!podeEditar || pix.salvando}
+                      onChange={(e) => pix.definir('tipo_chave_pix', e.target.value as TipoChavePix | '')}
+                    >
+                      <option value="">Sem chave PIX</option>
+                      {TIPOS_PIX.map((t) => (
+                        <option key={t.valor} value={t.valor}>{t.rotulo}</option>
+                      ))}
+                    </select>
+                  </Campo>
+                  <Campo id="chave-pix" rotulo="Chave PIX" erro={pix.erros.chave_pix} dica="Opcional.">
+                    <input
+                      id="chave-pix"
+                      className="config__input"
+                      value={pix.valor.chave_pix}
+                      maxLength={150}
+                      disabled={!podeEditar || pix.salvando}
+                      onChange={(e) => pix.definir('chave_pix', e.target.value)}
+                    />
+                  </Campo>
+                </div>
+              </section>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1927,14 +1924,8 @@ const Config: React.FC = () => {
         />
       )}
 
-      {modalPix && (
-        <ModalPix
-          estabelecimentoId={estab.id}
-          tipoAtual={estab.tipo_chave_pix ?? ''}
-          chaveAtual={estab.chave_pix ?? ''}
-          onFechar={() => setModalPix(false)}
-          onSucesso={aoAlterarPix}
-        />
+      {pixModalAberto && (
+        <ModalSenhaPix onConfirmar={confirmarPix} onFechar={() => setPixModalAberto(false)} />
       )}
 
       {saidaPendente && (

@@ -1,36 +1,99 @@
 /* ─────────────────────────────────────────────────────────────
    Perfil do restaurante
    Mesma linguagem do resto do sistema: fundo cinza, cards brancos,
-   verde para ação principal, vermelho para destaque/erro.
+   terracota para ação principal, vermelho para erro/alerta.
    ───────────────────────────────────────────────────────────── */
-
-.config {
+:root {
   --cfg-texto: #333333;
   --cfg-suave: #777777;
-  --cfg-borda: #dddddd;
+  --cfg-borda: #c9c6bd;
   --cfg-campo: #fafafa;
-  --cfg-verde: #5a7a3a;
-  --cfg-verde-escuro: #4a6530;
-  --cfg-verde-fundo: #e8f0df;
+  --cfg-primaria: #c0392b;
+  --cfg-primaria-escura: #a53023;
+  --cfg-primaria-fundo: #f7e6df;
   --cfg-vermelho: #c0392b;
   --cfg-vermelho-fundo: #fbe9e7;
+  --cfg-sucesso: #3f7d3f;
+  --cfg-sucesso-fundo: #e6f2e2;
+}
+
+.config {
 
   display: flex;
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  max-width: 980px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 8px 0 96px; /* espaço para o botão flutuante não cobrir o fim da página */
+  padding: 8px 0 96px;
   color: var(--cfg-texto);
 }
 
 /* ── Cabeçalho ── */
 .config__cabecalho {
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 20px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 26px 28px 24px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.config__cabecalho::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--cfg-primaria) 0%, #e0704f 100%);
+}
+
+.config__cabecalho-perfil {
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.config__avatar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 132px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.config__avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #e0e0e0;
+  background: #f3f3f3;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.config__arquivo { display: none; }
+
+.config__cabecalho-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.config__cabecalho-titulo-linha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .config__titulo {
@@ -39,12 +102,51 @@
   margin: 0;
 }
 
+.config__status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.config__status-badge--ativo { background: var(--cfg-sucesso-fundo); color: var(--cfg-sucesso); }
+.config__status-badge--inativo { background: #f0f0ee; color: #777777; }
+
+.config__status-ponto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.config__cabecalho-linha {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--cfg-suave);
+}
+
+.config__cabecalho-linha--muted { opacity: 0.85; }
+
 .config__subtitulo {
-  margin: 6px 0 0;
-  font-size: 14px;
+  margin: 8px 0 0;
+  font-size: 13px;
   line-height: 1.5;
   color: var(--cfg-suave);
   max-width: 60ch;
+}
+
+.config__cabecalho-acoes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 /* ── Avisos ── */
@@ -61,7 +163,7 @@
 
 .config__aviso svg { flex-shrink: 0; font-size: 20px; }
 
-.config__aviso--ok   { background: var(--cfg-verde-fundo);     color: #3f5a26; }
+.config__aviso--ok   { background: var(--cfg-sucesso-fundo);   color: var(--cfg-sucesso); }
 .config__aviso--erro { background: var(--cfg-vermelho-fundo);  color: #a93226; }
 .config__aviso--info { background: #ffffff; color: var(--cfg-suave); border: 1px solid var(--cfg-borda); }
 
@@ -77,9 +179,18 @@
 }
 
 .config__card-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 18px;
   font-weight: 600;
   margin: 0;
+}
+
+.config__card-titulo-icone {
+  display: inline-flex;
+  color: var(--cfg-primaria);
+  font-size: 18px;
 }
 
 .config__card--vazio {
@@ -99,6 +210,30 @@
   color: var(--cfg-vermelho);
 }
 
+/* ── Duas seções lado a lado dentro de uma aba (Contato/Endereço, Atendimento/PIX) ── */
+.config__duas-colunas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.config__subcard {
+  background: #ffffff;
+  border: 1px solid #eeeeec;
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: box-shadow 0.2s;
+}
+
+.config__subcard:focus-within {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+}
+
 /* ── Grades de campos ── */
 .config__grade {
   display: grid;
@@ -106,18 +241,19 @@
   gap: 18px 20px;
 }
 
+.config__grade--1col { grid-template-columns: 1fr; }
+.config__grade--2col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .config__grade--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .config__span-2   { grid-column: span 2; }
 
-/* Endereço em 12 colunas */
-.config__grade--endereco { grid-template-columns: repeat(12, minmax(0, 1fr)); }
-.config__col-cep    { grid-column: span 3; }
-.config__col-rua    { grid-column: span 7; }
-.config__col-numero { grid-column: span 2; }
-.config__col-compl  { grid-column: span 3; }
-.config__col-bairro { grid-column: span 3; }
-.config__col-cidade { grid-column: span 4; }
-.config__col-uf     { grid-column: span 2; }
+/* Endereço compacto (dentro do subcard, 6 colunas) */
+.config__grade--endereco-compacta { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.config__grade--endereco-compacta .config__col-cep    { grid-column: span 3; }
+.config__grade--endereco-compacta .config__col-rua    { grid-column: span 6; }
+.config__grade--endereco-compacta .config__col-numero { grid-column: span 2; }
+.config__grade--endereco-compacta .config__col-bairro { grid-column: span 4; }
+.config__grade--endereco-compacta .config__col-cidade { grid-column: span 4; }
+.config__grade--endereco-compacta .config__col-uf     { grid-column: span 2; }
 
 /* ── Campos ── */
 .config__campo {
@@ -149,17 +285,21 @@
   color: var(--cfg-texto);
   background: var(--cfg-campo);
   box-sizing: border-box;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .config__input:focus-visible,
 .config__btn:focus-visible,
 .config__link:focus-visible {
-  outline: 2px solid var(--cfg-verde);
+  outline: 2px solid var(--cfg-primaria);
   outline-offset: 2px;
 }
 
-.config__input:focus { border-color: var(--cfg-verde); }
+.config__input:focus {
+  border-color: var(--cfg-primaria);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 3px rgba(192, 57, 43, 0.12);
+}
 
 .config__input:disabled {
   opacity: 0.65;
@@ -171,17 +311,24 @@
   color: #666666;
   cursor: default;
   text-overflow: ellipsis;
+  box-shadow: none;
 }
 
-.config__input--bloqueado:focus { border-color: var(--cfg-borda); }
+.config__input--bloqueado:focus {
+  border-color: var(--cfg-borda);
+  box-shadow: none;
+}
 
 .config__select { cursor: pointer; }
 
 .config__input--hora {
-  width: 120px;
+  width: 100px;
 }
 
 .config__hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0;
   font-size: 12px;
   line-height: 1.5;
@@ -194,119 +341,6 @@
   line-height: 1.4;
   font-weight: 600;
   color: var(--cfg-vermelho);
-}
-
-/* ── Identidade ── */
-.config__identidade {
-  display: flex;
-  gap: 28px;
-  align-items: flex-start;
-}
-
-.config__logo-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  width: 168px;
-  flex-shrink: 0;
-  text-align: center;
-}
-
-.config__avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #e0e0e0;
-  background: #f3f3f3;
-}
-
-.config__arquivo { display: none; }
-
-.config__grade--identidade { flex: 1; min-width: 0; }
-
-/* ── Identidade no topo (fora das abas), centralizada ── */
-.config__identidade-topo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  text-align: center;
-  padding: 12px 0 4px;
-}
-
-.config__identidade-avatar-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.config__avatar--grande {
-  width: 128px;
-  height: 128px;
-}
-
-.config__identidade-nome-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  max-width: 420px;
-}
-
-.config__input--nome-topo {
-  text-align: center;
-  font-size: 22px;
-  font-weight: 700;
-  border: 1px solid transparent;
-  padding: 6px 12px;
-  width: 100%;
-}
-
-.config__input--nome-topo:hover:not(:disabled),
-.config__input--nome-topo:focus {
-  background: var(--cfg-campo);
-  border-color: var(--cfg-borda);
-}
-
-.config__input--nome-topo:disabled {
-  color: var(--cfg-texto);
-  -webkit-text-fill-color: var(--cfg-texto);
-  opacity: 1;
-}
-
-.config__secao-acoes--centro {
-  justify-content: center;
-}
-
-/* ── Customização do site: seletor de tema ── */
-.config__radio-grupo {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.config__radio-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.config__radio-label input[type='radio'] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--cfg-verde);
-  cursor: pointer;
-}
-
-@media (max-width: 640px) {
-  .config__identidade-topo { padding: 4px 0; }
-  .config__avatar--grande { width: 104px; height: 104px; }
 }
 
 /* ── Botões ── */
@@ -323,12 +357,16 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s, box-shadow 0.15s;
 }
 
 .config__btn:hover:not(:disabled) {
   background: #f5f5f5;
   border-color: #aaaaaa;
+}
+
+.config__btn:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .config__btn:disabled {
@@ -337,14 +375,16 @@
 }
 
 .config__btn--primario {
-  background: var(--cfg-verde);
-  border-color: var(--cfg-verde);
+  background: var(--cfg-primaria);
+  border-color: var(--cfg-primaria);
   color: #ffffff;
+  box-shadow: 0 2px 6px rgba(192, 57, 43, 0.25);
 }
 
 .config__btn--primario:hover:not(:disabled) {
-  background: var(--cfg-verde-escuro);
-  border-color: var(--cfg-verde-escuro);
+  background: var(--cfg-primaria-escura);
+  border-color: var(--cfg-primaria-escura);
+  box-shadow: 0 3px 10px rgba(192, 57, 43, 0.32);
 }
 
 .config__btn--sair {
@@ -371,7 +411,7 @@
   padding: 4px 2px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--cfg-verde);
+  color: var(--cfg-primaria);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -382,72 +422,72 @@
   text-decoration: none;
 }
 
-/* ── Interruptores (switch) ── */
-.config__switch input,
-.config__dia-check {
-  position: absolute;
-  opacity: 0;
-  width: 1px;
-  height: 1px;
-}
-
-.config__switch-trilho {
-  position: relative;
-  width: 40px;
-  height: 22px;
-  flex-shrink: 0;
-  border-radius: 999px;
-  background: #c9c9c9;
-  transition: background 0.2s;
-}
-
-.config__switch-trilho::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-  transition: transform 0.2s;
-}
-
-input:checked + .config__switch-trilho { background: var(--cfg-verde); }
-input:checked + .config__switch-trilho::after { transform: translateX(18px); }
-input:focus-visible + .config__switch-trilho { outline: 2px solid var(--cfg-verde); outline-offset: 2px; }
-input:disabled + .config__switch-trilho { opacity: 0.55; }
-
-.config__interruptores {
+/* ── Cartões de opção (Entrega / Retirada / Pedido na mesa) ── */
+.config__cartoes-opcao {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.config__switch {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
   gap: 12px;
-  padding: 14px;
-  border: 1px solid #eeeeee;
-  border-radius: 12px;
-  cursor: pointer;
 }
 
-.config__switch-texto {
+.config__cartao-opcao {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  font-size: 14px;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid #eeeeee;
+  border-radius: 12px;
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.15s;
 }
 
-.config__switch-texto small {
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--cfg-suave);
+.config__cartao-opcao:hover:not(:disabled) {
+  border-color: #d8ac9c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.07);
 }
+
+.config__cartao-opcao:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: none;
+}
+
+.config__cartao-opcao--ativo {
+  border-color: var(--cfg-primaria);
+  background: var(--cfg-primaria-fundo);
+}
+
+.config__cartao-opcao--ativo:hover:not(:disabled) {
+  box-shadow: 0 6px 14px rgba(192, 57, 43, 0.15);
+}
+
+.config__cartao-opcao-icone {
+  display: inline-flex;
+  font-size: 20px;
+  color: var(--cfg-primaria-escura);
+}
+
+.config__cartao-opcao-rotulo {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.config__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.config__pill--ativo { background: var(--cfg-primaria-fundo); color: var(--cfg-primaria-escura); }
+.config__pill--inativo { background: #f0f0ee; color: #888888; }
 
 /* ── Horários ── */
 .config__dias {
@@ -458,16 +498,23 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   flex-direction: column;
 }
 
+.config__dias--duas-colunas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 32px;
+}
+
 .config__dia {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: 180px minmax(0, 1fr);
   align-items: center;
   gap: 6px 16px;
   padding: 12px 0;
   border-top: 1px solid #f0f0f0;
 }
 
-.config__dia:first-child { border-top: none; }
+.config__dias--duas-colunas .config__dia:nth-child(-n+4) { border-top: none; }
+.config__dias--duas-colunas .config__dia:nth-child(4) { border-bottom: none; }
 
 .config__dia > .config__erro,
 .config__dia > .config__hint { grid-column: 2; }
@@ -498,9 +545,43 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   color: #999999;
 }
 
-/* ── Cada seção cuida de si: selo de status + Salvar/Descartar no cabeçalho ──
-   Mesma ideia dos badges "Aberta/Fechada" e das abas da tela de Caixa: um
-   selo curto (pill) mostra o estado, e as ações ficam coladas nele. */
+.config__dia-check,
+.config__switch input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.config__switch-trilho {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #c9c9c9;
+  transition: background 0.2s;
+}
+
+.config__switch-trilho::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s;
+}
+
+input:checked + .config__switch-trilho { background: var(--cfg-primaria); }
+input:checked + .config__switch-trilho::after { transform: translateX(18px); }
+input:focus-visible + .config__switch-trilho { outline: 2px solid var(--cfg-primaria); outline-offset: 2px; }
+input:disabled + .config__switch-trilho { opacity: 0.55; }
+
+/* ── Cada seção cuida de si: selo de status + Salvar/Descartar no cabeçalho ── */
 .config__secao-controles {
   display: flex;
   align-items: center;
@@ -523,7 +604,7 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
 
 .config__secao-status--pendente { background: #fff4e5; color: #9a6400; }
 .config__secao-status--salvando { background: #f0f0f0; color: #666666; }
-.config__secao-status--ok       { background: var(--cfg-verde-fundo); color: #3f5a26; }
+.config__secao-status--ok       { background: var(--cfg-sucesso-fundo); color: var(--cfg-sucesso); }
 .config__secao-status--erro     { background: var(--cfg-vermelho-fundo); color: #a93226; }
 
 .config__secao-acoes {
@@ -536,24 +617,14 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   font-size: 13px;
 }
 
-/* ── Cabeçalho: chip informativo + botão Sair, igual à tela de Caixa ── */
-.config__cabecalho-acoes {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-/* "Pendentes" é só informação (contador), não uma ação — por isso é uma
-   <div role="status">, sem cursor de clique e sem hover, igual ao chip
-   "Pedidos em aberto" da tela de Caixa. */
+/* ── Chip de pendências no cabeçalho ── */
 .config__chip-info {
   display: flex;
   align-items: center;
   gap: 8px;
   background: #fdecea;
   border: 1px solid #f3c8c2;
-  color: #c0392b;
+  color: var(--cfg-primaria);
   border-radius: 20px;
   padding: 9px 18px;
   font-size: 14px;
@@ -577,19 +648,19 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   min-width: 22px;
   height: 22px;
   padding: 0 6px;
-  background: #c0392b;
+  background: var(--cfg-primaria);
   color: #fff;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
 }
 
-/* ── Painel com abas, igual à tela de Caixa ── */
+/* ── Painel com abas ── */
 .config__painel {
-  background: rgba(255, 255, 255, 0.6);
+  background: #f6f3ee;
+  border: 1px solid #eee9e1;
   border-radius: 16px;
   padding: 20px 24px 28px;
-  backdrop-filter: blur(4px);
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -597,35 +668,53 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
 
 .config__abas {
   display: flex;
-  gap: 24px;
+  gap: 6px;
   flex-wrap: wrap;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e0d8;
 }
 
 .config__aba {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
-  padding: 10px 2px 12px;
+  border-radius: 8px 8px 0 0;
+  padding: 10px 14px 12px;
   font-size: 15px;
   font-weight: 600;
   color: #999;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color 0.2s, background 0.2s;
 }
 
-.config__aba:hover { color: var(--cfg-verde); }
+.config__aba-icone {
+  display: inline-flex;
+  font-size: 16px;
+}
+
+.config__aba:hover {
+  color: var(--cfg-primaria-escura);
+  background: rgba(192, 57, 43, 0.05);
+}
 
 .config__aba--ativa {
-  color: var(--cfg-verde);
-  border-bottom-color: var(--cfg-verde);
+  color: var(--cfg-primaria);
+  background: #ffffff;
 }
 
-/* Bolinha que sinaliza "essa seção tem alteração não salva", assim como
-   os números entre parênteses nas abas "Abertas (3)" da tela de Caixa. */
+.config__aba--ativa::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--cfg-primaria);
+  border-radius: 2px 2px 0 0;
+}
+
 .config__aba-ponto {
   width: 7px;
   height: 7px;
@@ -633,10 +722,12 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   background: #e08a00;
 }
 
-/* Dentro do painel, cada seção some seu próprio contorno de card — o
-   painel já é o "card" visualmente. */
-.config__painel > .config__card {
+.config__painel > .config__card,
+.config__painel > .config__duas-colunas {
   box-shadow: none;
+}
+
+.config__painel > .config__card {
   padding: 0;
   border-radius: 0;
 }
@@ -654,29 +745,29 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   backdrop-filter: blur(2px);
 }
 
-/* Retangular, com uma faixa de cor no topo para dar identidade ao card —
-   nada de bordas exageradamente arredondadas nem formato oval. */
 .config__dialogo {
   width: min(460px, 100%);
   max-height: calc(100vh - 32px);
   overflow: hidden;
+   display: flex;
+  flex-direction: column;
   background: #ffffff;
   color: #333333;
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid #eceae4;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.1);
   animation: config-dialogo-entra 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .config__dialogo::before {
   content: '';
   display: block;
-  height: 4px;
-  background: linear-gradient(90deg, var(--cfg-verde) 0%, #7fa855 100%);
+  height: 5px;
+  background: linear-gradient(90deg, var(--cfg-primaria) 0%, #e24d3c 100%);
 }
 
 @keyframes config-dialogo-entra {
-  from { opacity: 0; transform: scale(0.97) translateY(8px); }
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
@@ -684,7 +775,22 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding: 26px 28px 28px;
+  padding: 28px 30px 30px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Caixas de texto dentro do modal: fundo levemente destacado do branco do
+   diálogo + borda mais escura, senão o campo "some" contra o fundo branco. */
+.config__dialogo-form .config__input {
+  background: #f7f6f3;
+  border-color: #b9b5a9;
+}
+
+.config__dialogo-form .config__input:focus {
+  border-color: var(--cfg-primaria);
+  background: #ffffff;
 }
 
 .config__dialogo-topo {
@@ -715,59 +821,148 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
 .config__dialogo-x:hover:not(:disabled),
 .config__dialogo-voltar:hover:not(:disabled) { background: #f2f1ec; color: #333333; }
 
-/* Ícone do passo 1 (senha) — quadrado com cantos suaves, não um círculo,
-   pra manter a linguagem retangular do card. */
 .config__dialogo-icone {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  background: var(--cfg-verde-fundo);
-  color: var(--cfg-verde-escuro);
-  font-size: 21px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--cfg-primaria-fundo), #eccab8);
+  color: var(--cfg-primaria-escura);
+  font-size: 23px;
+  box-shadow: inset 0 0 0 1px rgba(165, 48, 35, 0.15);
 }
 
 .config__dialogo-form .config__card-titulo {
-  font-size: 19px;
+  font-size: 20px;
 }
 
-/* Selo "Senha confirmada" no topo do passo 2 */
 .config__dialogo-selo-ok {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 5px 12px;
   border-radius: 999px;
-  background: var(--cfg-verde-fundo);
+  background: var(--cfg-sucesso-fundo);
   font-size: 12px;
   font-weight: 700;
-  color: #3f5a26;
+  color: var(--cfg-sucesso);
+}
+
+/* Campo de senha com botão de mostrar/ocultar */
+.config__campo-senha {
+  position: relative;
+  display: flex;
+}
+
+.config__campo-senha .config__input {
+  padding-right: 40px;
+}
+
+.config__campo-senha-olho {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--cfg-suave);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.config__campo-senha-olho:hover:not(:disabled) { color: var(--cfg-texto); }
+.config__campo-senha-olho:disabled { cursor: not-allowed; opacity: 0.5; }
+
+/* Shake de erro no campo */
+@keyframes config-campo-erro {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.config__campo--chacoalha .config__input {
+  animation: config-campo-erro 0.4s ease;
+  border-color: var(--cfg-vermelho);
+}
+
+/* Ações do modal: primária em bloco, secundária discreta embaixo */
+.config__acoes--modal {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.config__btn--bloco {
+  width: 100%;
+}
+
+.config__btn--fantasma {
+  border: none;
+  background: none;
+  color: var(--cfg-suave);
+  align-self: center;
+  padding: 6px 10px;
+}
+
+.config__btn--fantasma:hover:not(:disabled) {
+  background: #f2f1ec;
+  color: var(--cfg-texto);
 }
 
 .config__dialogo-selo-ok svg { font-size: 15px; }
 
-/* Indicador de passo (duas barrinhas no topo do modal) */
+/* Indicador de passos: bolinha + rótulo curto embaixo */
 .config__dialogo-passos {
   display: flex;
   justify-content: center;
-  gap: 8px;
-  padding: 16px 0 0;
+  gap: 28px;
+  padding: 20px 0 0;
+    flex-shrink: 0;
+}
+
+.config__dialogo-passo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.config__dialogo-passo-item small {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #b3b1a9;
 }
 
 .config__dialogo-passo {
-  width: 26px;
+  width: 30px;
   height: 4px;
   border-radius: 999px;
   background: #e9e8e2;
   transition: background 0.25s, width 0.25s;
 }
 
-.config__dialogo-passo--ativo { background: var(--cfg-verde); width: 34px; }
-.config__dialogo-passo--feito { background: #b8cba0; }
+.config__dialogo-passo--ativo { background: var(--cfg-primaria); }
+.config__dialogo-passo--ativo + small,
+.config__dialogo-passo-item:has(.config__dialogo-passo--ativo) small { color: var(--cfg-primaria-escura); }
+.config__dialogo-passo--feito { background: #e0a58f; }
 
-/* Entrada de cada passo (o passo anterior sai do DOM, não fica só escondido) */
+.config__dialogo-tela {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .config__dialogo-tela--entra-dir { animation: config-passo-entra-dir 0.24s cubic-bezier(0.16, 1, 0.3, 1); }
 .config__dialogo-tela--entra-esq { animation: config-passo-entra-esq 0.24s cubic-bezier(0.16, 1, 0.3, 1); }
 
@@ -800,31 +995,38 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
 }
 
 /* ── Telas menores ── */
+@media (max-width: 960px) {
+  .config__duas-colunas { grid-template-columns: 1fr; }
+  .config__dias--duas-colunas { grid-template-columns: 1fr; }
+  .config__dias--duas-colunas .config__dia:nth-child(4) { border-bottom: 1px solid #f0f0f0; }
+}
+
 @media (max-width: 860px) {
-  .config__grade--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .config__interruptores { grid-template-columns: 1fr; }
+  .config__grade--4,
+  .config__grade--2col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .config__cartoes-opcao { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {
-  .config__card { padding: 20px 18px; }
+  .config__card,
+  .config__subcard { padding: 20px 18px; }
 
   .config__cabecalho { flex-direction: column; }
-
-  .config__identidade { flex-direction: column; align-items: stretch; }
-  .config__logo-col { width: 100%; }
+  .config__cabecalho-perfil { flex-direction: column; align-items: flex-start; }
+  .config__avatar-col { width: 100%; flex-direction: row; }
 
   .config__grade,
-  .config__grade--4 { grid-template-columns: 1fr; }
+  .config__grade--4,
+  .config__grade--2col { grid-template-columns: 1fr; }
   .config__span-2 { grid-column: auto; }
 
-  .config__grade--endereco { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .config__col-cep,
-  .config__col-rua,
-  .config__col-compl,
-  .config__col-bairro,
-  .config__col-cidade { grid-column: span 6; }
-  .config__col-numero,
-  .config__col-uf { grid-column: span 3; }
+  .config__grade--endereco-compacta { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .config__grade--endereco-compacta .config__col-cep,
+  .config__grade--endereco-compacta .config__col-rua,
+  .config__grade--endereco-compacta .config__col-bairro,
+  .config__grade--endereco-compacta .config__col-cidade { grid-column: span 6; }
+  .config__grade--endereco-compacta .config__col-numero,
+  .config__grade--endereco-compacta .config__col-uf { grid-column: span 3; }
 
   .config__dia { grid-template-columns: 1fr; }
   .config__dia > .config__erro,
