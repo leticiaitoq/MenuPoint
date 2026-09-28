@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   HiDotsVertical,
@@ -8,6 +8,7 @@ import {
   HiViewList,
   HiClipboardList,
   HiPlus,
+  HiX,
   HiOutlineDocumentText,
   HiOutlinePrinter,
   HiOutlineXCircle,
@@ -16,19 +17,31 @@ import RestaurantLayout from '../../../../shared/components/layout/Restaurantela
 import './GerenPagamentos.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
-type StatusMesaCaixa = 'aberta' | 'fechada' | 'livre';
+type StatusMesaCaixa = 'aberta' | 'fechada' | 'livre' | 'reservada';
+type StatusInicialMesa = 'livre' | 'reservada';
 type FiltroMesas = 'todas' | 'abertas' | 'fechadas';
 type ModoVisualizacao = 'grade' | 'lista';
 
 interface MesaCaixa {
   id: string;
   numero: number;
+  // Preenchidos quando a mesa é cadastrada pelo modal
+  capacidade?: number;
+  observacao?: string;
+  // Preenchidos quando há pedido em andamento
   pessoas?: number;
   itens?: number;
   total?: number;
   tempoMinutos?: number;
   status: StatusMesaCaixa;
 }
+
+type ErrosCadastro = Partial<Record<'numero' | 'capacidade' | 'observacao', string>>;
+
+// ── Constantes ─────────────────────────────────────────────────────────────────
+const CAPACIDADE_MIN = 1;
+const CAPACIDADE_MAX = 20;
+const OBSERVACAO_MAX = 80;
 
 // ── Mock (substituir por chamada à API futuramente — ver mesa.service.ts) ──────
 const MESAS_CAIXA_MOCK: MesaCaixa[] = [
@@ -42,43 +55,125 @@ const MESAS_CAIXA_MOCK: MesaCaixa[] = [
   { id: 'm8', numero: 8, status: 'livre' },
 ];
 
+const formatarMoeda = (valor: number) =>
+  valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
 // ── Componente ─────────────────────────────────────────────────────────────────
 const GerenPagamentos: React.FC = () => {
   const navigate = useNavigate();
 
-  const [filtro, setFiltro]         = useState<FiltroMesas>('todas');
+  // Lista de mesas em estado, para que uma mesa recém-cadastrada apareça na tela.
+  const [mesas, setMesas] = useState<MesaCaixa[]>(MESAS_CAIXA_MOCK);
+
+  const [filtro, setFiltro]             = useState<FiltroMesas>('todas');
   const [visualizacao, setVisualizacao] = useState<ModoVisualizacao>('grade');
 
   // id da mesa com o menu de ações (⋮) aberto — null = nenhum menu aberto
   const [menuAberto, setMenuAberto] = useState<string | null>(null);
 
+  // ── Modal: Cadastrar mesa ────────────────────────────────────────────────────
+  const [modalAberto, setModalAberto]   = useState(false);
+  const [numero, setNumero]             = useState('');
+  const [capacidade, setCapacidade]     = useState('4');
+  const [statusInicial, setStatusInicial] = useState<StatusInicialMesa>('livre');
+  const [observacao, setObservacao]     = useState('');
+  const [erros, setErros]               = useState<ErrosCadastro>({});
+
+  // Sugestão de número para a próxima mesa (maior número existente + 1)
+  const proximoNumero = useMemo(
+    () => (mesas.length > 0 ? Math.max(...mesas.map((m) => m.numero)) + 1 : 1),
+    [mesas]
+  );
+
   // ── Contagens usadas nos filtros e no chip "Pedidos em aberto" ──────────────
-  // Calculadas a partir dos dados reais (não fixas), pra nunca ficar
-  // dessincronizado do que está sendo exibido na tela.
-  const totalAbertas  = useMemo(() => MESAS_CAIXA_MOCK.filter((m) => m.status === 'aberta').length, []);
-  const totalFechadas = useMemo(() => MESAS_CAIXA_MOCK.filter((m) => m.status === 'fechada').length, []);
+  const totalAbertas  = useMemo(() => mesas.filter((m) => m.status === 'aberta').length, [mesas]);
+  const totalFechadas = useMemo(() => mesas.filter((m) => m.status === 'fechada').length, [mesas]);
 
   // ── Aplica o filtro selecionado ──────────────────────────────────────────────
   const mesasFiltradas = useMemo(() => {
-    if (filtro === 'abertas')  return MESAS_CAIXA_MOCK.filter((m) => m.status === 'aberta');
-    if (filtro === 'fechadas') return MESAS_CAIXA_MOCK.filter((m) => m.status === 'fechada');
-    return MESAS_CAIXA_MOCK;
-  }, [filtro]);
+    if (filtro === 'abertas')  return mesas.filter((m) => m.status === 'aberta');
+    if (filtro === 'fechadas') return mesas.filter((m) => m.status === 'fechada');
+    return mesas;
+  }, [filtro, mesas]);
 
-  const formatarMoeda = (valor: number) =>
-    valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  // Fecha o modal com a tecla Esc
+  useEffect(() => {
+    if (!modalAberto) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setModalAberto(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [modalAberto]);
+
+  // ── Cadastro de mesa ─────────────────────────────────────────────────────────
+  const abrirModal = () => {
+    setNumero(String(proximoNumero));
+    setCapacidade('4');
+    setStatusInicial('livre');
+    setObservacao('');
+    setErros({});
+    setMenuAberto(null);
+    setModalAberto(true);
+  };
+
+  const fecharModal = () => setModalAberto(false);
+
+  const validarCadastro = (): ErrosCadastro => {
+    const novos: ErrosCadastro = {};
+
+    const n = Number(numero);
+    if (!numero || !Number.isInteger(n) || n < 1) {
+      novos.numero = 'Informe um número de mesa válido.';
+    } else if (mesas.some((m) => m.numero === n)) {
+      novos.numero = `A Mesa ${n} já está cadastrada.`;
+    }
+
+    const c = Number(capacidade);
+    if (!capacidade || !Number.isInteger(c) || c < CAPACIDADE_MIN || c > CAPACIDADE_MAX) {
+      novos.capacidade = `A capacidade deve ser de ${CAPACIDADE_MIN} a ${CAPACIDADE_MAX} pessoas.`;
+    }
+
+    if (observacao.length > OBSERVACAO_MAX) {
+      novos.observacao = `Use no máximo ${OBSERVACAO_MAX} caracteres.`;
+    }
+
+    return novos;
+  };
+
+  const handleCadastrarMesa = () => {
+    const novos = validarCadastro();
+    setErros(novos);
+    if (Object.keys(novos).length > 0) return;
+
+    const obs = observacao.trim();
+
+    const novaMesa: MesaCaixa = {
+      id:         `m${Date.now()}`,
+      numero:     Number(numero),
+      capacidade: Number(capacidade),
+      observacao: obs || undefined,
+      status:     statusInicial,
+    };
+
+    // Mantém a lista ordenada pelo número da mesa
+    setMesas((prev) => [...prev, novaMesa].sort((a, b) => a.numero - b.numero));
+    setModalAberto(false);
+  };
 
   // ── Navegação ────────────────────────────────────────────────────────────────
   // Cards de mesas com pedido (aberta/fechada) levam para a tela de detalhe do
   // pedido/pagamento. TODO: criar a tela de detalhe e ajustar a rota abaixo.
+  const temPedido = (mesa: MesaCaixa) => mesa.status === 'aberta' || mesa.status === 'fechada';
+
   const abrirDetalheMesa = (mesa: MesaCaixa) => {
-    if (mesa.status === 'livre') return;
+    if (!temPedido(mesa)) return;
     setMenuAberto(null);
     navigate('/restaurante/caixa/pagar');
   };
 
-  // Mesa livre → manda pro fluxo de novo pedido, já é uma tela existente
-  const abrirMesaLivre = (mesa: MesaCaixa, e: React.MouseEvent) => {
+  // Mesa sem pedido (livre/reservada) → manda pro fluxo de novo pedido
+  const abrirMesaLivre = (_mesa: MesaCaixa, e: React.MouseEvent) => {
     e.stopPropagation();
     navigate('/restaurante/pedido');
   };
@@ -94,6 +189,11 @@ const GerenPagamentos: React.FC = () => {
     navigate(`/restaurante/caixa/mesa/${mesa.id}`);
   };
 
+  const mensagemVazio =
+    filtro === 'abertas'  ? 'Nenhuma mesa aberta no momento.'  :
+    filtro === 'fechadas' ? 'Nenhuma mesa fechada no momento.' :
+                            'Nenhuma mesa cadastrada.';
+
   return (
     <RestaurantLayout>
       <div className="caixa" onClick={() => setMenuAberto(null)}>
@@ -106,11 +206,7 @@ const GerenPagamentos: React.FC = () => {
           </div>
 
           <div className="caixa__header-acoes">
-            {/*
-              "Pedidos em aberto" é só uma informação (contador), não uma ação —
-              por isso é uma <div role="status">, sem cursor de clique e sem
-              hover, pra não parecer botão.
-            */}
+            {/* "Pedidos em aberto" é só informação (contador), não uma ação. */}
             <div
               className="caixa__chip-info"
               role="status"
@@ -122,16 +218,22 @@ const GerenPagamentos: React.FC = () => {
               <span className="caixa__chip-info-numero">{totalAbertas}</span>
             </div>
 
-            {/*
-              "Histórico" é uma ação real — <button>, com hover/estado de
-              foco e cursor de ponteiro, pra deixar claro que é clicável.
-            */}
+            {/* "Histórico" é uma ação real — <button> */}
             <button
               className="caixa__btn-historico"
               onClick={() => navigate('/restaurante/historico')}
               aria-label="Ver histórico de pedidos"
             >
               Histórico
+            </button>
+
+            {/* Abre o modal de cadastro de mesa */}
+            <button
+              className="caixa__btn-cadastrar"
+              onClick={(e) => { e.stopPropagation(); abrirModal(); }}
+              aria-label="Cadastrar nova mesa"
+            >
+              <HiPlus /> Cadastrar mesa
             </button>
           </div>
         </div>
@@ -190,11 +292,11 @@ const GerenPagamentos: React.FC = () => {
 
           {/* ── Grid de cards ── */}
           {mesasFiltradas.length === 0 ? (
-            <div className="caixa__vazio">Nenhuma mesa {filtro === 'abertas' ? 'aberta' : 'fechada'} no momento.</div>
+            <div className="caixa__vazio">{mensagemVazio}</div>
           ) : (
             <div className={`caixa__grid caixa__grid--${visualizacao}`}>
               {mesasFiltradas.map((mesa) => {
-                const clicavel = mesa.status !== 'livre';
+                const clicavel = temPedido(mesa);
 
                 return (
                   <div
@@ -205,10 +307,20 @@ const GerenPagamentos: React.FC = () => {
                     tabIndex={clicavel ? 0 : undefined}
                     onKeyDown={
                       clicavel
-                        ? (e) => { if (e.key === 'Enter') abrirDetalheMesa(mesa); }
+                        ? (e) => {
+                            // Só reage se o foco estiver no próprio card,
+                            // não em botões internos (ex.: menu ⋮).
+                            if (e.target === e.currentTarget && e.key === 'Enter') {
+                              abrirDetalheMesa(mesa);
+                            }
+                          }
                         : undefined
                     }
-                    aria-label={clicavel ? `Abrir pedido da Mesa ${mesa.numero}` : `Mesa ${mesa.numero} livre`}
+                    aria-label={
+                      clicavel
+                        ? `Abrir pedido da Mesa ${mesa.numero}`
+                        : `Mesa ${mesa.numero} ${mesa.status}`
+                    }
                   >
                     <div className="caixa__card-topo">
                       <span className="caixa__card-nome">Mesa {String(mesa.numero).padStart(2, '0')}</span>
@@ -219,6 +331,7 @@ const GerenPagamentos: React.FC = () => {
                             className="caixa__card-menu-btn"
                             onClick={(e) => toggleMenu(mesa.id, e)}
                             aria-label={`Mais ações para a Mesa ${mesa.numero}`}
+                            aria-expanded={menuAberto === mesa.id}
                           >
                             <HiDotsVertical />
                           </button>
@@ -240,14 +353,31 @@ const GerenPagamentos: React.FC = () => {
                       )}
                     </div>
 
-                    {mesa.status === 'livre' ? (
+                    {!clicavel ? (
+                      /* Mesa sem pedido: livre ou reservada */
                       <>
-                        <span className="caixa__card-livre-label">Livre</span>
+                        <span className="caixa__card-livre-label">
+                          {mesa.status === 'reservada' ? 'Reservada' : 'Livre'}
+                        </span>
+
+                        {mesa.capacidade !== undefined && (
+                          <span className="caixa__card-pessoas">
+                            <HiUserGroup /> {mesa.capacidade} lugares
+                          </span>
+                        )}
+
+                        {mesa.observacao && (
+                          <span className="caixa__card-obs" title={mesa.observacao}>
+                            {mesa.observacao}
+                          </span>
+                        )}
+
                         <button className="caixa__card-btn-abrir" onClick={(e) => abrirMesaLivre(mesa, e)}>
                           <HiPlus /> Abrir mesa
                         </button>
                       </>
                     ) : (
+                      /* Mesa com pedido: aberta ou fechada */
                       <>
                         <span className="caixa__card-pessoas">
                           <HiUserGroup /> {mesa.pessoas} pessoas
@@ -276,6 +406,122 @@ const GerenPagamentos: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* ── Modal: Cadastrar mesa ── */}
+        {modalAberto && (
+          <div className="caixa__overlay" onClick={fecharModal}>
+            <div
+              className="caixa__modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="caixa-modal-titulo"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="caixa__modal-header">
+                <div>
+                  <h3 id="caixa-modal-titulo" className="caixa__modal-titulo">Cadastrar mesa</h3>
+                  <p className="caixa__modal-subtitulo">Preencha os dados da nova mesa.</p>
+                </div>
+                <button className="caixa__modal-fechar" onClick={fecharModal} aria-label="Fechar">
+                  <HiX />
+                </button>
+              </div>
+
+              <div className="caixa__modal-corpo">
+
+                <div className="caixa__campo-linha">
+                  <div className="caixa__campo">
+                    <label className="caixa__label" htmlFor="mesa-numero">Número da mesa</label>
+                    <input
+                      id="mesa-numero"
+                      className={`caixa__input${erros.numero ? ' caixa__input--erro' : ''}`}
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={numero}
+                      onChange={(e) => setNumero(e.target.value)}
+                      autoFocus
+                    />
+                    {erros.numero && <span className="caixa__erro" role="alert">{erros.numero}</span>}
+                  </div>
+
+                  <div className="caixa__campo">
+                    <label className="caixa__label" htmlFor="mesa-capacidade">Capacidade (pessoas)</label>
+                    <input
+                      id="mesa-capacidade"
+                      className={`caixa__input${erros.capacidade ? ' caixa__input--erro' : ''}`}
+                      type="number"
+                      min={CAPACIDADE_MIN}
+                      max={CAPACIDADE_MAX}
+                      step="1"
+                      value={capacidade}
+                      onChange={(e) => setCapacidade(e.target.value)}
+                    />
+                    {erros.capacidade && <span className="caixa__erro" role="alert">{erros.capacidade}</span>}
+                  </div>
+                </div>
+
+                <fieldset className="caixa__campo caixa__fieldset">
+                  <legend className="caixa__label">Status inicial</legend>
+                  <div className="caixa__opcoes">
+                    <label className={`caixa__opcao caixa__opcao--livre${statusInicial === 'livre' ? ' caixa__opcao--ativa' : ''}`}>
+                      <input
+                        type="radio"
+                        name="mesa-status"
+                        value="livre"
+                        checked={statusInicial === 'livre'}
+                        onChange={() => setStatusInicial('livre')}
+                      />
+                      Livre
+                    </label>
+                    <label className={`caixa__opcao caixa__opcao--reservada${statusInicial === 'reservada' ? ' caixa__opcao--ativa' : ''}`}>
+                      <input
+                        type="radio"
+                        name="mesa-status"
+                        value="reservada"
+                        checked={statusInicial === 'reservada'}
+                        onChange={() => setStatusInicial('reservada')}
+                      />
+                      Reservada
+                    </label>
+                  </div>
+                </fieldset>
+
+                <div className="caixa__campo">
+                  <label className="caixa__label" htmlFor="mesa-observacao">
+                    Observação <span className="caixa__opcional">(opcional)</span>
+                  </label>
+                  <textarea
+                    id="mesa-observacao"
+                    className={`caixa__input caixa__textarea${erros.observacao ? ' caixa__input--erro' : ''}`}
+                    rows={3}
+                    placeholder="Ex.: perto da janela, acessível para cadeirantes"
+                    value={observacao}
+                    onChange={(e) => setObservacao(e.target.value)}
+                  />
+                  <div className="caixa__campo-rodape">
+                    {erros.observacao
+                      ? <span className="caixa__erro" role="alert">{erros.observacao}</span>
+                      : <span />}
+                    <span className={`caixa__contador${observacao.length > OBSERVACAO_MAX ? ' caixa__contador--excedido' : ''}`}>
+                      {observacao.length}/{OBSERVACAO_MAX}
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
+              <div className="caixa__modal-acoes">
+                <button className="caixa__btn-cancelar" onClick={fecharModal}>
+                  Cancelar
+                </button>
+                <button className="caixa__btn-salvar" onClick={handleCadastrarMesa}>
+                  <HiPlus /> Cadastrar mesa
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </RestaurantLayout>

@@ -102,6 +102,34 @@
   transform: translateY(-1px);
 }
 
+/* ── Botão "Cadastrar mesa" ─────────────────────────────────────────────────
+   Versão "contorno" do Histórico: mesma família visual, mas sem preenchimento,
+   para os dois botões lado a lado não competirem entre si. */
+.caixa__btn-cadastrar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  color: #c0392b;
+  border: 1.5px solid #c0392b;
+  border-radius: 20px;
+  padding: 9px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.caixa__btn-cadastrar:hover {
+  background: #fdecea;
+  transform: translateY(-1px);
+}
+
+.caixa__btn-cadastrar:focus-visible {
+  outline: 2px solid #c0392b;
+  outline-offset: 2px;
+}
+
 /* ═══════════════════════════════════════════════
    Painel
 ═══════════════════════════════════════════════ */
@@ -219,7 +247,7 @@
 }
 
 /* Só as mesas com pedido (aberta/fechada) parecem clicáveis.
-   Mesas livres não têm hover no card — a ação fica só no botão "Abrir mesa". */
+   Mesas livres/reservadas não têm hover no card — a ação fica só no botão "Abrir mesa". */
 .caixa__card--clicavel {
   cursor: pointer;
 }
@@ -238,6 +266,13 @@
 .caixa__card--livre {
   border-style: dashed;
   background: #fafafa;
+}
+
+/* Mesa reservada: mesmo formato tracejado da livre, com tom âmbar */
+.caixa__card--reservada {
+  border-style: dashed;
+  border-color: #f0c78a;
+  background: #fffaf2;
 }
 
 .caixa__card-topo {
@@ -357,11 +392,24 @@
 .caixa__badge--aberta  { background-color: #27ae60; }
 .caixa__badge--fechada { background-color: #7f8c8d; }
 
-/* ── Corpo do card (mesa livre) ── */
+/* ── Corpo do card (mesa livre / reservada) ── */
 .caixa__card-livre-label {
   font-size: 13px;
   color: #aaa;
   font-weight: 600;
+}
+
+.caixa__card--reservada .caixa__card-livre-label {
+  color: #d68910;
+}
+
+/* Observação cadastrada na mesa (uma linha, com reticências) */
+.caixa__card-obs {
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .caixa__card-btn-abrir {
@@ -413,4 +461,283 @@
 
 .caixa__grid--lista .caixa__card-livre-label {
   flex: 1;
+}
+
+.caixa__grid--lista .caixa__card-obs {
+  flex: 2;
+}
+
+/* ═══════════════════════════════════════════════
+   Modal: Cadastrar mesa
+═══════════════════════════════════════════════ */
+.caixa__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.45);
+  animation: caixa-fade 0.15s ease;
+}
+
+.caixa__modal {
+  width: 100%;
+  max-width: 500px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: caixa-subir 0.18s ease;
+}
+
+.caixa__modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 24px 8px;
+}
+
+.caixa__modal-titulo {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+}
+
+.caixa__modal-subtitulo {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #888;
+}
+
+.caixa__modal-fechar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: #aaa;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.caixa__modal-fechar:hover {
+  background: #f2f2f2;
+  color: #555;
+}
+
+.caixa__modal-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 24px 22px;
+  overflow-y: auto;
+}
+
+/* ── Campos ── */
+.caixa__campo-linha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.caixa__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.caixa__fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.caixa__label {
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+}
+
+.caixa__opcional {
+  font-weight: 400;
+  color: #aaa;
+}
+
+.caixa__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #333;
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.caixa__input:focus {
+  outline: none;
+  border-color: #c0392b;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+}
+
+.caixa__input--erro,
+.caixa__input--erro:focus {
+  border-color: #c0392b;
+  background: #fdf3f2;
+}
+
+.caixa__select   { cursor: pointer; }
+.caixa__textarea { resize: vertical; min-height: 72px; }
+
+.caixa__erro {
+  margin: 0;
+  font-size: 12px;
+  color: #c0392b;
+}
+
+.caixa__campo-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.caixa__contador {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.caixa__contador--excedido {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+/* ── Status inicial (opções em chip) ── */
+.caixa__opcoes {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.caixa__opcao {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fff;
+  color: #888;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+/* esconde o radio nativo, mas mantém acessível por teclado */
+.caixa__opcao input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.caixa__opcao:focus-within {
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+}
+
+.caixa__opcao--livre.caixa__opcao--ativa {
+  border-color: #27ae60;
+  background: #eafaf1;
+  color: #1e8449;
+}
+
+.caixa__opcao--reservada.caixa__opcao--ativa {
+  border-color: #e67e22;
+  background: #fef5e7;
+  color: #b9770e;
+}
+
+/* ── Ações ── */
+.caixa__modal-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.caixa__btn-cancelar,
+.caixa__btn-salvar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 20px;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.caixa__btn-cancelar {
+  background: #fff;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.caixa__btn-cancelar:hover {
+  background: #f2f2f2;
+}
+
+.caixa__btn-salvar {
+  background: #c0392b;
+  color: #fff;
+  border: 1px solid #c0392b;
+  box-shadow: 0 2px 6px rgba(192, 57, 43, 0.35);
+}
+
+.caixa__btn-salvar:hover {
+  background: #a53125;
+  border-color: #a53125;
+}
+
+.caixa__btn-cancelar:focus-visible,
+.caixa__btn-salvar:focus-visible {
+  outline: 2px solid #c0392b;
+  outline-offset: 2px;
+}
+
+/* ── Animações ── */
+@keyframes caixa-fade  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes caixa-subir { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .caixa__overlay,
+  .caixa__modal { animation: none; }
+}
+
+/* ── Responsivo (modal) ── */
+@media (max-width: 480px) {
+  .caixa__campo-linha { grid-template-columns: 1fr; }
+  .caixa__modal-acoes { flex-direction: column-reverse; }
 }
