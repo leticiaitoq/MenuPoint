@@ -27,6 +27,9 @@ import { clientesRoutes } from '@modules/clientes/Cliente.controller'
 import { assinaturaRoutes } from '@modules/assinatura/Assinatura.controller'
 // import { uploadRoutes } from '@modules/upload/Upload.controller'
 
+// GETs públicos que o cliente logado (perfil CLIENTE) pode chamar
+const ROTAS_PUBLICAS_GET = /^\/api\/v1\/(estabelecimentos|categorias)\/publico\//
+
 export function buildApp(): FastifyInstance {
   const app = Fastify({
 
@@ -97,6 +100,9 @@ app.register(fastifySwaggerUi, {
     // Quando existirem rotas feitas para o cliente (ex.: pedidos), libere o prefixo aqui.
     api.addHook('onRequest', async (request) => {
       if (request.url.startsWith('/api/v1/auth/')) return
+
+      // Rotas públicas de leitura (cardápio por slug) também servem o cliente logado
+      if (request.method === 'GET' && ROTAS_PUBLICAS_GET.test(request.url)) return
 
       const authorization = request.headers.authorization
       if (!authorization?.startsWith('Bearer ')) return

@@ -5,6 +5,8 @@ import {
   HiCash,
   HiCheckCircle,
   HiClipboardList,
+  HiClipboard,
+  HiExternalLink,
   HiClock,
   HiExclamationCircle,
   HiLocationMarker,
@@ -333,6 +335,61 @@ const payloadAtendimento = (v: AtendimentoForm): AtualizarEstabelecimentoDTO => 
   tempo_entrega_max: Number(v.tempo_entrega_max),
   taxa_entrega: paraNumero(v.taxa_entrega),
   pedido_minimo: paraNumero(v.pedido_minimo),
+});
+
+// ── Divulgação (tipo de cozinha + link do cardápio) ──────────────────────────
+
+// Opções prontas do dropdown. O valor salvo no banco é o próprio texto;
+// "Outros" libera um campo para o restaurante digitar o tipo dele.
+const TIPOS_COZINHA = [
+  'Pizzaria',
+  'Hamburgueria',
+  'Lanchonete',
+  'Churrascaria',
+  'Brasileira',
+  'Marmitaria',
+  'Italiana',
+  'Japonesa',
+  'Chinesa',
+  'Árabe',
+  'Mexicana',
+  'Frutos do mar',
+  'Pastelaria',
+  'Padaria e café',
+  'Açaí e sorvetes',
+  'Doces e confeitaria',
+  'Saudável e vegetariana',
+  'Bar e petiscos',
+];
+const OUTROS = '__outros__';
+
+interface DivulgacaoForm {
+  tipo_cozinha: string; // item de TIPOS_COZINHA, OUTROS ou ''
+  tipo_cozinha_outro: string;
+}
+
+const DIVULGACAO_PADRAO: DivulgacaoForm = { tipo_cozinha: '', tipo_cozinha_outro: '' };
+
+const extrairDivulgacao = (e: Estabelecimento): DivulgacaoForm => {
+  const atual = (e.tipo_cozinha ?? '').trim();
+  if (!atual) return DIVULGACAO_PADRAO;
+  if (TIPOS_COZINHA.includes(atual)) return { tipo_cozinha: atual, tipo_cozinha_outro: '' };
+  // Valor que não está na lista = foi digitado em "Outros"
+  return { tipo_cozinha: OUTROS, tipo_cozinha_outro: atual };
+};
+
+function validarDivulgacao(v: DivulgacaoForm): Erros {
+  const erros: Erros = {};
+  if (v.tipo_cozinha === OUTROS) {
+    const texto = v.tipo_cozinha_outro.trim();
+    if (!texto) erros.tipo_cozinha_outro = 'Digite o tipo de cozinha.';
+    else if (texto.length > 60) erros.tipo_cozinha_outro = 'Use no máximo 60 caracteres.';
+  }
+  return erros;
+}
+
+const payloadDivulgacao = (v: DivulgacaoForm): AtualizarEstabelecimentoDTO => ({
+  tipo_cozinha: v.tipo_cozinha === OUTROS ? v.tipo_cozinha_outro.trim() : v.tipo_cozinha,
 });
 
 // ── PIX ──────────────────────────────────────────────────────────────────────
@@ -1164,14 +1221,32 @@ const Config: React.FC = () => {
   const endereco = useSecao(estab, ENDERECO_PADRAO, extrairEndereco, validarEndereco, payloadEndereco, mesclar);
   const horario = useSecao(estab, HORARIO_PADRAO, extrairHorario, validarHorario, payloadHorario, mesclar);
   const atendimento = useSecao(estab, ATENDIMENTO_PADRAO, extrairAtendimento, validarAtendimento, payloadAtendimento, mesclar);
+  const divulgacao = useSecao(estab, DIVULGACAO_PADRAO, extrairDivulgacao, validarDivulgacao, payloadDivulgacao, mesclar);
   const pix = usePix(estab);
   const [pixModalAberto, setPixModalAberto] = useState(false);
+
+  // Link que o restaurante divulga: o cliente cai direto no cardápio dele
+  const linkCardapio = estab?.slug ? `${window.location.origin}/r/${estab.slug}` : '';
+  const [linkCopiado, setLinkCopiado] = useState(false);
+
+  const copiarLink = async () => {
+    if (!linkCardapio) return;
+    try {
+      await navigator.clipboard.writeText(linkCardapio);
+    } catch {
+      // Navegador sem permissão de área de transferência: seleciona o campo
+      (document.getElementById('link-cardapio') as HTMLInputElement | null)?.select();
+      return;
+    }
+    setLinkCopiado(true);
+    window.setTimeout(() => setLinkCopiado(false), 2500);
+  };
 
   // PIX fica fora da lista de seções "auto-salváveis": ele exige senha a
   // cada alteração, então não pode ser salvo sozinho no fluxo de saída.
   const secoesAutoSalvaveis = useMemo(
-    () => [contato, endereco, horario, atendimento],
-    [contato, endereco, horario, atendimento]
+    () => [contato, endereco, horario, atendimento, divulgacao],
+    [contato, endereco, horario, atendimento, divulgacao]
   );
   const algumAlterado = secoesAutoSalvaveis.some((s) => s.alterado) || pix.alterado;
   const totalPendentes = secoesAutoSalvaveis.filter((s) => s.alterado).length + (pix.alterado ? 1 : 0);
@@ -1188,7 +1263,7 @@ const Config: React.FC = () => {
 
   // ── Abas ─────────────────────────────────────────────────────────────────
   const ABAS: { id: AbaId; titulo: string; icone: React.ReactNode; alterado: boolean }[] = [
-    { id: 'dados-empresa', titulo: 'Dados da empresa', icone: <HiOfficeBuilding />, alterado: false },
+    { id: 'dados-empresa', titulo: 'Dados da empresa', icone: <HiOfficeBuilding />, alterado: divulgacao.alterado },
     { id: 'contato-endereco', titulo: 'Contato e Endereço', icone: <HiLocationMarker />, alterado: contato.alterado || endereco.alterado },
     { id: 'horario', titulo: 'Horário de funcionamento', icone: <HiClock />, alterado: horario.alterado },
     { id: 'atendimento', titulo: 'Atendimento, entrega e PIX', icone: <HiTruck />, alterado: atendimento.alterado || pix.alterado },
@@ -1547,6 +1622,87 @@ const Config: React.FC = () => {
                 Para mudar nome da empresa, razão social, responsável ou e-mail — incluindo o nome exibido no
                 topo desta tela — confirme sua senha em "Alterar dados". CNPJ e CPF não podem ser alterados.
               </p>
+            </section>
+          )}
+
+          {/* Divulgação: tipo de cozinha + link do cardápio */}
+          {abaAtiva === 'dados-empresa' && (
+            <section className="config__card" aria-labelledby="sec-divulgacao">
+              <SecaoCabecalho titulo="Divulgação" id="sec-divulgacao" secao={divulgacao} podeEditar={podeEditar} icone={<HiClipboard />} />
+              {divulgacao.erroGeral && <p className="config__erro" role="alert">{divulgacao.erroGeral}</p>}
+              <div className="config__grade">
+                <Campo
+                  id="tipo-cozinha"
+                  rotulo="Tipo de cozinha"
+                  erro={divulgacao.erros.tipo_cozinha_outro}
+                  dica={'Opcional. Aparece para o cliente. Não achou o seu? Escolha "Outros".'}
+                >
+                  <select
+                    id="tipo-cozinha"
+                    className="config__input config__select"
+                    value={divulgacao.valor.tipo_cozinha}
+                    disabled={!podeEditar || divulgacao.salvando}
+                    onChange={(e) => {
+                      divulgacao.definir('tipo_cozinha', e.target.value);
+                      divulgacao.limparErro('tipo_cozinha_outro');
+                    }}
+                  >
+                    <option value="">Não informar</option>
+                    {TIPOS_COZINHA.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                    <option value={OUTROS}>Outros</option>
+                  </select>
+                  {divulgacao.valor.tipo_cozinha === OUTROS && (
+                    <input
+                      id="tipo-cozinha-outro"
+                      className="config__input"
+                      style={{ marginTop: 8 }}
+                      placeholder="Digite o tipo de cozinha"
+                      maxLength={60}
+                      value={divulgacao.valor.tipo_cozinha_outro}
+                      disabled={!podeEditar || divulgacao.salvando}
+                      onChange={(e) => {
+                        divulgacao.definir('tipo_cozinha_outro', e.target.value);
+                        divulgacao.limparErro('tipo_cozinha_outro');
+                      }}
+                    />
+                  )}
+                </Campo>
+
+                <Campo
+                  id="link-cardapio"
+                  rotulo="Link para seus clientes"
+                  dica="Divulgue no Instagram, WhatsApp ou em QR code. O cliente entra direto no seu restaurante."
+                >
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      id="link-cardapio"
+                      className="config__input"
+                      value={linkCardapio || '—'}
+                      readOnly
+                      onFocus={(e) => e.currentTarget.select()}
+                    />
+                    <button
+                      type="button"
+                      className="config__btn config__btn--pequeno"
+                      onClick={() => void copiarLink()}
+                      disabled={!linkCardapio}
+                    >
+                      <HiClipboard /> {linkCopiado ? 'Copiado!' : 'Copiar'}
+                    </button>
+                    <a
+                      className="config__btn config__btn--pequeno"
+                      href={linkCardapio || undefined}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-disabled={!linkCardapio}
+                    >
+                      <HiExternalLink /> Abrir
+                    </a>
+                  </div>
+                </Campo>
+              </div>
             </section>
           )}
 

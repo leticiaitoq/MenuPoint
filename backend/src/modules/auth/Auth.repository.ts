@@ -282,6 +282,30 @@ export class AuthRepository {
           })
         }
 
+        // O nome do restaurante é o da empresa: o estabelecimento acompanha, na mesma
+        // transação (se uma das duas gravações falhar, nenhuma vale).
+        // O slug NÃO muda de propósito: o link /r/:slug já divulgado continua funcionando.
+        if (empresa_id && d.nome_empresa !== undefined) {
+          let estabelecimentoId = usuario.estabelecimento_id
+
+          // Usuário sem estabelecimento próprio: só atualiza se a empresa tiver um único
+          if (!estabelecimentoId) {
+            const lista = await tx.estabelecimento.findMany({
+              where: { empresa_id },
+              select: { id: true },
+              take: 2,
+            })
+            if (lista.length === 1) estabelecimentoId = lista[0].id
+          }
+
+          if (estabelecimentoId) {
+            await tx.estabelecimento.update({
+              where: { id: estabelecimentoId },
+              data: { nome: d.nome_empresa },
+            })
+          }
+        }
+
         return usuario
       })
     } catch (err) {

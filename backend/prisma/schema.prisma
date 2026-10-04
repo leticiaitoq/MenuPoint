@@ -45,6 +45,7 @@ model Estabelecimento {
   logo_url      String?  @db.VarChar(500)
   banner_url    String?  @db.VarChar(500)
   tema          Tema     @default(CLARO)
+  tipo_cozinha  String?  @db.VarChar(60)   // ex.: "Pizzaria", "Japonesa", "Lanches"
 
   chave_pix                  String?  @db.VarChar(150)
   tipo_chave_pix             TipoChavePix?

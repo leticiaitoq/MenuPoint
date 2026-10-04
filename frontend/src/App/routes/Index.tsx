@@ -25,8 +25,11 @@ import PerfilCliente from "../pages/cliente/Perfil/PerfilCliente";
 import PerfilLocal from "../pages/ClienteLocal/Perfil/PerfilLocal";
 import Fila from "../pages/Restaurante/Gestão/Fila/Fila";
 import Relatorios from "../pages/Restaurante/Gestão/Relatorios/Relatorios";
+import RestauranteLink from "../pages/cliente/RestauranteLink/RestauranteLink";
 import { RotaProtegida } from "../shared/components/RotaProtegida";
 import { RotaProtegidaCliente } from "../shared/components/RotaProtegidaCliente";
+import { RotaComRestaurante } from "../shared/components/RotaComRestaurante";
+import AcessoPeloLink from "../pages/cliente/AcessoPeloLink/AcessoPeloLink";
 import NovaSenhaCliente from "../pages/authCliente/NovaSenhaCliente";
 import Config from '../pages/Restaurante/Configuracao/Config';
 import VerifyCodePage from "../pages/auth/VerifyCodePage";
@@ -50,6 +53,8 @@ const AppRoutes: React.FC = () => {
       <Routes>
         <Route path="/welcomepage" element={<WelcomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/r/:slug" element={<RestauranteLink />} />
+        <Route path="/acesso-pelo-link" element={<AcessoPeloLink />} />
         <Route path="/login/cliente" element={<LoginCliente />} />
         <Route path="/register/cliente" element={<RegisterCliente />} />
         <Route path="/" element={<RegisterPage />} />
@@ -69,12 +74,15 @@ const AppRoutes: React.FC = () => {
 
         {/* Rotas do cliente cadastrado: exigem login do cliente (/login/cliente) */}
         <Route element={<RotaProtegidaCliente />}>
-          <Route path="/dwelcome" element={<DWelcomePage />} />
-          <Route path="/menu" element={<MenuCliente />} />
-          <Route path="/reserva" element={<Reserva />} />
+          {/* Dependem do restaurante escolhido pelo link /r/:slug (entrada direta é barrada) */}
+          <Route element={<RotaComRestaurante />}>
+            <Route path="/dwelcome" element={<DWelcomePage />} />
+            <Route path="/menu" element={<MenuCliente />} />
+            <Route path="/reserva" element={<Reserva />} />
+            <Route path="/endereço" element={<CadastroEndereco />} />
+            <Route path="/retirada" element={<InfoRetirada />} />
+          </Route>
           <Route path="/historico" element={<ControlePedido />} />
-          <Route path="/endereço" element={<CadastroEndereco />} />
-          <Route path="/retirada" element={<InfoRetirada />} />
           <Route path="/perfil" element={<PerfilCliente />} />
         </Route>
 

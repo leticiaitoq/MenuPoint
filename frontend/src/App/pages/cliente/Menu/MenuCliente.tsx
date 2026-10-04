@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import Carrinho from '../../../shared/components/Carrinho/Carrinho';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
+import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
+import RestaurantePublicoService from '../../../services/restaurantePublico.service';
 import './MenuCliente.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -21,32 +23,53 @@ interface Produto {
   imagem: string;
 }
 
-// ── Dados mockados (substituir por API futuramente) ────────────────────────────
-const CATEGORIAS: Categoria[] = [
-  { id: 'todos',      label: 'Todos',      icon: '🍽️' },
-  { id: 'lanches',    label: 'Lanches',    icon: '🍔' },
-  { id: 'bebidas',    label: 'Bebidas',    icon: '🥤' },
-  { id: 'massas',     label: 'Massas',     icon: '🍝' },
-  { id: 'sobremesas', label: 'Sobremesas', icon: '🧁' },
-  { id: 'pizzas',     label: 'Pizzas',     icon: '🍕' },
-  { id: 'porcoes',    label: 'Porções',    icon: '🍟' },
-  { id: 'saladas',    label: 'Saladas',    icon: '🥗' },
-];
+const CATEGORIA_TODOS: Categoria = { id: 'todos', label: 'Todos', icon: '🍽️' };
 
-const PRODUTOS: Produto[] = [
-  { id: '1', categoriaId: 'lanches',    nome: 'Hamburguer Celestino',   descricao: 'Pão, gergilim, hamburguer, bacon, cheddar, alface, cebola, tomate',  preco: 39.90, imagem: '/images/menu/lanche.jpg' },
-  { id: '2', categoriaId: 'massas',     nome: 'Macarrão ao molho ito',  descricao: 'Massa, molho vermelho, almondegas e queijo parmesão',                preco: 24.99, imagem: '/images/menu/macarrão.jpg' },
-  { id: '3', categoriaId: 'porcoes',    nome: 'Porção Batatas Brisola', descricao: 'Batatas fritas, cheddar e bacon (400g)',                              preco: 50.00, imagem: '/images/menu/batata.jpg' },
-  { id: '4', categoriaId: 'porcoes',    nome: 'Porção de Frango',       descricao: 'Frango crocante temperado com molho especial (300g)',                 preco: 38.00, imagem: '/images/menu/pf.jpg' },
-  { id: '5', categoriaId: 'bebidas',    nome: 'Caipirinha',             descricao: 'Limão, açúcar e cachaça artesanal',                                   preco: 18.00, imagem: '/images/menu/caipira.jpg' },
-  { id: '6', categoriaId: 'saladas',    nome: 'Salada Caesar',          descricao: 'Alface romana, croutons, parmesão e molho caesar',                    preco: 22.00, imagem: '/images/menu/ceaser.jpg' },
-  { id: '7', categoriaId: 'sobremesas', nome: 'Sorvete Cremoso',        descricao: 'Sorvete de chocolate com calda de morango',                           preco: 22.00, imagem: '/images/menu/sor.jpg' },
-  { id: '8', categoriaId: 'pizzas',     nome: 'Pizza Portuguesa',       descricao: 'Molho, mussarela, presunto, bacon, milho, ervilha, tomate e orégano', preco: 50.00, imagem: '/images/menu/pp.jpg' },
-  { id: '9', categoriaId: 'bebidas',    nome: 'Coca-Cola',              descricao: 'Coca-Cola Lata (350ml)',                                              preco: 6.00, imagem: '/images/menu/coca.jpg' },
-];  
 // ── Componente ─────────────────────────────────────────────────────────────────
 const MenuCliente: React.FC = () => {
   const navigate = useNavigate();
+  const { restaurante } = useRestauranteCliente();
+
+  const [categorias, setCategorias] = useState<Categoria[]>([CATEGORIA_TODOS]);
+  const [produtos, setProdutos]     = useState<Produto[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erroMenu, setErroMenu]     = useState('');
+
+  // Cardápio real do restaurante escolhido pelo link /r/:slug
+  useEffect(() => {
+    if (!restaurante) { setCarregando(false); return; }
+    let cancelado = false;
+    setCarregando(true);
+    setErroMenu('');
+
+    RestaurantePublicoService.cardapio(restaurante.id)
+      .then((lista) => {
+        if (cancelado) return;
+        const ativas = lista.filter((c) => c.ativo !== false);
+        setCategorias([
+          CATEGORIA_TODOS,
+          ...ativas.map((c) => ({ id: c.id, label: c.nome, icon: c.icone ?? '🍽️' })),
+        ]);
+        setProdutos(
+          ativas.flatMap((c) =>
+            (c.produtos ?? [])
+              .filter((p) => p.disponivel)
+              .map((p) => ({
+                id: p.id,
+                categoriaId: c.id,
+                nome: p.nome,
+                descricao: p.descricao ?? '',
+                preco: Number(p.preco_promocional ?? p.preco),
+                imagem: p.imagem_url ?? '/icons/restaurant-logo.png',
+              }))
+          )
+        );
+      })
+      .catch(() => { if (!cancelado) setErroMenu('Não foi possível carregar o cardápio.'); })
+      .finally(() => { if (!cancelado) setCarregando(false); });
+
+    return () => { cancelado = true; };
+  }, [restaurante]);
 
   const [busca, setBusca]                     = useState('');
   const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
@@ -55,7 +78,7 @@ const MenuCliente: React.FC = () => {
   const [modalTipoAberto, setModalTipoAberto] = useState(false);
 
   // ── Filtro ──────────────────────────────────────────────────────────────────
-  const produtosFiltrados = PRODUTOS.filter((p) => {
+  const produtosFiltrados = produtos.filter((p) => {
     const naCategoria = categoriaAtiva === 'todos' || p.categoriaId === categoriaAtiva;
     const naBusca     = p.nome.toLowerCase().includes(busca.toLowerCase());
     return naCategoria && naBusca;
@@ -95,7 +118,7 @@ const MenuCliente: React.FC = () => {
 
         {/* Categorias */}
         <div className="menu__categorias">
-          {CATEGORIAS.map((cat) => (
+          {categorias.map((cat) => (
             <button
               key={cat.id}
               className={`menu__cat-btn${categoriaAtiva === cat.id ? ' menu__cat-btn--ativo' : ''}`}
@@ -110,8 +133,12 @@ const MenuCliente: React.FC = () => {
 
         {/* Grid de produtos */}
         <div className="menu__grid">
-          {produtosFiltrados.length === 0 ? (
-            <p className="menu__vazio">Nenhum produto encontrado.</p>
+          {carregando || erroMenu || produtosFiltrados.length === 0 ? (
+            <p className="menu__vazio">
+              {carregando
+                ? 'Carregando cardápio...'
+                : erroMenu || (restaurante ? 'Nenhum produto encontrado.' : 'Nenhum restaurante selecionado.')}
+            </p>
           ) : (
             produtosFiltrados.map((p) => (
               <div key={p.id} className="menu__card">
