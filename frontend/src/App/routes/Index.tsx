@@ -26,6 +26,8 @@ import PerfilLocal from "../pages/ClienteLocal/Perfil/PerfilLocal";
 import Fila from "../pages/Restaurante/Gestão/Fila/Fila";
 import Relatorios from "../pages/Restaurante/Gestão/Relatorios/Relatorios";
 import { RotaProtegida } from "../shared/components/RotaProtegida";
+import { RotaProtegidaCliente } from "../shared/components/RotaProtegidaCliente";
+import NovaSenhaCliente from "../pages/authCliente/NovaSenhaCliente";
 import Config from '../pages/Restaurante/Configuracao/Config';
 import VerifyCodePage from "../pages/auth/VerifyCodePage";
 import LoginCliente from "../pages/authCliente/LoginCliente";
@@ -53,23 +55,28 @@ const AppRoutes: React.FC = () => {
         <Route path="/" element={<RegisterPage />} />
         <Route path="/assinatura/sucesso" element={<AssinaturaSucesso />} />
         <Route path="/nova-senha" element={<NovaSenha />} />
-        <Route path="/dwelcome" element={<DWelcomePage />} />
-        <Route path="/menu" element={<MenuCliente />} />
         <Route path="/menulocal" element={<MenuLocal />} />
         <Route path="/recover" element={<RecoverPass />} />
          <Route path="/recover/cliente" element={<RecoverPassCliente />} />
         <Route path="/verify-code" element={<VerifyCodePage />} />   {/* Rota para a página de verificação de código usada tanto para registro quanto para recuperação de senha */ }
-        <Route path="/verify-code/cliente" element={<VerifyCodeCliente />} />   
-        <Route path="/reserva" element={<Reserva />} />
-        <Route path="/historico" element={<ControlePedido />} />
+        <Route path="/verify-code/cliente" element={<VerifyCodeCliente />} />
+        <Route path="/nova-senha/cliente" element={<NovaSenhaCliente />} />
         <Route path="/historicolocal" element={<ControlePedidoLocal />} />
-        <Route path="/endereço" element={<CadastroEndereco />} />
-         <Route path="/retirada" element={<InfoRetirada />} />
-         <Route path="/perfil" element={<PerfilCliente />} />
           <Route path="/perfilLocal" element={<PerfilLocal />} />
          <Route path="/personaliza" element={<Persopedido />} />
 
 
+
+        {/* Rotas do cliente cadastrado: exigem login do cliente (/login/cliente) */}
+        <Route element={<RotaProtegidaCliente />}>
+          <Route path="/dwelcome" element={<DWelcomePage />} />
+          <Route path="/menu" element={<MenuCliente />} />
+          <Route path="/reserva" element={<Reserva />} />
+          <Route path="/historico" element={<ControlePedido />} />
+          <Route path="/endereço" element={<CadastroEndereco />} />
+          <Route path="/retirada" element={<InfoRetirada />} />
+          <Route path="/perfil" element={<PerfilCliente />} />
+        </Route>
 
         {/* Rotas do restaurante: exigem login */}
         <Route element={<RotaProtegida />}>

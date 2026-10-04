@@ -3,6 +3,7 @@ import Navbar from './Navbar/Navbar';
 import { useNavigate } from 'react-router-dom';
 import Footer from './Footer/Footer';
 import CustomerSidebar, { CustomerSidebarItem } from './Sidebar/CustomerSidebar';
+import { useClienteAuth } from '../../contexts/ClienteAuthContext';
 import './Customerlayout.css';
 
 // ── Tipos ──────────────────────────────────────────────
@@ -44,6 +45,9 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
   onOrdersClick,
 }) => {
 
+// ── cliente logado (nome na navbar)
+const { cliente } = useClienteAuth();
+
 // ── navegação
 const navigate = useNavigate();
 const handleClick = () => navigate(mode === 'guest' ? '/perfillocal' : '/perfil');
@@ -51,7 +55,7 @@ const handleClick = () => navigate(mode === 'guest' ? '/perfillocal' : '/perfil'
   // Sempre mostra o perfil na navbar, independente do modo
 const rightIcon = (
   <button className="btn-imagem" onClick={handleClick}>
-    <img src="/icons/customer-avatar.png" alt="Perfil do cliente" />
+    <img src="/icons/customer-avatar.png" alt={cliente?.nome ? `Perfil de ${cliente.nome}` : 'Perfil do cliente'} />
   </button>
 );
 
@@ -59,7 +63,14 @@ const rightIcon = (
     <img src="/icons/restaurant-logo.png" alt="Logo do restaurante" />
   );
 
-  const subtitle    = mode === 'guest' ? 'MenuPoint' : '(Cliente)';
+  // Logado: mostra o primeiro nome do cliente. Sem nome (não deveria ocorrer) cai no texto antigo.
+  const primeiroNome = cliente?.nome?.trim().split(/\s+/)[0] ?? '';
+  const subtitle =
+    mode === 'guest'
+      ? 'MenuPoint'
+      : mode === 'logged' && primeiroNome
+        ? `Olá, ${primeiroNome}`
+        : '(Cliente)';
   const showSidebar = mode !== 'welcome';
   const sidebarItems = mode === 'guest' ? GUEST_ITEMS : LOGGED_ITEMS;
 

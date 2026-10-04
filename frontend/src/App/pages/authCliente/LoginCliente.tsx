@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
 import { HiEye, HiEyeOff } from 'react-icons/hi';
 import AuthCard from '../auth/AuthCard';
-import AuthService from '../../services/auth.service';
+import ClienteService, { mensagemDeErro } from '../../services/cliente.service';
+import { useClienteAuth, ROTA_APOS_LOGIN_CLIENTE } from '../../shared/contexts/ClienteAuthContext';
 import './LoginCliente.css';
 
 const LoginCliente: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { entrar, isAuthenticated } = useClienteAuth();
 
   const [emailCliente, setEmailCliente] = useState('');
   const [senhaCliente, setSenhaCliente] = useState('');
@@ -21,21 +24,34 @@ const LoginCliente: React.FC = () => {
     setCarregandoCliente(true);
 
     try {
-      const resultadoCliente = await AuthService.login({
-        email: emailCliente,
+      const sessao = await ClienteService.login({
+        email: emailCliente.trim(),
         senha: senhaCliente,
       });
 
-      localStorage.setItem('@menupoint:token', resultadoCliente.token);
-      localStorage.setItem('@menupoint:usuario', JSON.stringify(resultadoCliente.usuario));
+      entrar(sessao);
 
-      navigate('/cliente/home');
+      // Se foi barrado numa tela protegida, volta para ela; senão vai para a dwelcome
+      const destino = (location.state as { from?: string } | null)?.from;
+      navigate(destino ?? ROTA_APOS_LOGIN_CLIENTE, { replace: true });
     } catch (err: any) {
-      setErroCliente(err?.response?.data?.message ?? 'Email ou senha inválidos.');
+      // 403 = e-mail ainda não confirmado (o back já enviou um código novo)
+      if (err?.response?.status === 403) {
+        navigate('/verify-code/cliente', {
+          state: { email: emailCliente.trim().toLowerCase(), mode: 'register' },
+        });
+        return;
+      }
+      setErroCliente(mensagemDeErro(err, 'E-mail ou senha inválidos.'));
     } finally {
       setCarregandoCliente(false);
     }
   };
+
+  // Já está logado: não precisa ver a tela de login
+  if (isAuthenticated) {
+    return <Navigate to={ROTA_APOS_LOGIN_CLIENTE} replace />;
+  }
 
   return (
     <div
@@ -108,7 +124,7 @@ const LoginCliente: React.FC = () => {
 
           </form>
 
-          <button className="login-cliente__forgot" onClick={() => navigate('/recover')}>
+          <button className="login-cliente__forgot" onClick={() => navigate('/recover/cliente')}>
             Esqueceu sua senha?
           </button>
 

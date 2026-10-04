@@ -262,3 +262,125 @@
 }
 
 .perfil__btn-editar-end:hover { background: #d4952e; }
+/* ── Perfil conectado ao back-end ─────────────────────────────────────────── */
+
+/* Avatar com iniciais (no lugar da foto: ainda não há upload para cliente) */
+.perfil__avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: #f0d0cc;
+  color: #c0392b;
+  font-size: 40px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #e8b8b2;
+  flex-shrink: 0;
+}
+
+.perfil__estado {
+  text-align: center;
+  color: #555;
+  margin: 8px 0;
+}
+
+.perfil__selo {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #2e7d32;
+}
+
+.perfil__hint {
+  font-size: 12px;
+  color: #777;
+  margin: 0;
+  text-align: center;
+}
+
+.perfil__erro {
+  color: #c0392b;
+  font-size: 13px;
+  margin: 0;
+  text-align: center;
+}
+
+.perfil__aviso {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+}
+
+.perfil__btn-cancelar:disabled,
+.perfil__btn-salvar:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Cards de segurança / endereços (mesmo visual do card de endereços) */
+.perfil__secao {
+  background: #fdf5f5;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.perfil__secao-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: #c0392b;
+  margin: 0 0 14px 0;
+  letter-spacing: 0.5px;
+}
+
+.perfil__secao-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.perfil__secao-texto {
+  font-size: 14px;
+  color: #555;
+  margin: 0;
+  flex: 1;
+  min-width: 200px;
+}
+
+.perfil__form-senha {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.perfil__regras {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  font-size: 12px;
+}
+.perfil__regra--ok { color: #2e7d32; }
+.perfil__regra--erro { color: #c0392b; }
+
+/* Sair */
+.perfil__btn-sair {
+  align-self: center;
+  background: none;
+  border: 2px solid #c0392b;
+  color: #c0392b;
+  border-radius: 8px;
+  padding: 10px 28px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.perfil__btn-sair:hover { background: #c0392b; color: #fff; }

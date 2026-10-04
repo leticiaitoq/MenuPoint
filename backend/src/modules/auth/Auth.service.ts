@@ -420,6 +420,11 @@ export class AuthService {
         env.JWT_REFRESH_SECRET
       ) as JWTPayload
 
+      // Refresh token de cliente tem rota própria (/auth/cliente/refresh)
+      if (decoded.perfil === 'CLIENTE') {
+        throw new AppError('Refresh token inválido, expirado ou já utilizado', 401)
+      }
+
       const tokenNoBanco = await prisma.refreshToken.findFirst({
         where: {
           token: data.refresh_token,

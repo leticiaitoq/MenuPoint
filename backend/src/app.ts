@@ -23,7 +23,7 @@ import { pedidosRoutes } from '@modules/pedidos/Pedido.controller'
 import { pagamentosRoutes } from '@modules/pagamentos/Pagamento.controller'
 import { reservasRoutes } from '@modules/reservas/Reserva.controller'
 import { empresasRoutes } from '@modules/empresas/Empresa.controller'
-// import { clientesRoutes } from '@modules/clientes/Cliente.controller'
+import { clientesRoutes } from '@modules/clientes/Cliente.controller'
 import { assinaturaRoutes } from '@modules/assinatura/Assinatura.controller'
 // import { uploadRoutes } from '@modules/upload/Upload.controller'
 
@@ -89,7 +89,29 @@ app.register(fastifySwaggerUi, {
 
   // ── Rotas
   app.register(async (api) => {
+
+    // Token de CLIENTE (perfil CLIENTE) não entra nas rotas do restaurante.
+    // O JWT é assinado com o mesmo secret, então sem esta barreira um cliente
+    // logado conseguiria chamar rotas que só conferem "tem token válido".
+    // Rotas /auth/* ficam de fora (cada módulo de auth faz a própria checagem).
+    // Quando existirem rotas feitas para o cliente (ex.: pedidos), libere o prefixo aqui.
+    api.addHook('onRequest', async (request) => {
+      if (request.url.startsWith('/api/v1/auth/')) return
+
+      const authorization = request.headers.authorization
+      if (!authorization?.startsWith('Bearer ')) return
+
+      const payload = (api.jwt as any).decode(authorization.slice(7)) as
+        | { perfil?: string }
+        | null
+
+      if (payload?.perfil === 'CLIENTE') {
+        throw new AppError('Acesso não permitido para este tipo de conta', 403)
+      }
+    })
+
     api.register(authRoutes,            { prefix: '/auth' })
+    api.register(clientesRoutes,        { prefix: '/auth/cliente' })
     api.register(usuariosRoutes,        { prefix: '/usuarios' })
     api.register(estabelecimentosRoutes,{ prefix: '/estabelecimentos' })
     api.register(categoriasRoutes,      { prefix: '/categorias' })
@@ -99,7 +121,6 @@ app.register(fastifySwaggerUi, {
     api.register(pedidosRoutes,         { prefix: '/pedidos' })
     api.register(reservasRoutes,        { prefix: '/reservas' })
     api.register(empresasRoutes, { prefix: '/empresas' })
-    // api.register(clientesRoutes,        { prefix: '/clientes' })
     api.register(assinaturaRoutes,      { prefix: '/assinatura' })
     // api.register(uploadRoutes,          { prefix: '/upload' })
   }, { prefix: '/api/v1' })

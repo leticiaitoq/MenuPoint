@@ -8,8 +8,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ============================================================
@@ -354,7 +354,7 @@ model RefreshToken {
   id          String   @id @default(uuid()) @db.Uuid
   usuario_id  String?  @db.Uuid
   cliente_id  String?  @db.Uuid
-  token       String   @unique @db.VarChar(128)
+  token       String   @unique @db.Text
   expira_em   DateTime @db.Timestamptz
   usado       Boolean  @default(false)
   criado_em   DateTime @default(now()) @db.Timestamptz
@@ -370,19 +370,35 @@ model RefreshToken {
 // ============================================================
 
 model Cliente {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nome       String   @db.VarChar(100)
-  telefone   String   @db.VarChar(20)
-  email      String?  @unique @db.VarChar(150)
-  senha_hash String?  @db.VarChar(255)
-  ativo      Boolean  @default(true)
-  criado_em  DateTime @default(now()) @db.Timestamptz
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome             String    @db.VarChar(100)
+  telefone         String    @db.VarChar(20)
+  email            String?   @unique @db.VarChar(150)
+  senha_hash       String?   @db.VarChar(255)
+  cpf              String?   @unique @db.VarChar(14)
+  email_verificado Boolean   @default(false)
+  ultimo_acesso    DateTime? @db.Timestamptz
+  ativo            Boolean   @default(true)
+  criado_em        DateTime  @default(now()) @db.Timestamptz
 
-  pedidos        Pedido[]
-  refresh_tokens RefreshToken[]
+  pedidos            Pedido[]
+  refresh_tokens     RefreshToken[]
   tokens_recuperacao TokenRecuperacaoSenhaCliente[]
+  tokens_confirmacao TokenConfirmacaoEmailCliente[]
 
   @@map("clientes")
+}
+
+model TokenConfirmacaoEmailCliente {
+  id         String   @id @default(uuid()) @db.Uuid
+  cliente_id String   @db.Uuid
+  cliente    Cliente  @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
+  token      String   @unique @db.VarChar(64)
+  expira_em  DateTime @db.Timestamptz
+  usado      Boolean  @default(false)
+  criado_em  DateTime @default(now()) @db.Timestamptz
+
+  @@map("tokens_confirmacao_email_cliente")
 }
 
 model TokenRecuperacaoSenhaCliente {

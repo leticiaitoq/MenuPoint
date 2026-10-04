@@ -1,11 +1,3 @@
-@font-face {
-  font-family: 'Bukhari Script';
-  src: url('../../../../../assets/fonts/BukhariScript-lemD.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
 .navbar {
   width: 100%;
   height: 80px;
@@ -31,13 +23,14 @@
 }
 
 .navbar__right {
-  justify-content: end;
+  justify-content: flex-end;
 }
 
 /* Centro da navbar */
 .navbar__center {
   position: absolute;
   left: 50%;
+  transform: translateX(-50%);
 
   display: flex;
   align-items: center;
@@ -46,10 +39,9 @@
 
 /* MenuPoint */
 .navbar__logo {
-  font-family: 'Bukhari Script', 'Dancing Script', cursive;
-  font-size: 32px;
-  font-weight: normal;
-  font-style: normal;
+  font-size: 28px;
+  font-weight: 700;
+  font-style: italic;
   line-height: 1.1;
   text-decoration: underline;
   margin-left: 8px;
@@ -71,6 +63,10 @@
   font-weight: 500;
   color: #ffffff;
   margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
 }
 
 .navbar__icon {
@@ -109,6 +105,7 @@
 
   .navbar__subtitle {
     font-size: 12px;
+    max-width: 28vw;
   }
 
   .navbar__icon {

@@ -1,0 +1,95 @@
+@host = http://localhost:3333/api/v1/auth/cliente
+
+### 1) Cadastro (envia código de 6 dígitos por e-mail; NÃO devolve token)
+POST {{host}}/register
+Content-Type: application/json
+
+{
+  "nome": "Maria da Silva",
+  "cpf": "529.982.247-25",
+  "telefone": "(11) 91234-5678",
+  "email": "maria@email.com",
+  "senha": "Senha1234",
+  "confirmar_senha": "Senha1234"
+}
+
+### 2) Confirmar e-mail (devolve token + refresh_token + cliente)
+# @name verificar
+POST {{host}}/verificar-codigo
+Content-Type: application/json
+
+{ "email": "maria@email.com", "codigo": "000000", "tipo": "registro" }
+
+### 3) Login (403 se o e-mail ainda não foi confirmado)
+# @name login
+POST {{host}}/login
+Content-Type: application/json
+
+{ "email": "maria@email.com", "senha": "Senha1234" }
+
+###
+@token = {{login.response.body.token}}
+@refresh = {{login.response.body.refresh_token}}
+
+### 4) Dados do cliente logado
+GET {{host}}/me
+Authorization: Bearer {{token}}
+
+### 4b) Atualizar perfil (só nome e telefone)
+PUT {{host}}/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "Maria da Silva Santos", "telefone": "(11) 98765-4321" }
+
+### 4c) Alterar senha (exige a senha atual; devolve sessão nova; senha atual errada = 400)
+POST {{host}}/alterar-senha
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "senha_atual": "Senha1234", "nova_senha": "NovaSenha123", "confirmar_senha": "NovaSenha123" }
+
+### 5) Renovar sessão (rotaciona o refresh token)
+POST {{host}}/refresh
+Content-Type: application/json
+
+{ "refresh_token": "{{refresh}}" }
+
+### 6) Reenviar código
+POST {{host}}/reenviar-codigo
+Content-Type: application/json
+
+{ "email": "maria@email.com", "tipo": "registro" }
+
+### 7) Esqueci a senha → verificar código → redefinir
+POST {{host}}/esqueci-senha
+Content-Type: application/json
+
+{ "email": "maria@email.com" }
+
+###
+POST {{host}}/verificar-codigo
+Content-Type: application/json
+
+{ "email": "maria@email.com", "codigo": "000000", "tipo": "recuperacao" }
+
+###
+POST {{host}}/redefinir-senha
+Content-Type: application/json
+
+{
+  "email": "maria@email.com",
+  "codigo": "000000",
+  "nova_senha": "NovaSenha123",
+  "confirmar_senha": "NovaSenha123"
+}
+
+### 8) Logout
+POST {{host}}/logout
+Content-Type: application/json
+
+{ "refresh_token": "{{refresh}}" }
+
+### 9) Token de cliente numa rota do restaurante → deve dar 403
+GET http://localhost:3333/api/v1/pedidos
+Authorization: Bearer {{token}}

@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
 import AuthCard from '../auth/AuthCard';
-import AuthService from '../../services/auth.service';
+import ClienteService, { mensagemDeErro } from '../../services/cliente.service';
+import { useClienteAuth, ROTA_APOS_LOGIN_CLIENTE } from '../../shared/contexts/ClienteAuthContext';
 import './VerifyCodeCliente.css';
 
 interface LocationStateCliente {
@@ -13,6 +14,7 @@ interface LocationStateCliente {
 const VerifyCodeCliente: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { entrar } = useClienteAuth();
   const stateCliente = (location.state as LocationStateCliente) || {};
 
   const emailCliente = stateCliente.email ?? '';
@@ -96,17 +98,17 @@ const VerifyCodeCliente: React.FC = () => {
     setCarregandoCliente(true);
 
     try {
-      const resultadoCliente = await AuthService.verifyCode({ email: emailCliente, code: codeCliente });
-
       if (modeCliente === 'register') {
-        localStorage.setItem('@menupoint:token', resultadoCliente.token);
-        localStorage.setItem('@menupoint:usuario', JSON.stringify(resultadoCliente.usuario));
-        navigate('/cliente/home');
+        // Confirma o e-mail e já recebe a sessão: o cliente cai logado na dwelcome
+        const sessao = await ClienteService.confirmarEmail(emailCliente, codeCliente);
+        entrar(sessao);
+        navigate(ROTA_APOS_LOGIN_CLIENTE, { replace: true });
       } else {
-        navigate('/cliente/nova-senha', { state: { email: emailCliente, code: codeCliente } });
+        await ClienteService.validarCodigoRecuperacao(emailCliente, codeCliente);
+        navigate('/nova-senha/cliente', { state: { email: emailCliente, code: codeCliente } });
       }
     } catch (err: any) {
-      setErroCliente(err?.response?.data?.message ?? 'Código inválido ou expirado.');
+      setErroCliente(mensagemDeErro(err, 'Código inválido ou expirado.'));
     } finally {
       setCarregandoCliente(false);
     }
@@ -119,11 +121,19 @@ const VerifyCodeCliente: React.FC = () => {
     setErroCliente(null);
 
     try {
-      // TODO: await AuthService.resendCode({ email: emailCliente });
-    } catch {
-      setErroCliente('Não foi possível reenviar o código. Tente novamente.');
+      await ClienteService.reenviarCodigo(
+        emailCliente,
+        modeCliente === 'register' ? 'registro' : 'recuperacao'
+      );
+    } catch (err: any) {
+      setErroCliente(mensagemDeErro(err, 'Não foi possível reenviar o código. Tente novamente.'));
     }
   };
+
+  // Recarregou a página (o e-mail vinha pela navegação): volta para o login
+  if (!emailCliente) {
+    return <Navigate to="/login/cliente" replace />;
+  }
 
   const tituloCliente = modeCliente === 'register' ? 'Verificar email' : 'Verificar identidade';
   const descricaoCliente =

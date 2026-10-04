@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiEye, HiEyeOff } from 'react-icons/hi';
 import AuthCard from '../auth/AuthCard';
-import AuthService from '../../services/auth.service';
+import ClienteService, { mensagemDeErro } from '../../services/cliente.service';
 import './RegisterCliente.css';
 
 const RegisterCliente: React.FC = () => {
@@ -10,6 +10,7 @@ const RegisterCliente: React.FC = () => {
 
   const [nomeCliente, setNomeCliente] = useState('');
   const [cpfCliente, setCpfCliente] = useState('');
+  const [telefoneCliente, setTelefoneCliente] = useState('');
   const [emailCliente, setEmailCliente] = useState('');
   const [senhaCliente, setSenhaCliente] = useState('');
   const [confirmarSenhaCliente, setConfirmarSenhaCliente] = useState('');
@@ -33,15 +34,36 @@ const RegisterCliente: React.FC = () => {
     setNomeCliente(valor);
   };
 
+  const handleTelefoneClienteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const d = e.target.value.replace(/\D/g, '').slice(0, 11);
+    let formatado = d;
+    if (d.length > 10) formatado = `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+    else if (d.length > 6) formatado = `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    else if (d.length > 2) formatado = `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    else if (d.length > 0) formatado = `(${d}`;
+    setTelefoneCliente(formatado);
+  };
+
   const regrasSenhaCliente = [
     { label: 'Mínimo 8 caracteres', valido: senhaCliente.length >= 8 },
     { label: 'Pelo menos 1 letra maiúscula', valido: /[A-Z]/.test(senhaCliente) },
+    { label: 'Pelo menos 1 letra minúscula', valido: /[a-z]/.test(senhaCliente) },
     { label: 'Pelo menos 1 número', valido: /[0-9]/.test(senhaCliente) },
   ];
 
   const handleSubmitCliente = async (e: React.FormEvent) => {
     e.preventDefault();
     setErroCliente(null);
+
+    if (cpfCliente.length !== 14) {
+      setErroCliente('Informe o CPF completo.');
+      return;
+    }
+
+    if (telefoneCliente.replace(/\D/g, '').length < 10) {
+      setErroCliente('Informe o telefone com DDD.');
+      return;
+    }
 
     if (senhaCliente !== confirmarSenhaCliente) {
       setErroCliente('As senhas não coincidem.');
@@ -56,21 +78,19 @@ const RegisterCliente: React.FC = () => {
 
     setCarregandoCliente(true);
     try {
-      // TODO (back-end): O DTO atual só aceita 'nome_restaurante'.
-      // Quando houver um endpoint/DTO próprio para cadastro de cliente,
-      // trocar 'nome_restaurante' por 'nome' (ou o campo correto definido pelo back-end).
-      const resultadoCliente = await AuthService.registrar({
-        nome_restaurante: nomeCliente,
-        email: emailCliente,
+      // Não devolve token: o cliente só entra depois de confirmar o e-mail
+      await ClienteService.registrar({
+        nome: nomeCliente.trim(),
+        cpf: cpfCliente,
+        telefone: telefoneCliente,
+        email: emailCliente.trim(),
         senha: senhaCliente,
         confirmar_senha: confirmarSenhaCliente,
       });
 
-      localStorage.setItem('@menupoint:token', resultadoCliente.token);
-      localStorage.setItem('@menupoint:usuario', JSON.stringify(resultadoCliente.usuario));
       setMostrarSucesso(true);
     } catch (err: any) {
-      setErroCliente(err?.response?.data?.message ?? 'Erro ao criar conta. Tente novamente.');
+      setErroCliente(mensagemDeErro(err, 'Erro ao criar conta. Tente novamente.'));
     } finally {
       setCarregandoCliente(false);
     }
@@ -78,7 +98,9 @@ const RegisterCliente: React.FC = () => {
 
   const handleIrParaConfirmacaoCliente = () => {
     setMostrarSucesso(false);
-    navigate('/confirmar-email');
+    navigate('/verify-code/cliente', {
+      state: { email: emailCliente.trim().toLowerCase(), mode: 'register' },
+    });
   };
 
   return (
@@ -132,6 +154,23 @@ const RegisterCliente: React.FC = () => {
                 className="register-cliente__input"
                 value={cpfCliente}
                 onChange={handleCpfClienteChange}
+                required
+              />
+            </div>
+
+            {/* Telefone */}
+            <div className="register-cliente__field">
+              <label className="register-cliente__label" htmlFor="telefoneCliente">
+                Telefone
+              </label>
+              <input
+                id="telefoneCliente"
+                type="tel"
+                inputMode="numeric"
+                placeholder="(00) 00000-0000"
+                className="register-cliente__input"
+                value={telefoneCliente}
+                onChange={handleTelefoneClienteChange}
                 required
               />
             </div>
