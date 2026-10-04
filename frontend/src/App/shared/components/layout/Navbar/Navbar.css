@@ -73,6 +73,21 @@
   margin-top: 2px;
 }
 
+.navbar__right {
+  gap: 8px;
+}
+
+/* Nome do cliente ao lado do avatar */
+.navbar__user-name {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .navbar__icon {
   width: 100px;
   height: 100px;
@@ -109,6 +124,11 @@
 
   .navbar__subtitle {
     font-size: 12px;
+  }
+
+  .navbar__user-name {
+    font-size: 13px;
+    max-width: 90px;
   }
 
   .navbar__icon {

@@ -1,0 +1,98 @@
+.qrmesa__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.qrmesa__modal {
+  width: 100%;
+  max-width: 400px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.qrmesa__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.qrmesa__header h3 { margin: 0; font-size: 17px; font-weight: 700; color: #333; }
+
+.qrmesa__fechar {
+  display: flex;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.qrmesa__fechar:hover { color: #333; }
+
+.qrmesa__corpo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 24px;
+  overflow-y: auto;
+}
+
+.qrmesa__info { margin: 0; font-size: 14px; color: #666; text-align: center; }
+.qrmesa__info strong { color: #333; }
+
+.qrmesa__qr {
+  padding: 14px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  line-height: 0; /* tira o espaço extra embaixo do svg */
+}
+.qrmesa__qr svg { max-width: 100%; height: auto; }
+
+.qrmesa__url {
+  margin: 0;
+  font-size: 12px;
+  color: #999;
+  word-break: break-all;
+  text-align: center;
+}
+
+.qrmesa__acoes {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.qrmesa__btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+.qrmesa__btn--sec { background: #f0f0f0; color: #555; }
+.qrmesa__btn--sec:hover { background: #ddd; }
+.qrmesa__btn--borda { background: #fff; color: #555; border: 1px solid #ddd; }
+.qrmesa__btn--borda:hover { background: #f7f7f7; }
+.qrmesa__btn--prim { background: #e8a838; color: #fff; font-weight: 600; }
+.qrmesa__btn--prim:hover { background: #d4952e; }

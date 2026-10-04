@@ -23,14 +23,14 @@ interface Produto {
 
 // ── Dados mockados (substituir por API futuramente) ────────────────────────────
 const CATEGORIAS: Categoria[] = [
-  { id: 'todos',      label: 'Todos',      icon: '🍽️' },
-  { id: 'lanches',    label: 'Lanches',    icon: '🍔' },
-  { id: 'bebidas',    label: 'Bebidas',    icon: '🥤' },
-  { id: 'massas',     label: 'Massas',     icon: '🍝' },
-  { id: 'sobremesas', label: 'Sobremesas', icon: '🧁' },
-  { id: 'pizzas',     label: 'Pizzas',     icon: '🍕' },
-  { id: 'porcoes',    label: 'Porções',    icon: '🍟' },
-  { id: 'saladas',    label: 'Saladas',    icon: '🥗' },
+  { id: 'todos',      label: 'Todos',      icon: '/icons/icons-categorias/icons-categorias/todos.png' },
+  { id: 'lanches',    label: 'Lanches',    icon: '/icons/icons-categorias/icons-categorias/lanches.png' },
+  { id: 'bebidas',    label: 'Bebidas',    icon: '/icons/icons-categorias/icons-categorias/bebidas.png' },
+  { id: 'massas',     label: 'Massas',     icon: '/icons/icons-categorias/icons-categorias/massas.png' },
+  { id: 'sobremesas', label: 'Sobremesas', icon: '/icons/icons-categorias/icons-categorias/sobremesas.png' },
+  { id: 'pizzas',     label: 'Pizzas',     icon: '/icons/icons-categorias/icons-categorias/pizzas.png' },
+  { id: 'porcoes',    label: 'Porções',    icon: '/icons/icons-categorias/icons-categorias/porcoes.png' },
+  { id: 'saladas',    label: 'Saladas',    icon: '/icons/icons-categorias/icons-categorias/saladas.png' },
 ];
 
 const PRODUTOS: Produto[] = [
@@ -83,7 +83,7 @@ const MenuCliente: React.FC = () => {
 
         {/* Busca */}
         <div className="menu__busca-wrap">
-          <span className="menu__busca-icon">🔍</span>
+           <img src="/icons/lupa.png" alt="" className="menu__busca-icon" />
           <input
             className="menu__busca"
             type="text"
@@ -103,7 +103,7 @@ const MenuCliente: React.FC = () => {
               aria-label={cat.label}
               title={cat.label}
             >
-              <span className="menu__cat-icon">{cat.icon}</span>
+             <img src={cat.icon} alt="" className="menu__cat-icon" />
             </button>
           ))}
         </div>
@@ -145,7 +145,7 @@ const MenuCliente: React.FC = () => {
         onClick={() => setCarrinhoAberto(true)}
         aria-label="Abrir carrinho"
       >
-        🛒
+        <img src="/icons/carrinho.png" alt="" className="menu__carrinho-fab-icon" />
         {totalCarrinho > 0 && (
           <span className="menu__carrinho-fab-badge">{totalCarrinho}</span>
         )}

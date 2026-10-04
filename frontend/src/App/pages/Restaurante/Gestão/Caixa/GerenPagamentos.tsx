@@ -10,10 +10,16 @@ import {
   HiPlus,
   HiX,
   HiOutlineDocumentText,
-  HiOutlinePrinter,
   HiOutlineXCircle,
+  HiOutlineClipboardList,
 } from 'react-icons/hi';
+import { MdQrCode2 } from 'react-icons/md';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
+import ComandaCozinha from '../../../../shared/components/ComandaCozinha/ComandaCozinha';
+import CancelarPedido from '../../../../shared/components/cancelarPedido/CancelarPedido';
+import QrCodeMesa from '../../../../shared/components/QrCodeMesas/QrCodeMesa';
+import { ROTAS_CAIXA } from '../../../../routes/caixaRotas';
+import { obterPedidoDaMesa } from '../../../../shared/components/ComandaCozinha/comanda.mock';
 import './GerenPagamentos.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -32,6 +38,8 @@ interface MesaCaixa {
   pessoas?: number;
   itens?: number;
   total?: number;
+  /** Quanto já foi pago da conta (pagamento parcial). Se > 0, não dá para cancelar. */
+  pagamentosRealizados?: number;
   tempoMinutos?: number;
   status: StatusMesaCaixa;
 }
@@ -46,7 +54,7 @@ const OBSERVACAO_MAX = 80;
 // ── Mock (substituir por chamada à API futuramente — ver mesa.service.ts) ──────
 const MESAS_CAIXA_MOCK: MesaCaixa[] = [
   { id: 'm1', numero: 1, pessoas: 2, itens: 5, total: 85.5,  tempoMinutos: 15, status: 'aberta' },
-  { id: 'm2', numero: 2, pessoas: 4, itens: 5, total: 162.4, tempoMinutos: 8,  status: 'aberta' },
+  { id: 'm2', numero: 2, pessoas: 4, itens: 5, total: 162.4, pagamentosRealizados: 50, tempoMinutos: 8,  status: 'aberta' },
   { id: 'm3', numero: 3, pessoas: 2, itens: 2, total: 48.9,  tempoMinutos: 10, status: 'aberta' },
   { id: 'm4', numero: 4, pessoas: 6, itens: 7, total: 245.7, tempoMinutos: 35, status: 'aberta' },
   { id: 'm5', numero: 5, pessoas: 2, itens: 1, total: 27.9,  tempoMinutos: 5,  status: 'aberta' },
@@ -70,6 +78,15 @@ const GerenPagamentos: React.FC = () => {
 
   // id da mesa com o menu de ações (⋮) aberto — null = nenhum menu aberto
   const [menuAberto, setMenuAberto] = useState<string | null>(null);
+
+  // mesa cuja comanda da cozinha está aberta — null = modal fechado
+  const [comandaMesa, setComandaMesa] = useState<MesaCaixa | null>(null);
+
+  // mesa que está sendo cancelada — null = modal fechado
+  const [cancelarMesa, setCancelarMesa] = useState<MesaCaixa | null>(null);
+
+  // mesa cujo QR Code está aberto — null = modal fechado
+  const [qrMesa, setQrMesa] = useState<MesaCaixa | null>(null);
 
   // ── Modal: Cadastrar mesa ────────────────────────────────────────────────────
   const [modalAberto, setModalAberto]   = useState(false);
@@ -162,14 +179,14 @@ const GerenPagamentos: React.FC = () => {
   };
 
   // ── Navegação ────────────────────────────────────────────────────────────────
-  // Cards de mesas com pedido (aberta/fechada) levam para a tela de detalhe do
-  // pedido/pagamento. TODO: criar a tela de detalhe e ajustar a rota abaixo.
+  // Cards de mesas com pedido (aberta/fechada) levam para a tela do pedido/pagamento
+  // daquela mesa (o id vai na URL: /restaurante/caixa/pagar/:id).
   const temPedido = (mesa: MesaCaixa) => mesa.status === 'aberta' || mesa.status === 'fechada';
 
   const abrirDetalheMesa = (mesa: MesaCaixa) => {
     if (!temPedido(mesa)) return;
     setMenuAberto(null);
-    navigate('/restaurante/caixa/pagar');
+    navigate(ROTAS_CAIXA.pagarMesa(mesa.id));
   };
 
   // Mesa sem pedido (livre/reservada) → manda pro fluxo de novo pedido
@@ -186,7 +203,40 @@ const GerenPagamentos: React.FC = () => {
   const handleAcaoMenu = (mesa: MesaCaixa, e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuAberto(null);
-    navigate(`/restaurante/caixa/mesa/${mesa.id}`);
+    navigate(ROTAS_CAIXA.pagarMesa(mesa.id));
+  };
+
+  const abrirComanda = (mesa: MesaCaixa, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuAberto(null);
+    setComandaMesa(mesa);
+  };
+
+  const abrirQr = (mesa: MesaCaixa, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuAberto(null);
+    setQrMesa(mesa);
+  };
+
+  const abrirCancelamento = (mesa: MesaCaixa, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuAberto(null);
+    setCancelarMesa(mesa);
+  };
+
+  // TODO: chamar a API — pedido.service.ts: cancelar(pedidoId, motivo)
+  //       (Pedido.status = CANCELADO, Pedido.cancelamento_motivo = motivo, Mesa.status = LIVRE)
+  const confirmarCancelamento = (_motivo: string) => {
+    if (!cancelarMesa) return;
+    // Mesa volta a ficar livre: mantém só os dados de cadastro, limpa o pedido
+    setMesas((prev) =>
+      prev.map((m) =>
+        m.id === cancelarMesa.id
+          ? { id: m.id, numero: m.numero, capacidade: m.capacidade, observacao: m.observacao, status: 'livre' }
+          : m
+      )
+    );
+    setCancelarMesa(null);
   };
 
   const mensagemVazio =
@@ -341,12 +391,17 @@ const GerenPagamentos: React.FC = () => {
                               <button className="caixa__card-menu-item" onClick={(e) => handleAcaoMenu(mesa, e)}>
                                 <HiOutlineDocumentText /> Ver detalhes
                               </button>
-                              <button className="caixa__card-menu-item" onClick={(e) => e.stopPropagation()}>
-                                <HiOutlinePrinter /> Imprimir conta
+                              <button className="caixa__card-menu-item" onClick={(e) => abrirComanda(mesa, e)}>
+                                <HiOutlineClipboardList /> Comanda da cozinha
                               </button>
-                              <button className="caixa__card-menu-item caixa__card-menu-item--perigo" onClick={(e) => e.stopPropagation()}>
-                                <HiOutlineXCircle /> Cancelar pedido
+                              <button className="caixa__card-menu-item" onClick={(e) => abrirQr(mesa, e)}>
+                                <MdQrCode2 /> QR Code da mesa
                               </button>
+                              {mesa.status === 'aberta' && (
+                                <button className="caixa__card-menu-item caixa__card-menu-item--perigo" onClick={(e) => abrirCancelamento(mesa, e)}>
+                                  <HiOutlineXCircle /> Cancelar pedido
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -522,6 +577,27 @@ const GerenPagamentos: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* ── Modal: Comanda da cozinha (gerada a partir do pedido da mesa) ── */}
+        <ComandaCozinha
+          aberta={comandaMesa !== null}
+          pedido={comandaMesa ? obterPedidoDaMesa(comandaMesa.id) : null}
+          onFechar={() => setComandaMesa(null)}
+        />
+
+        {/* ── Modal: QR Code da mesa ── */}
+        <QrCodeMesa mesa={qrMesa} onFechar={() => setQrMesa(null)} />
+
+        {/* ── Modal: Cancelar pedido ── */}
+        <CancelarPedido
+          aberto={cancelarMesa !== null}
+          mesaNumero={cancelarMesa?.numero ?? 0}
+          itens={cancelarMesa?.itens}
+          total={cancelarMesa?.total}
+          pagamentosRealizados={cancelarMesa?.pagamentosRealizados}
+          onFechar={() => setCancelarMesa(null)}
+          onConfirmar={confirmarCancelamento}
+        />
 
       </div>
     </RestaurantLayout>

@@ -3,6 +3,7 @@ import Navbar from './Navbar/Navbar';
 import { useNavigate } from 'react-router-dom';
 import Footer from './Footer/Footer';
 import CustomerSidebar, { CustomerSidebarItem } from './Sidebar/CustomerSidebar';
+import { useConvidado } from '../../contexts/Convidadocontext';
 import './Customerlayout.css';
 
 // ── Tipos ──────────────────────────────────────────────
@@ -46,6 +47,8 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
 
 // ── navegação
 const navigate = useNavigate();
+// Nome digitado na WelcomePage (só existe no fluxo do cliente local)
+const { nome: nomeConvidado } = useConvidado();
 const handleClick = () => navigate(mode === 'guest' ? '/perfillocal' : '/perfil');
    
   // Sempre mostra o perfil na navbar, independente do modo
@@ -59,7 +62,8 @@ const rightIcon = (
     <img src="/icons/restaurant-logo.png" alt="Logo do restaurante" />
   );
 
-  const subtitle    = mode === 'guest' ? 'MenuPoint' : '(Cliente)';
+  // No modo guest o centro da navbar mostra o nome do cliente (cai em 'MenuPoint' se ainda não houver)
+  const subtitle    = mode === 'guest' ? (nomeConvidado || 'MenuPoint') : '(Cliente)';
   const showSidebar = mode !== 'welcome';
   const sidebarItems = mode === 'guest' ? GUEST_ITEMS : LOGGED_ITEMS;
 

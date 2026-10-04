@@ -1,0 +1,242 @@
+/* ── Modal ─────────────────────────────────────────────────────────────────── */
+.comanda__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100; /* acima do modal de cadastro de mesa (1000) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.comanda__modal {
+  width: 100%;
+  max-width: 600px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  background: #f1f1f1;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.comanda__barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: #fff;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.comanda__barra-titulo {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #222;
+}
+
+.comanda__barra-fechar {
+  display: flex;
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: #666;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 4px;
+}
+.comanda__barra-fechar:hover { background: #f0f0f0; }
+
+.comanda__corpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.comanda__acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 18px;
+  background: #fff;
+  border-top: 1px solid #e5e5e5;
+}
+
+.comanda__btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+}
+.comanda__btn--sec  { background: #eee; color: #444; }
+.comanda__btn--sec:hover  { background: #e2e2e2; }
+.comanda__btn--prim { background: #c0392b; color: #fff; }
+.comanda__btn--prim:hover { background: #a93226; }
+
+/* ── Folha da comanda ──────────────────────────────────────────────────────── */
+.comanda-folha {
+  background: #fff;
+  color: #111;
+  padding: 20px 22px;
+  font-family: Arial, Helvetica, sans-serif;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact; /* mantém os fundos pretos ao imprimir */
+}
+
+.comanda-folha p { margin: 0; }
+
+.comanda-folha__aviso {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #111;
+}
+
+.comanda-folha__cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 3px solid #111;
+}
+
+.comanda-folha__marca { display: flex; flex-direction: column; }
+.comanda-folha__marca-nome { font-size: 26px; font-weight: 800; line-height: 1.1; }
+.comanda-folha__marca-slogan { font-size: 10px; max-width: 150px; margin-top: 2px; }
+
+.comanda-folha__setor { text-align: right; font-size: 11px; font-weight: 600; }
+.comanda-folha__setor p { margin-top: 3px; }
+.comanda-folha__setor-pill {
+  display: inline-block;
+  background: #111;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+  padding: 4px 18px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.comanda-folha__meta {
+  display: flex;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px dashed #111;
+}
+.comanda-folha__meta > div { display: flex; flex-direction: column; gap: 3px; }
+.comanda-folha__meta-mesa { flex: 1; }
+.comanda-folha__meta-mesa strong { font-size: 24px; font-weight: 800; }
+.comanda-folha__meta-mesa span { font-size: 12px; font-weight: 700; }
+.comanda-folha__meta-pedido {
+  flex: 1;
+  padding-left: 16px;
+  border-left: 2px solid #111;
+}
+.comanda-folha__meta-pedido strong { font-size: 20px; font-weight: 800; }
+.comanda-folha__meta-pedido span { font-size: 12px; }
+
+.comanda-folha__obs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  padding: 10px 14px;
+  border: 1.5px solid #111;
+  border-radius: 10px;
+  font-size: 12px;
+}
+.comanda-folha__obs-icone { font-size: 22px; flex-shrink: 0; }
+.comanda-folha__obs strong { display: block; font-size: 13px; margin-bottom: 2px; }
+
+.comanda-folha__grupo {
+  padding: 14px 0;
+  border-top: 1px dashed #111;
+}
+.comanda-folha__grupo-pill {
+  display: inline-block;
+  background: #111;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.comanda-folha__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.comanda-folha__item-qtd { min-width: 26px; font-size: 14px; font-weight: 600; }
+.comanda-folha__item-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.comanda-folha__item-info strong { font-size: 15px; font-weight: 800; }
+.comanda-folha__item-detalhe { font-size: 12px; }
+.comanda-folha__item-preco { font-size: 15px; font-weight: 800; white-space: nowrap; }
+
+.comanda-folha__vazio {
+  padding: 24px 0;
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+}
+
+.comanda-folha__rodape {
+  padding-top: 12px;
+  border-top: 1px dashed #111;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+}
+
+/* ── Mobile ────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .comanda-folha { padding: 14px; }
+  .comanda-folha__cabecalho { flex-direction: column; }
+  .comanda-folha__setor { text-align: left; }
+  .comanda-folha__meta { flex-direction: column; }
+  .comanda-folha__meta-pedido { padding-left: 0; border-left: none; }
+}
+
+/* ── Impressão: só a comanda sai no papel ─────────────────────────────────────
+   O portal é filho direto do <body>; escondemos o app (#root) e deixamos o
+   modal "solto", sem moldura, para a folha ocupar a página inteira. */
+@media print {
+  @page { margin: 10mm; }
+
+  body.comanda-aberta > #root { display: none !important; }
+
+  .comanda__overlay {
+    position: static;
+    display: block;
+    padding: 0;
+    background: none;
+  }
+  .comanda__modal {
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+    overflow: visible;
+  }
+  .comanda__barra,
+  .comanda__acoes { display: none !important; }
+  .comanda__corpo { padding: 0; overflow: visible; }
+  .comanda-folha { box-shadow: none; padding: 0; }
+  .comanda-folha__grupo,
+  .comanda-folha__item { break-inside: avoid; }
+}
