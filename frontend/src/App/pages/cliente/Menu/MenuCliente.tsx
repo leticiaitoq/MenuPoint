@@ -21,9 +21,19 @@ interface Produto {
   descricao: string;
   preco: number;
   imagem: string;
+  destaque: boolean;
+  ordem: number;
 }
 
 const CATEGORIA_TODOS: Categoria = { id: 'todos', label: 'Todos', icon: '🍽️' };
+
+// Mesma hierarquia do painel do restaurante: destaques primeiro; depois a ordem
+// definida por ele; empate (ex.: produtos novos, todos com ordem 0) cai na ordem das categorias.
+// Array.sort é estável, então o que empatar continua na ordem em que o backend enviou.
+const compararProdutos = (idsCategorias: string[]) => (a: Produto, b: Produto) =>
+  Number(b.destaque) - Number(a.destaque)
+  || a.ordem - b.ordem
+  || idsCategorias.indexOf(a.categoriaId) - idsCategorias.indexOf(b.categoriaId);
 
 // ── Componente ─────────────────────────────────────────────────────────────────
 const MenuCliente: React.FC = () => {
@@ -70,6 +80,8 @@ const MenuCliente: React.FC = () => {
               (c.produtos ?? [])
                 .filter((p) => p.disponivel)
                 .map((p) => ({
+                  destaque: !!p.destaque,
+                  ordem: p.ordem ?? 0,
                   id: p.id,
                   categoriaId: c.id,
                   nome: p.nome,
@@ -77,7 +89,7 @@ const MenuCliente: React.FC = () => {
                   preco: Number(p.preco_promocional ?? p.preco),
                   imagem: p.imagem_url ?? '/icons/restaurant-logo.png',
                 }))
-            )
+            ).sort(compararProdutos(ativas.map((c) => c.id)))
           );
           setErroMenu('');
         })
@@ -174,7 +186,8 @@ const MenuCliente: React.FC = () => {
             </p>
           ) : (
             produtosFiltrados.map((p) => (
-              <div key={p.id} className="menu__card">
+              <div key={p.id} className={`menu__card${p.destaque ? ' menu__card--destaque' : ''}`}>
+                {p.destaque && <span className="menu__card-selo">⭐ Destaque</span>}
                 <img src={p.imagem} alt={p.nome} className="menu__card-img" />
                 <div className="menu__card-body">
                   <h3 className="menu__card-nome">{p.nome}</h3>

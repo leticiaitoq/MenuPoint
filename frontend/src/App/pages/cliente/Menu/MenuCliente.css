@@ -361,3 +361,32 @@
     font-size: 24px;
   }
 }
+
+/* ── Produto em destaque ── */
+.menu__card { position: relative; }
+
+.menu__card--destaque {
+  box-shadow: 0 0 0 2px #e0a526, 0 4px 14px rgba(224, 165, 38, 0.35);
+}
+
+.menu__card--destaque:hover {
+  box-shadow: 0 0 0 2px #e0a526, 0 8px 20px rgba(224, 165, 38, 0.45);
+}
+
+.menu__card-selo {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f5c542, #e0a526);
+  color: #5a3b00;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 600px) {
+  .menu__card-selo { top: 6px; left: 6px; padding: 3px 8px; font-size: 10px; }
+}

@@ -1,4 +1,5 @@
 import React from 'react'
+import ContadorCaracteres from '../ContadorCaracteres/ContadorCaracteres'
 import {
   GRUPOS_CATEGORIAS_PADRAO,
   OUTRA_CATEGORIA,
@@ -69,6 +70,7 @@ const SeletorCategoria: React.FC<SeletorCategoriaProps> = ({
       </select>
 
       {valor.selecao === OUTRA_CATEGORIA && (
+        <>
         <input
           id={`${id}-outra`}
           className={inputClassName}
@@ -85,6 +87,8 @@ const SeletorCategoria: React.FC<SeletorCategoriaProps> = ({
             }
           }}
         />
+        <ContadorCaracteres valor={valor.texto} max={100} />
+        </>
       )}
     </div>
   )

@@ -4,6 +4,7 @@ import { HiUpload } from 'react-icons/hi';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
 import CategoriaService, { Categoria } from '../../../../services/categoria.service';
 import ProdutoService from '../../../../services/produto.service';
+import ContadorCaracteres, { DicaLimite } from '../../../../shared/components/ContadorCaracteres/ContadorCaracteres';
 import './EditProduto.css';
 
 // ── Tipos
@@ -13,6 +14,7 @@ interface FormEdicao {
   categoria_id: string;
   preco: string;
   disponivel: boolean;
+  destaque: boolean;
   imagemPreview: string;
   imagem: File | null;
 }
@@ -23,6 +25,7 @@ const FORM_VAZIO: FormEdicao = {
   categoria_id:  '',
   preco:         '',
   disponivel:    true,
+  destaque:      false,
   imagemPreview: '',
   imagem:        null,
 };
@@ -43,12 +46,14 @@ const EditProduto: React.FC = () => {
   const [erro, setErro]       = useState('');
   const [sucesso, setSucesso] = useState(false);
   const [carregando, setCarregando] = useState(true);
+  const [falhaCarregar, setFalhaCarregar] = useState(false);
   const [salvando, setSalvando]     = useState(false);
 
   // ── Carrega o produto real e as categorias do estabelecimento
   useEffect(() => {
     if (!id) {
       setErro('Produto não informado.');
+      setFalhaCarregar(true);
       setCarregando(false);
       return;
     }
@@ -67,11 +72,13 @@ const EditProduto: React.FC = () => {
           categoria_id:  produto.categoria_id,
           preco:         formatarPreco(produto.preco),
           disponivel:    produto.disponivel,
+          destaque:      produto.destaque,
           imagemPreview: produto.imagem_url ?? '',
           imagem:        null,
         });
       } catch (err: any) {
         setErro(err?.response?.data?.message ?? 'Não foi possível carregar o produto.');
+        setFalhaCarregar(true);
       } finally {
         setCarregando(false);
       }
@@ -130,10 +137,11 @@ const EditProduto: React.FC = () => {
 
       await ProdutoService.atualizar(id, {
         nome: form.nome.trim(),
-        descricao: form.descricao.trim() || undefined,
+        descricao: form.descricao.trim() || null, // null limpa a descrição no banco
         categoria_id: form.categoria_id,
         preco,
         disponivel: form.disponivel,
+        destaque: form.destaque,
         ...(imagem_url && { imagem_url }),
       });
 
@@ -155,6 +163,21 @@ const EditProduto: React.FC = () => {
     );
   }
 
+  if (falhaCarregar) {
+    return (
+      <RestaurantLayout>
+        <div className="editprod">
+          <p className="editprod__erro">{erro}</p>
+          <div className="editprod__acoes">
+            <button className="editprod__btn-cancelar" onClick={() => navigate('/restaurante/produtos')}>
+              Voltar
+            </button>
+          </div>
+        </div>
+      </RestaurantLayout>
+    );
+  }
+
   return (
     <RestaurantLayout>
       <div className="editprod">
@@ -171,15 +194,18 @@ const EditProduto: React.FC = () => {
         <div className="editprod__card">
 
           {/* Nome */}
-          <div className="editprod__linha-nome">
-            <span className="editprod__label-inline">Nome do Produto</span>
-            <input
-              className="editprod__input-inline"
-              type="text"
-              maxLength={150}
-              value={form.nome}
-              onChange={(e) => atualizarForm({ nome: e.target.value })}
-            />
+          <div className="editprod__campo">
+            <div className="editprod__linha-nome">
+              <span className="editprod__label-inline">Nome do Produto</span>
+              <input
+                className="editprod__input-inline"
+                type="text"
+                maxLength={150}
+                value={form.nome}
+                onChange={(e) => atualizarForm({ nome: e.target.value })}
+              />
+            </div>
+            <ContadorCaracteres valor={form.nome} max={150} />
           </div>
 
           {/* Foto + Descrição + Categoria */}
@@ -218,6 +244,7 @@ const EditProduto: React.FC = () => {
                   value={form.descricao}
                   onChange={(e) => atualizarForm({ descricao: e.target.value })}
                 />
+                <ContadorCaracteres valor={form.descricao} max={500} />
               </div>
 
               <div className="editprod__campo">
@@ -238,14 +265,17 @@ const EditProduto: React.FC = () => {
           </div>
 
           {/* Preço */}
-          <div className="editprod__linha-nome">
-            <span className="editprod__label-inline">Preço</span>
-            <input
-              className="editprod__input-inline"
-              type="text"
-              value={form.preco}
-              onChange={handlePreco}
-            />
+          <div className="editprod__campo">
+            <div className="editprod__linha-nome">
+              <span className="editprod__label-inline">Preço</span>
+              <input
+                className="editprod__input-inline"
+                type="text"
+                value={form.preco}
+                onChange={handlePreco}
+              />
+            </div>
+            <DicaLimite>Máx. R$ 999.999,99</DicaLimite>
           </div>
 
           {/* Disponível */}
@@ -257,6 +287,20 @@ const EditProduto: React.FC = () => {
                 className="editprod__toggle-input"
                 checked={form.disponivel}
                 onChange={(e) => atualizarForm({ disponivel: e.target.checked })}
+              />
+              <span className="editprod__toggle-slider" />
+            </label>
+          </div>
+
+          {/* Destaque */}
+          <div className="editprod__campo">
+            <p className="editprod__label">Destaque no cardápio?</p>
+            <label className="editprod__toggle-label">
+              <input
+                type="checkbox"
+                className="editprod__toggle-input"
+                checked={form.destaque}
+                onChange={(e) => atualizarForm({ destaque: e.target.checked })}
               />
               <span className="editprod__toggle-slider" />
             </label>

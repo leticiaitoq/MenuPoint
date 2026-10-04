@@ -37,7 +37,8 @@ export class CategoriaRepository extends BaseRepository <
       include: {
         produtos: {
           where: { disponivel: true },
-          orderBy: { ordem: 'asc' },
+          // destaques primeiro; dentro de cada grupo vale a ordem definida pelo restaurante
+          orderBy: [{ destaque: 'desc' }, { ordem: 'asc' }],
           include: {
             grupos_adicionais: {
               include: {

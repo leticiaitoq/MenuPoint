@@ -14,6 +14,7 @@ import { CSS } from '@dnd-kit/utilities';
 import CategoriaService, { Categoria } from '../../../../services/categoria.service';
 import ProdutoService from '../../../../services/produto.service';
 import SeletorCategoria from '../../../../shared/components/SeletorCategoria/SeletorCategoria';
+import ContadorCaracteres from '../../../../shared/components/ContadorCaracteres/ContadorCaracteres';
 import {
   SELECAO_VAZIA, SelecaoCategoria,
   chaveDeNome, resolverSelecao, selecaoDeNome, validarSelecao,
@@ -412,6 +413,7 @@ const GestaoCate: React.FC = () => {
                 <div className="cate__campo">
                   <label className="cate__label">Descrição <span className="cate__opcional">(opcional)</span></label>
                   <input className="cate__input" maxLength={255} value={form.descricao} onChange={(e) => atualizarForm({ descricao: e.target.value })} />
+                  <ContadorCaracteres valor={form.descricao} max={255} />
                 </div>
 
 
@@ -473,6 +475,7 @@ const GestaoCate: React.FC = () => {
                 <div className="cate__campo">
                   <label className="cate__label">Descrição</label>
                   <input className="cate__input" maxLength={255} value={form.descricao} onChange={(e) => atualizarForm({ descricao: e.target.value })} />
+                  <ContadorCaracteres valor={form.descricao} max={255} />
                 </div>
 
 

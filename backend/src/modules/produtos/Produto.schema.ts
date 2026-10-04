@@ -126,7 +126,8 @@ export type CriarProdutoDTO = z.infer<typeof criarProdutoSchema>
 export const atualizarProdutoSchema = z.object({
   categoria_id: z.string().uuid().optional(),
   nome: z.string().min(1).max(150).optional(),
-  descricao: z.string().max(500, 'Descrição deve ter no máximo 500 caracteres').optional(),
+  // null limpa a descrição (antes, apagar o texto no editar não surtia efeito)
+  descricao: z.string().max(500, 'Descrição deve ter no máximo 500 caracteres').nullable().optional(),
   preco: z.number().positive().max(999999.99, 'Preço máximo é R$ 999.999,99').optional(),
   preco_promocional: z.number().positive().optional().nullable(),
   imagem_url: z.string().url().optional().nullable(),

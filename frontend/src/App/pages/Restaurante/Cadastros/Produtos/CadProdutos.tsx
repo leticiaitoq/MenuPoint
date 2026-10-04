@@ -5,6 +5,7 @@ import RestaurantLayout from '../../../../shared/components/layout/Restaurantela
 import CategoriaService, { Categoria } from '../../../../services/categoria.service';
 import ProdutoService from '../../../../services/produto.service';
 import SeletorCategoria from '../../../../shared/components/SeletorCategoria/SeletorCategoria';
+import ContadorCaracteres, { DicaLimite } from '../../../../shared/components/ContadorCaracteres/ContadorCaracteres';
 import {
   SELECAO_VAZIA, SelecaoCategoria, resolverSelecao, validarSelecao,
 } from '../../../../shared/constants/categoriasPadrao';
@@ -198,6 +199,7 @@ const CadProdutos: React.FC = () => {
                 value={form.nome}
                 onChange={(e) => atualizarForm({ nome: e.target.value })}
               />
+              <ContadorCaracteres valor={form.nome} max={150} />
             </div>
 
             {/* Descrição */}
@@ -210,7 +212,7 @@ const CadProdutos: React.FC = () => {
                 value={form.descricao}
                 onChange={(e) => atualizarForm({ descricao: e.target.value })}
               />
-              <small className="cadprod__contador">{form.descricao.length}/500</small>
+              <ContadorCaracteres valor={form.descricao} max={500} />
             </div>
 
             {/* Categoria + Preço */}
@@ -239,8 +241,9 @@ const CadProdutos: React.FC = () => {
                   type="text"
                   placeholder="R$ 0,00"
                   value={form.preco}
-                  onChange= {handlePreco}
+                  onChange={handlePreco}
                 />
+                <DicaLimite>Máx. R$ 999.999,99</DicaLimite>
               </div>
             </div>
 
