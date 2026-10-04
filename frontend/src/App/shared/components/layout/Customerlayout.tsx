@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Footer from './Footer/Footer';
 import CustomerSidebar, { CustomerSidebarItem } from './Sidebar/CustomerSidebar';
 import { useClienteAuth } from '../../contexts/ClienteAuthContext';
+import { useConvidado } from '../../contexts/Convidadocontext';
 import './Customerlayout.css';
 
 // ── Tipos ──────────────────────────────────────────────
@@ -32,8 +33,8 @@ const LOGGED_ITEMS: CustomerSidebarItem[] = ['home', 'orders', 'tables', 'menu']
  * O item 'menu' deve apontar para /menulocal, não para /menu (delivery).
  */
 const GUEST_ROUTE_OVERRIDES: Partial<Record<CustomerSidebarItem, string>> = {
-  home: '/menulocal' ,
-  orders: '/historicolocal'
+  home: '/menulocal',
+  orders: '/historicolocal',
 };
 
 // ── Componente ─────────────────────────────────────────
@@ -44,20 +45,25 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
   onCartClick,
   onOrdersClick,
 }) => {
+  // ── cliente logado (nome na navbar)
+  const { cliente } = useClienteAuth();
 
-// ── cliente logado (nome na navbar)
-const { cliente } = useClienteAuth();
+  // Nome digitado na WelcomePage (só existe no fluxo do cliente local)
+  const { nome: nomeConvidado } = useConvidado();
 
-// ── navegação
-const navigate = useNavigate();
-const handleClick = () => navigate(mode === 'guest' ? '/perfillocal' : '/perfil');
-   
+  // ── navegação
+  const navigate = useNavigate();
+  const handleClick = () => navigate(mode === 'guest' ? '/perfillocal' : '/perfil');
+
   // Sempre mostra o perfil na navbar, independente do modo
-const rightIcon = (
-  <button className="btn-imagem" onClick={handleClick}>
-    <img src="/icons/customer-avatar.png" alt={cliente?.nome ? `Perfil de ${cliente.nome}` : 'Perfil do cliente'} />
-  </button>
-);
+  const rightIcon = (
+    <button className="btn-imagem" onClick={handleClick}>
+      <img
+        src="/icons/customer-avatar.png"
+        alt={cliente?.nome ? `Perfil de ${cliente.nome}` : 'Perfil do cliente'}
+      />
+    </button>
+  );
 
   const leftIcon = (
     <img src="/icons/restaurant-logo.png" alt="Logo do restaurante" />
@@ -65,12 +71,15 @@ const rightIcon = (
 
   // Logado: mostra o primeiro nome do cliente. Sem nome (não deveria ocorrer) cai no texto antigo.
   const primeiroNome = cliente?.nome?.trim().split(/\s+/)[0] ?? '';
+
+  // Guest: mostra o nome digitado na WelcomePage (cai em 'MenuPoint' se ainda não houver)
   const subtitle =
     mode === 'guest'
-      ? 'MenuPoint'
+      ? (nomeConvidado || 'MenuPoint')
       : mode === 'logged' && primeiroNome
         ? `Olá, ${primeiroNome}`
         : '(Cliente)';
+
   const showSidebar = mode !== 'welcome';
   const sidebarItems = mode === 'guest' ? GUEST_ITEMS : LOGGED_ITEMS;
 

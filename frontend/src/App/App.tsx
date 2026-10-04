@@ -4,17 +4,20 @@ import { ClienteAuthProvider } from './shared/contexts/ClienteAuthContext';
 import { CarrinhoProvider } from './shared/contexts/CarrinhoContext';
 import { RestauranteClienteProvider } from './shared/contexts/RestauranteClienteContext';
 import { EstabelecimentoProvider } from './shared/contexts/Estabelecimentocontext';
+import { ConvidadoProvider } from './shared/contexts/Convidadocontext';
 import AppRoutes from './routes/Index';
 
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <ClienteAuthProvider>
+       <ClienteAuthProvider>
         <RestauranteClienteProvider>
           <EstabelecimentoProvider>
-            <CarrinhoProvider>
-              <AppRoutes />
-            </CarrinhoProvider>
+            <ConvidadoProvider>
+              <CarrinhoProvider>
+                <AppRoutes />
+              </CarrinhoProvider>
+            </ConvidadoProvider>
           </EstabelecimentoProvider>
         </RestauranteClienteProvider>
       </ClienteAuthProvider>

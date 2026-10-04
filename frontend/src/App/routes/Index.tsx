@@ -1,5 +1,6 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ROTAS_CAIXA } from "./caixaRotas";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import AssinaturaSucesso from "../pages/assinatura/AssinaturaSucesso";
@@ -100,8 +101,11 @@ const AppRoutes: React.FC = () => {
           <Route path="/restaurante/relatorios" element={<Relatorios />} />
           <Route path="/restaurante/config" element={<Config />} />
           <Route path="/restaurante/caixa" element={<GerenPagamentos />} />
-          <Route path="/restaurante/caixa/pagar" element={<PagarMesa />} />
-          <Route path="/restaurante/caixa/pagarParcial" element={<PagarParcial />} />
+          {/* Telas por mesa: o :id diz qual mesa está aberta. Sem id → volta para o caixa. */}
+          <Route path="/restaurante/caixa/pagar" element={<Navigate to={ROTAS_CAIXA.lista} replace />} />
+          <Route path={ROTAS_CAIXA.pagarMesaPadrao} element={<PagarMesa />} />
+          <Route path="/restaurante/caixa/pagarParcial" element={<Navigate to={ROTAS_CAIXA.lista} replace />} />
+          <Route path={ROTAS_CAIXA.pagarParcialPadrao} element={<PagarParcial />} />
           <Route path="/restaurante/despesas" element={<Despesas />} />
           <Route path="/restaurante/despesas/cadastrodespe" element={<CadDespesa />} />
         </Route>

@@ -11,7 +11,7 @@ import './MenuCliente.css';
 interface Categoria {
   id: string;
   label: string;
-  icon: string;
+  icon: string; // caminho de imagem (começa com "/") ou emoji vindo do banco
 }
 
 interface Produto {
@@ -25,7 +25,15 @@ interface Produto {
   ordem: number;
 }
 
-const CATEGORIA_TODOS: Categoria = { id: 'todos', label: 'Todos', icon: '🍽️' };
+// "Todos" usa o PNG novo; as demais categorias vêm da API (ícone = emoji)
+const CATEGORIA_TODOS: Categoria = {
+  id: 'todos',
+  label: 'Todos',
+  icon: '/icons/icons-categorias/icons-categorias/todos.png',
+};
+
+// Ícone pode ser imagem (caminho/URL) ou emoji
+const ehImagem = (icon: string) => icon.startsWith('/') || icon.startsWith('http');
 
 // Mesma hierarquia do painel do restaurante: destaques primeiro; depois a ordem
 // definida por ele; empate (ex.: produtos novos, todos com ordem 0) cai na ordem das categorias.
@@ -131,16 +139,16 @@ const MenuCliente: React.FC = () => {
 
   const totalCarrinho = itensCarrinho.reduce((acc, i) => acc + i.quantidade, 0);
 
-  // ── Handlers 
+  // ── Handlers
   const abrirPersonalizacao = (produto: Produto) => {
-  navigate('/personaliza', { state: { produto, modoCliente: 'logged' } });
+    navigate('/personaliza', { state: { produto, modoCliente: 'logged' } });
   };
 
   const escolherTipo = (rota: string) => {
     navigate(rota);
   };
 
-  // ── Render 
+  // ── Render
   return (
     <CustomerLayout
       mode="logged"
@@ -151,7 +159,7 @@ const MenuCliente: React.FC = () => {
 
         {/* Busca */}
         <div className="menu__busca-wrap">
-          <span className="menu__busca-icon">🔍</span>
+          <img src="/icons/lupa.png" alt="" className="menu__busca-icon" />
           <input
             className="menu__busca"
             type="text"
@@ -171,7 +179,11 @@ const MenuCliente: React.FC = () => {
               aria-label={cat.label}
               title={cat.label}
             >
-              <span className="menu__cat-icon">{cat.icon}</span>
+              {ehImagem(cat.icon) ? (
+                <img src={cat.icon} alt="" className="menu__cat-icon" />
+              ) : (
+                <span className="menu__cat-icon" aria-hidden="true">{cat.icon}</span>
+              )}
             </button>
           ))}
         </div>
@@ -218,7 +230,7 @@ const MenuCliente: React.FC = () => {
         onClick={() => setCarrinhoAberto(true)}
         aria-label="Abrir carrinho"
       >
-        🛒
+        <img src="/icons/carrinho.png" alt="" className="menu__carrinho-fab-icon" />
         {totalCarrinho > 0 && (
           <span className="menu__carrinho-fab-badge">{totalCarrinho}</span>
         )}
