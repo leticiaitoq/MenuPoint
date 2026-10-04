@@ -21,11 +21,8 @@ export const criarCategoriaSchema = z.object({
     .url('URL da imagem inválida')
     .optional(),
 
-  ordem: z
-    .number()
-    .int('Ordem deve ser um número inteiro')
-    .min(0, 'Ordem não pode ser negativa')
-    .default(0),
+  // A ordem NÃO vem do cliente: é calculada automaticamente pelo service
+  // (nova categoria vai para o fim da lista). Para mudar depois, use PATCH /reordenar.
 
   ativo: z.boolean().default(true),
 
@@ -35,7 +32,8 @@ export const criarCategoriaSchema = z.object({
   estabelecimento_id: z.string().uuid("ID do estabelecimento inválido").optional(),
 })
 
-export type CriarCategoriaDTO = z.infer<typeof criarCategoriaSchema>
+// `ordem` é preenchida pelo service (automática), não pelo cliente
+export type CriarCategoriaDTO = z.infer<typeof criarCategoriaSchema> & { ordem?: number }
 
 export const atualizarCategoriaSchema = z.object({
   nome: z
@@ -49,9 +47,11 @@ export const atualizarCategoriaSchema = z.object({
     .max(255)
     .optional(),
 
+  // null limpa o ícone (ex.: trocou uma categoria pronta por uma personalizada)
   icone: z
     .string()
     .max(10)
+    .nullable()
     .optional(),
 
   imagem_url: z
@@ -66,6 +66,9 @@ export const atualizarCategoriaSchema = z.object({
     .optional(),
 
   ativo: z.boolean().optional(),
+
+  // Só vale ao reativar (ativo: true): também torna os produtos da categoria disponíveis
+  reativar_produtos: z.boolean().optional(),
 })
 
 export type AtualizarCategoriaDTO = z.infer<typeof atualizarCategoriaSchema>

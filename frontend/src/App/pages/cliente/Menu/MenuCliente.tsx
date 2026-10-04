@@ -34,45 +34,78 @@ const MenuCliente: React.FC = () => {
   const [produtos, setProdutos]     = useState<Produto[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erroMenu, setErroMenu]     = useState('');
+  const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
 
-  // Cardápio real do restaurante escolhido pelo link /r/:slug
+  // Cardápio real do restaurante escolhido pelo link /r/:slug.
+  // Recarrega sozinho (sem piscar a tela) quando o restaurante muda algo em
+  // categorias ou produtos: a cada 15s, ao voltar para a aba e ao recuperar a conexão.
   useEffect(() => {
     if (!restaurante) { setCarregando(false); return; }
     let cancelado = false;
-    setCarregando(true);
-    setErroMenu('');
+    let ultimaAssinatura = '';
 
-    RestaurantePublicoService.cardapio(restaurante.id)
-      .then((lista) => {
-        if (cancelado) return;
-        const ativas = lista.filter((c) => c.ativo !== false);
-        setCategorias([
-          CATEGORIA_TODOS,
-          ...ativas.map((c) => ({ id: c.id, label: c.nome, icon: c.icone ?? '🍽️' })),
-        ]);
-        setProdutos(
-          ativas.flatMap((c) =>
-            (c.produtos ?? [])
-              .filter((p) => p.disponivel)
-              .map((p) => ({
-                id: p.id,
-                categoriaId: c.id,
-                nome: p.nome,
-                descricao: p.descricao ?? '',
-                preco: Number(p.preco_promocional ?? p.preco),
-                imagem: p.imagem_url ?? '/icons/restaurant-logo.png',
-              }))
-          )
-        );
-      })
-      .catch(() => { if (!cancelado) setErroMenu('Não foi possível carregar o cardápio.'); })
-      .finally(() => { if (!cancelado) setCarregando(false); });
+    const carregar = (silencioso: boolean) => {
+      if (!silencioso) { setCarregando(true); setErroMenu(''); }
 
-    return () => { cancelado = true; };
+      return RestaurantePublicoService.cardapio(restaurante.id)
+        .then((lista) => {
+          if (cancelado) return;
+          // Nada mudou desde a última leitura: não re-renderiza
+          const assinatura = JSON.stringify(lista);
+          if (silencioso && assinatura === ultimaAssinatura) return;
+          ultimaAssinatura = assinatura;
+
+          const ativas = lista.filter((c) => c.ativo !== false);
+          const novasCategorias: Categoria[] = [
+            CATEGORIA_TODOS,
+            ...ativas.map((c) => ({ id: c.id, label: c.nome, icon: c.icone ?? '🍽️' })),
+          ];
+          setCategorias(novasCategorias);
+          // Se a categoria selecionada foi desativada/removida, volta para "Todos"
+          setCategoriaAtiva((atual) =>
+            novasCategorias.some((c) => c.id === atual) ? atual : 'todos'
+          );
+          setProdutos(
+            ativas.flatMap((c) =>
+              (c.produtos ?? [])
+                .filter((p) => p.disponivel)
+                .map((p) => ({
+                  id: p.id,
+                  categoriaId: c.id,
+                  nome: p.nome,
+                  descricao: p.descricao ?? '',
+                  preco: Number(p.preco_promocional ?? p.preco),
+                  imagem: p.imagem_url ?? '/icons/restaurant-logo.png',
+                }))
+            )
+          );
+          setErroMenu('');
+        })
+        .catch(() => {
+          // Em recarga silenciosa mantém o cardápio atual; só avisa no carregamento inicial
+          if (!cancelado && !silencioso) setErroMenu('Não foi possível carregar o cardápio.');
+        })
+        .finally(() => { if (!cancelado && !silencioso) setCarregando(false); });
+    };
+
+    carregar(false);
+
+    const recarregar = () => { if (document.visibilityState === 'visible') carregar(true); };
+    const intervalo = window.setInterval(recarregar, 15000);
+    document.addEventListener('visibilitychange', recarregar);
+    window.addEventListener('focus', recarregar);
+    window.addEventListener('online', recarregar);
+
+    return () => {
+      cancelado = true;
+      window.clearInterval(intervalo);
+      document.removeEventListener('visibilitychange', recarregar);
+      window.removeEventListener('focus', recarregar);
+      window.removeEventListener('online', recarregar);
+    };
   }, [restaurante]);
 
   const [busca, setBusca]                     = useState('');
-  const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
   const { itens: itensCarrinho, removerItem } = useCarrinho();
   const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
   const [modalTipoAberto, setModalTipoAberto] = useState(false);

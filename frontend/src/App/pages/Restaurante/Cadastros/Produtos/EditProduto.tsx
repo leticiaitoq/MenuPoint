@@ -102,7 +102,8 @@ const EditProduto: React.FC = () => {
   };
 
   const handlePreco = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits   = e.target.value.replace(/\D/g, '');
+    // Máx. 8 dígitos (até R$ 999.999,99)
+    const digits   = e.target.value.replace(/\D/g, '').slice(0, 8);
     const valor    = (Number(digits) / 100).toFixed(2);
     const formatado = `R$ ${valor.replace('.', ',')}`;
     atualizarForm({ preco: formatado });
@@ -175,6 +176,7 @@ const EditProduto: React.FC = () => {
             <input
               className="editprod__input-inline"
               type="text"
+              maxLength={150}
               value={form.nome}
               onChange={(e) => atualizarForm({ nome: e.target.value })}
             />
@@ -212,6 +214,7 @@ const EditProduto: React.FC = () => {
                 <input
                   className="editprod__input"
                   type="text"
+                  maxLength={500}
                   value={form.descricao}
                   onChange={(e) => atualizarForm({ descricao: e.target.value })}
                 />

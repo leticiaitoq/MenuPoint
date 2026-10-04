@@ -386,6 +386,7 @@ model Cliente {
   refresh_tokens     RefreshToken[]
   tokens_recuperacao TokenRecuperacaoSenhaCliente[]
   tokens_confirmacao TokenConfirmacaoEmailCliente[]
+  tokens_alteracao_email TokenAlteracaoEmailCliente[]
 
   @@map("clientes")
 }
@@ -400,6 +401,20 @@ model TokenConfirmacaoEmailCliente {
   criado_em  DateTime @default(now()) @db.Timestamptz
 
   @@map("tokens_confirmacao_email_cliente")
+}
+
+// Pedido de troca de e-mail: guarda o e-mail NOVO até o cliente confirmar o código enviado a ele
+model TokenAlteracaoEmailCliente {
+  id         String   @id @default(uuid()) @db.Uuid
+  cliente_id String   @db.Uuid
+  cliente    Cliente  @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
+  novo_email String   @db.VarChar(150)
+  token      String   @unique @db.VarChar(64)
+  expira_em  DateTime @db.Timestamptz
+  usado      Boolean  @default(false)
+  criado_em  DateTime @default(now()) @db.Timestamptz
+
+  @@map("tokens_alteracao_email_cliente")
 }
 
 model TokenRecuperacaoSenhaCliente {

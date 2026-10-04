@@ -93,3 +93,19 @@ Content-Type: application/json
 ### 9) Token de cliente numa rota do restaurante → deve dar 403
 GET http://localhost:3333/api/v1/pedidos
 Authorization: Bearer {{token}}
+
+### 4) Alterar e-mail (logado) — manda o código para o NOVO e-mail
+POST {{host}}/me/email/solicitar
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "novo_email": "maria.nova@email.com", "senha": "Senha1234" }
+
+### 5) Confirmar o novo e-mail (devolve sessão nova)
+POST {{host}}/me/email/confirmar
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "codigo": "000000" }
+
+###

@@ -18,9 +18,12 @@ import {
   ClientePerfilDTO,
   AtualizarPerfilClienteDTO,
   AlterarSenhaClienteDTO,
+  SolicitarAlteracaoEmailClienteDTO,
+  ConfirmarAlteracaoEmailClienteDTO,
 } from './Cliente.schema'
 import {
   templateConfirmacaoEmail,
+  templateEmailAlterado,
   templateRecuperacaoSenha,
   templateSenhaRedefinida,
 } from '@shared/emails/templates'
@@ -286,6 +289,71 @@ export class ClienteService {
   async atualizarPerfil(id: string, data: AtualizarPerfilClienteDTO): Promise<ClientePerfilDTO> {
     await this.buscarAtivo(id)
     return this.perfil(await this.repository.atualizarPerfil(id, data))
+  }
+
+  // ── ALTERAR E-MAIL (logado) ────────────────────────────────────────────────
+  // 1) solicitar: confere a senha e manda um código para o NOVO e-mail (o atual segue valendo)
+  // 2) confirmar: com o código certo o e-mail muda e uma sessão nova é devolvida
+  // Erros de senha/código são 400 (não 401) de propósito: o front trata 401 como "sessão expirada".
+  async solicitarAlteracaoEmail(
+    id: string,
+    data: SolicitarAlteracaoEmailClienteDTO
+  ): Promise<{ email: string }> {
+    const cliente = await this.buscarAtivo(id)
+
+    const senhaCorreta = cliente.senha_hash
+      ? await bcrypt.compare(data.senha, cliente.senha_hash)
+      : false
+    if (!senhaCorreta) throw new AppError('Senha incorreta', 400)
+
+    if (data.novo_email === cliente.email) {
+      throw new AppError('Este já é o seu e-mail atual', 400)
+    }
+
+    if (await this.repository.findByEmail(data.novo_email)) {
+      throw new AppError('Este e-mail já está em uso', 409)
+    }
+
+    const codigo = await this.repository.criarTokenAlteracaoEmail(
+      id,
+      data.novo_email,
+      EXPIRACAO_CODIGO_MINUTOS
+    )
+
+    this.enviarEmail(
+      data.novo_email,
+      '✅ Confirme seu novo e-mail — Menupoint',
+      templateConfirmacaoEmail(cliente.nome, codigo, EXPIRACAO_CODIGO_MINUTOS)
+    )
+
+    return { email: data.novo_email }
+  }
+
+  async confirmarAlteracaoEmail(
+    id: string,
+    data: ConfirmarAlteracaoEmailClienteDTO,
+    jwtSign: JwtSign
+  ): Promise<ClienteSessaoDTO> {
+    const cliente = await this.buscarAtivo(id)
+
+    const registro = await this.repository.findTokenAlteracaoEmail(id, data.codigo)
+    if (!registro) throw new AppError('Código inválido ou expirado.', 400)
+
+    const emailAntigo = cliente.email as string
+    const atualizado = await this.repository.aplicarAlteracaoEmail(
+      registro.id,
+      id,
+      registro.novo_email
+    )
+
+    // Aviso para o e-mail ANTIGO: se não foi o dono quem trocou, ele fica sabendo
+    this.enviarEmail(
+      emailAntigo,
+      '⚠️ Seu e-mail de acesso foi alterado — Menupoint',
+      templateEmailAlterado(cliente.nome, registro.novo_email)
+    )
+
+    return this.abrirSessao(atualizado, jwtSign)
   }
 
   // ── ALTERAR SENHA (logado) ─────────────────────────────────────────────────

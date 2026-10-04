@@ -13,21 +13,28 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import CategoriaService, { Categoria } from '../../../../services/categoria.service';
 import ProdutoService from '../../../../services/produto.service';
+import SeletorCategoria from '../../../../shared/components/SeletorCategoria/SeletorCategoria';
+import {
+  SELECAO_VAZIA, SelecaoCategoria,
+  chaveDeNome, resolverSelecao, selecaoDeNome, validarSelecao,
+} from '../../../../shared/constants/categoriasPadrao';
 import './GestaoCate.css';
 
 // ── Tipos
 interface CategoriaComContagem extends Categoria {
   produtos: number;
+  /** Produtos da categoria que estão indisponíveis (candidatos a reativar junto) */
+  produtosIndisponiveis: number;
 }
 
 interface FormCategoria {
-  nome: string;
+  /** Categoria pronta escolhida na lista, ou "Outra" + texto digitado */
+  nome: SelecaoCategoria;
   descricao: string;
-  ordem: number;
   ativo: boolean;
 }
 
-const FORM_VAZIO: FormCategoria = { nome: '', descricao: '', ordem: 1, ativo: true };
+const FORM_VAZIO: FormCategoria = { nome: SELECAO_VAZIA, descricao: '', ativo: true };
 
 const extrairErro = (err: any, padrao: string): string =>
   err?.response?.data?.message ?? padrao;
@@ -55,7 +62,10 @@ const LinhaCategoria: React.FC<LinhaProps> = ({ categoria, onEditar, onDeletar }
         <MdDragIndicator className="cate__drag-icon" {...attributes} {...listeners} />
         {categoria.ordem}
       </td>
-      <td className="cate__td-nome">{categoria.nome}</td>
+      <td className="cate__td-nome">
+        <span className="cate__icone" aria-hidden="true">{categoria.icone ?? '🍽️'}</span>
+        {categoria.nome}
+      </td>
       <td>{categoria.produtos}</td>
       <td>
         <span className={`cate__badge ${categoria.ativo ? 'cate__badge--ativo' : 'cate__badge--inativo'}`}>
@@ -84,9 +94,22 @@ const GestaoCate: React.FC = () => {
   const [erro, setErro]                       = useState('');
   const [erroModal, setErroModal]             = useState('');
   const [salvando, setSalvando]               = useState(false);
+  // Confirmação de desativação (avisa quando há produtos ligados à categoria)
+  const [confirmacao, setConfirmacao]         = useState<{
+    tipo: 'desativar' | 'reativar';
+    categoria: CategoriaComContagem;
+    /** Para 'reativar', recebe true quando o usuário quer reativar os produtos junto */
+    aoConfirmar: (reativarProdutos?: boolean) => Promise<void>;
+  } | null>(null);
+  const [confirmando, setConfirmando]         = useState(false);
 
   const atualizarForm = (campo: Partial<FormCategoria>) =>
     setForm((prev) => ({ ...prev, ...campo }));
+
+  // Nomes que o restaurante já tem: as prontas repetidas ficam desabilitadas na lista
+  const nomesJaUsados = categorias
+    .filter((c) => c.id !== modalEditar?.id)
+    .map((c) => c.nome);
 
   // ── Carrega categorias reais + conta produtos de cada uma
   const carregar = async () => {
@@ -104,6 +127,7 @@ const GestaoCate: React.FC = () => {
         .map((c) => ({
           ...c,
           produtos: listaProdutos.filter((p) => p.categoria_id === c.id).length,
+          produtosIndisponiveis: listaProdutos.filter((p) => p.categoria_id === c.id && !p.disponivel).length,
         }));
 
       setCategorias(comContagem);
@@ -118,7 +142,7 @@ const GestaoCate: React.FC = () => {
 
   // ── Abre modal novo
   const abrirModalNovo = () => {
-    setForm({ ...FORM_VAZIO, ordem: categorias.length + 1 });
+    setForm(FORM_VAZIO);
     setErroModal('');
     setModalNovo(true);
   };
@@ -126,9 +150,8 @@ const GestaoCate: React.FC = () => {
   // ── Abre modal editar preenchido
   const abrirModalEditar = (categoria: CategoriaComContagem) => {
     setForm({
-      nome:      categoria.nome,
+      nome:      selecaoDeNome(categoria.nome),
       descricao: categoria.descricao ?? '',
-      ordem:     categoria.ordem,
       ativo:     categoria.ativo,
     });
     setErroModal('');
@@ -137,15 +160,17 @@ const GestaoCate: React.FC = () => {
 
   // ── Salva nova categoria
   const salvarNova = async () => {
-    if (!form.nome.trim()) { setErroModal('Informe o nome da categoria.'); return; }
+    const erroNome = validarSelecao(form.nome, nomesJaUsados);
+    if (erroNome) { setErroModal(erroNome); return; }
+    const { nome, icone } = resolverSelecao(form.nome);
 
     setErroModal('');
     setSalvando(true);
     try {
       await CategoriaService.criar({
-        nome: form.nome.trim(),
+        nome,
+        ...(icone ? { icone } : {}),
         descricao: form.descricao.trim() || undefined,
-        ordem: form.ordem,
         ativo: form.ativo,
       });
       setModalNovo(false);
@@ -160,16 +185,39 @@ const GestaoCate: React.FC = () => {
   // ── Salva edição
   const salvarEdicao = async () => {
     if (!modalEditar) return;
-    if (!form.nome.trim()) { setErroModal('Informe o nome da categoria.'); return; }
+    // Ocultar uma categoria ativa desativa também os produtos: pede confirmação
+    if (modalEditar.ativo && !form.ativo) {
+      pedirConfirmacaoDesativar(modalEditar, executarSalvarEdicao);
+      return;
+    }
+    // Reativar uma categoria com produtos indisponíveis: pergunta se reativa os produtos junto
+    if (!modalEditar.ativo && form.ativo && modalEditar.produtosIndisponiveis > 0) {
+      pedirConfirmacaoReativar(modalEditar, executarSalvarEdicao);
+      return;
+    }
+    await executarSalvarEdicao();
+  };
+
+  const executarSalvarEdicao = async (reativarProdutos = false) => {
+    if (!modalEditar) return;
+    const erroNome = validarSelecao(form.nome, nomesJaUsados);
+    if (erroNome) { setErroModal(erroNome); return; }
+    const { nome, icone } = resolverSelecao(form.nome);
+
+    // Categoria personalizada com o mesmo nome de antes: não mexe no ícone que ela já tem.
+    // Trocou para outro nome personalizado: limpa o ícone da categoria pronta anterior.
+    const mesmoNome = chaveDeNome(nome) === chaveDeNome(modalEditar.nome);
+    const iconeParaSalvar = icone ?? (mesmoNome ? undefined : null);
 
     setErroModal('');
     setSalvando(true);
     try {
       await CategoriaService.atualizar(modalEditar.id, {
-        nome: form.nome.trim(),
+        nome,
+        ...(iconeParaSalvar !== undefined ? { icone: iconeParaSalvar } : {}),
         descricao: form.descricao.trim() || undefined,
-        ordem: form.ordem,
         ativo: form.ativo,
+        ...(!modalEditar.ativo && form.ativo ? { reativar_produtos: reativarProdutos } : {}),
       });
       setModalEditar(null);
       await carregar();
@@ -183,10 +231,27 @@ const GestaoCate: React.FC = () => {
   // ── Desativa/reativa categoria imediatamente (botão no modal editar)
   const alternarAtivaModal = async () => {
     if (!modalEditar) return;
+    if (form.ativo) {
+      pedirConfirmacaoDesativar(modalEditar, executarAlternarAtiva);
+      return;
+    }
+    if (modalEditar.produtosIndisponiveis > 0) {
+      pedirConfirmacaoReativar(modalEditar, executarAlternarAtiva);
+      return;
+    }
+    await executarAlternarAtiva();
+  };
+
+  const executarAlternarAtiva = async (reativarProdutos = false) => {
+    if (!modalEditar) return;
     setErroModal('');
     setSalvando(true);
     try {
-      await CategoriaService.atualizar(modalEditar.id, { ativo: !form.ativo });
+      if (form.ativo) {
+        await CategoriaService.atualizar(modalEditar.id, { ativo: false });
+      } else {
+        await CategoriaService.reativar(modalEditar.id, reativarProdutos);
+      }
       setModalEditar(null);
       await carregar();
     } catch (err: any) {
@@ -196,19 +261,43 @@ const GestaoCate: React.FC = () => {
     }
   };
 
-  // ── Deleta (desativa) categoria a partir da linha da tabela
-  const deletarCategoria = async (categoria: CategoriaComContagem) => {
-    if (!window.confirm(`Ocultar a categoria "${categoria.nome}"? Os produtos dela deixarão de aparecer no cardápio.`)) {
-      return;
+  // ── Abre a confirmação de desativação (avisa se há produtos ligados)
+  const pedirConfirmacaoDesativar = (
+    categoria: CategoriaComContagem,
+    aoConfirmar: () => Promise<void>,
+  ) => setConfirmacao({ tipo: 'desativar', categoria, aoConfirmar });
+
+  // ── Abre a pergunta "reativar também os produtos?"
+  const pedirConfirmacaoReativar = (
+    categoria: CategoriaComContagem,
+    aoConfirmar: (reativarProdutos?: boolean) => Promise<void>,
+  ) => setConfirmacao({ tipo: 'reativar', categoria, aoConfirmar });
+
+  const confirmarDesativacao = async (reativarProdutos?: boolean) => {
+    if (!confirmacao) return;
+    setConfirmando(true);
+    try {
+      await confirmacao.aoConfirmar(reativarProdutos);
+    } finally {
+      setConfirmando(false);
+      setConfirmacao(null);
     }
+  };
+
+  // ── Deleta (desativa) categoria a partir da linha da tabela
+  // O backend desativa também os produtos da categoria.
+  const executarDeletar = async (categoria: CategoriaComContagem) => {
     setErro('');
     try {
       await CategoriaService.deletar(categoria.id);
       await carregar();
     } catch (err: any) {
-      setErro(extrairErro(err, 'Não foi possível ocultar a categoria.'));
+      setErro(extrairErro(err, 'Não foi possível desativar a categoria.'));
     }
   };
+
+  const deletarCategoria = (categoria: CategoriaComContagem) =>
+    pedirConfirmacaoDesativar(categoria, () => executarDeletar(categoria));
 
   // ── Drag and drop — grava a nova ordem no backend
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -289,7 +378,7 @@ const GestaoCate: React.FC = () => {
               </DndContext>
               </div>
 
-              <p className="cate__dica">↺ Arraste para mudar a ordem das categorias</p>
+              <p className="cate__dica">↺ Arraste para mudar a ordem das categorias (a nova ordem é salva automaticamente)</p>
             </>
           )}
         </div>
@@ -308,18 +397,23 @@ const GestaoCate: React.FC = () => {
               <div className="cate__modal-corpo">
                 <div className="cate__campo">
                   <label className="cate__label">Nome da categoria</label>
-                  <input className="cate__input" value={form.nome} onChange={(e) => atualizarForm({ nome: e.target.value })} />
+                  <SeletorCategoria
+                    id="cate-nome"
+                    valor={form.nome}
+                    onChange={(nome) => atualizarForm({ nome })}
+                    jaUsadas={nomesJaUsados}
+                    desabilitado={salvando}
+                    selectClassName="cate__input cate__select"
+                    inputClassName="cate__input"
+                  />
+                  <p className="cate__hint">Escolha uma categoria pronta. Não achou a sua? Use "Outra".</p>
                 </div>
 
                 <div className="cate__campo">
                   <label className="cate__label">Descrição <span className="cate__opcional">(opcional)</span></label>
-                  <input className="cate__input" value={form.descricao} onChange={(e) => atualizarForm({ descricao: e.target.value })} />
+                  <input className="cate__input" maxLength={255} value={form.descricao} onChange={(e) => atualizarForm({ descricao: e.target.value })} />
                 </div>
 
-                <div className="cate__campo">
-                  <label className="cate__label">Ordem de exibição</label>
-                  <input className="cate__input cate__input--pequeno" type="number" value={form.ordem} onChange={(e) => atualizarForm({ ordem: Number(e.target.value) })} />
-                </div>
 
                 <div className="cate__campo">
                   <label className="cate__label">Status</label>
@@ -364,18 +458,23 @@ const GestaoCate: React.FC = () => {
               <div className="cate__modal-corpo">
                 <div className="cate__campo">
                   <label className="cate__label">Nome da categoria</label>
-                  <input className="cate__input" value={form.nome} onChange={(e) => atualizarForm({ nome: e.target.value })} />
+                  <SeletorCategoria
+                    id="cate-nome"
+                    valor={form.nome}
+                    onChange={(nome) => atualizarForm({ nome })}
+                    jaUsadas={nomesJaUsados}
+                    desabilitado={salvando}
+                    selectClassName="cate__input cate__select"
+                    inputClassName="cate__input"
+                  />
+                  <p className="cate__hint">Escolha uma categoria pronta. Não achou a sua? Use "Outra".</p>
                 </div>
 
                 <div className="cate__campo">
                   <label className="cate__label">Descrição</label>
-                  <input className="cate__input" value={form.descricao} onChange={(e) => atualizarForm({ descricao: e.target.value })} />
+                  <input className="cate__input" maxLength={255} value={form.descricao} onChange={(e) => atualizarForm({ descricao: e.target.value })} />
                 </div>
 
-                <div className="cate__campo">
-                  <label className="cate__label">Ordem de exibição</label>
-                  <input className="cate__input cate__input--pequeno" type="number" value={form.ordem} onChange={(e) => atualizarForm({ ordem: Number(e.target.value) })} />
-                </div>
 
                 <div className="cate__campo">
                   <label className="cate__label">Status</label>
@@ -405,6 +504,74 @@ const GestaoCate: React.FC = () => {
                   <HiPlus /> {salvando ? 'Salvando...' : 'Salvar'}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Modal de confirmação de desativação ── */}
+        {confirmacao && (
+          <div className="cate__overlay" onClick={() => !confirmando && setConfirmacao(null)}>
+            <div className="cate__modal" role="alertdialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+              <div className="cate__modal-header">
+                <h3>{confirmacao.tipo === 'reativar' ? 'Reativar categoria' : 'Desativar categoria'}</h3>
+                <button className="cate__modal-fechar" onClick={() => setConfirmacao(null)} disabled={confirmando}>
+                  <HiX />
+                </button>
+              </div>
+
+              <div className="cate__modal-corpo">
+                {confirmacao.tipo === 'reativar' ? (
+                  <>
+                    <p className="cate__confirmar-texto">
+                      A categoria <strong>"{confirmacao.categoria.nome}"</strong> possui{' '}
+                      <strong>
+                        {confirmacao.categoria.produtosIndisponiveis}{' '}
+                        {confirmacao.categoria.produtosIndisponiveis === 1 ? 'produto desativado' : 'produtos desativados'}
+                      </strong>.
+                    </p>
+                    <p className="cate__confirmar-texto">
+                      Deseja ativar {confirmacao.categoria.produtosIndisponiveis === 1 ? 'esse produto' : 'esses produtos'} junto com a categoria?
+                    </p>
+                  </>
+                ) : confirmacao.categoria.produtos > 0 ? (
+                  <>
+                    <p className="cate__confirmar-texto">
+                      A categoria <strong>"{confirmacao.categoria.nome}"</strong> possui{' '}
+                      <strong>
+                        {confirmacao.categoria.produtos}{' '}
+                        {confirmacao.categoria.produtos === 1 ? 'produto conectado' : 'produtos conectados'}
+                      </strong>.
+                    </p>
+                    <p className="cate__confirmar-texto">
+                      Se continuar, {confirmacao.categoria.produtos === 1 ? 'esse produto também será desativado' : 'todos eles também serão desativados'} e
+                      deixarão de aparecer no cardápio. Deseja realmente desativar esta categoria?
+                    </p>
+                  </>
+                ) : (
+                  <p className="cate__confirmar-texto">
+                    Deseja realmente desativar a categoria <strong>"{confirmacao.categoria.nome}"</strong>?
+                  </p>
+                )}
+              </div>
+
+              {confirmacao.tipo === 'reativar' ? (
+                <div className="cate__modal-acoes cate__modal-acoes--direita">
+                  <button className="cate__btn-cancelar" onClick={() => setConfirmacao(null)} disabled={confirmando}>Cancelar</button>
+                  <button className="cate__btn-cancelar" onClick={() => confirmarDesativacao(false)} disabled={confirmando}>
+                    Só a categoria
+                  </button>
+                  <button className="cate__btn-salvar" onClick={() => confirmarDesativacao(true)} disabled={confirmando}>
+                    {confirmando ? 'Ativando...' : 'Categoria e produtos'}
+                  </button>
+                </div>
+              ) : (
+                <div className="cate__modal-acoes cate__modal-acoes--direita">
+                  <button className="cate__btn-cancelar" onClick={() => setConfirmacao(null)} disabled={confirmando}>Cancelar</button>
+                  <button className="cate__btn-salvar" onClick={() => confirmarDesativacao()} disabled={confirmando}>
+                    {confirmando ? 'Desativando...' : 'Sim, desativar'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

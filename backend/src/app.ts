@@ -57,6 +57,7 @@ app.register(cors, {
     max: 100,
     timeWindow: '1 minute',
     errorResponseBuilder: () => ({
+      statusCode: 429,
       status: 'error',
       message: 'Muitas requisições. Tente novamente em alguns instantes.',
     }),
@@ -155,6 +156,16 @@ app.register(fastifySwaggerUi, {
     return reply.status(401).send({
       status: 'error',
       message: 'Token inválido ou expirado',
+    })
+  }
+
+  // Erros 4xx que não são nossos (ex.: limite de requisições do rate-limit = 429).
+  // Sem isto caíam no 500 abaixo e a tela mostrava "erro interno" em vez do aviso real.
+  const statusCode = (error as { statusCode?: number }).statusCode
+  if (typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500) {
+    return reply.status(statusCode).send({
+      status: 'error',
+      message: error.message,
     })
   }
 

@@ -118,10 +118,23 @@ const ClienteService = {
     return r.data.cliente
   },
 
-  // Atualiza nome e telefone (e-mail e CPF não mudam por aqui)
+  // Atualiza nome e telefone (CPF não muda; o e-mail tem fluxo próprio, logo abaixo)
   async atualizarPerfil(data: { nome: string; telefone: string }): Promise<ClientePerfil> {
     const r = await apiCliente.put<{ cliente: ClientePerfil }>('auth/cliente/me', data)
     return r.data.cliente
+  },
+
+  // Troca de e-mail, em 2 passos. O e-mail atual continua valendo até o passo 2.
+  // 1) confere a senha e envia um código de 6 dígitos para o NOVO e-mail
+  async solicitarAlteracaoEmail(data: { novo_email: string; senha: string }): Promise<{ email: string }> {
+    const r = await apiCliente.post<{ message: string; email: string }>('auth/cliente/me/email/solicitar', data)
+    return r.data
+  },
+
+  // 2) confirma o código: o e-mail muda e vem uma sessão nova (quem chama passa para `entrar()`)
+  async confirmarAlteracaoEmail(codigo: string): Promise<SessaoCliente> {
+    const r = await apiCliente.post<SessaoCliente>('auth/cliente/me/email/confirmar', { codigo })
+    return r.data
   },
 
   // Exige a senha atual. Devolve uma sessão nova (as outras são encerradas):

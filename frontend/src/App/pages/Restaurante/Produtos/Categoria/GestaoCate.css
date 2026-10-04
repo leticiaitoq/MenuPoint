@@ -413,3 +413,23 @@
     flex-direction: column-reverse;
   }
 }
+
+/* Select da categoria pronta (usa o visual do .cate__input) */
+.cate__select {
+  background-color: #fff;
+  cursor: pointer;
+  width: 100%;
+}
+
+.cate__hint {
+  margin: 0;
+  font-size: 12px;
+  color: #999;
+}
+
+.cate__icone {
+  margin-right: 8px;
+}
+
+/* Modal de confirmação de desativação */
+.cate__confirmar-texto { margin: 0 0 10px; line-height: 1.5; color: #333; font-size: 0.95rem; }

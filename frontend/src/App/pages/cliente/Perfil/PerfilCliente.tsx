@@ -69,6 +69,15 @@ const PerfilCliente: React.FC = () => {
   const [erroSenha, setErroSenha] = useState<string | null>(null);
   const [salvandoSenha, setSalvandoSenha] = useState(false);
 
+  // ── Alterar e-mail (2 passos: senha + novo e-mail → código enviado ao novo e-mail) ──
+  const [alterandoEmail, setAlterandoEmail] = useState(false);
+  const [emailPendente, setEmailPendente] = useState<string | null>(null); // passo 2 ativo
+  const [novoEmail, setNovoEmail] = useState('');
+  const [senhaEmail, setSenhaEmail] = useState('');
+  const [codigoEmail, setCodigoEmail] = useState('');
+  const [erroEmail, setErroEmail] = useState<string | null>(null);
+  const [salvandoEmail, setSalvandoEmail] = useState(false);
+
   const [aviso, setAviso] = useState<string | null>(null);
 
   // Evita setState depois de sair da tela (ex.: logout no meio de uma requisição)
@@ -206,6 +215,71 @@ const PerfilCliente: React.FC = () => {
     }
   };
 
+  // ── Alterar e-mail ──
+  const fecharAlterarEmail = () => {
+    setAlterandoEmail(false);
+    setEmailPendente(null);
+    setNovoEmail('');
+    setSenhaEmail('');
+    setCodigoEmail('');
+    setErroEmail(null);
+  };
+
+  // Passo 1: confere a senha e manda o código para o NOVO e-mail
+  const handleEnviarCodigoEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErroEmail(null);
+
+    const email = novoEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setErroEmail('Informe um e-mail válido.');
+      return;
+    }
+    if (email === perfil?.email.toLowerCase()) {
+      setErroEmail('Este já é o seu e-mail atual.');
+      return;
+    }
+    if (!senhaEmail) {
+      setErroEmail('Informe a sua senha para confirmar.');
+      return;
+    }
+
+    setSalvandoEmail(true);
+    try {
+      const r = await ClienteService.solicitarAlteracaoEmail({ novo_email: email, senha: senhaEmail });
+      setEmailPendente(r.email);
+      setSenhaEmail('');
+    } catch (err: any) {
+      setErroEmail(mensagemDeErro(err, 'Não foi possível enviar o código. Tente novamente.'));
+    } finally {
+      if (montado.current) setSalvandoEmail(false);
+    }
+  };
+
+  // Passo 2: confirma o código; o back troca o e-mail e devolve uma sessão nova
+  const handleConfirmarEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErroEmail(null);
+
+    if (!/^\d{6}$/.test(codigoEmail)) {
+      setErroEmail('Digite os 6 dígitos do código.');
+      return;
+    }
+
+    setSalvandoEmail(true);
+    try {
+      const sessao = await ClienteService.confirmarAlteracaoEmail(codigoEmail);
+      entrar(sessao); // guarda a sessão nova (o e-mail também vai dentro do token)
+      setPerfil((atual) => (atual ? { ...atual, email: sessao.cliente.email, email_verificado: true } : atual));
+      fecharAlterarEmail();
+      mostrarAviso('E-mail alterado com sucesso. Use o novo e-mail para entrar.');
+    } catch (err: any) {
+      setErroEmail(mensagemDeErro(err, 'Não foi possível confirmar o código. Tente novamente.'));
+    } finally {
+      if (montado.current) setSalvandoEmail(false);
+    }
+  };
+
   // ── Sair ──
   const handleSair = () => {
     // Navega antes de limpar a sessão: assim a rota protegida não "lembra" o /perfil
@@ -291,13 +365,13 @@ const PerfilCliente: React.FC = () => {
                   </div>
 
                   <p className="perfil__detalhe">
-                    <strong>E-mail:</strong> {perfil.email} 🔒
+                    <strong>E-mail:</strong> {perfil.email}
                   </p>
                   <p className="perfil__detalhe">
                     <strong>CPF:</strong> {mascararCpf(perfil.cpf)} 🔒
                   </p>
                   <p className="perfil__hint">
-                    O e-mail e o CPF não podem ser alterados por aqui.
+                    O CPF não pode ser alterado. Para trocar o e-mail, use a seção “E-mail de acesso” abaixo.
                   </p>
 
                   <div className="perfil__acoes-edicao">
@@ -342,6 +416,104 @@ const PerfilCliente: React.FC = () => {
               )}
             </div>
           </div>
+        </div>
+
+        {/* ── E-mail de acesso ── */}
+        <div className="perfil__secao">
+          <h2 className="perfil__secao-titulo">E-MAIL DE ACESSO</h2>
+
+          {alterandoEmail ? (
+            emailPendente ? (
+              <form className="perfil__form-senha" onSubmit={handleConfirmarEmail}>
+                {erroEmail && <p className="perfil__erro" role="alert">{erroEmail}</p>}
+
+                <p className="perfil__secao-texto">
+                  Enviamos um código de 6 dígitos para <strong>{emailPendente}</strong>. Digite-o abaixo
+                  para concluir. Até lá, o seu e-mail atual continua valendo.
+                </p>
+
+                <div className="perfil__campo">
+                  <label className="perfil__label" htmlFor="perfilCodigoEmail">Código</label>
+                  <input
+                    id="perfilCodigoEmail"
+                    className="perfil__input"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    placeholder="000000"
+                    value={codigoEmail}
+                    onChange={(e) => setCodigoEmail(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  />
+                </div>
+
+                <div className="perfil__acoes-edicao">
+                  <button
+                    type="button"
+                    className="perfil__btn-cancelar"
+                    onClick={fecharAlterarEmail}
+                    disabled={salvandoEmail}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="perfil__btn-salvar" disabled={salvandoEmail}>
+                    {salvandoEmail ? 'Confirmando…' : 'Confirmar e-mail'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form className="perfil__form-senha" onSubmit={handleEnviarCodigoEmail}>
+                {erroEmail && <p className="perfil__erro" role="alert">{erroEmail}</p>}
+
+                <div className="perfil__campo">
+                  <label className="perfil__label" htmlFor="perfilNovoEmail">Novo e-mail</label>
+                  <input
+                    id="perfilNovoEmail"
+                    className="perfil__input"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="seu@novoemail.com"
+                    value={novoEmail}
+                    onChange={(e) => setNovoEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="perfil__campo">
+                  <label className="perfil__label" htmlFor="perfilSenhaEmail">Sua senha</label>
+                  <input
+                    id="perfilSenhaEmail"
+                    className="perfil__input"
+                    type="password"
+                    autoComplete="current-password"
+                    value={senhaEmail}
+                    onChange={(e) => setSenhaEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="perfil__acoes-edicao">
+                  <button
+                    type="button"
+                    className="perfil__btn-cancelar"
+                    onClick={fecharAlterarEmail}
+                    disabled={salvandoEmail}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="perfil__btn-salvar" disabled={salvandoEmail}>
+                    {salvandoEmail ? 'Enviando…' : 'Enviar código'}
+                  </button>
+                </div>
+              </form>
+            )
+          ) : (
+            <div className="perfil__secao-linha">
+              <p className="perfil__secao-texto">
+                Você entra com <strong>{perfil.email}</strong>. Para trocar, enviamos um código para o novo e-mail.
+              </p>
+              <button className="perfil__btn-editar" onClick={() => setAlterandoEmail(true)}>
+                ALTERAR E-MAIL
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ── Segurança ── */}

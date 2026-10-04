@@ -116,8 +116,8 @@ export const refreshTokenClienteSchema = z.object({
 })
 
 // ── Perfil (área logada) ─────────────────────────────────────────────────────
-// Só nome e telefone são editáveis. E-mail e CPF não mudam por aqui (o e-mail
-// é o login e exigiria nova verificação).
+// Aqui só nome e telefone. O CPF não muda. O e-mail (que é o login) tem fluxo próprio:
+// /me/email/solicitar + /me/email/confirmar, com código enviado ao novo endereço.
 export const atualizarPerfilClienteSchema = z.object({
   nome: z
     .string()
@@ -133,6 +133,20 @@ export const atualizarPerfilClienteSchema = z.object({
 })
 
 export type AtualizarPerfilClienteDTO = z.infer<typeof atualizarPerfilClienteSchema>
+
+// ── Alterar e-mail (logado) ──────────────────────────────────────────────────
+export const solicitarAlteracaoEmailClienteSchema = z.object({
+  novo_email: email,
+  senha: z.string().min(1, 'Senha é obrigatória'),
+})
+
+export type SolicitarAlteracaoEmailClienteDTO = z.infer<typeof solicitarAlteracaoEmailClienteSchema>
+
+export const confirmarAlteracaoEmailClienteSchema = z.object({
+  codigo: codigo6,
+})
+
+export type ConfirmarAlteracaoEmailClienteDTO = z.infer<typeof confirmarAlteracaoEmailClienteSchema>
 
 export const alterarSenhaClienteSchema = z
   .object({

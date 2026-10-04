@@ -13,6 +13,8 @@ import {
   refreshTokenClienteSchema,
   atualizarPerfilClienteSchema,
   alterarSenhaClienteSchema,
+  solicitarAlteracaoEmailClienteSchema,
+  confirmarAlteracaoEmailClienteSchema,
 } from './Cliente.schema'
 
 const service = new ClienteService(new ClienteRepository())
@@ -23,7 +25,7 @@ const limite = (max: number, timeWindow: string, mensagem: string) => ({
     rateLimit: {
       max,
       timeWindow,
-      errorResponseBuilder: () => ({ status: 'error', message: mensagem }),
+      errorResponseBuilder: () => ({ statusCode: 429, status: 'error', message: mensagem }),
     },
   },
 })
@@ -160,6 +162,34 @@ export async function clientesRoutes(app: FastifyInstance): Promise<void> {
       const cliente = await service.atualizarPerfil(sub, data)
       return reply.status(200).send({ cliente })
     })
+
+    // POST /auth/cliente/me/email/solicitar — exige a senha; manda um código para o NOVO e-mail.
+    // O e-mail atual continua valendo até o código ser confirmado.
+    priv.post(
+      '/me/email/solicitar',
+      limite(5, '15 minutes', 'Muitas tentativas de alterar o e-mail. Aguarde alguns minutos.'),
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { sub } = request.user as ClienteJWTPayload
+        const data = solicitarAlteracaoEmailClienteSchema.parse(request.body)
+        const result = await service.solicitarAlteracaoEmail(sub, data)
+        return reply.status(200).send({
+          message: 'Enviamos um código de confirmação para o novo e-mail.',
+          ...result,
+        })
+      }
+    )
+
+    // POST /auth/cliente/me/email/confirmar — confirma o código e troca o e-mail; devolve sessão nova
+    priv.post(
+      '/me/email/confirmar',
+      limite(8, '15 minutes', 'Muitas tentativas de confirmação. Aguarde alguns minutos.'),
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { sub } = request.user as ClienteJWTPayload
+        const data = confirmarAlteracaoEmailClienteSchema.parse(request.body)
+        const sessao = await service.confirmarAlteracaoEmail(sub, data, jwtSign)
+        return reply.status(200).send(sessao)
+      }
+    )
 
     // POST /auth/cliente/alterar-senha — exige a senha atual; devolve sessão nova
     priv.post(
