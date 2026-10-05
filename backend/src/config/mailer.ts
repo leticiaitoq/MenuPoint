@@ -1,34 +1,70 @@
-import nodemailer from 'nodemailer'
 import { env } from './env'
 
-// Cria o transporter do nodemailer com as configurações do Gmail
-// O transporter é a instância que envia os e-mails
-// Criamos uma vez e reutilizamos em toda a aplicação
-export const transporter = nodemailer.createTransport({
-  host: env.MAIL_HOST,
-  port: env.MAIL_PORT,
-  // secure: true usa SSL direto na porta 465
-  // secure: false usa STARTTLS na porta 587
-  // Para Gmail recomendamos porta 465 com secure: true
-  secure: env.MAIL_PORT === 465,
-  auth: {
-    user: env.MAIL_USER,
-    pass: env.MAIL_PASS,
-  },
-  // Sem isso o nodemailer espera minutos por um SMTP que não responde
-  connectionTimeout: 10_000,
-  greetingTimeout: 10_000,
-  socketTimeout: 20_000,
-})
+// Envio de e-mails via Resend (https://resend.com/docs/api-reference/emails/send-email).
+// Configuração: RESEND_API_KEY, MAIL_FROM e MAIL_REPLY_TO no .env (nada fica no código).
+//
+// `transporter.sendMail(...)` mantém o mesmo formato que o antigo nodemailer, então os
+// serviços que já enviam e-mail continuam funcionando sem mudança.
 
-// Verifica se a conexão com o servidor de e-mail está funcionando
-// Chamado na inicialização da API para detectar problemas cedo
-export async function verificarConexaoEmail(): Promise<void> {
-  try {
-    await transporter.verify()
-    console.log('✅ Serviço de e-mail conectado')
-  } catch (error) {
-    // Não derruba a API se o e-mail falhar — apenas avisa
-    console.warn('⚠️  Serviço de e-mail indisponível:', error)
+const RESEND_URL = 'https://api.resend.com/emails'
+
+interface EnvioEmail {
+  from?: string
+  to: string
+  subject: string
+  html: string
+  text?: string
+}
+
+// Versão em texto puro do e-mail. Mensagens só com HTML pontuam pior nos filtros de spam;
+// enviar HTML + texto é uma das práticas que mais ajudam a chegar na caixa de entrada.
+function htmlParaTexto(html: string): string {
+  return html
+    .replace(/<(style|title)[\s\S]*?<\/\1>/gi, '')
+    .replace(/<(br|\/p|\/div|\/h[1-6]|\/li)\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n\s*\n\s*\n+/g, '\n\n')
+    .split('\n')
+    .map((linha) => linha.trim())
+    .join('\n')
+    .trim()
+}
+
+export async function enviarEmail({ from, to, subject, html, text }: EnvioEmail): Promise<void> {
+  const resposta = await fetch(RESEND_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: from ?? env.MAIL_FROM,
+      to: [to],
+      subject,
+      html,
+      text: text ?? htmlParaTexto(html),
+      ...(env.MAIL_REPLY_TO ? { reply_to: env.MAIL_REPLY_TO } : {}),
+    }),
+    // Sem isso uma falha de rede deixaria a requisição pendurada
+    signal: AbortSignal.timeout(10_000),
+  })
+
+  if (!resposta.ok) {
+    const detalhe = await resposta.text().catch(() => '')
+    throw new Error(`Resend respondeu ${resposta.status}: ${detalhe}`)
   }
+}
+
+// Compatibilidade com o código que já chamava `transporter.sendMail(...)`
+export const transporter = { sendMail: enviarEmail }
+
+// Chamado na inicialização da API. Não faz chamada de rede (a chave do Resend pode ser
+// só de envio): apenas confirma a configuração e mostra o remetente em uso.
+export async function verificarConexaoEmail(): Promise<void> {
+  console.log(`✅ E-mail via Resend configurado (remetente: ${env.MAIL_FROM})`)
 }

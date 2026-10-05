@@ -5,6 +5,7 @@ import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
 import { env } from '@config/env'
 import prisma from '@config/prisma'
+import { confirmarPagamento } from './Pagamento.temporario'
 
 const service = new AssinaturaService()
 
@@ -36,6 +37,30 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
       const data = criarAssinaturaSchema.parse(request.body)
       const resultado = await service.criar(data, user.empresa_id)
       return reply.status(201).send(resultado)
+    }
+  )
+
+  /**
+   * POST /api/v1/assinatura/confirmar-pagamento
+   *
+   * PAGAMENTO TEMPORÁRIO: o botão "Confirmar pagamento" chama esta rota e a
+   * cobrança pendente da empresa é aprovada na hora. Veja Pagamento.temporario.ts
+   * (será substituída pelo Mercado Pago).
+   */
+  app.post(
+    '/confirmar-pagamento',
+    {
+      onRequest: [async (request) => request.jwtVerify()],
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = request.user as JWTPayload
+
+      if (!user.empresa_id) {
+        throw new AppError('Usuário não vinculado a uma empresa', 400)
+      }
+
+      await confirmarPagamento(user.empresa_id)
+      return reply.status(200).send({ message: 'Pagamento confirmado!' })
     }
   )
 

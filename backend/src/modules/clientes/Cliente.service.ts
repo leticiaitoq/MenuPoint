@@ -77,7 +77,7 @@ export class ClienteService {
     const codigo = await this.repository.criarTokenConfirmacaoEmail(c.id, EXPIRACAO_CODIGO_MINUTOS)
     this.enviarEmail(
       c.email as string,
-      '✅ Confirme seu e-mail — Menupoint',
+      'Seu código de verificação do Menupoint',
       templateConfirmacaoEmail(c.nome, codigo, EXPIRACAO_CODIGO_MINUTOS)
     )
   }
@@ -322,7 +322,7 @@ export class ClienteService {
 
     this.enviarEmail(
       data.novo_email,
-      '✅ Confirme seu novo e-mail — Menupoint',
+      'Confirme seu novo e-mail no Menupoint',
       templateConfirmacaoEmail(cliente.nome, codigo, EXPIRACAO_CODIGO_MINUTOS)
     )
 

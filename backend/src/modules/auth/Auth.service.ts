@@ -5,6 +5,7 @@ import { AppError } from '@shared/errors/AppError'
 import { transporter } from '@config/mailer'
 import { env } from '@config/env'
 import prisma from '@config/prisma'
+import { temPagamentoPendente } from '@modules/assinatura/Pagamento.temporario'
 import {
   LoginDTO,
   LoginResponseDTO,
@@ -22,7 +23,8 @@ import {
   templateConfirmacaoEmail,
 } from '@shared/emails/templates'
 
-const EXPIRACAO_CODIGO_MINUTOS = 15
+// Validade do código (configurável: CODIGO_EXPIRA_MINUTOS no .env)
+const EXPIRACAO_CODIGO_MINUTOS = env.CODIGO_EXPIRA_MINUTOS
 
 export class AuthService {
 
@@ -66,10 +68,6 @@ export class AuthService {
       throw new AppError('Usuário inativo. Entre em contato com o administrador', 401)
     }
 
-    if (!usuario.email_verificado) {
-      throw new AppError('Confirme seu e-mail antes de fazer login. Verifique sua caixa de entrada.', 403)
-    }
-
     if (usuario.estabelecimento && !usuario.estabelecimento.ativo) {
       throw new AppError('Estabelecimento suspenso. Entre em contato com o suporte', 403)
     }
@@ -78,6 +76,11 @@ export class AuthService {
 
     if (!senhaCorreta) {
       throw new AppError('E-mail ou senha incorretos', 401)
+    }
+
+    // O front reconhece o `code` e mostra "E-mail não verificado" + botão "Reenviar código"
+    if (!usuario.email_verificado) {
+      throw new AppError('E-mail não verificado', 403, true, 'EMAIL_NAO_VERIFICADO')
     }
 
     this.repository.atualizarUltimoAcesso(usuario.id).catch(console.error)
@@ -106,6 +109,7 @@ export class AuthService {
         escopo: usuario.escopo,
         estabelecimento_id: usuario.estabelecimento_id,
         empresa_id: usuario.empresa_id,
+        pagamento_pendente: await temPagamentoPendente(usuario.empresa_id),
       },
     }
   }
@@ -130,7 +134,7 @@ export class AuthService {
     // Cria Empresa + Estabelecimento + Usuário numa única transação:
     // o usuário já nasce com estabelecimento_id (as rotas de produtos, mesas,
     // reservas etc. dependem dele).
-    const { usuario } = await this.repository.registrar({
+    const { usuario, pagamento_pendente } = await this.repository.registrar({
       nome_empresa: data.nome_restaurante,
       razao_social: data.razao_social,
       cnpj: data.cnpj,
@@ -147,6 +151,7 @@ export class AuthService {
       email: data.email,
       senha_hash,
       token_pagamento: data.token_pagamento,
+      plano: data.plano,
     })
 
     // E-mail de confirmação em SEGUNDO PLANO: se o SMTP estiver lento ou fora do ar,
@@ -162,7 +167,7 @@ export class AuthService {
         await transporter.sendMail({
           from: env.MAIL_FROM,
           to: usuario.email,
-          subject: '✅ Confirme seu e-mail — Menupoint',
+          subject: 'Seu código de verificação do Menupoint',
           html: templateConfirmacaoEmail(usuario.nome, codigo, EXPIRACAO_CODIGO_MINUTOS),
         })
       } catch (err) {
@@ -194,6 +199,7 @@ export class AuthService {
         escopo: usuario.escopo,
         estabelecimento_id: usuario.estabelecimento_id!,
         empresa_id: usuario.empresa_id!,
+        pagamento_pendente,
       },
     }
   }
@@ -257,7 +263,7 @@ export class AuthService {
           await transporter.sendMail({
             from: env.MAIL_FROM,
             to: usuario.email,
-            subject: '✅ Confirme seu novo e-mail — Menupoint',
+            subject: 'Confirme seu novo e-mail no Menupoint',
             html: templateConfirmacaoEmail(usuario.nome, codigo, EXPIRACAO_CODIGO_MINUTOS),
           })
         } catch (err) {
@@ -317,6 +323,17 @@ export class AuthService {
     if (data.tipo === 'registro') {
       if (usuario.email_verificado) return
 
+      // Limite contra reenvios seguidos: o último código define quando dá para pedir outro
+      const ultimo = await this.repository.ultimoTokenConfirmacao(usuario.id)
+      if (ultimo) {
+        const espera = Math.ceil(
+          env.REENVIO_INTERVALO_SEGUNDOS - (Date.now() - ultimo.criado_em.getTime()) / 1000
+        )
+        if (espera > 0) {
+          throw new AppError(`Aguarde ${espera} segundo(s) para pedir um novo código.`, 429)
+        }
+      }
+
       const codigo = await this.repository.criarTokenConfirmacaoEmail(
         usuario.id,
         EXPIRACAO_CODIGO_MINUTOS
@@ -325,7 +342,7 @@ export class AuthService {
       await transporter.sendMail({
         from: env.MAIL_FROM,
         to: usuario.email,
-        subject: '✅ Confirme seu e-mail — Menupoint',
+        subject: 'Seu código de verificação do Menupoint',
         html: templateConfirmacaoEmail(usuario.nome, codigo, EXPIRACAO_CODIGO_MINUTOS),
       })
       return
