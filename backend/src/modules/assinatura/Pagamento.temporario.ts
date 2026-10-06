@@ -55,14 +55,29 @@ export async function criarCobrancaPendente(
   })
 }
 
-/** true = a empresa se cadastrou, escolheu plano e ainda não confirmou o pagamento. */
+/**
+ * true = a empresa se cadastrou e ainda não pagou: há cobrança PENDENTE, ou o pagamento
+ * foi recusado/cancelado (FALHOU/CANCELADA) e a empresa nunca chegou a ter assinatura ATIVA.
+ */
 export async function temPagamentoPendente(empresa_id: string | null): Promise<boolean> {
   if (!empresa_id) return false
   const pendente = await prisma.assinatura.findFirst({
-    where: { empresa_id, status: 'PENDENTE', gateway: GATEWAY_TEMPORARIO },
+    where: { empresa_id, status: 'PENDENTE' },
     select: { id: true },
   })
-  return Boolean(pendente)
+  if (pendente) return true
+  return pagamentoRecusado(empresa_id)
+}
+
+/** Empresa inativa, sem nenhuma assinatura ATIVA e com tentativa de pagamento que falhou. */
+export async function pagamentoRecusado(empresa_id: string): Promise<boolean> {
+  const empresa = await prisma.empresa.findUnique({ where: { id: empresa_id }, select: { ativo: true } })
+  if (!empresa || empresa.ativo) return false
+  const [ativa, falha] = await Promise.all([
+    prisma.assinatura.findFirst({ where: { empresa_id, status: 'ATIVA' }, select: { id: true } }),
+    prisma.assinatura.findFirst({ where: { empresa_id, status: { in: ['FALHOU', 'CANCELADA'] } }, select: { id: true } }),
+  ])
+  return !ativa && Boolean(falha)
 }
 
 /** Considera o pagamento aprovado e libera o acesso da empresa. */

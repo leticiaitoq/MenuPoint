@@ -17,6 +17,7 @@ const LoginPage: React.FC = () => {
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [showSucesso, setShowSucesso] = useState(false);
+  const [pagamentoPendente, setPagamentoPendente] = useState(false);
   const [emailNaoVerificado, setEmailNaoVerificado] = useState(false);
   const [reenviando, setReenviando] = useState(false);
 
@@ -32,6 +33,7 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setErro(null);
     setEmailNaoVerificado(false);
+    setPagamentoPendente(false);
     setCarregando(true);
 
     try {
@@ -48,6 +50,12 @@ const LoginPage: React.FC = () => {
       });
 
       setCarregando(false);
+
+      // Cadastro feito, mas o pagamento não foi concluído: avisa e oferece o botão para pagar
+      if (resultado.usuario.pagamento_pendente) {
+        setPagamentoPendente(true);
+        return;
+      }
       setShowSucesso(true);
     } catch (err: any) {
       if (err?.response?.data?.code === 'EMAIL_NAO_VERIFICADO') {
@@ -91,6 +99,21 @@ const LoginPage: React.FC = () => {
               <p style={{ color: 'red', fontSize: '14px', marginBottom: '8px' }}>
                 {erro}
               </p>
+            )}
+
+            {pagamentoPendente && (
+              <div style={{ marginBottom: '8px' }}>
+                <p style={{ color: 'red', fontSize: '14px', marginBottom: '8px' }}>
+                  Pagamento pendente
+                </p>
+                <button
+                  type="button"
+                  className="login-page__submit"
+                  onClick={() => navigate('/pagamento')}
+                >
+                  Realizar pagamento
+                </button>
+              </div>
             )}
 
             {emailNaoVerificado && (

@@ -4,10 +4,10 @@ import AuthCard from '../auth/AuthCard';
 import AssinaturaService from '../../services/assinatura.service';
 import { useAuth, ROTA_APOS_LOGIN } from '../../shared/contexts/Authcontext';
 import '../auth/LoginPage.css';
+import './PagamentoPage.css';
 
-// PAGAMENTO TEMPORÁRIO (sem cobrança real).
-// Para usar o Mercado Pago: no lugar de confirmarPagamento(), chame
-// AssinaturaService.criar(plan_id, email) e redirecione para o init_point.
+// Pagamento real pelo Mercado Pago: o botão pede o link ao backend (/assinatura/checkout)
+// e leva o usuário para lá. A liberação do acesso vem do webhook do MP.
 
 interface LocationState {
   email?: string;
@@ -26,32 +26,41 @@ const PagamentoPage: React.FC = () => {
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
 
-  // Mostra o plano escolhido; se não há pagamento pendente, não há o que fazer aqui
+  // Mostra o plano escolhido. Se o pagamento já foi aprovado (ex.: pagou e fechou a aba),
+  // libera o sistema e segue para a confirmação do e-mail, se ainda faltar.
   useEffect(() => {
     AssinaturaService.minha()
       .then((a) => {
-        if (a.status !== 'PENDENTE') navigate(ROTA_APOS_LOGIN, { replace: true });
-        else setPlano({ plano: a.plano, valor: Number(a.valor) });
+        // Pendente, recusado ou cancelado: mostra o botão para pagar (de novo)
+        if (a.status !== 'ATIVA') {
+          setPlano({ plano: a.plano, valor: Number(a.valor) });
+          return;
+        }
+        if (token && usuario) entrar({ token, usuario: { ...usuario, pagamento_pendente: false } });
+        let pos: { email?: string; verificarEmail?: boolean } = {};
+        try { pos = JSON.parse(localStorage.getItem('@menupoint:pos_pagamento') || '{}'); } catch { /* ignora */ }
+        localStorage.removeItem('@menupoint:pos_pagamento');
+        if (pos.verificarEmail) navigate('/verify-code', { state: { email: pos.email, mode: 'register' }, replace: true });
+        else navigate(ROTA_APOS_LOGIN, { replace: true });
       })
       .catch(() => navigate(ROTA_APOS_LOGIN, { replace: true }));
-  }, [navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleConfirmar = async () => {
+  // Vai para o checkout do Mercado Pago. Ao voltar, /assinatura/sucesso confere o pagamento.
+  const handlePagar = async () => {
     setErro(null);
     setCarregando(true);
     try {
-      await AssinaturaService.confirmarPagamento();
-      if (token && usuario) {
-        entrar({ token, usuario: { ...usuario, pagamento_pendente: false } });
-      }
-      // Logo após o cadastro, falta confirmar o e-mail com o código enviado
-      if (state.verificarEmail) {
-        navigate('/verify-code', { state: { email: state.email, mode: 'register' }, replace: true });
-      } else {
-        navigate(ROTA_APOS_LOGIN, { replace: true });
-      }
+      // Lembra o que fazer depois do pagamento (confirmar o e-mail do cadastro)
+      localStorage.setItem('@menupoint:pos_pagamento', JSON.stringify({
+        email: state.email,
+        verificarEmail: Boolean(state.verificarEmail),
+      }));
+      const { init_point } = await AssinaturaService.checkout();
+      window.location.href = init_point;
     } catch (err: any) {
-      setErro(err?.response?.data?.message ?? 'Não foi possível confirmar o pagamento. Tente novamente.');
+      setErro(err?.response?.data?.message ?? 'Não foi possível abrir o pagamento. Tente novamente.');
       setCarregando(false);
     }
   };
@@ -62,27 +71,39 @@ const PagamentoPage: React.FC = () => {
         <AuthCard />
 
         <div className="login-page__form-side">
-          <h1 className="login-page__title">Pagamento</h1>
-
-          {plano && (
-            <p style={{ textAlign: 'center', marginBottom: '16px' }}>
-              Plano <strong>{NOME_PLANO[plano.plano] ?? plano.plano}</strong> —{' '}
-              {plano.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/mês
+          <div className="pagamento">
+            <h1 className="pagamento__titulo">Finalize sua assinatura</h1>
+            <p className="pagamento__subtitulo">
+              Falta só o pagamento para liberar o acesso ao seu restaurante.
             </p>
-          )}
 
-          {erro && (
-            <p style={{ color: 'red', fontSize: '14px', marginBottom: '8px' }}>{erro}</p>
-          )}
+            {plano && (
+              <div className="pagamento__card">
+                <span className="pagamento__card-rotulo">Plano escolhido</span>
+                <span className="pagamento__card-plano">{NOME_PLANO[plano.plano] ?? plano.plano}</span>
+                <span className="pagamento__card-preco">
+                  {plano.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  <small> /mês</small>
+                </span>
+                <span className="pagamento__card-obs">Cobrança mensal recorrente.</span>
+              </div>
+            )}
 
-          <button
-            type="button"
-            className="login-page__submit"
-            onClick={handleConfirmar}
-            disabled={carregando || !plano}
-          >
-            {carregando ? 'Confirmando...' : 'Confirmar pagamento'}
-          </button>
+            {erro && <p className="pagamento__erro">{erro}</p>}
+
+            <button
+              type="button"
+              className="pagamento__botao"
+              onClick={handlePagar}
+              disabled={carregando || !plano}
+            >
+              {carregando ? 'Abrindo pagamento...' : 'Pagar com Mercado Pago'}
+            </button>
+
+            <p className="pagamento__seguro">
+              🔒 Você será levado ao Mercado Pago para concluir o pagamento com segurança.
+            </p>
+          </div>
         </div>
       </div>
     </div>

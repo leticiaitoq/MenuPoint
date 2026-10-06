@@ -41,6 +41,30 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
   )
 
   /**
+   * POST /api/v1/assinatura/checkout
+   *
+   * Pagamento real (Mercado Pago) logo após o cadastro: cria a assinatura no MP
+   * para a cobrança pendente da empresa e devolve { init_point }.
+   * O frontend faz: window.location.href = init_point
+   */
+  app.post(
+    '/checkout',
+    {
+      onRequest: [async (request) => request.jwtVerify()],
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = request.user as JWTPayload
+
+      if (!user.empresa_id) {
+        throw new AppError('Usuário não vinculado a uma empresa', 400)
+      }
+
+      const resultado = await service.criarCheckout(user.empresa_id, user.email)
+      return reply.status(201).send(resultado)
+    }
+  )
+
+  /**
    * POST /api/v1/assinatura/confirmar-pagamento
    *
    * PAGAMENTO TEMPORÁRIO: o botão "Confirmar pagamento" chama esta rota e a

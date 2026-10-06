@@ -19,8 +19,13 @@ const AssinaturaService = {
     return data
   },
 
+  /** Pagamento real: gera o link do Mercado Pago para a cobrança pendente do cadastro. */
+  async checkout(): Promise<{ init_point: string }> {
+    const { data } = await api.post('/assinatura/checkout')
+    return data
+  },
+
   // ── Pagamento temporário (sem cobrança real) ──
-  // Para usar o Mercado Pago no lugar: troque confirmarPagamento por criar() + init_point.
   async minha(): Promise<{ plano: string; status: string; valor: string | number }> {
     const { data } = await api.get('/assinatura/minha')
     return data
