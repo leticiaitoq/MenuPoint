@@ -19,6 +19,11 @@ export function RotaProtegida({ children, perfisPermitidos }: RotaProtegidaProps
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
+  // Cadastro feito mas pagamento ainda não confirmado: só a tela de pagamento é liberada
+  if (usuario?.pagamento_pendente && location.pathname !== '/pagamento') {
+    return <Navigate to="/pagamento" replace />
+  }
+
   if (perfisPermitidos && usuario && !perfisPermitidos.includes(usuario.perfil)) {
     return <Navigate to="/restaurante/home" replace />
   }

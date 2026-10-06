@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MenuPoint – O point que transforma fome em vendas</title>
+  <meta name="description" content="Sistema completo para restaurantes gerenciarem pedidos, cardápios e mesas de forma simples, inteligente e eficiente. Comece agora com 7 dias grátis.">
+  <!-- Open Graph -->
+  <meta property="og:title" content="MenuPoint – O point que transforma fome em vendas">
+  <meta property="og:description" content="Sistema completo para restaurantes gerenciarem pedidos, cardápios e mesas de forma simples, inteligente e eficiente.">
+  <meta property="og:image" content="https://menupointe.space/assets/Home.png">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MenuPoint – O point que transforma fome em vendas">
+  <meta name="twitter:description" content="Sistema completo para restaurantes gerenciarem pedidos, cardápios e mesas de forma simples, inteligente e eficiente.">
+  <meta name="twitter:image" content="https://menupointe.space/assets/Home.png">
+  <link rel="icon" href="./assets/Logo.png" type="image/png">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="logo-icon">
+        <img src="./assets/Logo.png" alt="Logo" class="logo-img">
+      </div>
+      <img src="./assets/Texto.png" alt="Testo" class="texto-img">
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#features">Funcionalidades</a></li>
+      <li><a href="#how">Como funciona</a></li>
+      <li><a href="#testimonial">Depoimentos</a></li>
+      <li><a href="#pricing">Planos</a></li>
+      <li><a href="#about">Sobre</a></li>
+      <li><a href="/login">Entrar</a></li>
+    </ul>
+    <a href="#pricing" class="btn-red nav-cta">Começar agora</a>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <div class="hero-inner">
+      <div>
+        <h1>
+          <span class="brand">MenuPoint</span><br>
+          O point que transforma<br>fome em vendas
+        </h1>
+        <p>Sistema completo para restaurantes gerenciarem pedidos, cardápios e mesas de forma simples, inteligente e eficiente.</p>
+        <div class="hero-btns">
+          <a href="#pricing" class="btn-red">Começar agora</a>
+          <a href="#how" class="btn-outline">▶ Como funciona</a>
+        </div>
+        <div class="hero-checks">
+          <span><span class="check">✓</span> Fácil de usar</span>
+          <span><span class="check">✓</span> Mais vendas</span>
+          <span><span class="check">✓</span> Menos erros</span>
+        </div>
+      </div>
+      <img src="./assets/Home.png" alt="Home" class="home-img">
+    </div>
+  </div>
+</section>
+
+<!-- ── PROBLEM / SOLUTION ─────────────────────────── -->
+<section class="problem-solution">
+  <div class="container">
+    <div class="ps-grid">
+      <div class="ps-box">
+        <div class="badge">O problema</div>
+        <h3>Muitos restaurantes ainda usam:</h3>
+        <div class="old-methods">
+          <div class="old-method"><div class="icon">📄</div>Papel</div>
+          <div class="old-method"><div class="icon">📱</div>WhatsApp</div>
+          <div class="old-method"><div class="icon">🔧</div>Controle manual</div>
+        </div>
+        <p style="font-size:.85rem;color:var(--gray-700);margin-bottom:12px">Isso gera:</p>
+        <ul class="problems-list">
+          <li><span class="x">✗</span> Erros de pedidos</li>
+          <li><span class="x">✗</span> Falta de organização</li>
+          <li><span class="x">✗</span> Perda de vendas</li>
+          <li><span class="x">✗</span> Clientes insatisfeitos</li>
+        </ul>
+      </div>
+      <div>
+        <img src="./assets/Mascote.png" alt="Mascote" class="chef-img">
+        <div class="ps-box" style="margin-top:24px">
+          <div class="badge">🚀 A solução</div>
+          <h3>Com o MenuPoint você:</h3>
+          <ul class="solution-list">
+            <li><span class="check-green">✔</span> Organiza pedidos em tempo real</li>
+            <li><span class="check-green">✔</span> Controla mesas e atendimento</li>
+            <li><span class="check-green">✔</span> Gerencia cardápio digital</li>
+            <li><span class="check-green">✔</span> Aumenta suas vendas</li>
+            <li><span class="check-green">✔</span> Melhora a experiência do cliente</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES ───────────────────────────────────── -->
+<section class="features" id="features">
+  <div class="container">
+    <h2 class="section-title">Tudo que seu restaurante precisa</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🛒</div>
+        <h4>Gestão de Pedidos</h4>
+        <p>Acompanhe todos os pedidos em tempo real e organize sua cozinha.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🍔</div>
+        <h4>Cardápio Digital</h4>
+        <p>Organize produtos, categorias, preços e promoções facilmente.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🪑</div>
+        <h4>Gestão de Mesas</h4>
+        <p>Veja mesas ocupadas, reservas e tempo de permanência.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h4>Relatórios</h4>
+        <p>Acompanhe vendas, faturamento e desempenho do seu restaurante.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏷️</div>
+        <h4>Promoções</h4>
+        <p>Crie ofertas e combos para atrair mais clientes e vender mais.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h4>Experiência do Cliente</h4>
+        <p>Pedidos rápidos, simples e intuitivos direto do celular.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SCREENSHOTS ────────────────────────────────── -->
+<section class="screenshots">
+  <div class="container">
+    <h2 class="section-title">Veja o MenuPoint em ação</h2>
+    <div class="screens-row">
+      <div class="screen-item">
+        <div class="screen-thumb"><div class="screen-icon">📊</div><div class="screen-name">Dashboard</div></div>
+        <span>Dashboard</span>
+      </div>
+      <div class="screen-item">
+        <div class="screen-thumb"><div class="screen-icon">📋</div><div class="screen-name">Pedidos</div></div>
+        <span>Fila de pedidos</span>
+      </div>
+      <div class="screen-item">
+        <div class="screen-thumb"><div class="screen-icon">🪑</div><div class="screen-name">Mesas</div></div>
+        <span>Gestão de mesas</span>
+      </div>
+      <div class="screen-item">
+        <div class="screen-thumb"><div class="screen-icon">🍽️</div><div class="screen-name">Cardápio</div></div>
+        <span>Cardápio</span>
+      </div>
+      <div class="screen-item">
+        <div class="screen-thumb"><div class="screen-icon">📜</div><div class="screen-name">Histórico</div></div>
+        <span>Histórico de pedidos</span>
+      </div>
+      <div class="screen-item">
+        <div class="screen-thumb"><div class="screen-icon">🏷️</div><div class="screen-name">Promoções</div></div>
+        <span>Promoções</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ───────────────────────────────── -->
+<section class="how" id="how">
+  <div class="container">
+    <h2 class="section-title">Como funciona</h2>
+    <div class="steps-row">
+      <div class="step">
+        <div class="step-icon">📱</div>
+        <div class="step-num">1</div>
+        <h4>Cliente faz o pedido pelo cardápio digital</h4>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-icon">📋</div>
+        <div class="step-num">2</div>
+        <h4>Pedido entra na fila e cozinha prepara</h4>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-icon">🍳</div>
+        <div class="step-num">3</div>
+        <h4>Pedido fica pronto e é marcado</h4>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-icon">🚀</div>
+        <div class="step-num">4</div>
+        <h4>Pedido é entregue ao cliente</h4>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-icon">📈</div>
+        <div class="step-num">5</div>
+        <h4>Restaurante acompanha tudo em tempo real</h4>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── WHY + TESTIMONIAL ──────────────────────────── -->
+<section class="why-section" id="testimonial">
+  <div class="container">
+    <div class="why-grid">
+      <div class="why-list">
+        <h3>Por que usar o MenuPoint?</h3>
+        <ul class="why-items">
+          <li><span class="why-icon">💰</span> Aumenta o faturamento</li>
+          <li><span class="why-icon">⚡</span> Agiliza o atendimento</li>
+          <li><span class="why-icon">✅</span> Reduz erros</li>
+          <li><span class="why-icon">🌟</span> Moderniza seu restaurante</li>
+        </ul>
+      </div>
+      <div class="testimonial-box">
+        <div>
+          <div class="quote-mark">"</div>
+          <p>Depois que começamos a usar o MenuPoint, nossos pedidos ficaram muito mais organizados e aumentamos nossas vendas. Hoje já não conseguimos mais trabalhar sem ele!</p>
+        </div>
+        <div class="testi-author">
+          <div class="testi-avatar">JS</div>
+          <div>
+            <strong>João Silva</strong>
+            <small>Proprietário do Restaurante Sabor Caseiro</small>
+          </div>
+        </div>
+      </div>
+      <div class="restaurant-img">
+        <div class="ri-icon">🍽️</div>
+        <div class="ri-text">Restaurantes que<br>já usam o MenuPoint</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRICING ──────────────────────────────────────── -->
+<section class="pricing" id="pricing">
+  <div class="container">
+    <h2 class="section-title">Planos para todo tamanho de restaurante</h2>
+
+    <div class="pricing-toggle">
+      <span class="toggle-label active" id="label-mensal">Mensal</span>
+      <label class="toggle-wrap">
+        <input type="checkbox" id="billingToggle">
+        <span class="toggle-knob"></span>
+      </label>
+      <span class="toggle-label" id="label-anual">Anual</span>
+      <span class="discount-badge">2 meses grátis</span>
+    </div>
+
+    <div class="pricing-grid">
+
+      <!-- BÁSICO -->
+      <div class="plan-card">
+        <div class="plan-name">Básico</div>
+        <div class="plan-desc">Ideal para quem está começando</div>
+        <div class="plan-price" id="price-basic">
+          <sup>R$</sup><span class="val">97</span><span class="period">/mês</span>
+        </div>
+        <div class="plan-price-annual" id="annual-basic"></div>
+        <hr class="plan-divider">
+        <ul class="plan-features">
+          <li><span class="fi">✔</span> Gestão de pedidos</li>
+          <li><span class="fi">✔</span> Cardápio digital</li>
+          <li><span class="fi">✔</span> Até 10 mesas</li>
+          <li><span class="fi">✔</span> 1 usuário / operador</li>
+          <li><span class="fi">✔</span> Suporte por e-mail</li>
+          <li class="disabled"><span class="fi off">✔</span> Relatórios avançados</li>
+          <li class="disabled"><span class="fi off">✔</span> Promoções e combos</li>
+          <li class="disabled"><span class="fi off">✔</span> Múltiplos usuários</li>
+        </ul>
+        <button class="plan-btn filled" onclick="iniciarPagamento('basico', this)">Assinar plano Básico</button>
+      </div>
+
+      <!-- PRO (popular) -->
+      <div class="plan-card popular">
+        <span class="popular-tag">⭐ Mais popular</span>
+        <div class="plan-name" style="color:var(--red)">Pro</div>
+        <div class="plan-desc">Para restaurantes em crescimento</div>
+        <div class="plan-price" id="price-pro">
+          <sup>R$</sup><span class="val">197</span><span class="period">/mês</span>
+        </div>
+        <div class="plan-price-annual" id="annual-pro"></div>
+        <hr class="plan-divider">
+        <ul class="plan-features">
+          <li><span class="fi">✔</span> Tudo do plano Básico</li>
+          <li><span class="fi">✔</span> Mesas ilimitadas</li>
+          <li><span class="fi">✔</span> Até 5 usuários</li>
+          <li><span class="fi">✔</span> Relatórios completos</li>
+          <li><span class="fi">✔</span> Promoções e combos</li>
+          <li><span class="fi">✔</span> Histórico de pedidos</li>
+          <li><span class="fi">✔</span> Suporte via WhatsApp</li>
+          <li class="disabled"><span class="fi off">✔</span> API de integrações</li>
+        </ul>
+        <button class="plan-btn filled" onclick="iniciarPagamento('pro', this)">Assinar plano Pro</button>
+      </div>
+
+      <!-- ENTERPRISE -->
+      <div class="plan-card">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-desc">Para redes e franquias</div>
+        <div class="plan-price" id="price-ent">
+          <sup>R$</sup><span class="val">397</span><span class="period">/mês</span>
+        </div>
+        <div class="plan-price-annual" id="annual-ent"></div>
+        <hr class="plan-divider">
+        <ul class="plan-features">
+          <li><span class="fi">✔</span> Tudo do plano Pro</li>
+          <li><span class="fi">✔</span> Usuários ilimitados</li>
+          <li><span class="fi">✔</span> Múltiplas unidades</li>
+          <li><span class="fi">✔</span> API de integrações</li>
+          <li><span class="fi">✔</span> Dashboard centralizado</li>
+          <li><span class="fi">✔</span> Onboarding dedicado</li>
+          <li><span class="fi">✔</span> Suporte prioritário 24/7</li>
+          <li><span class="fi">✔</span> SLA garantido</li>
+        </ul>
+        <button class="plan-btn outline" onclick="iniciarPagamento('enterprise', this)">Falar com especialista</button>
+      </div>
+
+    </div><!-- /pricing-grid -->
+  </div>
+</section>
+
+<!-- ── SOBRE ──────────────────────────────────────── -->
+<section class="about-section" id="about">
+  <div class="container">
+    <h2 class="section-title">Sobre o MenuPoint</h2>
+    <div class="about-grid">
+      <div class="about-text">
+        <p class="about-lead">Nascemos da frustração de ver bons restaurantes perderem vendas por causa de processos ultrapassados.</p>
+        <p>Em 2026, um grupo de empreendedores apaixonados por tecnologia e gastronomia se uniu com um objetivo claro: criar uma ferramenta simples o suficiente para qualquer restaurante usar no primeiro dia, mas poderosa o bastante para crescer junto com o negócio.</p>
+        <p>O MenuPoint nasceu para ser o ponto de encontro entre a eficiência digital e o calor humano da boa hospitalidade. Hoje, centenas de restaurantes em todo o Brasil usam nossa plataforma para atender melhor, vender mais e trabalhar com muito menos estresse.</p>
+        <p><strong>Nossa missão:</strong> transformar a gestão de restaurantes em algo tão simples quanto pedir uma pizza.</p>
+      </div>
+      <div class="about-stats">
+        <div class="stat-card">
+          <div class="stat-num">500<span>+</span></div>
+          <div class="stat-label">Restaurantes ativos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">98<span>%</span></div>
+          <div class="stat-label">Satisfação dos clientes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">2M<span>+</span></div>
+          <div class="stat-label">Pedidos processados</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">24<span>h</span></div>
+          <div class="stat-label">Suporte disponível</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA BAND ───────────────────────────────────── -->
+<section class="cta-band" id="cta">
+  <div class="container">
+    <h2>Pronto para transformar seu restaurante?</h2>
+    <p>O point que transforma fome em vendas</p>
+    <a href="#pricing" class="btn-white">Começar agora →</a>
+  </div>
+</section>
+
+<!-- ── FOOTER ─────────────────────────────────────── -->
+<footer id="about">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="brand">🍽 MenuPoint</div>
+        <p>Sistema completo para restaurantes venderem mais e atenderem melhor.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navegação</h4>
+        <ul>
+          <li><a href="#">Início</a></li>
+          <li><a href="#features">Funcionalidades</a></li>
+          <li><a href="#how">Como funciona</a></li>
+          <li><a href="#testimonial">Depoimentos</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Suporte</h4>
+        <ul>
+          <li><a href="https://wa.me/5511999999999" target="_blank">Central de ajuda</a></li>
+          <li><a href="mailto:contato@menupoint.com.br">Contato</a></li>
+          <li><a href="politica-de-privacidade.html">Política de privacidade</a></li>
+          <li><a href="termos-de-uso.html">Termos de uso</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contato</h4>
+        <ul>
+          <li><a href="https://wa.me/5511999999999" target="_blank">WhatsApp</a></li>
+          <li><a href="mailto:contato@menupoint.com.br">E-mail</a></li>
+          <li><a href="https://instagram.com/menupoint" target="_blank">Instagram</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 MenuPoint. Todos os direitos reservados.</div>
+  </div>
+</footer>
+
+<script>
+  // Mobile menu toggle
+  const hamburger = document.getElementById('hamburger');
+  const navLinks  = document.getElementById('navLinks');
+  hamburger.addEventListener('click', () => navLinks.classList.toggle('open'));
+
+  // Close menu on link click
+  navLinks.querySelectorAll('a').forEach(a =>
+    a.addEventListener('click', () => navLinks.classList.remove('open'))
+  );
+
+  // Pricing toggle — mensal vs anual
+  const toggle = document.getElementById('billingToggle');
+  const labelM = document.getElementById('label-mensal');
+  const labelA = document.getElementById('label-anual');
+  const plans = [
+    { monthly: 97,  annual: 81,  priceEl: 'price-basic', annualEl: 'annual-basic' },
+    { monthly: 197, annual: 164, priceEl: 'price-pro',   annualEl: 'annual-pro'   },
+    { monthly: 397, annual: 331, priceEl: 'price-ent',   annualEl: 'annual-ent'   },
+  ];
+
+  function updatePricing() {
+    const isAnnual = toggle.checked;
+    labelM.classList.toggle('active', !isAnnual);
+    labelA.classList.toggle('active',  isAnnual);
+    plans.forEach(p => {
+      const val = isAnnual ? p.annual : p.monthly;
+      document.querySelector(`#${p.priceEl} .val`).textContent = val;
+      const annualEl = document.getElementById(p.annualEl);
+      annualEl.textContent = isAnnual
+        ? `R$${val * 12}/ano — você economiza R$${(p.monthly - p.annual) * 12}`
+        : '';
+    });
+  }
+  toggle.addEventListener('change', updatePricing);
+
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.feature-card, .step, .ps-box, .why-items li, .plan-card').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(24px)';
+    el.style.transition = 'opacity .5s ease, transform .5s ease';
+    observer.observe(el);
+  });
+
+// Plano escolhido no site segue para o cadastro do app (?plano=); o pagamento vem depois do cadastro.
+const APP_URL = '';
+const planos = { basico: 'starter', pro: 'pro' };
+
+function iniciarPagamento(plano, btn) {
+  if (btn) {
+    btn.disabled = true;
+    btn.dataset.originalText = btn.textContent;
+    btn.textContent = 'Aguarde…';
+  }
+  if (plano === 'enterprise') {
+    window.location.href = 'mailto:contato@menupoint.com.br?subject=Interesse%20no%20Plano%20Enterprise';
+    setTimeout(() => { if (btn) { btn.disabled = false; btn.textContent = btn.dataset.originalText; } }, 2000);
+    return;
+  }
+  const slug = planos[plano];
+  const url = slug && `${APP_URL}/cadastro?plano=${slug}`;
+  if (!url) {
+    console.error('Plano não encontrado:', plano);
+    if (btn) { btn.disabled = false; btn.textContent = btn.dataset.originalText; }
+    return;
+  }
+  window.location.href = url;
+}
+
+
+</script>
+</body>
+</html>

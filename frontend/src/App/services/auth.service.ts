@@ -14,6 +14,8 @@ export interface Usuario {
   escopo: 'GLOBAL' | 'LOCAL'
   estabelecimento_id: string | null
   empresa_id: string | null
+  // true = cadastro feito, mas o pagamento do plano ainda não foi confirmado
+  pagamento_pendente?: boolean
 }
 
 // Dados do usuário lidos direto do banco (GET /auth/me)
@@ -84,6 +86,8 @@ export interface RegistrarDTO {
   bairro?: string
   senha: string
   confirmar_senha: string
+  // Plano escolhido no site (?plano=starter|pro)
+  plano?: string
 }
 
 const AuthService = {

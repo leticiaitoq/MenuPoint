@@ -17,6 +17,9 @@ const LoginPage: React.FC = () => {
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [showSucesso, setShowSucesso] = useState(false);
+  const [pagamentoPendente, setPagamentoPendente] = useState(false);
+  const [emailNaoVerificado, setEmailNaoVerificado] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
 
   // Mesmo padrão usado na tela de verificação de código: mostra o toast de
   // sucesso e só navega depois de um tempinho, pra pessoa ver a confirmação.
@@ -29,6 +32,8 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
+    setEmailNaoVerificado(false);
+    setPagamentoPendente(false);
     setCarregando(true);
 
     try {
@@ -45,10 +50,34 @@ const LoginPage: React.FC = () => {
       });
 
       setCarregando(false);
+
+      // Cadastro feito, mas o pagamento não foi concluído: avisa e oferece o botão para pagar
+      if (resultado.usuario.pagamento_pendente) {
+        setPagamentoPendente(true);
+        return;
+      }
       setShowSucesso(true);
     } catch (err: any) {
-      setErro(err?.response?.data?.message ?? 'Email ou senha inválidos.');
+      if (err?.response?.data?.code === 'EMAIL_NAO_VERIFICADO') {
+        setEmailNaoVerificado(true);
+      } else {
+        setErro(err?.response?.data?.message ?? 'Email ou senha inválidos.');
+      }
       setCarregando(false);
+    }
+  };
+
+  // Pede um novo código e leva para a tela onde ele é digitado
+  const handleReenviarCodigo = async () => {
+    setErro(null);
+    setReenviando(true);
+    try {
+      await AuthService.resendCode(email.trim(), 'registro');
+      navigate('/verify-code', { state: { email: email.trim(), mode: 'register' } });
+    } catch (err: any) {
+      setErro(err?.response?.data?.message ?? 'Não foi possível reenviar o código. Tente novamente.');
+    } finally {
+      setReenviando(false);
     }
   };
 
@@ -70,6 +99,37 @@ const LoginPage: React.FC = () => {
               <p style={{ color: 'red', fontSize: '14px', marginBottom: '8px' }}>
                 {erro}
               </p>
+            )}
+
+            {pagamentoPendente && (
+              <div style={{ marginBottom: '8px' }}>
+                <p style={{ color: 'red', fontSize: '14px', marginBottom: '8px' }}>
+                  Pagamento pendente
+                </p>
+                <button
+                  type="button"
+                  className="login-page__submit"
+                  onClick={() => navigate('/pagamento')}
+                >
+                  Realizar pagamento
+                </button>
+              </div>
+            )}
+
+            {emailNaoVerificado && (
+              <div style={{ marginBottom: '8px' }}>
+                <p style={{ color: 'red', fontSize: '14px', marginBottom: '8px' }}>
+                  E-mail não verificado
+                </p>
+                <button
+                  type="button"
+                  className="login-page__submit"
+                  onClick={handleReenviarCodigo}
+                  disabled={reenviando}
+                >
+                  {reenviando ? 'Enviando...' : 'Reenviar código'}
+                </button>
+              </div>
             )}
 
             {/* Campo Email */}

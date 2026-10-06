@@ -3,6 +3,7 @@ import prisma from '@config/prisma'
 import crypto from 'crypto'
 import { AppError } from '@shared/errors/AppError'
 import { gerarSlug } from '@shared/utils/slug'
+import { criarCobrancaPendente, planoDoSlug } from '@modules/assinatura/Pagamento.temporario'
 
 export type EnderecoEstabelecimento = {
   rua: string
@@ -26,6 +27,7 @@ export interface RegistrarInput {
   email: string
   senha_hash: string
   token_pagamento?: string
+  plano?: string
 }
 
 export class AuthRepository {
@@ -167,7 +169,8 @@ export class AuthRepository {
 
   private async registrarEmTransacao(data: RegistrarInput, forcarSufixoAleatorio: boolean) {
     return prisma.$transaction(async (tx) => {
-      let plano: Plano = Plano.STARTER
+      const planoEscolhido = data.token_pagamento ? null : planoDoSlug(data.plano)
+      let plano: Plano = planoEscolhido ?? Plano.STARTER
       let assinaturaId: string | undefined
 
       if (data.token_pagamento) {
@@ -211,6 +214,12 @@ export class AuthRepository {
         })
       }
 
+      // Plano escolhido no site (sem token do Mercado Pago): a empresa nasce aguardando
+      // a confirmação do pagamento (ver Pagamento.temporario.ts)
+      if (planoEscolhido) {
+        await criarCobrancaPendente(tx, empresa.id, planoEscolhido)
+      }
+
       // 2) Estabelecimento — criado SEMPRE junto com a empresa.
       //    Telefone, WhatsApp, horários etc. ficam para o "completar perfil".
       const slug = await this.gerarSlugUnico(tx, data.nome_empresa, forcarSufixoAleatorio)
@@ -242,7 +251,7 @@ export class AuthRepository {
         },
       })
 
-      return { empresa, estabelecimento, usuario }
+      return { empresa, estabelecimento, usuario, pagamento_pendente: Boolean(planoEscolhido) }
     })
   }
 
@@ -361,6 +370,15 @@ export class AuthRepository {
       }
     }
     throw new AppError('Não foi possível gerar o código. Tente novamente.', 500)
+  }
+
+  /** Data do último código de confirmação enviado (para limitar reenvios seguidos) */
+  async ultimoTokenConfirmacao(usuario_id: string) {
+    return prisma.tokenConfirmacaoEmail.findFirst({
+      where: { usuario_id },
+      orderBy: { criado_em: 'desc' },
+      select: { criado_em: true },
+    })
   }
 
   async findTokenConfirmacaoPorCodigo(email: string, codigo: string) {

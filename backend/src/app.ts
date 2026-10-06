@@ -138,6 +138,7 @@ app.register(fastifySwaggerUi, {
     return reply.status(error.statusCode).send({
       status: 'error',
       message: error.message,
+      ...(error.code ? { code: error.code } : {}),
     })
   }
 

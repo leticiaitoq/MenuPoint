@@ -1,0 +1,116 @@
+/* Tela de pagamento: reaproveita o layout do login e só organiza o conteúdo do lado direito */
+.pagamento {
+  font-family: 'Arimo', Arial, Helvetica, sans-serif;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pagamento * {
+  font-family: inherit;
+}
+
+.pagamento__titulo {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.pagamento__subtitulo {
+  font-size: 14px;
+  color: #6b6b6b;
+  margin: -12px 0 0;
+  line-height: 1.5;
+}
+
+.pagamento__card {
+  border: 1px solid #ececec;
+  border-radius: 12px;
+  padding: 20px 22px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pagamento__card-rotulo {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #c0392b;
+}
+
+.pagamento__card-plano {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.pagamento__card-preco {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1.1;
+}
+
+.pagamento__card-preco small {
+  font-size: 15px;
+  font-weight: 500;
+  color: #6b6b6b;
+}
+
+.pagamento__card-obs {
+  font-size: 13px;
+  color: #6b6b6b;
+  margin-top: 4px;
+}
+
+.pagamento__erro {
+  background: #fdecea;
+  border: 1px solid #f5c6c1;
+  color: #a93226;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  margin: 0;
+}
+
+.pagamento__botao {
+  width: 100%;
+  padding: 14px;
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.pagamento__botao:hover:not(:disabled) {
+  background-color: #a93226;
+}
+
+.pagamento__botao:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.pagamento__seguro {
+  font-size: 13px;
+  color: #8a8a8a;
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .pagamento__titulo { font-size: 24px; }
+  .pagamento__card-preco { font-size: 28px; }
+}

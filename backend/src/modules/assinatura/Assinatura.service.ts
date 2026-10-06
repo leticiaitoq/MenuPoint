@@ -4,6 +4,7 @@ import { AppError } from '@shared/errors/AppError'
 import { CriarAssinaturaDTO } from './Assinatura.schema'
 import prisma from '@config/prisma'
 import { Plano, StatusAssinatura } from '@prisma/client'
+import { pagamentoRecusado } from './Pagamento.temporario'
 
 const mpClient = new MercadoPagoConfig({
   accessToken: env.MP_ACCESS_TOKEN,
@@ -79,6 +80,85 @@ export class AssinaturaService {
     }
   }
 
+  /**
+   * CHECKOUT DO CADASTRO: cria a assinatura no Mercado Pago para a cobrança
+   * PENDENTE criada no cadastro e devolve o link de pagamento (init_point).
+   * Sem plano pré-criado no MP: valor e recorrência vêm daqui (VALOR do plano).
+   */
+  async criarCheckout(empresa_id: string, email: string) {
+    let pendente = await prisma.assinatura.findFirst({
+      where: { empresa_id, status: 'PENDENTE' },
+      orderBy: { criado_em: 'desc' },
+    })
+
+    // Pagamento recusado/cancelado antes: abre uma nova tentativa com o mesmo plano
+    if (!pendente && (await pagamentoRecusado(empresa_id))) {
+      const ultima = await prisma.assinatura.findFirst({
+        where: { empresa_id },
+        orderBy: { criado_em: 'desc' },
+      })
+      if (ultima) {
+        pendente = await prisma.assinatura.create({
+          data: {
+            empresa_id,
+            plano:   ultima.plano,
+            status:  'PENDENTE',
+            gateway: 'mercadopago',
+            valor:   ultima.valor,
+            periodo: 'MENSAL',
+          },
+        })
+      }
+    }
+
+    if (!pendente) {
+      throw new AppError('Nenhum pagamento pendente para esta conta', 404)
+    }
+
+    // Já gerou o link antes (usuário voltou do checkout sem pagar): reaproveita
+    if (pendente.gateway === 'mercadopago' && pendente.checkout_url) {
+      return { init_point: pendente.checkout_url }
+    }
+
+    try {
+      const mpAssinatura = await preApprovalClient.create({
+        body: {
+          reason:             `MenuPoint - Plano ${pendente.plano}`,
+          external_reference: empresa_id,
+          payer_email:        email,
+          back_url:           `${env.FRONTEND_URL}/assinatura/sucesso`,
+          notification_url:   `${env.API_URL}/api/v1/assinatura/webhook`,
+          status:             'pending',
+          auto_recurring: {
+            frequency:          1,
+            frequency_type:     'months',
+            transaction_amount: Number(pendente.valor),
+            currency_id:        'BRL',
+          },
+        } as any,
+      })
+
+      if (!mpAssinatura.init_point) {
+        throw new AppError('Mercado Pago não retornou o link de checkout', 502)
+      }
+
+      await prisma.assinatura.update({
+        where: { id: pendente.id },
+        data: {
+          gateway:      'mercadopago',
+          gateway_id:   mpAssinatura.id ?? null,
+          checkout_url: mpAssinatura.init_point,
+        },
+      })
+
+      return { init_point: mpAssinatura.init_point }
+    } catch (err: any) {
+      if (err instanceof AppError) throw err
+      const msg = err?.cause?.[0]?.description ?? err?.message ?? 'Erro ao criar assinatura'
+      throw new AppError(`Mercado Pago: ${msg}`, 502)
+    }
+  }
+
   async processarWebhook(id: string, type: string) {
     if (type !== 'subscription_preapproval') {
       return { ignorado: true }
@@ -114,21 +194,17 @@ export class AssinaturaService {
         },
       })
 
-      // Se ficou ATIVA, atualiza também o plano da empresa
-      if (novoStatus === 'ATIVA' && raw.preapproval_plan_id) {
-        const plano = PLAN_ID_TO_PLANO[raw.preapproval_plan_id]
-        if (plano) {
-          // Busca a assinatura para pegar o empresa_id
-          const assinatura = await prisma.assinatura.findFirst({
-            where: { gateway_id: id, gateway: 'mercadopago' },
-          })
+      // Se ficou ATIVA, libera a empresa com o plano da própria assinatura salva no cadastro
+      if (novoStatus === 'ATIVA') {
+        const assinatura = await prisma.assinatura.findFirst({
+          where: { gateway_id: id, gateway: 'mercadopago' },
+        })
 
-          if (assinatura) {
-            await prisma.empresa.update({
-              where: { id: assinatura.empresa_id },
-              data:  { plano, ativo: true },
-            })
-          }
+        if (assinatura) {
+          await prisma.empresa.update({
+            where: { id: assinatura.empresa_id },
+            data:  { plano: assinatura.plano, ativo: true },
+          })
         }
       }
 

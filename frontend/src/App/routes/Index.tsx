@@ -1,9 +1,10 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ROTAS_CAIXA } from "./caixaRotas";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import AssinaturaSucesso from "../pages/assinatura/AssinaturaSucesso";
+import PagamentoPage from "../pages/assinatura/PagamentoPage";
 import NovaSenha from "../pages/auth/NovaSenha";
 import WelcomePage from "../pages/ClienteLocal/WelcomePage/WelcomePage";
 import HomeRestaurante from "../pages/Restaurante/Home/HomeRestaurante";
@@ -46,6 +47,18 @@ import PagarParcial from "../pages/Restaurante/Gestão/Caixa/PagarParcial";
 import Despesas from "../pages/Restaurante/Gestão/Relatorios/Despesas/Despesa";
 import CadDespesa from "../pages/Restaurante/Gestão/Relatorios/Despesas/CadDespesa";
 /**
+ * Entrada do sistema: o cadastro fica em /cadastro (aberto a partir do site, com ?plano=).
+ * "/" mantém os links antigos (/?plano=pro) funcionando e leva ao mesmo lugar;
+ * sem plano escolhido, o /cadastro manda a pessoa para o site (REACT_APP_SITE_URL).
+ */
+const EntradaSistema: React.FC = () => {
+  const { search } = useLocation();
+  if (search.includes('plano=')) return <Navigate to={`/cadastro${search}`} replace />;
+  window.location.replace('/site/index.html');
+  return null;
+};
+
+/**
  * Novas telas = Novas rotas aqui (Obrigatorio)
  */
 const AppRoutes: React.FC = () => {
@@ -58,7 +71,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/acesso-pelo-link" element={<AcessoPeloLink />} />
         <Route path="/login/cliente" element={<LoginCliente />} />
         <Route path="/register/cliente" element={<RegisterCliente />} />
-        <Route path="/" element={<RegisterPage />} />
+        <Route path="/" element={<EntradaSistema />} />
+        <Route path="/cadastro" element={<RegisterPage />} />
         <Route path="/assinatura/sucesso" element={<AssinaturaSucesso />} />
         <Route path="/nova-senha" element={<NovaSenha />} />
         <Route path="/menulocal" element={<MenuLocal />} />
@@ -89,6 +103,7 @@ const AppRoutes: React.FC = () => {
 
         {/* Rotas do restaurante: exigem login */}
         <Route element={<RotaProtegida />}>
+          <Route path="/pagamento" element={<PagamentoPage />} />
           <Route path="/restaurante/home" element={<HomeRestaurante /> } />
           <Route path="/restaurante/pedido" element={<Pedido />} />
           <Route path="/restaurante/historico" element={<RestHistorico />} />
