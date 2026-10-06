@@ -65,11 +65,15 @@ export const criarProdutoSchema = z.object({
     .min(1, 'Nome é obrigatório')
     .max(150, 'Nome deve ter no máximo 150 caracteres'),
 
-  descricao: z.string().optional(),
+  descricao: z
+    .string()
+    .max(500, 'Descrição deve ter no máximo 500 caracteres')
+    .optional(),
 
   preco: z
     .number()
-    .positive('Preço deve ser maior que zero'),
+    .positive('Preço deve ser maior que zero')
+    .max(999999.99, 'Preço máximo é R$ 999.999,99'),
 
   preco_promocional: z
     .number()
@@ -122,8 +126,9 @@ export type CriarProdutoDTO = z.infer<typeof criarProdutoSchema>
 export const atualizarProdutoSchema = z.object({
   categoria_id: z.string().uuid().optional(),
   nome: z.string().min(1).max(150).optional(),
-  descricao: z.string().optional(),
-  preco: z.number().positive().optional(),
+  // null limpa a descrição (antes, apagar o texto no editar não surtia efeito)
+  descricao: z.string().max(500, 'Descrição deve ter no máximo 500 caracteres').nullable().optional(),
+  preco: z.number().positive().max(999999.99, 'Preço máximo é R$ 999.999,99').optional(),
   preco_promocional: z.number().positive().optional().nullable(),
   imagem_url: z.string().url().optional().nullable(),
   codigo_interno: z.string().max(50).optional(),

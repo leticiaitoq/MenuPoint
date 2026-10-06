@@ -209,3 +209,17 @@
 
 .prod__btn-acao:hover               { color: #333; }
 .prod__btn-acao--pausar:hover       { color: #c0392b; }
+/* Selo de destaque ao lado do nome */
+.prod__destaque {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #fff4d6;
+  color: #b7791f;
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: middle;
+}

@@ -271,3 +271,50 @@ export function templateConfirmacaoEmail(
     </html>
   `
 }
+
+/** Aviso enviado ao e-mail ANTIGO depois que o e-mail de acesso é trocado. */
+export function templateEmailAlterado(nomeUsuario: string, novoEmail: string): string {
+  return `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8">
+      <title>E-mail alterado</title>
+      <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { background-color: #1A1A2E; padding: 32px; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 24px; }
+        .body { padding: 32px; color: #333333; line-height: 1.6; }
+        .body p { margin: 0 0 16px; }
+        .warning { background-color: #FEF3C7; border-left: 4px solid #D97706; padding: 12px 16px; border-radius: 4px; font-size: 14px; color: #92400E; margin: 16px 0; }
+        .footer { background-color: #f4f4f4; padding: 20px 32px; text-align: center; font-size: 12px; color: #999999; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🍽️ Menupoint</h1>
+        </div>
+        <div class="body">
+          <p>Olá, <strong>${nomeUsuario}</strong>!</p>
+          <div class="warning">
+            O e-mail de acesso da sua conta foi alterado para <strong>${novoEmail}</strong>.
+          </div>
+          <p>
+            A partir de agora, use o novo e-mail para entrar. Este endereço não
+            recebe mais acesso à conta.
+          </p>
+          <p>
+            Se você não fez essa alteração, entre em contato com o suporte imediatamente.
+          </p>
+        </div>
+        <div class="footer">
+          <p>Este é um e-mail automático, não responda.</p>
+          <p>© ${new Date().getFullYear()} Menupoint. Todos os direitos reservados.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+}

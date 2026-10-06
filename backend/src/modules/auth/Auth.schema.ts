@@ -36,6 +36,7 @@ export interface LoginResponseDTO {
     escopo: string
     estabelecimento_id: string | null
     empresa_id: string | null
+    pagamento_pendente?: boolean
   }
 }
 
@@ -169,6 +170,9 @@ export const registrarSchema = z.object({
     .regex(/[0-9]/, 'Senha deve ter ao menos um número'),
   confirmar_senha: z.string().min(1, 'Confirmação de senha é obrigatória'),
 
+  // Plano escolhido no site (?plano=starter|pro). Sem ele, o cadastro segue o fluxo antigo.
+  plano: z.string().trim().max(30).optional(),
+
   // Gerado pelo webhook após pagamento da assinatura ser confirmado
   token_pagamento: z
     .string()
@@ -193,6 +197,7 @@ export interface RegistrarResponseDTO {
     escopo: string
     estabelecimento_id: string
     empresa_id: string
+    pagamento_pendente?: boolean
   }
 }
 

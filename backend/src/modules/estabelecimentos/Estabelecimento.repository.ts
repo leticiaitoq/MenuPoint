@@ -49,6 +49,7 @@ export class EstabelecimentoRepository extends BaseRepository<
         logo_url: true,
         banner_url: true,
         tema: true,
+        tipo_cozinha: true,
         telefone: true,
         whatsapp: true,
         endereco: true,

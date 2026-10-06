@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   HiArrowLeft,
   HiPrinter,
@@ -16,6 +16,7 @@ import {
 } from 'react-icons/hi';
 import { MdCreditCard, MdPix } from 'react-icons/md';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
+import { ROTAS_CAIXA } from '../../../../routes/caixaRotas';
 import './PagarMesa.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -133,12 +134,8 @@ const FORMAS_PAGAMENTO: { id: FormaPagamento; nome: string; info: string; icone:
 const gerarIdItem = () => `it${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
 // ── Componente ─────────────────────────────────────────────────────────────────
-const PagarMesa: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = ({ id, pedidoBase }) => {
   const navigate = useNavigate();
-
-  // Fallback pra 'm1' evita tela quebrada se o id não existir no mock
-  const pedidoBase = (id && PEDIDOS_DETALHE_MOCK[id]) || PEDIDOS_DETALHE_MOCK['m1'];
 
   const [itens, setItens]           = useState<ItemPedido[]>(pedidoBase.itens);
   const [menuAberto, setMenuAberto] = useState(false);
@@ -389,7 +386,7 @@ const PagarMesa: React.FC = () => {
               */}
               <button
                 className="pagar__btn-parcial"
-                onClick={() => navigate(`/restaurante/caixa/pagarParcial`)}
+                onClick={() => navigate(ROTAS_CAIXA.pagarParcial(id))}
               >
                 Pagamento parcial
               </button>
@@ -607,6 +604,19 @@ const PagarMesa: React.FC = () => {
       </div>
     </RestaurantLayout>
   );
+};
+
+// ── Rota: descobre a mesa pelo :id da URL ─────────────────────────────────────
+// Sem id, ou com id que não existe → volta para o caixa (antes caía em silêncio
+// na mesa m1 e mostrava os itens errados). O key={id} faz o state interno
+// (itens, desconto...) recomeçar do zero se o id da URL mudar.
+const PagarMesa: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const pedido = id ? PEDIDOS_DETALHE_MOCK[id] : undefined;
+
+  if (!id || !pedido) return <Navigate to={ROTAS_CAIXA.lista} replace />;
+
+  return <PagarMesaConteudo key={id} id={id} pedidoBase={pedido} />;
 };
 
 export default PagarMesa;

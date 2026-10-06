@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { HiSearch, HiPencil, HiPause, HiPlay, HiPlus } from 'react-icons/hi';
+import { HiSearch, HiPencil, HiPause, HiPlay, HiPlus, HiStar } from 'react-icons/hi';
 import { MdDragIndicator } from 'react-icons/md';
 import RestaurantLayout from '../../../shared/components/layout/Restaurantelayout';
 import { useNavigate } from 'react-router-dom';
@@ -9,17 +9,25 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from '@dnd-kit/utilities';
 import ProdutoService, { Produto } from '../../../services/produto.service';
 import CategoriaService, { Categoria } from '../../../services/categoria.service';
+import ContadorCaracteres from '../../../shared/components/ContadorCaracteres/ContadorCaracteres';
 
 const STATUS = ['Todos os status', 'Ativo', 'Inativo'];
 
+// Produtos em destaque ficam sempre no topo; dentro de cada grupo vale a ordem salva
+const ordenarProdutos = (lista: Produto[]): Produto[] =>
+  [...lista].sort((a, b) =>
+    Number(b.destaque) - Number(a.destaque) || a.ordem - b.ordem
+  );
+
 interface LinhaProps {
   produto: Produto;
+  posicao: number;
   onEditar: (produto: Produto) => void;
   onAlternar: (id: string) => void;
   formatarMoeda: (valor: number) => string;
 }
 
-const LinhaProduto: React.FC<LinhaProps> = ({ produto, onEditar, onAlternar, formatarMoeda }) => {
+const LinhaProduto: React.FC<LinhaProps> = ({ produto, posicao, onEditar, onAlternar, formatarMoeda }) => {
   const {
     attributes,
     listeners,
@@ -45,7 +53,7 @@ const LinhaProduto: React.FC<LinhaProps> = ({ produto, onEditar, onAlternar, for
           {...attributes}
           {...listeners}
         />
-        {produto.ordem}
+        {posicao}
       </td>
       <td className="prod__td-produto">
         <img
@@ -54,6 +62,11 @@ const LinhaProduto: React.FC<LinhaProps> = ({ produto, onEditar, onAlternar, for
           className="prod__imagem"
         />
         {produto.nome}
+        {produto.destaque && (
+          <span className="prod__destaque" title="Produto em destaque">
+            <HiStar /> Destaque
+          </span>
+        )}
       </td>
       <td>{formatarMoeda(produto.preco)}</td>
       <td>{produto.categoria?.nome ?? '—'}</td>
@@ -94,7 +107,7 @@ const RestProdutos: React.FC = () => {
         ProdutoService.listar(),
         CategoriaService.listar(),
       ]);
-      setProdutos(listaProdutos);
+      setProdutos(ordenarProdutos(listaProdutos));
       setCategorias(listaCategorias);
     } catch (err: any) {
       setErro(err?.response?.data?.message ?? 'Não foi possível carregar os produtos.');
@@ -148,6 +161,14 @@ const RestProdutos: React.FC = () => {
 
     const oldIndex = produtos.findIndex((p) => p.id === active.id);
     const newIndex = produtos.findIndex((p) => p.id === over.id);
+
+    // Destaques ficam sempre acima dos demais: só dá para reordenar dentro do mesmo grupo
+    if (produtos[oldIndex].destaque !== produtos[newIndex].destaque) {
+      setErro('Produtos em destaque ficam sempre no topo. Para mudar isso, edite o produto e altere o destaque.');
+      return;
+    }
+    setErro('');
+
     const reordenado = arrayMove(produtos, oldIndex, newIndex).map((p, i) => ({ ...p, ordem: i + 1 }));
 
     setProdutos(reordenado);
@@ -183,9 +204,11 @@ const RestProdutos: React.FC = () => {
               type="text"
               placeholder="Buscar produto..."
               className="prod__busca"
+              maxLength={150}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
+            {busca.length > 0 && <ContadorCaracteres valor={busca} max={150} />}
           </div>
 
           <select className="prod__select" value={categoriaFiltro} onChange={(e) => setCategoriaFiltro(e.target.value)}>
@@ -208,9 +231,7 @@ const RestProdutos: React.FC = () => {
             <p className="prod__dica">Nenhum produto encontrado.</p>
           ) : (
             <>
-              <p className="prod__dica">↕ Arraste para mudar a ordem dos produtos</p>
-
-              <div className="prod__tabela-scroll">
+                <div className="prod__tabela-scroll">
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                   <SortableContext items={produtosFiltrados.map((p) => p.id)} strategy={verticalListSortingStrategy}>
                     <table className="prod__tabela">
@@ -229,6 +250,7 @@ const RestProdutos: React.FC = () => {
                           <LinhaProduto
                             key={produto.id}
                             produto={produto}
+                            posicao={produtos.findIndex((p) => p.id === produto.id) + 1}
                             onEditar={(p) => navigate(`/restaurante/editprodutos/${p.id}`)}
                             onAlternar={alternarDisponibilidade}
                             formatarMoeda={formatarMoeda}
@@ -240,7 +262,7 @@ const RestProdutos: React.FC = () => {
                 </DndContext>
               </div>
 
-              <p className="prod__dica">↕ Arraste para mudar a ordem dos produtos</p>
+              <p className="prod__dica">↕ Arraste para mudar a ordem dos produtos (a nova ordem é salva automaticamente). Produtos em destaque ficam sempre no topo.</p>
             </>
           )}
         </div>

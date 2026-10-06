@@ -37,8 +37,12 @@ async create(
     throw new AppError('Já existe uma categoria com este nome', 409);
   }
 
+  // Ordem automática: sempre vai para o fim da lista do estabelecimento
+  const ordem = await this.repository.proximaOrdem(estabelecimento_id);
+
   return this.repository.create({
     ...data,
+    ordem,
     estabelecimento_id,
   });
 }
@@ -85,7 +89,28 @@ async create(
     }
   }
 
-  return this.repository.update(id, data);
+  // Reativar pela edição: opcionalmente reativa os produtos junto
+  if (data.ativo === true && !categoria.ativo) {
+    const { ativo, reativar_produtos, ...resto } = data;
+    if (Object.keys(resto).length > 0) {
+      await this.repository.update(id, resto);
+    }
+    await this.repository.reativarComProdutos(id, reativar_produtos === true);
+    return (await this.repository.findById(id)) as Categoria;
+  }
+
+  // Desativar pela edição (status "Oculta") também desativa os produtos
+  if (data.ativo === false && categoria.ativo) {
+    const { ativo, reativar_produtos, ...resto } = data;
+    if (Object.keys(resto).length > 0) {
+      await this.repository.update(id, resto);
+    }
+    await this.repository.desativarComProdutos(id);
+    return (await this.repository.findById(id)) as Categoria;
+  }
+
+  const { reativar_produtos, ...dados } = data;
+  return this.repository.update(id, dados);
 }
 
   async reordenar(
@@ -128,10 +153,15 @@ async create(
       throw new AppError('Acesso não autorizado', 403)
     }
 
-    await this.repository.update(id, { ativo: false } as any)
+    // Desativa a categoria e todos os produtos ligados a ela
+    await this.repository.desativarComProdutos(id)
   }
 
-  async reativar(id: string, estabelecimento_id: string): Promise<Categoria> {
+  async reativar(
+    id: string,
+    estabelecimento_id: string,
+    reativarProdutos = false
+  ): Promise<Categoria> {
     const categoria = await this.repository.findById(id)
 
     if (!categoria) {
@@ -146,6 +176,7 @@ async create(
       throw new AppError('Categoria já está ativa', 400)
     }
 
-    return this.repository.update(id, { ativo: true } as any)
+    await this.repository.reativarComProdutos(id, reativarProdutos)
+    return (await this.repository.findById(id)) as Categoria
   }
 }

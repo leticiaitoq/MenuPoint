@@ -81,6 +81,8 @@ export const criarEstabelecimentoSchema = z.object({
 
   tema: z.enum(['CLARO', 'ESCURO']).default('CLARO'),
 
+  tipo_cozinha: z.string().trim().max(60, 'Tipo de cozinha deve ter no máximo 60 caracteres').optional(),
+
   chave_pix: z.string().max(150).optional(),
 
   tipo_chave_pix: z
@@ -166,6 +168,8 @@ export const atualizarEstabelecimentoSchema = z
     logo_url: z.string().url().nullable().optional(),
     banner_url: z.string().url().nullable().optional(),
     tema: z.enum(['CLARO', 'ESCURO']).optional(),
+    // "" apaga o valor (vira null)
+    tipo_cozinha: textoOuNulo(60).optional(),
     tempo_entrega_min: z.number().int().min(1).optional(),
     tempo_entrega_max: z.number().int().min(1).optional(),
     taxa_entrega: z.number().min(0).optional(),

@@ -145,7 +145,16 @@ export async function categoriasRoutes(app: FastifyInstance): Promise<void> {
           throw new AppError('Usuário não vinculado a um estabelecimento', 400)
         }
 
-        const categoria = await service.reativar(id, user.estabelecimento_id)
+        // Corpo opcional: { reativar_produtos: boolean }
+        const { reativar_produtos } = z
+          .object({ reativar_produtos: z.boolean().optional() })
+          .parse(request.body ?? {})
+
+        const categoria = await service.reativar(
+          id,
+          user.estabelecimento_id,
+          reativar_produtos === true
+        )
         return reply.send(categoria)
       }
     )

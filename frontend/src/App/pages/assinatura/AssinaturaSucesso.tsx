@@ -1,10 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useAuth, ROTA_APOS_LOGIN } from '../../shared/contexts/Authcontext';
 
 const AssinaturaSucesso: React.FC = () => {
   const navigate = useNavigate();
-  const [status, setStatus] = useState<'checando' | 'ativa' | 'demorando'>('checando');
+  const { token, usuario, entrar } = useAuth();
+  const [status, setStatus] = useState<'checando' | 'ativa' | 'demorando' | 'recusado'>('checando');
+
+  // Logo após o cadastro falta confirmar o e-mail; nos demais casos vai direto ao sistema
+  const irParaProximaTela = () => {
+    let pos: { email?: string; verificarEmail?: boolean } = {};
+    try { pos = JSON.parse(localStorage.getItem('@menupoint:pos_pagamento') || '{}'); } catch { /* ignora */ }
+    localStorage.removeItem('@menupoint:pos_pagamento');
+    if (pos.verificarEmail) navigate('/verify-code', { state: { email: pos.email, mode: 'register' }, replace: true });
+    else navigate(ROTA_APOS_LOGIN, { replace: true });
+  };
 
   useEffect(() => {
     let tentativas = 0;
@@ -13,9 +24,15 @@ const AssinaturaSucesso: React.FC = () => {
     const verificar = async () => {
       try {
         const { data } = await api.get('/assinatura/minha');
+        if (data?.status === 'CANCELADA' || data?.status === 'FALHOU') {
+          setStatus('recusado');
+          return;
+        }
         if (data?.status === 'ATIVA') {
           setStatus('ativa');
-          setTimeout(() => navigate('/restaurante/home'), 1500);
+          // Pagamento aprovado: libera o restante do sistema
+          if (token && usuario) entrar({ token, usuario: { ...usuario, pagamento_pendente: false } });
+          setTimeout(irParaProximaTela, 1500);
           return;
         }
       } catch {
@@ -31,7 +48,8 @@ const AssinaturaSucesso: React.FC = () => {
     };
 
     verificar();
-  }, [navigate]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div style={{
@@ -57,14 +75,22 @@ const AssinaturaSucesso: React.FC = () => {
       )}
       {status === 'demorando' && (
         <>
-          <h2>Seu pagamento está sendo processado</h2>
+          <h2>Ainda não recebemos a confirmação</h2>
           <p>
-            Isso às vezes demora um pouco mais. Você já pode entrar no sistema —
-            sua assinatura será ativada automaticamente assim que o pagamento for confirmado.
+            Se você já pagou, pode levar alguns minutos. Se o pagamento não foi concluído,
+            é só tentar de novo.
           </p>
-          <button onClick={() => navigate('/restaurante/home')}>
-            Ir para o sistema
+          <button onClick={() => window.location.reload()}>Verificar novamente</button>
+          <button onClick={() => navigate('/pagamento', { replace: true })} style={{ marginTop: 8 }}>
+            Voltar ao pagamento
           </button>
+        </>
+      )}
+      {status === 'recusado' && (
+        <>
+          <h2>Não foi possível concluir o pagamento</h2>
+          <p>O pagamento foi recusado ou cancelado. Você pode tentar novamente.</p>
+          <button onClick={() => navigate('/pagamento', { replace: true })}>Tentar novamente</button>
         </>
       )}
     </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
+import { useConvidado } from '../../../shared/contexts/Convidadocontext';
 import './WelcomePage.css';
 
 /**
@@ -17,6 +18,7 @@ import './WelcomePage.css';
  */
 const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { definirConvidado } = useConvidado();
 
   const [name, setName] = useState('');
   const [error, setError] = useState('');
@@ -49,9 +51,11 @@ const WelcomePage: React.FC = () => {
 
   /**
    * Chamado ao clicar em CONFIRMAR no modal.
-   * Futuramente: salvar nome e mesa no CustomerContext antes de navegar.
+   * Salva nome e mesa no contexto antes de navegar, para a navbar
+   * (e as demais telas do cliente local) conseguirem usar.
    */
   const handleConfirmTable = () => {
+    definirConvidado({ nome: name.trim(), mesa: tableNumber });
     setShowModal(false);
     navigate('/menulocal');
   };

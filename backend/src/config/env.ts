@@ -9,13 +9,17 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
 
-  //E-mail
-
-  MAIL_HOST: z.string().default('smtp.gmail.com'),
-  MAIL_PORT: z.coerce.number().default(465),
-  MAIL_USER: z.string().email('MAIL_USER deve ser um e-mail válido'),
-  MAIL_PASS: z.string().min(1, 'MAIL_PASS é obrigatório'),
+  // E-mail (Resend — https://resend.com/api-keys)
+  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY é obrigatório'),
+  // Remetente: precisa ser de um domínio verificado no Resend (SPF/DKIM) para não cair no spam
   MAIL_FROM: z.string().default('Menupoint <noreply@menupoint.com>'),
+  // Opcional: para onde vão as respostas dos usuários (ex.: suporte@seudominio.com)
+  MAIL_REPLY_TO: z.string().optional(),
+
+  // Código de verificação de e-mail
+  CODIGO_EXPIRA_MINUTOS: z.coerce.number().int().min(1).default(15),
+  // Intervalo mínimo entre dois reenvios de código para o mesmo usuário
+  REENVIO_INTERVALO_SEGUNDOS: z.coerce.number().int().min(0).default(60),
 
   //Whatspp
   ZAPI_INSTANCE_ID: z.string().optional(),

@@ -24,7 +24,6 @@ import {
 } from 'react-icons/hi2';
 import AuthService from '../../services/auth.service';
 import { useAuth } from '../../shared/contexts/Authcontext';
-import AssinaturaService from '../../services/assinatura.service';
 import TermsModal from '../../shared/components/TermsModal/TermesModal';
 import './RegisterPage.css';
 
@@ -37,6 +36,11 @@ const ESTADOS_BR = [
   'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI',
   'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
 ];
+
+// Plano escolhido no site: guardado aqui para sobreviver a recarregar a página
+const CHAVE_PLANO = '@menupoint:plano';
+// Endereço do site institucional (REACT_APP_SITE_URL). Sem ele, o cadastro abre direto.
+const SITE_URL = '/site/index.html';
 
 const somenteDigitos = (v: string) => v.replace(/\D/g, '');
 
@@ -156,10 +160,18 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { entrar } = useAuth();
   const [searchParams] = useSearchParams();
-  // Se a pessoa veio do site institucional com um plano já escolhido
-  // (ex: menupoint-sistema.../?plano=pro), guardamos o slug aqui.
-  const planoDesejado = searchParams.get('plano'); // 'basico' | 'pro' | null
+  // Plano escolhido no site (ex: /cadastro?plano=pro). Fica guardado durante todo o cadastro.
+  const [planoDesejado] = useState<string | null>(() => {
+    const doSite = searchParams.get('plano');
+    if (doSite) sessionStorage.setItem(CHAVE_PLANO, doSite);
+    return doSite ?? sessionStorage.getItem(CHAVE_PLANO);
+  });
   const [redirecionandoPagamento, setRedirecionandoPagamento] = useState(false);
+
+  // Cadastro sem plano escolhido: a primeira tela é o site, onde o plano é escolhido
+  useEffect(() => {
+    if (!planoDesejado && SITE_URL) window.location.replace(SITE_URL);
+  }, [planoDesejado]);
 
   const [etapa, setEtapa] = useState<1 | 2>(1);
 
@@ -404,6 +416,7 @@ const RegisterPage: React.FC = () => {
         email: email.trim(),
         senha,
         confirmar_senha: confirmarSenha,
+        plano: planoDesejado ?? undefined,
       });
 
       entrar({
@@ -412,37 +425,25 @@ const RegisterPage: React.FC = () => {
         usuario: resultado.usuario,
       });
 
-      // Se a pessoa veio de um botão "Assinar plano X" no site, pula direto
-      // pro checkout do Mercado Pago em vez de mostrar o modal de boas-vindas.
+      // Veio do site com um plano: segue para o pagamento (o código de e-mail já foi enviado
+      // e será confirmado logo depois). Sem plano, mantém o fluxo de confirmação de e-mail.
       if (planoDesejado) {
-        setCarregando(false);
+        sessionStorage.removeItem(CHAVE_PLANO);
         setRedirecionandoPagamento(true);
-        try {
-          const planos = await AssinaturaService.listarPlanos();
-          const planoEscolhido = planos.find((p) => p.slug === planoDesejado);
-
-          if (!planoEscolhido) {
-            // Plano não reconhecido (link antigo ou slug errado): não trava o
-            // cadastro, só cai no fluxo normal de confirmação por e-mail.
-            setShowSucesso(true);
-            return;
-          }
-
-          const { init_point } = await AssinaturaService.criar(planoEscolhido.id, email.trim());
-          window.location.href = init_point;
-        } catch (err: any) {
-          // Conta já foi criada com sucesso — não deixamos a pessoa perdida
-          // só porque a etapa de pagamento falhou. Ela pode assinar depois.
-          setRedirecionandoPagamento(false);
-          setErro('Sua conta foi criada, mas não foi possível iniciar o pagamento agora. Você pode assinar um plano dentro do sistema.');
-          setShowSucesso(true);
-        }
+        navigate('/pagamento', { state: { email: email.trim(), verificarEmail: true } });
         return;
       }
 
       setShowSucesso(true);
     } catch (err: any) {
-      setErro(err?.response?.data?.message ?? 'Erro ao criar conta. Tente novamente.');
+      // Se o backend já mandou um motivo específico (ex: "Este e-mail já
+      // está cadastrado"), mostramos ele. Senão, caímos numa mensagem mais
+      // empática do que um erro genérico.
+      const mensagemDoServidor = err?.response?.data?.message;
+      setErro(
+        mensagemDoServidor ??
+        'Não foi possível criar sua conta. Tente novamente mais tarde. Se o problema persistir, entre em contato com nossa equipe.'
+      );
     } finally {
       setCarregando(false);
     }
@@ -452,6 +453,9 @@ const RegisterPage: React.FC = () => {
     setShowSucesso(false);
     navigate('/verify-code', { state: { email: email.trim(), mode: 'register' } });
   };
+
+  // Redirecionando para o site para escolher o plano
+  if (!planoDesejado && SITE_URL) return null;
 
   /* ────────────────────────────────────────────────────────────
      Render
@@ -614,7 +618,7 @@ const RegisterPage: React.FC = () => {
                 error={erros.numero} layout={span(3, 5, 12)}>
                 <input id="rp-numero" type="text" className="register-page__input"
                   placeholder="Ex: 123" value={numero}
-                  onChange={(e) => { setNumero(e.target.value.replace(/[^\w/\-]/g, '')); limparErro('numero'); }}
+                  onChange={(e) => { setNumero(e.target.value.replace(/[^\w/-]/g, '')); limparErro('numero'); }}
                   maxLength={10} aria-invalid={!!erros.numero} />
               </Field>
 

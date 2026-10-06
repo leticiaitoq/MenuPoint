@@ -1,8 +1,10 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { ROTAS_CAIXA } from "./caixaRotas";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import AssinaturaSucesso from "../pages/assinatura/AssinaturaSucesso";
+import PagamentoPage from "../pages/assinatura/PagamentoPage";
 import NovaSenha from "../pages/auth/NovaSenha";
 import WelcomePage from "../pages/ClienteLocal/WelcomePage/WelcomePage";
 import HomeRestaurante from "../pages/Restaurante/Home/HomeRestaurante";
@@ -25,7 +27,12 @@ import PerfilCliente from "../pages/cliente/Perfil/PerfilCliente";
 import PerfilLocal from "../pages/ClienteLocal/Perfil/PerfilLocal";
 import Fila from "../pages/Restaurante/Gestão/Fila/Fila";
 import Relatorios from "../pages/Restaurante/Gestão/Relatorios/Relatorios";
+import RestauranteLink from "../pages/cliente/RestauranteLink/RestauranteLink";
 import { RotaProtegida } from "../shared/components/RotaProtegida";
+import { RotaProtegidaCliente } from "../shared/components/RotaProtegidaCliente";
+import { RotaComRestaurante } from "../shared/components/RotaComRestaurante";
+import AcessoPeloLink from "../pages/cliente/AcessoPeloLink/AcessoPeloLink";
+import NovaSenhaCliente from "../pages/authCliente/NovaSenhaCliente";
 import Config from '../pages/Restaurante/Configuracao/Config';
 import VerifyCodePage from "../pages/auth/VerifyCodePage";
 import LoginCliente from "../pages/authCliente/LoginCliente";
@@ -40,6 +47,18 @@ import PagarParcial from "../pages/Restaurante/Gestão/Caixa/PagarParcial";
 import Despesas from "../pages/Restaurante/Gestão/Relatorios/Despesas/Despesa";
 import CadDespesa from "../pages/Restaurante/Gestão/Relatorios/Despesas/CadDespesa";
 /**
+ * Entrada do sistema: o cadastro fica em /cadastro (aberto a partir do site, com ?plano=).
+ * "/" mantém os links antigos (/?plano=pro) funcionando e leva ao mesmo lugar;
+ * sem plano escolhido, o /cadastro manda a pessoa para o site (REACT_APP_SITE_URL).
+ */
+const EntradaSistema: React.FC = () => {
+  const { search } = useLocation();
+  if (search.includes('plano=')) return <Navigate to={`/cadastro${search}`} replace />;
+  window.location.replace('/site/index.html');
+  return null;
+};
+
+/**
  * Novas telas = Novas rotas aqui (Obrigatorio)
  */
 const AppRoutes: React.FC = () => {
@@ -48,31 +67,43 @@ const AppRoutes: React.FC = () => {
       <Routes>
         <Route path="/welcomepage" element={<WelcomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/r/:slug" element={<RestauranteLink />} />
+        <Route path="/acesso-pelo-link" element={<AcessoPeloLink />} />
         <Route path="/login/cliente" element={<LoginCliente />} />
         <Route path="/register/cliente" element={<RegisterCliente />} />
-        <Route path="/" element={<RegisterPage />} />
+        <Route path="/" element={<EntradaSistema />} />
+        <Route path="/cadastro" element={<RegisterPage />} />
         <Route path="/assinatura/sucesso" element={<AssinaturaSucesso />} />
         <Route path="/nova-senha" element={<NovaSenha />} />
-        <Route path="/dwelcome" element={<DWelcomePage />} />
-        <Route path="/menu" element={<MenuCliente />} />
         <Route path="/menulocal" element={<MenuLocal />} />
         <Route path="/recover" element={<RecoverPass />} />
          <Route path="/recover/cliente" element={<RecoverPassCliente />} />
         <Route path="/verify-code" element={<VerifyCodePage />} />   {/* Rota para a página de verificação de código usada tanto para registro quanto para recuperação de senha */ }
-        <Route path="/verify-code/cliente" element={<VerifyCodeCliente />} />   
-        <Route path="/reserva" element={<Reserva />} />
-        <Route path="/historico" element={<ControlePedido />} />
+        <Route path="/verify-code/cliente" element={<VerifyCodeCliente />} />
+        <Route path="/nova-senha/cliente" element={<NovaSenhaCliente />} />
         <Route path="/historicolocal" element={<ControlePedidoLocal />} />
-        <Route path="/endereço" element={<CadastroEndereco />} />
-         <Route path="/retirada" element={<InfoRetirada />} />
-         <Route path="/perfil" element={<PerfilCliente />} />
           <Route path="/perfilLocal" element={<PerfilLocal />} />
          <Route path="/personaliza" element={<Persopedido />} />
 
 
 
+        {/* Rotas do cliente cadastrado: exigem login do cliente (/login/cliente) */}
+        <Route element={<RotaProtegidaCliente />}>
+          {/* Dependem do restaurante escolhido pelo link /r/:slug (entrada direta é barrada) */}
+          <Route element={<RotaComRestaurante />}>
+            <Route path="/dwelcome" element={<DWelcomePage />} />
+            <Route path="/menu" element={<MenuCliente />} />
+            <Route path="/reserva" element={<Reserva />} />
+            <Route path="/endereço" element={<CadastroEndereco />} />
+            <Route path="/retirada" element={<InfoRetirada />} />
+          </Route>
+          <Route path="/historico" element={<ControlePedido />} />
+          <Route path="/perfil" element={<PerfilCliente />} />
+        </Route>
+
         {/* Rotas do restaurante: exigem login */}
         <Route element={<RotaProtegida />}>
+          <Route path="/pagamento" element={<PagamentoPage />} />
           <Route path="/restaurante/home" element={<HomeRestaurante /> } />
           <Route path="/restaurante/pedido" element={<Pedido />} />
           <Route path="/restaurante/historico" element={<RestHistorico />} />
@@ -85,8 +116,11 @@ const AppRoutes: React.FC = () => {
           <Route path="/restaurante/relatorios" element={<Relatorios />} />
           <Route path="/restaurante/config" element={<Config />} />
           <Route path="/restaurante/caixa" element={<GerenPagamentos />} />
-          <Route path="/restaurante/caixa/pagar" element={<PagarMesa />} />
-          <Route path="/restaurante/caixa/pagarParcial" element={<PagarParcial />} />
+          {/* Telas por mesa: o :id diz qual mesa está aberta. Sem id → volta para o caixa. */}
+          <Route path="/restaurante/caixa/pagar" element={<Navigate to={ROTAS_CAIXA.lista} replace />} />
+          <Route path={ROTAS_CAIXA.pagarMesaPadrao} element={<PagarMesa />} />
+          <Route path="/restaurante/caixa/pagarParcial" element={<Navigate to={ROTAS_CAIXA.lista} replace />} />
+          <Route path={ROTAS_CAIXA.pagarParcialPadrao} element={<PagarParcial />} />
           <Route path="/restaurante/despesas" element={<Despesas />} />
           <Route path="/restaurante/despesas/cadastrodespe" element={<CadDespesa />} />
         </Route>

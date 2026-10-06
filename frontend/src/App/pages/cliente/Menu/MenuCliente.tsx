@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import Carrinho from '../../../shared/components/Carrinho/Carrinho';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
+import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
+import RestaurantePublicoService from '../../../services/restaurantePublico.service';
 import './MenuCliente.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 interface Categoria {
   id: string;
   label: string;
-  icon: string;
+  icon: string; // caminho de imagem (começa com "/") ou emoji vindo do banco
 }
 
 interface Produto {
@@ -19,43 +21,117 @@ interface Produto {
   descricao: string;
   preco: number;
   imagem: string;
+  destaque: boolean;
+  ordem: number;
 }
 
-// ── Dados mockados (substituir por API futuramente) ────────────────────────────
-const CATEGORIAS: Categoria[] = [
-  { id: 'todos',      label: 'Todos',      icon: '🍽️' },
-  { id: 'lanches',    label: 'Lanches',    icon: '🍔' },
-  { id: 'bebidas',    label: 'Bebidas',    icon: '🥤' },
-  { id: 'massas',     label: 'Massas',     icon: '🍝' },
-  { id: 'sobremesas', label: 'Sobremesas', icon: '🧁' },
-  { id: 'pizzas',     label: 'Pizzas',     icon: '🍕' },
-  { id: 'porcoes',    label: 'Porções',    icon: '🍟' },
-  { id: 'saladas',    label: 'Saladas',    icon: '🥗' },
-];
+// "Todos" usa o PNG novo; as demais categorias vêm da API (ícone = emoji)
+const CATEGORIA_TODOS: Categoria = {
+  id: 'todos',
+  label: 'Todos',
+  icon: '/icons/icons-categorias/icons-categorias/todos.png',
+};
 
-const PRODUTOS: Produto[] = [
-  { id: '1', categoriaId: 'lanches',    nome: 'Hamburguer Celestino',   descricao: 'Pão, gergilim, hamburguer, bacon, cheddar, alface, cebola, tomate',  preco: 39.90, imagem: '/images/menu/lanche.jpg' },
-  { id: '2', categoriaId: 'massas',     nome: 'Macarrão ao molho ito',  descricao: 'Massa, molho vermelho, almondegas e queijo parmesão',                preco: 24.99, imagem: '/images/menu/macarrão.jpg' },
-  { id: '3', categoriaId: 'porcoes',    nome: 'Porção Batatas Brisola', descricao: 'Batatas fritas, cheddar e bacon (400g)',                              preco: 50.00, imagem: '/images/menu/batata.jpg' },
-  { id: '4', categoriaId: 'porcoes',    nome: 'Porção de Frango',       descricao: 'Frango crocante temperado com molho especial (300g)',                 preco: 38.00, imagem: '/images/menu/pf.jpg' },
-  { id: '5', categoriaId: 'bebidas',    nome: 'Caipirinha',             descricao: 'Limão, açúcar e cachaça artesanal',                                   preco: 18.00, imagem: '/images/menu/caipira.jpg' },
-  { id: '6', categoriaId: 'saladas',    nome: 'Salada Caesar',          descricao: 'Alface romana, croutons, parmesão e molho caesar',                    preco: 22.00, imagem: '/images/menu/ceaser.jpg' },
-  { id: '7', categoriaId: 'sobremesas', nome: 'Sorvete Cremoso',        descricao: 'Sorvete de chocolate com calda de morango',                           preco: 22.00, imagem: '/images/menu/sor.jpg' },
-  { id: '8', categoriaId: 'pizzas',     nome: 'Pizza Portuguesa',       descricao: 'Molho, mussarela, presunto, bacon, milho, ervilha, tomate e orégano', preco: 50.00, imagem: '/images/menu/pp.jpg' },
-  { id: '9', categoriaId: 'bebidas',    nome: 'Coca-Cola',              descricao: 'Coca-Cola Lata (350ml)',                                              preco: 6.00, imagem: '/images/menu/coca.jpg' },
-];  
+// Ícone pode ser imagem (caminho/URL) ou emoji
+const ehImagem = (icon: string) => icon.startsWith('/') || icon.startsWith('http');
+
+// Mesma hierarquia do painel do restaurante: destaques primeiro; depois a ordem
+// definida por ele; empate (ex.: produtos novos, todos com ordem 0) cai na ordem das categorias.
+// Array.sort é estável, então o que empatar continua na ordem em que o backend enviou.
+const compararProdutos = (idsCategorias: string[]) => (a: Produto, b: Produto) =>
+  Number(b.destaque) - Number(a.destaque)
+  || a.ordem - b.ordem
+  || idsCategorias.indexOf(a.categoriaId) - idsCategorias.indexOf(b.categoriaId);
+
 // ── Componente ─────────────────────────────────────────────────────────────────
 const MenuCliente: React.FC = () => {
   const navigate = useNavigate();
+  const { restaurante } = useRestauranteCliente();
+
+  const [categorias, setCategorias] = useState<Categoria[]>([CATEGORIA_TODOS]);
+  const [produtos, setProdutos]     = useState<Produto[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erroMenu, setErroMenu]     = useState('');
+  const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
+
+  // Cardápio real do restaurante escolhido pelo link /r/:slug.
+  // Recarrega sozinho (sem piscar a tela) quando o restaurante muda algo em
+  // categorias ou produtos: a cada 15s, ao voltar para a aba e ao recuperar a conexão.
+  useEffect(() => {
+    if (!restaurante) { setCarregando(false); return; }
+    let cancelado = false;
+    let ultimaAssinatura = '';
+
+    const carregar = (silencioso: boolean) => {
+      if (!silencioso) { setCarregando(true); setErroMenu(''); }
+
+      return RestaurantePublicoService.cardapio(restaurante.id)
+        .then((lista) => {
+          if (cancelado) return;
+          // Nada mudou desde a última leitura: não re-renderiza
+          const assinatura = JSON.stringify(lista);
+          if (silencioso && assinatura === ultimaAssinatura) return;
+          ultimaAssinatura = assinatura;
+
+          const ativas = lista.filter((c) => c.ativo !== false);
+          const novasCategorias: Categoria[] = [
+            CATEGORIA_TODOS,
+            ...ativas.map((c) => ({ id: c.id, label: c.nome, icon: c.icone ?? '🍽️' })),
+          ];
+          setCategorias(novasCategorias);
+          // Se a categoria selecionada foi desativada/removida, volta para "Todos"
+          setCategoriaAtiva((atual) =>
+            novasCategorias.some((c) => c.id === atual) ? atual : 'todos'
+          );
+          setProdutos(
+            ativas.flatMap((c) =>
+              (c.produtos ?? [])
+                .filter((p) => p.disponivel)
+                .map((p) => ({
+                  destaque: !!p.destaque,
+                  ordem: p.ordem ?? 0,
+                  id: p.id,
+                  categoriaId: c.id,
+                  nome: p.nome,
+                  descricao: p.descricao ?? '',
+                  preco: Number(p.preco_promocional ?? p.preco),
+                  imagem: p.imagem_url ?? '/icons/restaurant-logo.png',
+                }))
+            ).sort(compararProdutos(ativas.map((c) => c.id)))
+          );
+          setErroMenu('');
+        })
+        .catch(() => {
+          // Em recarga silenciosa mantém o cardápio atual; só avisa no carregamento inicial
+          if (!cancelado && !silencioso) setErroMenu('Não foi possível carregar o cardápio.');
+        })
+        .finally(() => { if (!cancelado && !silencioso) setCarregando(false); });
+    };
+
+    carregar(false);
+
+    const recarregar = () => { if (document.visibilityState === 'visible') carregar(true); };
+    const intervalo = window.setInterval(recarregar, 15000);
+    document.addEventListener('visibilitychange', recarregar);
+    window.addEventListener('focus', recarregar);
+    window.addEventListener('online', recarregar);
+
+    return () => {
+      cancelado = true;
+      window.clearInterval(intervalo);
+      document.removeEventListener('visibilitychange', recarregar);
+      window.removeEventListener('focus', recarregar);
+      window.removeEventListener('online', recarregar);
+    };
+  }, [restaurante]);
 
   const [busca, setBusca]                     = useState('');
-  const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
   const { itens: itensCarrinho, removerItem } = useCarrinho();
   const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
   const [modalTipoAberto, setModalTipoAberto] = useState(false);
 
   // ── Filtro ──────────────────────────────────────────────────────────────────
-  const produtosFiltrados = PRODUTOS.filter((p) => {
+  const produtosFiltrados = produtos.filter((p) => {
     const naCategoria = categoriaAtiva === 'todos' || p.categoriaId === categoriaAtiva;
     const naBusca     = p.nome.toLowerCase().includes(busca.toLowerCase());
     return naCategoria && naBusca;
@@ -63,16 +139,16 @@ const MenuCliente: React.FC = () => {
 
   const totalCarrinho = itensCarrinho.reduce((acc, i) => acc + i.quantidade, 0);
 
-  // ── Handlers 
+  // ── Handlers
   const abrirPersonalizacao = (produto: Produto) => {
-  navigate('/personaliza', { state: { produto, modoCliente: 'logged' } });
+    navigate('/personaliza', { state: { produto, modoCliente: 'logged' } });
   };
 
   const escolherTipo = (rota: string) => {
     navigate(rota);
   };
 
-  // ── Render 
+  // ── Render
   return (
     <CustomerLayout
       mode="logged"
@@ -83,7 +159,7 @@ const MenuCliente: React.FC = () => {
 
         {/* Busca */}
         <div className="menu__busca-wrap">
-          <span className="menu__busca-icon">🔍</span>
+          <img src="/icons/lupa.png" alt="" className="menu__busca-icon" />
           <input
             className="menu__busca"
             type="text"
@@ -95,7 +171,7 @@ const MenuCliente: React.FC = () => {
 
         {/* Categorias */}
         <div className="menu__categorias">
-          {CATEGORIAS.map((cat) => (
+          {categorias.map((cat) => (
             <button
               key={cat.id}
               className={`menu__cat-btn${categoriaAtiva === cat.id ? ' menu__cat-btn--ativo' : ''}`}
@@ -103,18 +179,27 @@ const MenuCliente: React.FC = () => {
               aria-label={cat.label}
               title={cat.label}
             >
-              <span className="menu__cat-icon">{cat.icon}</span>
+              {ehImagem(cat.icon) ? (
+                <img src={cat.icon} alt="" className="menu__cat-icon" />
+              ) : (
+                <span className="menu__cat-icon" aria-hidden="true">{cat.icon}</span>
+              )}
             </button>
           ))}
         </div>
 
         {/* Grid de produtos */}
         <div className="menu__grid">
-          {produtosFiltrados.length === 0 ? (
-            <p className="menu__vazio">Nenhum produto encontrado.</p>
+          {carregando || erroMenu || produtosFiltrados.length === 0 ? (
+            <p className="menu__vazio">
+              {carregando
+                ? 'Carregando cardápio...'
+                : erroMenu || (restaurante ? 'Nenhum produto encontrado.' : 'Nenhum restaurante selecionado.')}
+            </p>
           ) : (
             produtosFiltrados.map((p) => (
-              <div key={p.id} className="menu__card">
+              <div key={p.id} className={`menu__card${p.destaque ? ' menu__card--destaque' : ''}`}>
+                {p.destaque && <span className="menu__card-selo">⭐ Destaque</span>}
                 <img src={p.imagem} alt={p.nome} className="menu__card-img" />
                 <div className="menu__card-body">
                   <h3 className="menu__card-nome">{p.nome}</h3>
@@ -145,7 +230,7 @@ const MenuCliente: React.FC = () => {
         onClick={() => setCarrinhoAberto(true)}
         aria-label="Abrir carrinho"
       >
-        🛒
+        <img src="/icons/carrinho.png" alt="" className="menu__carrinho-fab-icon" />
         {totalCarrinho > 0 && (
           <span className="menu__carrinho-fab-badge">{totalCarrinho}</span>
         )}

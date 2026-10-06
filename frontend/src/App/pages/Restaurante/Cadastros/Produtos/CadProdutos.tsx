@@ -4,6 +4,11 @@ import { HiUpload, HiPlus } from 'react-icons/hi';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
 import CategoriaService, { Categoria } from '../../../../services/categoria.service';
 import ProdutoService from '../../../../services/produto.service';
+import SeletorCategoria from '../../../../shared/components/SeletorCategoria/SeletorCategoria';
+import ContadorCaracteres, { DicaLimite } from '../../../../shared/components/ContadorCaracteres/ContadorCaracteres';
+import {
+  SELECAO_VAZIA, SelecaoCategoria, resolverSelecao, validarSelecao,
+} from '../../../../shared/constants/categoriasPadrao';
 import './CadProdutos.css';
 
 // ── Tipos
@@ -40,7 +45,7 @@ const CadProdutos: React.FC = () => {
   const [form, setForm] = useState<FormProduto>(FORM_INICIAL);
 
   const [categorias, setCategorias]         = useState<Categoria[]>([]);
-  const [novaCategoria, setNovaCategoria]   = useState('');
+  const [novaCategoria, setNovaCategoria]   = useState<SelecaoCategoria>(SELECAO_VAZIA);
   const [adicionandoCat, setAdicionandoCat] = useState(false);
   const [criandoCategoria, setCriandoCategoria] = useState(false);
 
@@ -92,20 +97,17 @@ const CadProdutos: React.FC = () => {
 
   // ── Cria uma nova categoria de verdade no backend
   const handleNovaCategoria = async () => {
-    const nome = novaCategoria.trim();
-    if (!nome) return;
-    if (categorias.some((c) => c.nome.toLowerCase() === nome.toLowerCase())) {
-      setErro('Já existe uma categoria com esse nome.');
-      return;
-    }
+    const erroNome = validarSelecao(novaCategoria, categorias.map((c) => c.nome));
+    if (erroNome) { setErro(erroNome); return; }
+    const { nome, icone } = resolverSelecao(novaCategoria);
 
     setCriandoCategoria(true);
     setErro('');
     try {
-      const categoria = await CategoriaService.criar({ nome });
+      const categoria = await CategoriaService.criar({ nome, ...(icone ? { icone } : {}) });
       setCategorias((prev) => [...prev, categoria]);
       atualizarForm({ categoria_id: categoria.id });
-      setNovaCategoria('');
+      setNovaCategoria(SELECAO_VAZIA);
       setAdicionandoCat(false);
     } catch (err: any) {
       setErro(err?.response?.data?.message ?? 'Não foi possível criar a categoria.');
@@ -151,7 +153,8 @@ const CadProdutos: React.FC = () => {
   };
 
   const handlePreco = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = e.target.value.replace(/\D/g, '');
+    // Máx. 8 dígitos (até R$ 999.999,99)
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
     const valor = (Number(digits) / 100).toFixed(2);
     const formatado = `R$ ${valor.replace('.', ',')}`;
     atualizarForm({ preco: formatado });
@@ -192,9 +195,11 @@ const CadProdutos: React.FC = () => {
                 className="cadprod__input"
                 type="text"
                 placeholder="Nome"
+                maxLength={150}
                 value={form.nome}
                 onChange={(e) => atualizarForm({ nome: e.target.value })}
               />
+              <ContadorCaracteres valor={form.nome} max={150} />
             </div>
 
             {/* Descrição */}
@@ -203,9 +208,11 @@ const CadProdutos: React.FC = () => {
               <textarea
                 className="cadprod__textarea"
                 placeholder="Adicione a descrição do seu produto."
+                maxLength={500}
                 value={form.descricao}
                 onChange={(e) => atualizarForm({ descricao: e.target.value })}
               />
+              <ContadorCaracteres valor={form.descricao} max={500} />
             </div>
 
             {/* Categoria + Preço */}
@@ -234,8 +241,9 @@ const CadProdutos: React.FC = () => {
                   type="text"
                   placeholder="R$ 0,00"
                   value={form.preco}
-                  onChange= {handlePreco}
+                  onChange={handlePreco}
                 />
+                <DicaLimite>Máx. R$ 999.999,99</DicaLimite>
               </div>
             </div>
 
@@ -312,16 +320,24 @@ const CadProdutos: React.FC = () => {
 
                 {adicionandoCat ? (
                   <div className="cadprod__nova-cat">
-                    <input
-                      className="cadprod__input cadprod__input--mini"
-                      placeholder="Nome"
-                      value={novaCategoria}
-                      onChange={(e) => setNovaCategoria(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleNovaCategoria()}
+                    <SeletorCategoria
+                      id="cadprod-nova-cat"
+                      valor={novaCategoria}
+                      onChange={setNovaCategoria}
+                      jaUsadas={categorias.map((c) => c.nome)}
+                      desabilitado={criandoCategoria}
+                      selectClassName="cadprod__select cadprod__select--mini"
+                      inputClassName="cadprod__input cadprod__input--mini cadprod__input--larga"
+                      onEnter={handleNovaCategoria}
                       autoFocus
-                      disabled={criandoCategoria}
                     />
                     <button className="cadprod__chip-confirmar" onClick={handleNovaCategoria} disabled={criandoCategoria}>✔</button>
+                    <button
+                      className="cadprod__chip-cancelar"
+                      onClick={() => { setAdicionandoCat(false); setNovaCategoria(SELECAO_VAZIA); }}
+                      disabled={criandoCategoria}
+                      aria-label="Cancelar"
+                    >✕</button>
                   </div>
                 ) : (
                   <button className="cadprod__chip-novo" onClick={() => setAdicionandoCat(true)}>

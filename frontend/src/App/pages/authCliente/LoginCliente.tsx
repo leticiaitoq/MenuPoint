@@ -1,19 +1,38 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
-import { HiEye, HiEyeOff } from 'react-icons/hi';
+import { HiEye, HiEyeOff, HiCheckCircle } from 'react-icons/hi';
 import AuthCard from '../auth/AuthCard';
-import AuthService from '../../services/auth.service';
+import ClienteService, { mensagemDeErro } from '../../services/cliente.service';
+import { useClienteAuth, ROTA_APOS_LOGIN_CLIENTE } from '../../shared/contexts/ClienteAuthContext';
 import './LoginCliente.css';
 
 const LoginCliente: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { entrar, isAuthenticated } = useClienteAuth();
 
   const [emailCliente, setEmailCliente] = useState('');
   const [senhaCliente, setSenhaCliente] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erroCliente, setErroCliente] = useState<string | null>(null);
   const [carregandoCliente, setCarregandoCliente] = useState(false);
+  const [showSucesso, setShowSucesso] = useState(false);
+
+  // Aviso vindo de outra tela (ex.: "você abriu outro restaurante, entre novamente")
+  const avisoCliente = (location.state as { aviso?: string } | null)?.aviso;
+
+  // Mesmo padrão do login do restaurante: mostra o toast de sucesso e só navega
+  // depois de um tempinho, para a pessoa ver a confirmação.
+  useEffect(() => {
+    if (!showSucesso) return;
+    const timer = setTimeout(() => {
+      // Se foi barrado numa tela protegida, volta para ela; senão vai para a dwelcome
+      const destino = (location.state as { from?: string } | null)?.from;
+      navigate(destino ?? ROTA_APOS_LOGIN_CLIENTE, { replace: true });
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [showSucesso, navigate, location.state]);
 
   const handleSubmitCliente = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,21 +40,37 @@ const LoginCliente: React.FC = () => {
     setCarregandoCliente(true);
 
     try {
-      const resultadoCliente = await AuthService.login({
-        email: emailCliente,
+      const sessao = await ClienteService.login({
+        email: emailCliente.trim(),
         senha: senhaCliente,
       });
 
-      localStorage.setItem('@menupoint:token', resultadoCliente.token);
-      localStorage.setItem('@menupoint:usuario', JSON.stringify(resultadoCliente.usuario));
-
-      navigate('/cliente/home');
+      // O toast vem ANTES do entrar(): assim que a sessão existe, o guard abaixo
+      // ("já está logado") não pode redirecionar antes da mensagem aparecer.
+      setShowSucesso(true);
+      entrar(sessao);
     } catch (err: any) {
-      setErroCliente(err?.response?.data?.message ?? 'Email ou senha inválidos.');
+      // 403 = e-mail ainda não confirmado (o back já enviou um código novo)
+      if (err?.response?.status === 403) {
+        navigate('/verify-code/cliente', {
+          state: {
+            email: emailCliente.trim().toLowerCase(),
+            mode: 'register',
+            aviso: 'Seu e-mail ainda não foi confirmado. Use o código mais recente enviado para a sua caixa de entrada.',
+          },
+        });
+        return;
+      }
+      setErroCliente(mensagemDeErro(err, 'E-mail ou senha inválidos.'));
     } finally {
       setCarregandoCliente(false);
     }
   };
+
+  // Já está logado: não precisa ver a tela de login (exceto durante o toast de sucesso)
+  if (isAuthenticated && !showSucesso) {
+    return <Navigate to={ROTA_APOS_LOGIN_CLIENTE} replace />;
+  }
 
   return (
     <div
@@ -49,6 +84,11 @@ const LoginCliente: React.FC = () => {
           <h1 className="login-cliente__title">Entrar</h1>
 
           <form className="login-cliente__form" onSubmit={handleSubmitCliente}>
+
+            {/* Aviso informativo */}
+            {avisoCliente && !erroCliente && (
+              <p className="login-cliente__info" role="status">{avisoCliente}</p>
+            )}
 
             {/* Mensagem de erro */}
             {erroCliente && (
@@ -108,7 +148,7 @@ const LoginCliente: React.FC = () => {
 
           </form>
 
-          <button className="login-cliente__forgot" onClick={() => navigate('/recover')}>
+          <button className="login-cliente__forgot" onClick={() => navigate('/recover/cliente')}>
             Esqueceu sua senha?
           </button>
 
@@ -125,6 +165,17 @@ const LoginCliente: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {showSucesso && (
+        <div className="login-cliente__toast-overlay">
+          <div className="login-cliente__toast">
+            <div className="login-cliente__toast-inner">
+              <HiCheckCircle className="login-cliente__toast-icon" />
+              <p className="login-cliente__toast-text">Login realizado com sucesso!</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -254,7 +254,11 @@ button.register-page__step-dot.is-done:hover {
 }
 
 .register-page__label {
-  font-size: 14px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--rp-ink);
 }
@@ -533,6 +537,12 @@ input[type='password']::-webkit-textfield-decoration-container {
   gap: 14px;
   margin-top: 6px;
 }
+
+.register-page__obrigatorio {
+  color: #c0392b;
+}
+
+
 
 .register-page__submit {
   width: 100%;

@@ -59,6 +59,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
             max: RATE.register.max,
             timeWindow: RATE.register.timeWindow,
             errorResponseBuilder: (_req, context) => ({
+              statusCode: 429,
               status: 'error',
               message: `Muitas tentativas de registro. Tente novamente em ${Math.ceil(Number(context.ttl) / 60000)} minuto(s).`,
               limite: context.max,
@@ -85,6 +86,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
             timeWindow: RATE.login.timeWindow,
             ban: RATE.login.ban,
             errorResponseBuilder: (_req, context) => ({
+              statusCode: 429,
               status: 'error',
               message: context.ban
                 ? `Muitas tentativas de login. IP bloqueado por 10 minutos.`
@@ -110,6 +112,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
             max: RATE.refresh.max,
             timeWindow: RATE.refresh.timeWindow,
             errorResponseBuilder: () => ({
+              statusCode: 429,
               status: 'error',
               message: 'Muitas renovações de token. Aguarde um momento.',
             }),
@@ -131,6 +134,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
             max: 8,
             timeWindow: '15 minutes',
             errorResponseBuilder: () => ({
+              statusCode: 429,
               status: 'error',
               message: 'Muitas tentativas de verificação. Aguarde alguns minutos.',
             }),
@@ -152,6 +156,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
             max: 3,
             timeWindow: '10 minutes',
             errorResponseBuilder: (_req, context) => ({
+              statusCode: 429,
               status: 'error',
               message: `Muitas solicitações de reenvio. Tente novamente em ${Math.ceil(Number(context.ttl) / 60000)} minuto(s).`,
             }),
@@ -175,6 +180,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
             max: RATE.esqueciSenha.max,
             timeWindow: RATE.esqueciSenha.timeWindow,
             errorResponseBuilder: (_req, context) => ({
+              statusCode: 429,
               status: 'error',
               message: `Limite de recuperação de senha atingido. Tente novamente em ${Math.ceil(Number(context.ttl) / 60000)} minuto(s).`,
               resetEm: new Date(Date.now() + Number(context.ttl)).toISOString(),
@@ -200,6 +206,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
             max: RATE.redefinirSenha.max,
             timeWindow: RATE.redefinirSenha.timeWindow,
             errorResponseBuilder: () => ({
+              statusCode: 429,
               status: 'error',
               message: 'Muitas tentativas de redefinição de senha. Tente novamente mais tarde.',
             }),
@@ -286,6 +293,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
             max: 5,
             timeWindow: '15 minutes',
             errorResponseBuilder: () => ({
+              statusCode: 429,
               status: 'error',
               message: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
             }),
@@ -311,6 +319,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
             max: 5,
             timeWindow: '15 minutes',
             errorResponseBuilder: () => ({
+              statusCode: 429,
               status: 'error',
               message: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
             }),

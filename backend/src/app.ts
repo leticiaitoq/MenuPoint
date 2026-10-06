@@ -23,9 +23,12 @@ import { pedidosRoutes } from '@modules/pedidos/Pedido.controller'
 import { pagamentosRoutes } from '@modules/pagamentos/Pagamento.controller'
 import { reservasRoutes } from '@modules/reservas/Reserva.controller'
 import { empresasRoutes } from '@modules/empresas/Empresa.controller'
-// import { clientesRoutes } from '@modules/clientes/Cliente.controller'
+import { clientesRoutes } from '@modules/clientes/Cliente.controller'
 import { assinaturaRoutes } from '@modules/assinatura/Assinatura.controller'
 // import { uploadRoutes } from '@modules/upload/Upload.controller'
+
+// GETs públicos que o cliente logado (perfil CLIENTE) pode chamar
+const ROTAS_PUBLICAS_GET = /^\/api\/v1\/(estabelecimentos|categorias)\/publico\//
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({
@@ -54,6 +57,7 @@ app.register(cors, {
     max: 100,
     timeWindow: '1 minute',
     errorResponseBuilder: () => ({
+      statusCode: 429,
       status: 'error',
       message: 'Muitas requisições. Tente novamente em alguns instantes.',
     }),
@@ -89,7 +93,32 @@ app.register(fastifySwaggerUi, {
 
   // ── Rotas
   app.register(async (api) => {
+
+    // Token de CLIENTE (perfil CLIENTE) não entra nas rotas do restaurante.
+    // O JWT é assinado com o mesmo secret, então sem esta barreira um cliente
+    // logado conseguiria chamar rotas que só conferem "tem token válido".
+    // Rotas /auth/* ficam de fora (cada módulo de auth faz a própria checagem).
+    // Quando existirem rotas feitas para o cliente (ex.: pedidos), libere o prefixo aqui.
+    api.addHook('onRequest', async (request) => {
+      if (request.url.startsWith('/api/v1/auth/')) return
+
+      // Rotas públicas de leitura (cardápio por slug) também servem o cliente logado
+      if (request.method === 'GET' && ROTAS_PUBLICAS_GET.test(request.url)) return
+
+      const authorization = request.headers.authorization
+      if (!authorization?.startsWith('Bearer ')) return
+
+      const payload = (api.jwt as any).decode(authorization.slice(7)) as
+        | { perfil?: string }
+        | null
+
+      if (payload?.perfil === 'CLIENTE') {
+        throw new AppError('Acesso não permitido para este tipo de conta', 403)
+      }
+    })
+
     api.register(authRoutes,            { prefix: '/auth' })
+    api.register(clientesRoutes,        { prefix: '/auth/cliente' })
     api.register(usuariosRoutes,        { prefix: '/usuarios' })
     api.register(estabelecimentosRoutes,{ prefix: '/estabelecimentos' })
     api.register(categoriasRoutes,      { prefix: '/categorias' })
@@ -99,7 +128,6 @@ app.register(fastifySwaggerUi, {
     api.register(pedidosRoutes,         { prefix: '/pedidos' })
     api.register(reservasRoutes,        { prefix: '/reservas' })
     api.register(empresasRoutes, { prefix: '/empresas' })
-    // api.register(clientesRoutes,        { prefix: '/clientes' })
     api.register(assinaturaRoutes,      { prefix: '/assinatura' })
     // api.register(uploadRoutes,          { prefix: '/upload' })
   }, { prefix: '/api/v1' })
@@ -110,6 +138,7 @@ app.register(fastifySwaggerUi, {
     return reply.status(error.statusCode).send({
       status: 'error',
       message: error.message,
+      ...(error.code ? { code: error.code } : {}),
     })
   }
 
@@ -128,6 +157,16 @@ app.register(fastifySwaggerUi, {
     return reply.status(401).send({
       status: 'error',
       message: 'Token inválido ou expirado',
+    })
+  }
+
+  // Erros 4xx que não são nossos (ex.: limite de requisições do rate-limit = 429).
+  // Sem isto caíam no 500 abaixo e a tela mostrava "erro interno" em vez do aviso real.
+  const statusCode = (error as { statusCode?: number }).statusCode
+  if (typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500) {
+    return reply.status(statusCode).send({
+      status: 'error',
+      message: error.message,
     })
   }
 

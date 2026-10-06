@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
+import { useConvidado } from '../../../shared/contexts/Convidadocontext';
 import './PerfilLocal.css';
 
 // ── Tipos
@@ -11,8 +12,9 @@ interface Cliente {
 }
 
 // ── Mock (substituir por API futuramente)
+// O nome NÃO vem daqui: vem do ConvidadoContext (digitado na WelcomePage)
 const CLIENTE_MOCK: Cliente = {
-  nome:     'Fulana da Silva',
+  nome:     '',
   telefone: '',
   email:    'email.tal@email.com',
   foto:     '/images/avatar-cliente.png',
@@ -27,8 +29,12 @@ const formatarTelefone = (valor: string): string => {
 
 const PerfilLocal: React.FC = () => {
   const fotoRef = useRef<HTMLInputElement>(null);
+  const { nome: nomeConvidado, mesa, definirConvidado } = useConvidado();
 
-  const [cliente, setCliente]       = useState<Cliente>(CLIENTE_MOCK);
+  const [cliente, setCliente]       = useState<Cliente>({
+    ...CLIENTE_MOCK,
+    nome: nomeConvidado || 'Convidado',
+  });
   const [editando, setEditando]     = useState(false);
   const [temaEscuro, setTemaEscuro] = useState(false);
 
@@ -45,8 +51,15 @@ const PerfilLocal: React.FC = () => {
   };
 
   const handleSalvar = () => {
+    const novoNome = formNome.trim() || cliente.nome;
+
+    // Se o nome mudou, atualiza o contexto também → a navbar acompanha
+    if (novoNome !== cliente.nome) {
+      definirConvidado({ nome: novoNome, mesa });
+    }
+
     setCliente({
-      nome:     formNome,
+      nome:     novoNome,
       telefone: formTelefone,
       email:    formEmail,
       foto:     fotoPreview,

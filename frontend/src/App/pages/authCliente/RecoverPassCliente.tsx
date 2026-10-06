@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
 import AuthCard from '../auth/AuthCard';
+import ClienteService, { mensagemDeErro } from '../../services/cliente.service';
 import './RecoverPassCliente.css';
 
 const RecoverPassCliente: React.FC = () => {
@@ -11,19 +12,17 @@ const RecoverPassCliente: React.FC = () => {
   const [erroCliente, setErroCliente] = useState<string | null>(null);
   const [carregandoCliente, setCarregandoCliente] = useState(false);
 
-  /**
-   * Chamar API futuramente
-   */
   const handleSubmitCliente = async (e: React.FormEvent) => {
     e.preventDefault();
     setErroCliente(null);
     setCarregandoCliente(true);
 
     try {
-      // TODO: await AuthService.enviarCodigoRecuperacao({ email: emailCliente });
-      navigate('/cliente/verify-code', { state: { email: emailCliente, mode: 'recover' } });
+      const email = emailCliente.trim().toLowerCase();
+      await ClienteService.esqueciSenha(email);
+      navigate('/verify-code/cliente', { state: { email, mode: 'recover' } });
     } catch (err: any) {
-      setErroCliente(err?.response?.data?.message ?? 'Erro ao enviar o código. Tente novamente.');
+      setErroCliente(mensagemDeErro(err, 'Erro ao enviar o código. Tente novamente.'));
     } finally {
       setCarregandoCliente(false);
     }
@@ -67,6 +66,7 @@ const RecoverPassCliente: React.FC = () => {
                   className="recover-pass-cliente__input recover-pass-cliente__input--with-icon"
                   value={emailCliente}
                   onChange={(e) => setEmailCliente(e.target.value)}
+                  required
                 />
               </div>
             </div>

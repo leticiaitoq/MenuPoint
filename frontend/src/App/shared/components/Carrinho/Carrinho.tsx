@@ -101,7 +101,7 @@ const Carrinho: React.FC<CarrinhoProps> = ({ aberto, onFechar, itens, onFinaliza
             onClick={onFinalizar}
             disabled={itens.length === 0}
           >
-            Finalizar pedido
+            Enviar para a cozinha
           </button>
         </div>
 
