@@ -5,6 +5,10 @@ import { CriarAssinaturaDTO } from './Assinatura.schema'
 import prisma from '@config/prisma'
 import { Plano, StatusAssinatura } from '@prisma/client'
 import { pagamentoRecusado } from './Pagamento.temporario'
+import { PLANOS } from './Planos.config'
+
+// FRONTEND_URL pode ter várias origens separadas por vírgula (CORS): o retorno do MP usa a primeira
+const FRONTEND_PRINCIPAL = env.FRONTEND_URL.split(',')[0].trim().replace(/\/$/, '')
 
 const mpClient = new MercadoPagoConfig({
   accessToken: env.MP_ACCESS_TOKEN,
@@ -20,8 +24,8 @@ const PLAN_ID_TO_PLANO: Record<string, Plano> = {
 
 // Valor de cada plano (em BRL) — usado ao salvar a assinatura
 const PLAN_ID_TO_VALOR: Record<string, number> = {
-  [env.MP_PLAN_ID_BASICO]: 49.90,
-  [env.MP_PLAN_ID_PRO]:    99.90,
+  [env.MP_PLAN_ID_BASICO]: PLANOS.STARTER.valor,
+  [env.MP_PLAN_ID_PRO]:    PLANOS.PRO.valor,
 }
 
 export class AssinaturaService {
@@ -42,7 +46,7 @@ export class AssinaturaService {
       const body: any = {
         preapproval_plan_id: data.plan_id,
         payer_email:         data.email,
-        back_url:            `${env.FRONTEND_URL}/assinatura/sucesso`,
+        back_url:            `${FRONTEND_PRINCIPAL}/assinatura/sucesso`,
         notification_url:    `${env.API_URL}/api/v1/assinatura/webhook`,
         status:              'pending',
         reason:              'Plano MenuPoint',
@@ -125,8 +129,9 @@ export class AssinaturaService {
         body: {
           reason:             `MenuPoint - Plano ${pendente.plano}`,
           external_reference: empresa_id,
-          payer_email:        email,
-          back_url:           `${env.FRONTEND_URL}/assinatura/sucesso`,
+          // Modo teste: MP_PAYER_EMAIL_TESTE substitui o e-mail do cadastro (pagador de teste do MP)
+          payer_email:        env.MP_PAYER_EMAIL_TESTE?.trim() || email,
+          back_url:           `${FRONTEND_PRINCIPAL}/assinatura/sucesso`,
           notification_url:   `${env.API_URL}/api/v1/assinatura/webhook`,
           status:             'pending',
           auto_recurring: {
@@ -157,6 +162,37 @@ export class AssinaturaService {
       const msg = err?.cause?.[0]?.description ?? err?.message ?? 'Erro ao criar assinatura'
       throw new AppError(`Mercado Pago: ${msg}`, 502)
     }
+  }
+
+  /**
+   * Confere agora no Mercado Pago o status da assinatura pendente da empresa (mesma regra do
+   * webhook). A tela de retorno usa isso para não depender só do webhook, que pode demorar
+   * ou nem estar configurado.
+   */
+  async sincronizarStatus(empresa_id: string) {
+    const ultima = await prisma.assinatura.findFirst({
+      where: { empresa_id },
+      orderBy: { criado_em: 'desc' },
+    })
+    if (!ultima) {
+      throw new AppError('Nenhuma assinatura encontrada', 404)
+    }
+
+    if (ultima.status === 'PENDENTE' && ultima.gateway === 'mercadopago' && ultima.gateway_id) {
+      let statusMP: string | null = null
+      try {
+        const r: any = await this.processarWebhook(ultima.gateway_id, 'subscription_preapproval')
+        statusMP = r?.status_mp ?? null
+        console.log(`[sincronizar] empresa=${empresa_id} assinatura_mp=${ultima.gateway_id} status_mp=${statusMP}`)
+      } catch (err: any) {
+        // Falha ao consultar o MP: devolve o status que já temos e a tela tenta de novo
+        console.error(`[sincronizar] falha ao consultar o MP: ${err?.message ?? err}`)
+      }
+      const atual = await prisma.assinatura.findUnique({ where: { id: ultima.id } })
+      return { status: atual?.status ?? ultima.status, status_mp: statusMP }
+    }
+
+    return { status: ultima.status }
   }
 
   async processarWebhook(id: string, type: string) {
@@ -212,6 +248,7 @@ export class AssinaturaService {
         assinatura_id:     raw.id,
         payer_email:       raw.payer_email,
         status:            novoStatus,
+        status_mp:         statusMP,
         plan_id:           raw.preapproval_plan_id,
         proximo_debito:    raw.next_payment_date,
         registros_atualizados: assinaturaAtualizada.count,

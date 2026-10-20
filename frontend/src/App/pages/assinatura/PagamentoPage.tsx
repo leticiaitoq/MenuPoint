@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AuthCard from '../auth/AuthCard';
+import AuthService from '../../services/auth.service';
 import AssinaturaService from '../../services/assinatura.service';
 import { useAuth, ROTA_APOS_LOGIN } from '../../shared/contexts/Authcontext';
 import '../auth/LoginPage.css';
@@ -40,6 +41,7 @@ const PagamentoPage: React.FC = () => {
         let pos: { email?: string; verificarEmail?: boolean } = {};
         try { pos = JSON.parse(localStorage.getItem('@menupoint:pos_pagamento') || '{}'); } catch { /* ignora */ }
         localStorage.removeItem('@menupoint:pos_pagamento');
+        if (pos.verificarEmail && pos.email) AuthService.resendCode(pos.email, 'registro').catch(() => undefined);
         if (pos.verificarEmail) navigate('/verify-code', { state: { email: pos.email, mode: 'register' }, replace: true });
         else navigate(ROTA_APOS_LOGIN, { replace: true });
       })

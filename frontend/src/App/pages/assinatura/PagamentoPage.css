@@ -110,6 +110,52 @@
   line-height: 1.5;
 }
 
+/* Tela de retorno do pagamento */
+.pagamento--centro {
+  align-items: center;
+  text-align: center;
+}
+
+.pagamento__icone {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  font-weight: 700;
+  margin: 0 auto;
+}
+
+.pagamento__icone--ok { background: #e8f6ee; color: #1e8e4e; }
+.pagamento__icone--aviso { background: #fff4e0; color: #c77700; }
+.pagamento__icone--erro { background: #fdecea; color: #c0392b; }
+
+.pagamento__spinner {
+  width: 56px;
+  height: 56px;
+  border: 5px solid #f0d4d0;
+  border-top-color: #c0392b;
+  border-radius: 50%;
+  margin: 0 auto;
+  animation: pagamento-giro 0.9s linear infinite;
+}
+
+@keyframes pagamento-giro {
+  to { transform: rotate(360deg); }
+}
+
+.pagamento__botao--secundario {
+  background: #ffffff;
+  color: #c0392b;
+  border: 1.5px solid #c0392b;
+}
+
+.pagamento__botao--secundario:hover:not(:disabled) {
+  background: #fdecea;
+}
+
 @media (max-width: 600px) {
   .pagamento__titulo { font-size: 24px; }
   .pagamento__card-preco { font-size: 28px; }
