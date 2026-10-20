@@ -25,14 +25,16 @@ const AssinaturaService = {
     return data
   },
 
-  // ── Pagamento temporário (sem cobrança real) ──
-  async minha(): Promise<{ plano: string; status: string; valor: string | number }> {
-    const { data } = await api.get('/assinatura/minha')
+  /** Confere o pagamento direto no Mercado Pago e devolve o status atual. */
+  async sincronizar(): Promise<{ status: string }> {
+    const { data } = await api.post('/assinatura/sincronizar')
     return data
   },
 
-  async confirmarPagamento(): Promise<void> {
-    await api.post('/assinatura/confirmar-pagamento')
+  /** Assinatura mais recente da empresa (status, plano e valor). */
+  async minha(): Promise<{ plano: string; status: string; valor: string | number }> {
+    const { data } = await api.get('/assinatura/minha')
+    return data
   },
 }
 

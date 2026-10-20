@@ -5,7 +5,9 @@ import { CriarAssinaturaDTO } from './Assinatura.schema'
 import prisma from '@config/prisma'
 import { Plano, StatusAssinatura } from '@prisma/client'
 import { pagamentoRecusado } from './Pagamento.temporario'
+import { PLANOS } from './Planos.config'
 
+// FRONTEND_URL pode ter várias origens separadas por vírgula (CORS): o retorno do MP usa a primeira
 const FRONTEND_PRINCIPAL = env.FRONTEND_URL.split(',')[0].trim().replace(/\/$/, '')
 
 const mpClient = new MercadoPagoConfig({
@@ -22,8 +24,8 @@ const PLAN_ID_TO_PLANO: Record<string, Plano> = {
 
 // Valor de cada plano (em BRL) — usado ao salvar a assinatura
 const PLAN_ID_TO_VALOR: Record<string, number> = {
-  [env.MP_PLAN_ID_BASICO]: 97,
-  [env.MP_PLAN_ID_PRO]:    197,
+  [env.MP_PLAN_ID_BASICO]: PLANOS.STARTER.valor,
+  [env.MP_PLAN_ID_PRO]:    PLANOS.PRO.valor,
 }
 
 export class AssinaturaService {
@@ -160,6 +162,33 @@ export class AssinaturaService {
       const msg = err?.cause?.[0]?.description ?? err?.message ?? 'Erro ao criar assinatura'
       throw new AppError(`Mercado Pago: ${msg}`, 502)
     }
+  }
+
+  /**
+   * Confere agora no Mercado Pago o status da assinatura pendente da empresa (mesma regra do
+   * webhook). A tela de retorno usa isso para não depender só do webhook, que pode demorar
+   * ou nem estar configurado.
+   */
+  async sincronizarStatus(empresa_id: string) {
+    const ultima = await prisma.assinatura.findFirst({
+      where: { empresa_id },
+      orderBy: { criado_em: 'desc' },
+    })
+    if (!ultima) {
+      throw new AppError('Nenhuma assinatura encontrada', 404)
+    }
+
+    if (ultima.status === 'PENDENTE' && ultima.gateway === 'mercadopago' && ultima.gateway_id) {
+      try {
+        await this.processarWebhook(ultima.gateway_id, 'subscription_preapproval')
+      } catch {
+        // Falha ao consultar o MP: devolve o status que já temos e a tela tenta de novo
+      }
+      const atual = await prisma.assinatura.findUnique({ where: { id: ultima.id } })
+      return { status: atual?.status ?? ultima.status }
+    }
+
+    return { status: ultima.status }
   }
 
   async processarWebhook(id: string, type: string) {

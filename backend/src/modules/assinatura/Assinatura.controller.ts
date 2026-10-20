@@ -65,6 +65,29 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
   )
 
   /**
+   * POST /api/v1/assinatura/sincronizar
+   *
+   * Consulta o Mercado Pago e atualiza o status da assinatura da empresa na hora.
+   * Usada pela tela /assinatura/sucesso enquanto espera a aprovação.
+   */
+  app.post(
+    '/sincronizar',
+    {
+      onRequest: [async (request) => request.jwtVerify()],
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = request.user as JWTPayload
+
+      if (!user.empresa_id) {
+        throw new AppError('Usuário não vinculado a uma empresa', 400)
+      }
+
+      const resultado = await service.sincronizarStatus(user.empresa_id)
+      return reply.send(resultado)
+    }
+  )
+
+  /**
    * POST /api/v1/assinatura/webhook
    *
    * Endpoint PÚBLICO — o Mercado Pago chama automaticamente quando
