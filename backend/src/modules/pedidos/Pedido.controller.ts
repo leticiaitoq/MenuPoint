@@ -4,6 +4,7 @@ import { PedidoRepository } from './Pedido.repository'
 import {
   criarPedidoSchema,
   atualizarStatusPedidoSchema,
+  atualizarPedidoSchema,
 } from './Pedido.schema'
 import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
@@ -29,7 +30,7 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
       }
 
       const data = criarPedidoSchema.parse(request.body)
-      const pedido = await service.criar(data, user.estabelecimento_id)
+      const pedido = await service.criar(data, user.estabelecimento_id, user.sub)
 
       return reply.status(201).send(pedido)
     }
@@ -45,15 +46,29 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
         throw new AppError('Usuário não vinculado a um estabelecimento', 400)
       }
 
-      const { status, modalidade, data_inicio, data_fim } = request.query as {
-        status?: string
+      const { status, modalidade, mesa_id, data_inicio, data_fim } = request.query as {
+        status?: string // um ou vários separados por vírgula: RECEBIDO,PREPARO,PRONTO
         modalidade?: string
+        mesa_id?: string
         data_inicio?: string
         data_fim?: string
       }
 
+      const statusValidos = ['RECEBIDO', 'PREPARO', 'PRONTO', 'ENTREGUE', 'CANCELADO']
+      const listaStatus = status
+        ? status.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean)
+        : []
+
+      if (listaStatus.some((s) => !statusValidos.includes(s))) {
+        throw new AppError('Status inválido no filtro', 400)
+      }
+      if (mesa_id && !z.string().uuid().safeParse(mesa_id).success) {
+        throw new AppError('mesa_id inválido', 400)
+      }
+
       const pedidos = await service.listar(user.estabelecimento_id, {
-        ...(status && { status }),
+        ...(listaStatus.length > 0 && { status: listaStatus }),
+        ...(mesa_id && { mesa_id }),
         ...(modalidade && { modalidade }),
         ...(data_inicio && { data_inicio: new Date(data_inicio) }),
         ...(data_fim && { data_fim: new Date(data_fim) }),
@@ -75,6 +90,24 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
       }
 
       const pedido = await service.findById(id, user.estabelecimento_id)
+      return reply.send(pedido)
+    }
+  )
+
+  // PUT /:id — edita nome do cliente, observações e itens de um pedido em andamento
+  app.put(
+    '/:id',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string }
+      const user = request.user as JWTPayload
+
+      if (!user.estabelecimento_id) {
+        throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+      }
+
+      const data = atualizarPedidoSchema.parse(request.body)
+      const pedido = await service.atualizar(id, data, user.estabelecimento_id)
+
       return reply.send(pedido)
     }
   )

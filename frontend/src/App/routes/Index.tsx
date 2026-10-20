@@ -7,6 +7,7 @@ import AssinaturaSucesso from "../pages/assinatura/AssinaturaSucesso";
 import PagamentoPage from "../pages/assinatura/PagamentoPage";
 import NovaSenha from "../pages/auth/NovaSenha";
 import WelcomePage from "../pages/ClienteLocal/WelcomePage/WelcomePage";
+import MesaQr from "../pages/ClienteLocal/MesaQr/MesaQr";
 import HomeRestaurante from "../pages/Restaurante/Home/HomeRestaurante";
 import DWelcomePage from "../pages/cliente/Welcome/DWelcomePage";
 import MenuCliente from "../pages/cliente/Menu/MenuCliente";
@@ -66,6 +67,8 @@ const AppRoutes: React.FC = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/welcomepage" element={<WelcomePage />} />
+        {/* Link/QR Code da mesa: resolve o token e redireciona para a /welcomepage */}
+        <Route path="/mesa/:token" element={<MesaQr />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/r/:slug" element={<RestauranteLink />} />
         <Route path="/acesso-pelo-link" element={<AcessoPeloLink />} />

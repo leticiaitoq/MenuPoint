@@ -15,7 +15,14 @@ const CHAVE = '@menupoint:convidado'
 
 export interface Convidado {
   nome: string
+  /** Número da mesa para exibir (ex.: "05") */
   mesa: string
+  /** Preenchidos quando o cliente entra pelo QR Code da mesa (/mesa/:token) */
+  mesaId?: string
+  mesaToken?: string
+  estabelecimentoId?: string
+  restauranteNome?: string
+  restauranteLogo?: string | null
 }
 
 interface ConvidadoContextData extends Convidado {

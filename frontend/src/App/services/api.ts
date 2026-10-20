@@ -3,7 +3,10 @@ import axios from 'axios'
 const api = axios.create({
   baseURL: `${process.env.REACT_APP_API_URL}/api/v1`,
 
-  timeout: 10000,
+  // 30s: o Azure Container Apps pode estar "dormindo" (cold start) e a primeira
+  // requisição leva mais de 10s. Com 10s o login falhava na 1ª tentativa e só
+  // funcionava na 2ª. NÃO diminuir (já regrediu em merges anteriores).
+  timeout: 30000,
 
   headers: {
     'Content-Type': 'application/json',

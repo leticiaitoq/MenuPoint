@@ -13,22 +13,24 @@ import './WelcomePage.css';
  * 3. Cliente confirma → vai para o cardápio
  * 4. Cliente clica fora do modal → fecha e volta ao campo
  *
- * Futuramente o número da mesa virá via parâmetro da URL:
- * ex: /welcome?restaurante=123&mesa=5
+ * A mesa vem do link/QR Code (/mesa/:token → MesaQr), que grava mesa e restaurante
+ * no contexto do convidado antes de redirecionar para cá.
  */
 const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { definirConvidado } = useConvidado();
+  const {
+    definirConvidado,
+    mesa: tableNumber,
+    mesaId,
+    mesaToken,
+    estabelecimentoId,
+    restauranteNome,
+    restauranteLogo,
+  } = useConvidado();
 
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
-
-  /**
-   * Número da mesa — futuramente virá da URL via useSearchParams.
-   * Por hora fixo para desenvolvimento.
-   */
-  const tableNumber = '05';
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -55,7 +57,15 @@ const WelcomePage: React.FC = () => {
    * (e as demais telas do cliente local) conseguirem usar.
    */
   const handleConfirmTable = () => {
-    definirConvidado({ nome: name.trim(), mesa: tableNumber });
+    definirConvidado({
+      nome: name.trim(),
+      mesa: tableNumber,
+      mesaId,
+      mesaToken,
+      estabelecimentoId,
+      restauranteNome,
+      restauranteLogo,
+    });
     setShowModal(false);
     navigate('/menulocal');
   };
@@ -70,16 +80,27 @@ const WelcomePage: React.FC = () => {
 
   return (
     <CustomerLayout mode="welcome">
+      {/* Sem mesa no contexto = o cliente não entrou pelo QR Code da mesa */}
+      {!tableNumber ? (
+        <div className="welcome-page">
+          <p className="welcome-page__sem-mesa">
+            Escaneie o QR Code da sua mesa para entrar.
+          </p>
+        </div>
+      ) : (
       <div className="welcome-page">
 
-        {/* Logo do restaurante — futuramente virá da API */}
+        {/* Logo e nome do restaurante da mesa (vêm da API pelo QR Code) */}
         <div className="welcome-page__logo-wrapper">
           <img
-            src="/images/Menu/pizza.jpg"
-            alt="Logo do restaurante"
+            src={restauranteLogo || '/images/Menu/pizza.jpg'}
+            alt={restauranteNome ? `Logo de ${restauranteNome}` : 'Logo do restaurante'}
             className="welcome-page__logo"
           />
         </div>
+        {restauranteNome && (
+          <h1 className="welcome-page__restaurante">{restauranteNome}</h1>
+        )}
 
         {/* Campo de nome */}
         <div className="welcome-page__input-wrapper">
@@ -109,6 +130,7 @@ const WelcomePage: React.FC = () => {
         </div>
 
       </div>
+      )}
 
       {/* Modal de confirmação de mesa */}
       {showModal && (
@@ -129,7 +151,7 @@ const WelcomePage: React.FC = () => {
               </div>
 
               <p className="welcome-page__modal-text">
-                Caso este não seja o número da sua mesa, altere antes de confirmar.
+                Caso este não seja o número da sua mesa, escaneie o QR Code da mesa correta.
               </p>
 
               <button

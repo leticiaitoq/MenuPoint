@@ -29,6 +29,8 @@ export interface ItemParaComanda {
 
 export interface PedidoParaComanda {
   numeroPedido: number;
+  /** Mesa com vários pedidos em andamento: todos os números saem na comanda (#1256, #1257) */
+  numerosPedidos?: number[];
   mesaNumero: number;
   pessoas: number;
   modalidade: ModalidadePedido;
@@ -156,7 +158,9 @@ export function gerarComanda(pedido: PedidoParaComanda, opcoes: OpcoesComanda = 
 
   return {
     mesa: String(pedido.mesaNumero).padStart(2, '0'),
-    numeroPedido: `#${pedido.numeroPedido}`,
+    numeroPedido: (pedido.numerosPedidos?.length ? pedido.numerosPedidos : [pedido.numeroPedido])
+      .map((n) => `#${n}`)
+      .join(', '),
     pessoas: pedido.pessoas,
     tipo: ROTULO_TIPO[pedido.modalidade],
     atendente: pedido.atendente,

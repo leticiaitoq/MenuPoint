@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   HiDotsVertical,
@@ -12,20 +12,27 @@ import {
   HiOutlineDocumentText,
   HiOutlineXCircle,
   HiOutlineClipboardList,
+  HiOutlinePencil,
 } from 'react-icons/hi';
 import { MdQrCode2 } from 'react-icons/md';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
 import ComandaCozinha from '../../../../shared/components/ComandaCozinha/ComandaCozinha';
 import CancelarPedido from '../../../../shared/components/cancelarPedido/CancelarPedido';
 import QrCodeMesa from '../../../../shared/components/QrCodeMesas/QrCodeMesa';
+import MesaService, { Mesa as MesaApi } from '../../../../services/mesa.service';
+import PedidoService, { Pedido as PedidoApi } from '../../../../services/pedido.service';
+import { mensagemDeErro } from '../../../../services/cliente.service';
 import { ROTAS_CAIXA } from '../../../../routes/caixaRotas';
-import { obterPedidoDaMesa } from '../../../../shared/components/ComandaCozinha/comanda.mock';
+import { useAuth } from '../../../../shared/contexts/Authcontext';
+import { pedidosParaComanda } from '../../../../shared/components/ComandaCozinha/comanda.adapter';
+import type { PedidoParaComanda } from '../../../../shared/components/ComandaCozinha/comanda';
+import ProdutoService from '../../../../services/produto.service';
 import './GerenPagamentos.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 type StatusMesaCaixa = 'aberta' | 'fechada' | 'livre' | 'reservada';
 type StatusInicialMesa = 'livre' | 'reservada';
-type FiltroMesas = 'todas' | 'abertas' | 'fechadas';
+type FiltroMesas = 'todas' | 'abertas' | 'livres' | 'reservadas';
 type ModoVisualizacao = 'grade' | 'lista';
 
 interface MesaCaixa {
@@ -34,6 +41,8 @@ interface MesaCaixa {
   // Preenchidos quando a mesa é cadastrada pelo modal
   capacidade?: number;
   observacao?: string;
+  /** qr_code_token da mesa: é o que o QR Code/link usa para abrir a WelcomePage dela */
+  qrToken?: string;
   // Preenchidos quando há pedido em andamento
   pessoas?: number;
   itens?: number;
@@ -41,27 +50,65 @@ interface MesaCaixa {
   /** Quanto já foi pago da conta (pagamento parcial). Se > 0, não dá para cancelar. */
   pagamentosRealizados?: number;
   tempoMinutos?: number;
+  /** Pedidos em andamento (RECEBIDO, PREPARO, PRONTO) desta mesa, vindos da API */
+  pedidos?: PedidoApi[];
+  /** Nomes dos clientes cadastrados na mesa (sem repetir) */
+  clientes?: string[];
   status: StatusMesaCaixa;
 }
 
 type ErrosCadastro = Partial<Record<'numero' | 'capacidade' | 'observacao', string>>;
 
 // ── Constantes ─────────────────────────────────────────────────────────────────
+// Os limites finais são conferidos de novo no backend (Mesa.schema.ts).
+const NUMERO_MAX = 9999;
 const CAPACIDADE_MIN = 1;
 const CAPACIDADE_MAX = 20;
-const OBSERVACAO_MAX = 80;
+const OBSERVACAO_MAX = 80; // vai para a coluna `localizacao` (máx. 100 no banco)
 
-// ── Mock (substituir por chamada à API futuramente — ver mesa.service.ts) ──────
-const MESAS_CAIXA_MOCK: MesaCaixa[] = [
-  { id: 'm1', numero: 1, pessoas: 2, itens: 5, total: 85.5,  tempoMinutos: 15, status: 'aberta' },
-  { id: 'm2', numero: 2, pessoas: 4, itens: 5, total: 162.4, pagamentosRealizados: 50, tempoMinutos: 8,  status: 'aberta' },
-  { id: 'm3', numero: 3, pessoas: 2, itens: 2, total: 48.9,  tempoMinutos: 10, status: 'aberta' },
-  { id: 'm4', numero: 4, pessoas: 6, itens: 7, total: 245.7, tempoMinutos: 35, status: 'aberta' },
-  { id: 'm5', numero: 5, pessoas: 2, itens: 1, total: 27.9,  tempoMinutos: 5,  status: 'aberta' },
-  { id: 'm6', numero: 6, pessoas: 3, itens: 4, total: 112.0, tempoMinutos: 20, status: 'aberta' },
-  { id: 'm7', numero: 7, status: 'livre' },
-  { id: 'm8', numero: 8, status: 'livre' },
-];
+// Converte a mesa da API (+ seus pedidos em andamento) para o formato da tela do Caixa.
+// Mesa com pedido em andamento aparece como "aberta", com itens, total e tempo reais.
+const STATUS_EM_ANDAMENTO: PedidoApi['status'][] = ['RECEBIDO', 'PREPARO', 'PRONTO'];
+
+// Clientes da mesa = nomes diferentes nos pedidos em andamento (ignora maiúsculas e espaços a mais)
+const clientesDaMesa = (pedidos: PedidoApi[]): string[] => {
+  const vistos = new Map<string, string>();
+  pedidos.forEach((p) => {
+    const nome = p.cliente_nome.trim().replace(/\s+/g, ' ');
+    const chave = nome.toLowerCase();
+    if (nome && !vistos.has(chave)) vistos.set(chave, nome);
+  });
+  return Array.from(vistos.values());
+};
+
+const rotuloClientes = (n: number) => `${n} ${n === 1 ? 'cliente' : 'clientes'}`;
+
+const daApi = (m: MesaApi, pedidos: PedidoApi[] = []): MesaCaixa => {
+  const clientes = clientesDaMesa(pedidos);
+  const aberta = pedidos.length > 0 || m.status === 'OCUPADA';
+  const maisAntigo = pedidos.length
+    ? Math.min(...pedidos.map((p) => new Date(p.criado_em).getTime()))
+    : undefined;
+
+  return {
+    id: m.id,
+    numero: m.numero,
+    capacidade: m.capacidade,
+    observacao: m.localizacao ?? undefined,
+    qrToken: m.qr_code_token,
+    pedidos,
+    clientes,
+    pessoas: clientes.length > 0 ? clientes.length : undefined,
+    status: aberta ? 'aberta' : m.status === 'RESERVADA' ? 'reservada' : 'livre',
+    ...(pedidos.length > 0 && {
+      itens: pedidos.reduce((acc, p) => acc + p.itens.reduce((q, i) => q + i.quantidade, 0), 0),
+      total: pedidos.reduce((acc, p) => acc + p.total, 0),
+      tempoMinutos: Math.max(0, Math.floor((Date.now() - (maisAntigo as number)) / 60000)),
+    }),
+  };
+};
+
+const ordenar = (lista: MesaCaixa[]) => [...lista].sort((a, b) => a.numero - b.numero);
 
 const formatarMoeda = (valor: number) =>
   valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -70,8 +117,14 @@ const formatarMoeda = (valor: number) =>
 const GerenPagamentos: React.FC = () => {
   const navigate = useNavigate();
 
-  // Lista de mesas em estado, para que uma mesa recém-cadastrada apareça na tela.
-  const [mesas, setMesas] = useState<MesaCaixa[]>(MESAS_CAIXA_MOCK);
+  const { usuario } = useAuth();
+  // Só o administrador pode cadastrar mesa (regra do backend: POST /mesas)
+  const podeCadastrar = usuario?.perfil === 'ADMIN';
+
+  // Mesas reais, vindas do banco
+  const [mesas, setMesas]           = useState<MesaCaixa[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erroLista, setErroLista]   = useState<string | null>(null);
 
   const [filtro, setFiltro]             = useState<FiltroMesas>('todas');
   const [visualizacao, setVisualizacao] = useState<ModoVisualizacao>('grade');
@@ -81,12 +134,21 @@ const GerenPagamentos: React.FC = () => {
 
   // mesa cuja comanda da cozinha está aberta — null = modal fechado
   const [comandaMesa, setComandaMesa] = useState<MesaCaixa | null>(null);
+  const [comandaPedido, setComandaPedido] = useState<PedidoParaComanda | null>(null);
+  const [comandaCarregando, setComandaCarregando] = useState(false);
+  const [comandaErro, setComandaErro] = useState<string | null>(null);
+  // Identifica a busca mais recente: ignora respostas antigas se o usuário fechar/trocar de mesa
+  const comandaReq = useRef(0);
 
   // mesa que está sendo cancelada — null = modal fechado
   const [cancelarMesa, setCancelarMesa] = useState<MesaCaixa | null>(null);
 
   // mesa cujo QR Code está aberto — null = modal fechado
   const [qrMesa, setQrMesa] = useState<MesaCaixa | null>(null);
+
+  // id da mesa cujo status (livre ↔ reservada) está sendo alterado — evita duplo clique
+  const [alternandoId, setAlternandoId] = useState<string | null>(null);
+  const [erroAcao, setErroAcao] = useState<string | null>(null);
 
   // ── Modal: Cadastrar mesa ────────────────────────────────────────────────────
   const [modalAberto, setModalAberto]   = useState(false);
@@ -95,6 +157,8 @@ const GerenPagamentos: React.FC = () => {
   const [statusInicial, setStatusInicial] = useState<StatusInicialMesa>('livre');
   const [observacao, setObservacao]     = useState('');
   const [erros, setErros]               = useState<ErrosCadastro>({});
+  const [salvando, setSalvando]         = useState(false);
+  const [erroApi, setErroApi]           = useState<string | null>(null);
 
   // Sugestão de número para a próxima mesa (maior número existente + 1)
   const proximoNumero = useMemo(
@@ -104,14 +168,45 @@ const GerenPagamentos: React.FC = () => {
 
   // ── Contagens usadas nos filtros e no chip "Pedidos em aberto" ──────────────
   const totalAbertas  = useMemo(() => mesas.filter((m) => m.status === 'aberta').length, [mesas]);
-  const totalFechadas = useMemo(() => mesas.filter((m) => m.status === 'fechada').length, [mesas]);
+  const totalLivres     = useMemo(() => mesas.filter((m) => m.status === 'livre').length, [mesas]);
+  const totalReservadas = useMemo(() => mesas.filter((m) => m.status === 'reservada').length, [mesas]);
 
   // ── Aplica o filtro selecionado ──────────────────────────────────────────────
   const mesasFiltradas = useMemo(() => {
     if (filtro === 'abertas')  return mesas.filter((m) => m.status === 'aberta');
-    if (filtro === 'fechadas') return mesas.filter((m) => m.status === 'fechada');
+    if (filtro === 'livres')     return mesas.filter((m) => m.status === 'livre');
+    if (filtro === 'reservadas') return mesas.filter((m) => m.status === 'reservada');
     return mesas;
   }, [filtro, mesas]);
+
+  // ── Lista as mesas cadastradas ───────────────────────────────────────────────
+  const carregarMesas = useCallback(async () => {
+    setCarregando(true);
+    setErroLista(null);
+    try {
+      const [lista, pedidosAbertos] = await Promise.all([
+        MesaService.listar(),
+        PedidoService.listar({ status: STATUS_EM_ANDAMENTO, modalidade: 'MESA' }),
+      ]);
+
+      // Agrupa os pedidos em andamento por mesa
+      const porMesa = new Map<string, PedidoApi[]>();
+      pedidosAbertos.forEach((p) => {
+        if (!p.mesa) return;
+        porMesa.set(p.mesa.id, [...(porMesa.get(p.mesa.id) ?? []), p]);
+      });
+
+      setMesas(ordenar(lista.map((m) => daApi(m, porMesa.get(m.id) ?? []))));
+    } catch (err: any) {
+      setErroLista(mensagemDeErro(err, 'Não foi possível carregar as mesas.'));
+    } finally {
+      setCarregando(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void carregarMesas();
+  }, [carregarMesas]);
 
   // Fecha o modal com a tecla Esc
   useEffect(() => {
@@ -130,69 +225,126 @@ const GerenPagamentos: React.FC = () => {
     setStatusInicial('livre');
     setObservacao('');
     setErros({});
+    setErroApi(null);
     setMenuAberto(null);
     setModalAberto(true);
   };
 
-  const fecharModal = () => setModalAberto(false);
+  const fecharModal = () => {
+    if (salvando) return;
+    setModalAberto(false);
+  };
 
   const validarCadastro = (): ErrosCadastro => {
     const novos: ErrosCadastro = {};
 
     const n = Number(numero);
-    if (!numero || !Number.isInteger(n) || n < 1) {
-      novos.numero = 'Informe um número de mesa válido.';
+    if (!numero.trim() || !Number.isInteger(n) || n < 1 || n > NUMERO_MAX) {
+      novos.numero = `Informe um número inteiro de 1 a ${NUMERO_MAX}.`;
     } else if (mesas.some((m) => m.numero === n)) {
       novos.numero = `A Mesa ${n} já está cadastrada.`;
     }
 
     const c = Number(capacidade);
-    if (!capacidade || !Number.isInteger(c) || c < CAPACIDADE_MIN || c > CAPACIDADE_MAX) {
+    if (!capacidade.trim() || !Number.isInteger(c) || c < CAPACIDADE_MIN || c > CAPACIDADE_MAX) {
       novos.capacidade = `A capacidade deve ser de ${CAPACIDADE_MIN} a ${CAPACIDADE_MAX} pessoas.`;
     }
 
-    if (observacao.length > OBSERVACAO_MAX) {
+    if (observacao.trim().length > OBSERVACAO_MAX) {
       novos.observacao = `Use no máximo ${OBSERVACAO_MAX} caracteres.`;
     }
 
     return novos;
   };
 
-  const handleCadastrarMesa = () => {
+  const handleCadastrarMesa = async () => {
+    if (salvando) return; // evita duplo clique criar duas vezes
+
     const novos = validarCadastro();
     setErros(novos);
+    setErroApi(null);
     if (Object.keys(novos).length > 0) return;
 
-    const obs = observacao.trim();
+    setSalvando(true);
+    try {
+      const criada = await MesaService.criar({
+        numero: Number(numero),
+        capacidade: Number(capacidade),
+        localizacao: observacao.trim() || undefined,
+        status: statusInicial === 'reservada' ? 'RESERVADA' : 'LIVRE',
+      });
 
-    const novaMesa: MesaCaixa = {
-      id:         `m${Date.now()}`,
-      numero:     Number(numero),
-      capacidade: Number(capacidade),
-      observacao: obs || undefined,
-      status:     statusInicial,
-    };
-
-    // Mantém a lista ordenada pelo número da mesa
-    setMesas((prev) => [...prev, novaMesa].sort((a, b) => a.numero - b.numero));
-    setModalAberto(false);
+      // Mantém a lista ordenada pelo número da mesa
+      setMesas((prev) => ordenar([...prev, daApi(criada)]));
+      setModalAberto(false);
+    } catch (err: any) {
+      const mensagem = mensagemDeErro(err, 'Não foi possível cadastrar a mesa.');
+      if (err?.response?.status === 409) {
+        // Número já existe (inclusive mesa inativa): mostra no próprio campo
+        setErros({ numero: mensagem });
+      } else {
+        setErroApi(mensagem);
+      }
+    } finally {
+      setSalvando(false);
+    }
   };
 
   // ── Navegação ────────────────────────────────────────────────────────────────
-  // Cards de mesas com pedido (aberta/fechada) levam para a tela do pedido/pagamento
-  // daquela mesa (o id vai na URL: /restaurante/caixa/pagar/:id).
+  // Mesa com pedido em andamento (aberta/fechada) abre a tela da mesa ao clicar no card.
   const temPedido = (mesa: MesaCaixa) => mesa.status === 'aberta' || mesa.status === 'fechada';
 
+  // Abre a tela da mesa (/restaurante/caixa/pagar/:id) — pedidos, itens, desconto e pagamento.
   const abrirDetalheMesa = (mesa: MesaCaixa) => {
-    if (!temPedido(mesa)) return;
     setMenuAberto(null);
     navigate(ROTAS_CAIXA.pagarMesa(mesa.id));
   };
 
-  // Mesa sem pedido (livre/reservada) → manda pro fluxo de novo pedido
-  const abrirMesaLivre = (_mesa: MesaCaixa, e: React.MouseEvent) => {
+  // Abre a tela de pedido já com a mesa escolhida (mesa livre, reservada ou já aberta)
+  const novoPedido = (mesa: MesaCaixa) => {
+    setMenuAberto(null);
+    navigate(`/restaurante/pedido?mesa=${mesa.id}`);
+  };
+
+  const abrirMesaLivre = (mesa: MesaCaixa, e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate('/restaurante/pedido');
+    novoPedido(mesa);
+  };
+
+  // Abre a tela de pedido com os dados do pedido já preenchidos
+  const editarPedido = (pedidoId: string) => {
+    setMenuAberto(null);
+    navigate(`/restaurante/pedido?editar=${pedidoId}`);
+  };
+
+  // Menu ⋮ → "Editar pedido": com um pedido só vai direto para a edição;
+  // com vários, abre a tela da mesa, onde cada pedido tem o seu botão "Editar".
+  const handleEditarDoMenu = (mesa: MesaCaixa, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const pedidos = mesa.pedidos ?? [];
+    if (pedidos.length === 1) {
+      editarPedido(pedidos[0].id);
+    } else {
+      abrirDetalheMesa(mesa);
+    }
+  };
+
+  // Alterna a mesa entre Livre (liberada) e Reservada
+  const alternarReserva = async (mesa: MesaCaixa, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (alternandoId) return; // evita duplo clique
+
+    const novoStatus = mesa.status === 'reservada' ? 'LIVRE' : 'RESERVADA';
+    setAlternandoId(mesa.id);
+    setErroAcao(null);
+    try {
+      const atualizada = await MesaService.atualizarStatus(mesa.id, novoStatus);
+      setMesas((prev) => prev.map((m) => (m.id === mesa.id ? daApi(atualizada, m.pedidos ?? []) : m)));
+    } catch (err: any) {
+      setErroAcao(mensagemDeErro(err, 'Não foi possível alterar o status da mesa.'));
+    } finally {
+      setAlternandoId(null);
+    }
   };
 
   const toggleMenu = (mesaId: string, e: React.MouseEvent) => {
@@ -202,15 +354,67 @@ const GerenPagamentos: React.FC = () => {
 
   const handleAcaoMenu = (mesa: MesaCaixa, e: React.MouseEvent) => {
     e.stopPropagation();
-    setMenuAberto(null);
-    navigate(ROTAS_CAIXA.pagarMesa(mesa.id));
+    abrirDetalheMesa(mesa);
   };
+
+  // Busca os pedidos da mesa direto na API (dados frescos, com atendente) e as categorias
+  // dos produtos, e monta a comanda. Não guarda nada: é recalculada a cada abertura.
+  const carregarComanda = useCallback(async (mesa: MesaCaixa) => {
+    const req = ++comandaReq.current;
+    setComandaPedido(null);
+    setComandaErro(null);
+
+    const ids = (mesa.pedidos ?? []).map((p) => p.id);
+    if (ids.length === 0) {
+      setComandaErro('Esta mesa não tem pedidos em andamento.');
+      return;
+    }
+
+    setComandaCarregando(true);
+    try {
+      const [pedidos, produtos] = await Promise.all([
+        Promise.all(ids.map((id) => PedidoService.buscarPorId(id))),
+        ProdutoService.listar(),
+      ]);
+      if (req !== comandaReq.current) return;
+
+      const categoriaPorProduto: Record<string, string> = {};
+      produtos.forEach((p) => {
+        if (p.categoria?.nome) categoriaPorProduto[p.id] = p.categoria.nome;
+      });
+
+      // Outro usuário pode ter finalizado/cancelado um pedido desde que a lista foi carregada
+      const emAndamento = pedidos.filter((p) => STATUS_EM_ANDAMENTO.includes(p.status));
+      const comanda = pedidosParaComanda({
+        mesaNumero: mesa.numero,
+        pedidos: emAndamento,
+        categoriaPorProduto,
+      });
+
+      if (comanda) setComandaPedido(comanda);
+      else setComandaErro('Esta mesa não tem mais pedidos em andamento. Atualize a tela do Caixa.');
+    } catch (err: any) {
+      if (req !== comandaReq.current) return;
+      setComandaErro(mensagemDeErro(err, 'Não foi possível carregar a comanda da cozinha.'));
+    } finally {
+      if (req === comandaReq.current) setComandaCarregando(false);
+    }
+  }, []);
 
   const abrirComanda = (mesa: MesaCaixa, e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuAberto(null);
     setComandaMesa(mesa);
+    void carregarComanda(mesa);
   };
+
+  const fecharComanda = useCallback(() => {
+    comandaReq.current++; // descarta qualquer busca em andamento
+    setComandaMesa(null);
+    setComandaPedido(null);
+    setComandaErro(null);
+    setComandaCarregando(false);
+  }, []);
 
   const abrirQr = (mesa: MesaCaixa, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -232,7 +436,7 @@ const GerenPagamentos: React.FC = () => {
     setMesas((prev) =>
       prev.map((m) =>
         m.id === cancelarMesa.id
-          ? { id: m.id, numero: m.numero, capacidade: m.capacidade, observacao: m.observacao, status: 'livre' }
+          ? { id: m.id, numero: m.numero, capacidade: m.capacidade, observacao: m.observacao, qrToken: m.qrToken, status: 'livre' }
           : m
       )
     );
@@ -240,9 +444,10 @@ const GerenPagamentos: React.FC = () => {
   };
 
   const mensagemVazio =
-    filtro === 'abertas'  ? 'Nenhuma mesa aberta no momento.'  :
-    filtro === 'fechadas' ? 'Nenhuma mesa fechada no momento.' :
-                            'Nenhuma mesa cadastrada.';
+    filtro === 'abertas'    ? 'Nenhuma mesa aberta no momento.'     :
+    filtro === 'livres'     ? 'Nenhuma mesa livre no momento.'      :
+    filtro === 'reservadas' ? 'Nenhuma mesa reservada no momento.'  :
+                              'Nenhuma mesa cadastrada.';
 
   return (
     <RestaurantLayout>
@@ -277,14 +482,17 @@ const GerenPagamentos: React.FC = () => {
               Histórico
             </button>
 
-            {/* Abre o modal de cadastro de mesa */}
-            <button
-              className="caixa__btn-cadastrar"
-              onClick={(e) => { e.stopPropagation(); abrirModal(); }}
-              aria-label="Cadastrar nova mesa"
-            >
-              <HiPlus /> Cadastrar mesa
-            </button>
+            {/* Abre o modal de cadastro de mesa (só administrador) */}
+            {podeCadastrar && (
+              <button
+                className="caixa__btn-cadastrar"
+                onClick={(e) => { e.stopPropagation(); abrirModal(); }}
+                aria-label="Cadastrar nova mesa"
+                disabled={carregando}
+              >
+                <HiPlus /> Cadastrar mesa
+              </button>
+            )}
           </div>
         </div>
 
@@ -308,15 +516,23 @@ const GerenPagamentos: React.FC = () => {
                 className={`caixa__aba${filtro === 'abertas' ? ' caixa__aba--ativa' : ''}`}
                 onClick={() => setFiltro('abertas')}
               >
-                Abertas ({totalAbertas})
+                Abertas / Ocupadas ({totalAbertas})
               </button>
               <button
                 role="tab"
-                aria-selected={filtro === 'fechadas'}
-                className={`caixa__aba${filtro === 'fechadas' ? ' caixa__aba--ativa' : ''}`}
-                onClick={() => setFiltro('fechadas')}
+                aria-selected={filtro === 'livres'}
+                className={`caixa__aba${filtro === 'livres' ? ' caixa__aba--ativa' : ''}`}
+                onClick={() => setFiltro('livres')}
               >
-                Fechadas ({totalFechadas})
+                Livres ({totalLivres})
+              </button>
+              <button
+                role="tab"
+                aria-selected={filtro === 'reservadas'}
+                className={`caixa__aba${filtro === 'reservadas' ? ' caixa__aba--ativa' : ''}`}
+                onClick={() => setFiltro('reservadas')}
+              >
+                Reservadas ({totalReservadas})
               </button>
             </div>
 
@@ -340,8 +556,21 @@ const GerenPagamentos: React.FC = () => {
             </div>
           </div>
 
+          {erroAcao && (
+            <div className="caixa__vazio" role="alert">{erroAcao}</div>
+          )}
+
           {/* ── Grid de cards ── */}
-          {mesasFiltradas.length === 0 ? (
+          {carregando ? (
+            <div className="caixa__vazio">Carregando mesas...</div>
+          ) : erroLista ? (
+            <div className="caixa__vazio" role="alert">
+              {erroLista}{' '}
+              <button className="caixa__btn-cancelar" onClick={() => void carregarMesas()}>
+                Tentar de novo
+              </button>
+            </div>
+          ) : mesasFiltradas.length === 0 ? (
             <div className="caixa__vazio">{mensagemVazio}</div>
           ) : (
             <div className={`caixa__grid caixa__grid--${visualizacao}`}>
@@ -368,15 +597,14 @@ const GerenPagamentos: React.FC = () => {
                     }
                     aria-label={
                       clicavel
-                        ? `Abrir pedido da Mesa ${mesa.numero}`
+                        ? `Ver detalhes da Mesa ${mesa.numero}`
                         : `Mesa ${mesa.numero} ${mesa.status}`
                     }
                   >
                     <div className="caixa__card-topo">
                       <span className="caixa__card-nome">Mesa {String(mesa.numero).padStart(2, '0')}</span>
 
-                      {clicavel && (
-                        <div className="caixa__card-menu-wrap">
+                      <div className="caixa__card-menu-wrap">
                           <button
                             className="caixa__card-menu-btn"
                             onClick={(e) => toggleMenu(mesa.id, e)}
@@ -391,9 +619,22 @@ const GerenPagamentos: React.FC = () => {
                               <button className="caixa__card-menu-item" onClick={(e) => handleAcaoMenu(mesa, e)}>
                                 <HiOutlineDocumentText /> Ver detalhes
                               </button>
-                              <button className="caixa__card-menu-item" onClick={(e) => abrirComanda(mesa, e)}>
-                                <HiOutlineClipboardList /> Comanda da cozinha
+                              <button
+                                className="caixa__card-menu-item"
+                                onClick={(e) => { e.stopPropagation(); novoPedido(mesa); }}
+                              >
+                                <HiPlus /> {clicavel ? 'Adicionar pedido' : 'Abrir mesa'}
                               </button>
+                              {clicavel && (
+                                <button className="caixa__card-menu-item" onClick={(e) => handleEditarDoMenu(mesa, e)}>
+                                  <HiOutlinePencil /> Editar pedido
+                                </button>
+                              )}
+                              {clicavel && (
+                                <button className="caixa__card-menu-item" onClick={(e) => abrirComanda(mesa, e)}>
+                                  <HiOutlineClipboardList /> Comanda da cozinha
+                                </button>
+                              )}
                               <button className="caixa__card-menu-item" onClick={(e) => abrirQr(mesa, e)}>
                                 <MdQrCode2 /> QR Code da mesa
                               </button>
@@ -405,7 +646,6 @@ const GerenPagamentos: React.FC = () => {
                             </div>
                           )}
                         </div>
-                      )}
                     </div>
 
                     {!clicavel ? (
@@ -430,16 +670,32 @@ const GerenPagamentos: React.FC = () => {
                         <button className="caixa__card-btn-abrir" onClick={(e) => abrirMesaLivre(mesa, e)}>
                           <HiPlus /> Abrir mesa
                         </button>
+
+                        {/* Alterna entre Livre (liberada) e Reservada */}
+                        <button
+                          className="caixa__card-btn-alternar"
+                          onClick={(e) => void alternarReserva(mesa, e)}
+                          disabled={alternandoId === mesa.id}
+                        >
+                          {alternandoId === mesa.id
+                            ? 'Alterando...'
+                            : mesa.status === 'reservada'
+                              ? 'Liberar mesa'
+                              : 'Reservar mesa'}
+                        </button>
                       </>
                     ) : (
                       /* Mesa com pedido: aberta ou fechada */
                       <>
                         <span className="caixa__card-pessoas">
-                          <HiUserGroup /> {mesa.pessoas} pessoas
+                          <HiUserGroup />{' '}
+                          {mesa.pessoas !== undefined
+                            ? rotuloClientes(mesa.pessoas)
+                            : `${mesa.capacidade ?? '—'} lugares`}
                         </span>
 
                         <div className="caixa__card-linha">
-                          <span className="caixa__card-itens">{mesa.itens} itens</span>
+                          <span className="caixa__card-itens">{mesa.itens ?? 0} itens</span>
                           <span className="caixa__card-total">{formatarMoeda(mesa.total ?? 0)}</span>
                         </div>
 
@@ -449,7 +705,7 @@ const GerenPagamentos: React.FC = () => {
                           </span>
                           {mesa.status === 'aberta' && (
                             <span className="caixa__card-tempo">
-                              <HiClock /> {mesa.tempoMinutos} min
+                              <HiClock /> {mesa.tempoMinutos ?? '—'} min
                             </span>
                           )}
                         </div>
@@ -492,6 +748,7 @@ const GerenPagamentos: React.FC = () => {
                       className={`caixa__input${erros.numero ? ' caixa__input--erro' : ''}`}
                       type="number"
                       min="1"
+                      max={NUMERO_MAX}
                       step="1"
                       value={numero}
                       onChange={(e) => setNumero(e.target.value)}
@@ -566,12 +823,16 @@ const GerenPagamentos: React.FC = () => {
 
               </div>
 
+              {erroApi && (
+                <span className="caixa__erro" role="alert" style={{ padding: '0 24px' }}>{erroApi}</span>
+              )}
+
               <div className="caixa__modal-acoes">
-                <button className="caixa__btn-cancelar" onClick={fecharModal}>
+                <button className="caixa__btn-cancelar" onClick={fecharModal} disabled={salvando}>
                   Cancelar
                 </button>
-                <button className="caixa__btn-salvar" onClick={handleCadastrarMesa}>
-                  <HiPlus /> Cadastrar mesa
+                <button className="caixa__btn-salvar" onClick={handleCadastrarMesa} disabled={salvando}>
+                  <HiPlus /> {salvando ? 'Cadastrando...' : 'Cadastrar mesa'}
                 </button>
               </div>
             </div>
@@ -581,12 +842,19 @@ const GerenPagamentos: React.FC = () => {
         {/* ── Modal: Comanda da cozinha (gerada a partir do pedido da mesa) ── */}
         <ComandaCozinha
           aberta={comandaMesa !== null}
-          pedido={comandaMesa ? obterPedidoDaMesa(comandaMesa.id) : null}
-          onFechar={() => setComandaMesa(null)}
+          pedido={comandaPedido}
+          mesaNumero={comandaMesa?.numero}
+          carregando={comandaCarregando}
+          erro={comandaErro}
+          onTentarNovamente={comandaMesa ? () => void carregarComanda(comandaMesa) : undefined}
+          onFechar={fecharComanda}
         />
 
         {/* ── Modal: QR Code da mesa ── */}
-        <QrCodeMesa mesa={qrMesa} onFechar={() => setQrMesa(null)} />
+        <QrCodeMesa
+          mesa={qrMesa ? { numero: qrMesa.numero, capacidade: qrMesa.capacidade, token: qrMesa.qrToken } : null}
+          onFechar={() => setQrMesa(null)}
+        />
 
         {/* ── Modal: Cancelar pedido ── */}
         <CancelarPedido

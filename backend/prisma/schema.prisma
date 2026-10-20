@@ -217,6 +217,7 @@ model Mesa {
   reservas        Reserva[]
   pedidos         Pedido[]
 
+  @@unique([estabelecimento_id, numero])
   @@map("mesas")
 }
 
