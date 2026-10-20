@@ -6,6 +6,8 @@ import prisma from '@config/prisma'
 import { Plano, StatusAssinatura } from '@prisma/client'
 import { pagamentoRecusado } from './Pagamento.temporario'
 
+const FRONTEND_PRINCIPAL = env.FRONTEND_URL.split(',')[0].trim().replace(/\/$/, '')
+
 const mpClient = new MercadoPagoConfig({
   accessToken: env.MP_ACCESS_TOKEN,
 })
@@ -20,8 +22,8 @@ const PLAN_ID_TO_PLANO: Record<string, Plano> = {
 
 // Valor de cada plano (em BRL) — usado ao salvar a assinatura
 const PLAN_ID_TO_VALOR: Record<string, number> = {
-  [env.MP_PLAN_ID_BASICO]: 49.90,
-  [env.MP_PLAN_ID_PRO]:    99.90,
+  [env.MP_PLAN_ID_BASICO]: 97,
+  [env.MP_PLAN_ID_PRO]:    197,
 }
 
 export class AssinaturaService {
@@ -42,7 +44,7 @@ export class AssinaturaService {
       const body: any = {
         preapproval_plan_id: data.plan_id,
         payer_email:         data.email,
-        back_url:            `${env.FRONTEND_URL}/assinatura/sucesso`,
+        back_url:            `${FRONTEND_PRINCIPAL}/assinatura/sucesso`,
         notification_url:    `${env.API_URL}/api/v1/assinatura/webhook`,
         status:              'pending',
         reason:              'Plano MenuPoint',
@@ -125,8 +127,9 @@ export class AssinaturaService {
         body: {
           reason:             `MenuPoint - Plano ${pendente.plano}`,
           external_reference: empresa_id,
-          payer_email:        email,
-          back_url:           `${env.FRONTEND_URL}/assinatura/sucesso`,
+          // Modo teste: MP_PAYER_EMAIL_TESTE substitui o e-mail do cadastro (pagador de teste do MP)
+          payer_email:        env.MP_PAYER_EMAIL_TESTE?.trim() || email,
+          back_url:           `${FRONTEND_PRINCIPAL}/assinatura/sucesso`,
           notification_url:   `${env.API_URL}/api/v1/assinatura/webhook`,
           status:             'pending',
           auto_recurring: {

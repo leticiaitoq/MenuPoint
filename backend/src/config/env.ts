@@ -37,6 +37,9 @@ const envSchema = z.object({
   MP_PUBLIC_KEY:    z.string().min(1, 'MP_PUBLIC_KEY é obrigatório'),
   MP_PLAN_ID_BASICO: z.string().min(1, 'MP_PLAN_ID_BASICO é obrigatório'),
   MP_PLAN_ID_PRO:    z.string().min(1, 'MP_PLAN_ID_PRO é obrigatório'),
+  // SÓ PARA TESTES: e-mail da conta de COMPRADOR de teste do Mercado Pago. Quando preenchido, é enviado
+  // ao MP como pagador no lugar do e-mail do cadastro. Em produção, deixe vazio/apague.
+  MP_PAYER_EMAIL_TESTE: z.string().optional(),
 
   // URL pública do backend (usada no notification_url do MP)
   API_URL: z.string().url().default('http://localhost:3333')

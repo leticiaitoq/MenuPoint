@@ -5,6 +5,7 @@ import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
 import { env } from '@config/env'
 import prisma from '@config/prisma'
+import { PLANOS } from './Planos.config'
 
 const service = new AssinaturaService()
 
@@ -108,20 +109,8 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
     '/planos',
     async (_request: FastifyRequest, reply: FastifyReply) => {
       return reply.send([
-        {
-          id:     env.MP_PLAN_ID_BASICO,
-          nome:   'Starter',
-          slug:   'starter',
-          valor:  49.90,
-          plano:  'STARTER',
-        },
-        {
-          id:     env.MP_PLAN_ID_PRO,
-          nome:   'Pro',
-          slug:   'pro',
-          valor:  99.90,
-          plano:  'PRO',
-        },
+        { id: env.MP_PLAN_ID_BASICO, plano: 'STARTER', ...PLANOS.STARTER },
+        { id: env.MP_PLAN_ID_PRO,    plano: 'PRO',     ...PLANOS.PRO },
       ])
     }
   )
