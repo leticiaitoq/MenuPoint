@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useClienteAuth, ROTA_APOS_LOGIN_CLIENTE } from '../../../shared/contexts/ClienteAuthContext'
 import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext'
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext'
+import { useConvidado } from '../../../shared/contexts/Convidadocontext'
 
 /**
  * Entrada pelo link do restaurante: /r/:slug
@@ -19,6 +20,7 @@ const RestauranteLink: React.FC = () => {
   const { isAuthenticated, sair } = useClienteAuth()
   const { slug, restaurante, erro, selecionar } = useRestauranteCliente()
   const { limparCarrinho } = useCarrinho()
+  const { limparConvidado } = useConvidado()
 
   const slugNormalizado = slugDaUrl.trim().toLowerCase()
   const slugAnterior = useRef(slug)
@@ -37,6 +39,8 @@ const RestauranteLink: React.FC = () => {
     if (trocouDeRestaurante) {
       // O carrinho do restaurante anterior não pode ir junto...
       limparCarrinho()
+      // ...a mesa (QR Code) do restaurante anterior também não vale mais aqui...
+      limparConvidado()
       // ...e o cliente precisa entrar de novo neste restaurante
       if (sessao.current.isAuthenticated) {
         encerrouPorTroca.current = true
@@ -46,7 +50,7 @@ const RestauranteLink: React.FC = () => {
 
     slugAnterior.current = slugNormalizado
     selecionar(slugNormalizado)
-  }, [slugNormalizado, selecionar, limparCarrinho])
+  }, [slugNormalizado, selecionar, limparCarrinho, limparConvidado])
 
   const pronto = restaurante?.slug === slugNormalizado && restaurante.aceita_entrega
 

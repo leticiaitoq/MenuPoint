@@ -182,3 +182,27 @@
   font-size: 16px;
   padding: 32px 16px;
 }
+
+.welcome-page__conta {
+  width: 100%;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.welcome-page__conta-ou { font-size: 13px; color: #777; }
+.welcome-page__conta-botoes { display: flex; gap: 10px; width: 100%; }
+.welcome-page__conta-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #c0392b;
+  border-radius: 50px;
+  background: transparent;
+  color: #c0392b;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.welcome-page__conta-btn:hover { background: rgba(192, 57, 43, 0.08); }

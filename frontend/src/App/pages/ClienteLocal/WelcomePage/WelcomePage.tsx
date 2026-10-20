@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
+import { useClienteAuth, ROTA_APOS_LOGIN_CLIENTE } from '../../../shared/contexts/ClienteAuthContext';
 import './WelcomePage.css';
 
 /**
@@ -18,6 +19,7 @@ import './WelcomePage.css';
  */
 const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useClienteAuth();
   const {
     definirConvidado,
     mesa: tableNumber,
@@ -69,6 +71,17 @@ const WelcomePage: React.FC = () => {
     setShowModal(false);
     navigate('/menulocal');
   };
+
+  /**
+   * Quem já tem (ou quer criar) conta segue para o login/cadastro de cliente.
+   * A mesa fica guardada no ConvidadoContext e, depois de entrar, o cliente cai na
+   * dwelcome ainda vinculado a ela.
+   */
+  const irParaConta = (rota: '/login/cliente' | '/register/cliente') =>
+    navigate(rota, { state: { from: ROTA_APOS_LOGIN_CLIENTE } });
+
+  // Já está logado: não precisa digitar nome nem ver a tela de convidado
+  if (isAuthenticated) return <Navigate to={ROTA_APOS_LOGIN_CLIENTE} replace />;
 
   /**
    * Fecha o modal ao clicar no overlay (fora do card).
@@ -126,6 +139,27 @@ const WelcomePage: React.FC = () => {
           >
             Entrar
           </button>
+
+          {/* Alternativa ao convidado: conta de cliente (continua na mesa depois de entrar) */}
+          <div className="welcome-page__conta">
+            <span className="welcome-page__conta-ou">ou</span>
+            <div className="welcome-page__conta-botoes">
+              <button
+                type="button"
+                className="welcome-page__conta-btn"
+                onClick={() => irParaConta('/login/cliente')}
+              >
+                Entrar na conta
+              </button>
+              <button
+                type="button"
+                className="welcome-page__conta-btn"
+                onClick={() => irParaConta('/register/cliente')}
+              >
+                Criar conta
+              </button>
+            </div>
+          </div>
 
         </div>
 
