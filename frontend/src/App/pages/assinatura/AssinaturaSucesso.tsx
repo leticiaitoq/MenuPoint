@@ -20,6 +20,7 @@ const AssinaturaSucesso: React.FC = () => {
   const { token, usuario, entrar } = useAuth();
   const [estado, setEstado] = useState<Estado>('checando');
   const [rodada, setRodada] = useState(0);
+  const [statusMP, setStatusMP] = useState<string | null>(null);
 
   // Logo após o cadastro falta confirmar o e-mail; nos demais casos vai direto ao sistema
   const irParaProximaTela = () => {
@@ -41,8 +42,9 @@ const AssinaturaSucesso: React.FC = () => {
     const verificar = async () => {
       if (cancelado) return;
       try {
-        const { status } = await AssinaturaService.sincronizar();
+        const { status, status_mp } = await AssinaturaService.sincronizar();
         if (cancelado) return;
+        setStatusMP(status_mp ?? null);
         if (status === 'CANCELADA' || status === 'FALHOU') {
           setEstado('recusado');
           return;
@@ -101,6 +103,9 @@ const AssinaturaSucesso: React.FC = () => {
                 <p className="pagamento__subtitulo">
                   Se você já pagou, pode levar alguns minutos. Se o pagamento não foi concluído, é só tentar de novo.
                 </p>
+                {statusMP && (
+                  <p className="pagamento__subtitulo">Status no Mercado Pago: <strong>{statusMP}</strong></p>
+                )}
                 <button type="button" className="pagamento__botao" onClick={() => setRodada((r) => r + 1)}>
                   Verificar novamente
                 </button>

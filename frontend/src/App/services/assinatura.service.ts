@@ -26,7 +26,7 @@ const AssinaturaService = {
   },
 
   /** Confere o pagamento direto no Mercado Pago e devolve o status atual. */
-  async sincronizar(): Promise<{ status: string }> {
+  async sincronizar(): Promise<{ status: string; status_mp?: string | null }> {
     const { data } = await api.post('/assinatura/sincronizar')
     return data
   },

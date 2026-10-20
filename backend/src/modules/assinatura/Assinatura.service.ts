@@ -179,13 +179,17 @@ export class AssinaturaService {
     }
 
     if (ultima.status === 'PENDENTE' && ultima.gateway === 'mercadopago' && ultima.gateway_id) {
+      let statusMP: string | null = null
       try {
-        await this.processarWebhook(ultima.gateway_id, 'subscription_preapproval')
-      } catch {
+        const r: any = await this.processarWebhook(ultima.gateway_id, 'subscription_preapproval')
+        statusMP = r?.status_mp ?? null
+        console.log(`[sincronizar] empresa=${empresa_id} assinatura_mp=${ultima.gateway_id} status_mp=${statusMP}`)
+      } catch (err: any) {
         // Falha ao consultar o MP: devolve o status que já temos e a tela tenta de novo
+        console.error(`[sincronizar] falha ao consultar o MP: ${err?.message ?? err}`)
       }
       const atual = await prisma.assinatura.findUnique({ where: { id: ultima.id } })
-      return { status: atual?.status ?? ultima.status }
+      return { status: atual?.status ?? ultima.status, status_mp: statusMP }
     }
 
     return { status: ultima.status }
@@ -244,6 +248,7 @@ export class AssinaturaService {
         assinatura_id:     raw.id,
         payer_email:       raw.payer_email,
         status:            novoStatus,
+        status_mp:         statusMP,
         plan_id:           raw.preapproval_plan_id,
         proximo_debito:    raw.next_payment_date,
         registros_atualizados: assinaturaAtualizada.count,
