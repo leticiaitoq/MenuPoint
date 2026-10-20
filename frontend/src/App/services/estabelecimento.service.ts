@@ -44,7 +44,6 @@ export interface Estabelecimento {
   logo_url: string | null
   banner_url: string | null
   tema: 'CLARO' | 'ESCURO'
-  tipo_cozinha: string | null
   chave_pix: string | null
   tipo_chave_pix: TipoChavePix | null
   tempo_entrega_min: number
@@ -70,7 +69,6 @@ export interface AtualizarEstabelecimentoDTO {
   email?: string // "" apaga o valor
   endereco?: Endereco
   tema?: 'CLARO' | 'ESCURO'
-  tipo_cozinha?: string // "" apaga o valor
   tempo_entrega_min?: number
   tempo_entrega_max?: number
   taxa_entrega?: number

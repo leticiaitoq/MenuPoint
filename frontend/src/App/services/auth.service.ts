@@ -14,13 +14,12 @@ export interface Usuario {
   escopo: 'GLOBAL' | 'LOCAL'
   estabelecimento_id: string | null
   empresa_id: string | null
-  // true = cadastro feito, mas o pagamento do plano ainda não foi confirmado
-  pagamento_pendente?: boolean
 }
 
 // Dados do usuário lidos direto do banco (GET /auth/me)
 export interface UsuarioPerfil extends Usuario {
   cpf: string | null
+  data_nascimento: string | null
   ativo: boolean
   email_verificado: boolean
   ultimo_acesso: string | null
@@ -76,6 +75,7 @@ export interface RegistrarDTO {
   razao_social?: string
   nome_responsavel?: string
   cpf?: string
+  data_nascimento?: string
   cnpj?: string
   email: string
   cep?: string
@@ -86,8 +86,6 @@ export interface RegistrarDTO {
   bairro?: string
   senha: string
   confirmar_senha: string
-  // Plano escolhido no site (?plano=starter|pro)
-  plano?: string
 }
 
 const AuthService = {

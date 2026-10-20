@@ -42,7 +42,7 @@ const HomeRestaurante: React.FC = () => {
       icon: <MdTableRestaurant className="home-rest__card-icon home-rest__card-icon--red" />,
       value: 'Mesas Disponíveis',
       sub: `${mesasDisponiveis} mesas`,
-      route: '/restaurante/mesas',
+      route: '/restaurante/caixa',
     },
   ];
  

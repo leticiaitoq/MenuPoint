@@ -21,9 +21,11 @@ import {
   HiOutlineShieldCheck,
   HiOutlineUser,
   HiOutlineXCircle,
+  HiOutlineCalendarDays,
 } from 'react-icons/hi2';
 import AuthService from '../../services/auth.service';
 import { useAuth } from '../../shared/contexts/Authcontext';
+import AssinaturaService from '../../services/assinatura.service';
 import TermsModal from '../../shared/components/TermsModal/TermesModal';
 import './RegisterPage.css';
 
@@ -36,11 +38,6 @@ const ESTADOS_BR = [
   'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI',
   'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
 ];
-
-// Plano escolhido no site: guardado aqui para sobreviver a recarregar a página
-const CHAVE_PLANO = '@menupoint:plano';
-// Endereço do site institucional (REACT_APP_SITE_URL). Sem ele, o cadastro abre direto.
-const SITE_URL = '/site/index.html';
 
 const somenteDigitos = (v: string) => v.replace(/\D/g, '');
 
@@ -87,6 +84,35 @@ const cnpjValido = (valor: string) => {
 };
 
 const emailValido = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const dataNascimentoValida = (valor: string) => {
+  const d = somenteDigitos(valor);
+  if (d.length !== 8) return false;
+  const dia = Number(d.slice(0, 2));
+  const mes = Number(d.slice(2, 4));
+  const ano = Number(d.slice(4));
+  const data = new Date(ano, mes - 1, dia);
+  // Rejeita datas inexistentes (ex.: 31/02) e datas futuras
+  if (data.getFullYear() !== ano || data.getMonth() !== mes - 1 || data.getDate() !== dia) return false;
+  return ano >= 1900 && data <= new Date();
+};
+
+const maiorDeIdade = (valor: string) => {
+  const d = somenteDigitos(valor);
+  const dia = Number(d.slice(0, 2));
+  const mes = Number(d.slice(2, 4));
+  const ano = Number(d.slice(4));
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - ano;
+  if (hoje.getMonth() + 1 < mes || (hoje.getMonth() + 1 === mes && hoje.getDate() < dia)) idade--;
+  return idade >= 18;
+};
+
+/** '25/12/1990' → '1990-12-25' (formato que a API costuma esperar) */
+const dataParaISO = (valor: string) => {
+  const [dia, mes, ano] = valor.split('/');
+  return `${ano}-${mes}-${dia}`;
+};
+
 
 type Erros = Record<string, string>;
 
@@ -160,18 +186,10 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { entrar } = useAuth();
   const [searchParams] = useSearchParams();
-  // Plano escolhido no site (ex: /cadastro?plano=pro). Fica guardado durante todo o cadastro.
-  const [planoDesejado] = useState<string | null>(() => {
-    const doSite = searchParams.get('plano');
-    if (doSite) sessionStorage.setItem(CHAVE_PLANO, doSite);
-    return doSite ?? sessionStorage.getItem(CHAVE_PLANO);
-  });
+  // Se a pessoa veio do site institucional com um plano já escolhido
+  // (ex: menupoint-sistema.../?plano=pro), guardamos o slug aqui.
+  const planoDesejado = searchParams.get('plano'); // 'basico' | 'pro' | null
   const [redirecionandoPagamento, setRedirecionandoPagamento] = useState(false);
-
-  // Cadastro sem plano escolhido: a primeira tela é o site, onde o plano é escolhido
-  useEffect(() => {
-    if (!planoDesejado && SITE_URL) window.location.replace(SITE_URL);
-  }, [planoDesejado]);
 
   const [etapa, setEtapa] = useState<1 | 2>(1);
 
@@ -195,6 +213,7 @@ const RegisterPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [aceitaTermos, setAceitaTermos] = useState(false);
+  const [dataNascimento, setDataNascimento] = useState('');
 
   // Estado da tela
   const [erros, setErros] = useState<Erros>({});
@@ -298,6 +317,11 @@ const RegisterPage: React.FC = () => {
     limparErro('cpf');
   };
 
+    const handleDataNascimentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDataNascimento(mascarar(e.target.value, '00/00/0000'));
+    limparErro('dataNascimento');
+    };
+
   const buscarCep = async (cepFormatado: string) => {
     setBuscandoCep(true);
     try {
@@ -362,6 +386,9 @@ const RegisterPage: React.FC = () => {
     const e: Erros = {};
     if (nomeCompleto.trim().split(/\s+/).length < 2) e.nomeCompleto = 'Informe nome e sobrenome.';
     if (!cpfValido(cpf)) e.cpf = 'Informe um CPF válido.';
+    if (!cpfValido(cpf)) e.cpf = 'Informe um CPF válido.';
+    if (!dataNascimentoValida(dataNascimento)) e.dataNascimento = 'Informe uma data válida.';
+      else if (!maiorDeIdade(dataNascimento)) e.dataNascimento = 'É preciso ter 18 anos ou mais.';
     if (!emailValido(email)) e.email = 'Informe um e-mail válido.';
     if (!senhaForte) e.senha = 'A senha não atende aos requisitos.';
     if (senha !== confirmarSenha) e.confirmarSenha = 'As senhas não coincidem.';
@@ -413,10 +440,10 @@ const RegisterPage: React.FC = () => {
         // responsável
         nome_responsavel: nomeCompleto.trim(),
         cpf,
+        data_nascimento: dataParaISO(dataNascimento),
         email: email.trim(),
         senha,
         confirmar_senha: confirmarSenha,
-        plano: planoDesejado ?? undefined,
       });
 
       entrar({
@@ -425,12 +452,31 @@ const RegisterPage: React.FC = () => {
         usuario: resultado.usuario,
       });
 
-      // Veio do site com um plano: segue para o pagamento (o código de e-mail já foi enviado
-      // e será confirmado logo depois). Sem plano, mantém o fluxo de confirmação de e-mail.
+      // Se a pessoa veio de um botão "Assinar plano X" no site, pula direto
+      // pro checkout do Mercado Pago em vez de mostrar o modal de boas-vindas.
       if (planoDesejado) {
-        sessionStorage.removeItem(CHAVE_PLANO);
+        setCarregando(false);
         setRedirecionandoPagamento(true);
-        navigate('/pagamento', { state: { email: email.trim(), verificarEmail: true } });
+        try {
+          const planos = await AssinaturaService.listarPlanos();
+          const planoEscolhido = planos.find((p) => p.slug === planoDesejado);
+
+          if (!planoEscolhido) {
+            // Plano não reconhecido (link antigo ou slug errado): não trava o
+            // cadastro, só cai no fluxo normal de confirmação por e-mail.
+            setShowSucesso(true);
+            return;
+          }
+
+          const { init_point } = await AssinaturaService.criar(planoEscolhido.id, email.trim());
+          window.location.href = init_point;
+        } catch (err: any) {
+          // Conta já foi criada com sucesso — não deixamos a pessoa perdida
+          // só porque a etapa de pagamento falhou. Ela pode assinar depois.
+          setRedirecionandoPagamento(false);
+          setErro('Sua conta foi criada, mas não foi possível iniciar o pagamento agora. Você pode assinar um plano dentro do sistema.');
+          setShowSucesso(true);
+        }
         return;
       }
 
@@ -453,9 +499,6 @@ const RegisterPage: React.FC = () => {
     setShowSucesso(false);
     navigate('/verify-code', { state: { email: email.trim(), mode: 'register' } });
   };
-
-  // Redirecionando para o site para escolher o plano
-  if (!planoDesejado && SITE_URL) return null;
 
   /* ────────────────────────────────────────────────────────────
      Render
@@ -654,13 +697,19 @@ const RegisterPage: React.FC = () => {
                   placeholder="000.000.000-00" value={cpf} onChange={handleCpfChange}
                   aria-invalid={!!erros.cpf} />
               </Field>
-
               <Field name="email" label="E-mail" icon={<HiOutlineEnvelope />}
-                error={erros.email} layout={span(12)}>
-                <input id="rp-email" type="email" className="register-page__input"
-                  placeholder="Digite seu e-mail" value={email}
-                  onChange={(e) => { setEmail(e.target.value); limparErro('email'); }}
-                  maxLength={150} autoComplete="email" aria-invalid={!!erros.email} />
+              error={erros.email} layout={span(7)}>
+               <input id="rp-email" type="email" className="register-page__input"
+             placeholder="Digite seu e-mail" value={email}
+               onChange={(e) => { setEmail(e.target.value); limparErro('email'); }}
+              maxLength={150} autoComplete="email" aria-invalid={!!erros.email} />
+            </Field>
+
+              <Field name="dataNascimento" label="Data de nascimento" icon={<HiOutlineCalendarDays />}
+                error={erros.dataNascimento} layout={span(5)}>
+                <input id="rp-dataNascimento" type="text" inputMode="numeric" className="register-page__input"
+                  placeholder="DD/MM/AAAA" value={dataNascimento} onChange={handleDataNascimentoChange}
+                  autoComplete="bday" aria-invalid={!!erros.dataNascimento} />
               </Field>
 
               <Field name="senha" label="Senha" icon={<HiOutlineLockClosed />}

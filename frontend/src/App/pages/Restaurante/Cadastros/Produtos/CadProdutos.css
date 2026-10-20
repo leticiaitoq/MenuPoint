@@ -260,8 +260,7 @@
 
 .cadprod__nova-cat {
   display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
 }
 
@@ -313,27 +312,49 @@
   margin: 0;
 }
 
-/* Seletor de categoria pronta (inline, ao criar categoria no cadastro de produto) */
-.cadprod__select--mini {
-  padding: 5px 8px;
-  font-size: 13px;
-  max-width: 100%;
-  background-color: #fff;
+.cadprod__erro {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #dc2626;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  box-shadow: 0 1px 4px rgba(220, 38, 38, 0.12);
 }
 
-.cadprod__input--larga {
-  width: 100%;
-  box-sizing: border-box;
+.cadprod__erro-icon {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
 }
 
-.cadprod__chip-cancelar {
-  background: #f5f5f5;
-  color: #777;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 4px 8px;
+.cadprod__erro span {
+  flex: 1;
+}
+
+.cadprod__erro-fechar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: 0;
+  background: none;
+  color: #b91c1c;
+  font-size: 18px;
   cursor: pointer;
-  font-size: 13px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
 }
 
-.cadprod__contador { display: block; text-align: right; color: #888; font-size: 0.75rem; margin-top: 4px; }
+.cadprod__erro-fechar:hover {
+  opacity: 1;
+}

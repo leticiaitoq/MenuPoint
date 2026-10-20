@@ -65,19 +65,8 @@ const CategoriaService = {
     return response.data
   },
 
-  async atualizar(
-    id: string,
-    data: Partial<Categoria> & { reativar_produtos?: boolean }
-  ): Promise<Categoria> {
+  async atualizar(id: string, data: Partial<Categoria>): Promise<Categoria> {
     const response = await api.put<Categoria>(`categorias/${id}`, data)
-    return response.data
-  },
-
-  /** Reativa a categoria; com reativarProdutos=true os produtos dela voltam a ficar disponíveis. */
-  async reativar(id: string, reativarProdutos: boolean): Promise<Categoria> {
-    const response = await api.patch<Categoria>(`categorias/${id}/reativar`, {
-      reativar_produtos: reativarProdutos,
-    })
     return response.data
   },
 

@@ -31,14 +31,13 @@
 }
 
 .navbar__right {
-  justify-content: flex-end;
+  justify-content: end;
 }
 
 /* Centro da navbar */
 .navbar__center {
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
 
   display: flex;
   align-items: center;
@@ -72,25 +71,6 @@
   font-weight: 500;
   color: #ffffff;
   margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 220px;
-}
-
-.navbar__right {
-  gap: 8px;
-}
-
-/* Nome do cliente ao lado do avatar */
-.navbar__user-name {
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 600;
-  max-width: 160px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .navbar__icon {
@@ -129,12 +109,6 @@
 
   .navbar__subtitle {
     font-size: 12px;
-    max-width: 28vw;
-  }
-
-  .navbar__user-name {
-    font-size: 13px;
-    max-width: 90px;
   }
 
   .navbar__icon {

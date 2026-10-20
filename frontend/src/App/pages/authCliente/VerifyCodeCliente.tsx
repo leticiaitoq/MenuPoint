@@ -1,23 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
-import { HiCheckCircle } from 'react-icons/hi';
 import AuthCard from '../auth/AuthCard';
-import ClienteService, { mensagemDeErro } from '../../services/cliente.service';
-import { useClienteAuth, ROTA_APOS_LOGIN_CLIENTE } from '../../shared/contexts/ClienteAuthContext';
+import AuthService from '../../services/auth.service';
 import './VerifyCodeCliente.css';
 
 interface LocationStateCliente {
   email?: string;
   mode?: 'register' | 'recover';
-  /** Texto informativo mostrado no topo (ex.: vindo do login com e-mail não confirmado) */
-  aviso?: string;
 }
 
 const VerifyCodeCliente: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { entrar } = useClienteAuth();
   const stateCliente = (location.state as LocationStateCliente) || {};
 
   const emailCliente = stateCliente.email ?? '';
@@ -28,7 +23,6 @@ const VerifyCodeCliente: React.FC = () => {
   const [carregandoCliente, setCarregandoCliente] = useState(false);
   const [reenvioAtivoCliente, setReenvioAtivoCliente] = useState(false);
   const [segundosCliente, setSegundosCliente] = useState(60);
-  const [showSucesso, setShowSucesso] = useState(false);
 
   const inputRefsCliente = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -41,13 +35,6 @@ const VerifyCodeCliente: React.FC = () => {
     const timer = setTimeout(() => setSegundosCliente((s) => s - 1), 1000);
     return () => clearTimeout(timer);
   }, [segundosCliente]);
-
-  /* ── Toast de sucesso: mostra a confirmação e só navega depois de um tempinho ── */
-  useEffect(() => {
-    if (!showSucesso) return;
-    const timer = setTimeout(() => navigate(ROTA_APOS_LOGIN_CLIENTE, { replace: true }), 1800);
-    return () => clearTimeout(timer);
-  }, [showSucesso, navigate]);
 
   /* ── Foca no primeiro campo ao montar ── */
   useEffect(() => {
@@ -109,17 +96,17 @@ const VerifyCodeCliente: React.FC = () => {
     setCarregandoCliente(true);
 
     try {
+      const resultadoCliente = await AuthService.verifyCode({ email: emailCliente, code: codeCliente });
+
       if (modeCliente === 'register') {
-        // Confirma o e-mail e já recebe a sessão: o cliente cai logado na dwelcome
-        const sessao = await ClienteService.confirmarEmail(emailCliente, codeCliente);
-        entrar(sessao);
-        setShowSucesso(true);
+        localStorage.setItem('@menupoint:token', resultadoCliente.token);
+        localStorage.setItem('@menupoint:usuario', JSON.stringify(resultadoCliente.usuario));
+        navigate('/cliente/home');
       } else {
-        await ClienteService.validarCodigoRecuperacao(emailCliente, codeCliente);
-        navigate('/nova-senha/cliente', { state: { email: emailCliente, code: codeCliente } });
+        navigate('/cliente/nova-senha', { state: { email: emailCliente, code: codeCliente } });
       }
     } catch (err: any) {
-      setErroCliente(mensagemDeErro(err, 'Código inválido ou expirado.'));
+      setErroCliente(err?.response?.data?.message ?? 'Código inválido ou expirado.');
     } finally {
       setCarregandoCliente(false);
     }
@@ -132,19 +119,11 @@ const VerifyCodeCliente: React.FC = () => {
     setErroCliente(null);
 
     try {
-      await ClienteService.reenviarCodigo(
-        emailCliente,
-        modeCliente === 'register' ? 'registro' : 'recuperacao'
-      );
-    } catch (err: any) {
-      setErroCliente(mensagemDeErro(err, 'Não foi possível reenviar o código. Tente novamente.'));
+      // TODO: await AuthService.resendCode({ email: emailCliente });
+    } catch {
+      setErroCliente('Não foi possível reenviar o código. Tente novamente.');
     }
   };
-
-  // Recarregou a página (o e-mail vinha pela navegação): volta para o login
-  if (!emailCliente) {
-    return <Navigate to="/login/cliente" replace />;
-  }
 
   const tituloCliente = modeCliente === 'register' ? 'Verificar email' : 'Verificar identidade';
   const descricaoCliente =
@@ -179,11 +158,6 @@ const VerifyCodeCliente: React.FC = () => {
           </p>
 
           <form className="verify-cliente__form" onSubmit={handleSubmitCliente}>
-            {/* Aviso informativo */}
-            {stateCliente.aviso && !erroCliente && (
-              <p className="verify-cliente__info" role="status">{stateCliente.aviso}</p>
-            )}
-
             {/* Mensagem de erro */}
             {erroCliente && (
               <p className="verify-cliente__error">{erroCliente}</p>
@@ -249,17 +223,6 @@ const VerifyCodeCliente: React.FC = () => {
           </p>
         </div>
       </div>
-
-      {showSucesso && (
-        <div className="verify-cliente__toast-overlay">
-          <div className="verify-cliente__toast">
-            <div className="verify-cliente__toast-inner">
-              <HiCheckCircle className="verify-cliente__toast-icon" />
-              <p className="verify-cliente__toast-text">Email verificado com sucesso!</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

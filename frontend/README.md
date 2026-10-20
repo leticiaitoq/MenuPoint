@@ -1,9 +1,3 @@
- feature/adc-site
-teste
-
-Teste helo
-feature/integração
-
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

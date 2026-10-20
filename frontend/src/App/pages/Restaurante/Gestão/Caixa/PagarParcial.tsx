@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { HiArrowLeft, HiPlus, HiOutlineTrash } from 'react-icons/hi';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
-import { ROTAS_CAIXA } from '../../../../routes/caixaRotas';
 import './PagarParcial.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -60,8 +59,13 @@ const ITENS_POR_MESA_MOCK: Record<string, ItemPedido[]> = {
 const gerarIdForma = () => `f${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
 // ── Componente ─────────────────────────────────────────────────────────────────
-const PagarParcialConteudo: React.FC<{ id: string; itensMesa: ItemPedido[] }> = ({ id, itensMesa }) => {
+const PagarParcial: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  // Fallback pra 'm1' evita tela quebrada se o id não existir no mock —
+  // mesmo padrão usado em PagarMesa.tsx
+  const itensMesa = (id && ITENS_POR_MESA_MOCK[id]) || ITENS_POR_MESA_MOCK['m1'];
 
   const formatarMoeda = (valor: number) =>
     valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -137,7 +141,7 @@ const PagarParcialConteudo: React.FC<{ id: string; itensMesa: ItemPedido[] }> = 
         <div className="pagar-parcial__header">
           <button
             className="pagar-parcial__voltar"
-            onClick={() => navigate(ROTAS_CAIXA.pagarMesa(id))}
+            onClick={() => navigate(`/restaurante/caixa/pagar`)}
             aria-label="Voltar para a comanda"
           >
             <HiArrowLeft />
@@ -275,16 +279,6 @@ const PagarParcialConteudo: React.FC<{ id: string; itensMesa: ItemPedido[] }> = 
       </div>
     </RestaurantLayout>
   );
-};
-
-// ── Rota: descobre a mesa pelo :id da URL (mesmo padrão de PagarMesa.tsx) ──────
-const PagarParcial: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const itensMesa = id ? ITENS_POR_MESA_MOCK[id] : undefined;
-
-  if (!id || !itensMesa) return <Navigate to={ROTAS_CAIXA.lista} replace />;
-
-  return <PagarParcialConteudo key={id} id={id} itensMesa={itensMesa} />;
 };
 
 export default PagarParcial;

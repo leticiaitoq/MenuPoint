@@ -56,7 +56,7 @@ export interface CriarProdutoDTO {
 export interface AtualizarProdutoDTO {
   categoria_id?: string
   nome?: string
-  descricao?: string | null
+  descricao?: string
   preco?: number
   preco_promocional?: number | null
   imagem_url?: string | null
@@ -74,51 +74,39 @@ export interface FiltrosProduto {
   destaque?: boolean
 }
 
-// O Prisma serializa Decimal como string no JSON ("49.90"). Converte para number
-// aqui, para as telas poderem usar toFixed()/toLocaleString() sem surpresas.
-const normalizarProduto = (p: any): Produto => ({
-  ...p,
-  preco: Number(p.preco),
-  preco_promocional: p.preco_promocional == null ? null : Number(p.preco_promocional),
-  grupos_adicionais: p.grupos_adicionais?.map((g: any) => ({
-    ...g,
-    adicionais: g.adicionais?.map((a: any) => ({ ...a, preco_extra: Number(a.preco_extra) })),
-  })),
-})
-
 const ProdutoService = {
 
   // Lista os produtos do estabelecimento do usuário logado (token já envia o vínculo)
   async listar(filtros?: FiltrosProduto): Promise<Produto[]> {
     const response = await api.get<Produto[]>('produtos', { params: filtros })
-    return response.data.map(normalizarProduto)
+    return response.data
   },
 
   async maisVendidos(limite?: number): Promise<Produto[]> {
     const response = await api.get<Produto[]>('produtos/mais-vendidos', {
       params: limite ? { limite } : undefined,
     })
-    return response.data.map(normalizarProduto)
+    return response.data
   },
 
   async buscarPorId(id: string): Promise<Produto> {
     const response = await api.get<Produto>(`produtos/${id}`)
-    return normalizarProduto(response.data)
+    return response.data
   },
 
   async criar(data: CriarProdutoDTO): Promise<Produto> {
     const response = await api.post<Produto>('produtos', data)
-    return normalizarProduto(response.data)
+    return response.data
   },
 
   async atualizar(id: string, data: AtualizarProdutoDTO): Promise<Produto> {
     const response = await api.put<Produto>(`produtos/${id}`, data)
-    return normalizarProduto(response.data)
+    return response.data
   },
 
   async alternarDisponibilidade(id: string): Promise<Produto> {
     const response = await api.patch<Produto>(`produtos/${id}/disponibilidade`)
-    return normalizarProduto(response.data)
+    return response.data
   },
 
   async reordenar(itens: { id: string; ordem: number }[]): Promise<void> {
@@ -131,7 +119,7 @@ const ProdutoService = {
 
   async reativar(id: string): Promise<Produto> {
     const response = await api.patch<Produto>(`produtos/${id}/reativar`)
-    return normalizarProduto(response.data)
+    return response.data
   },
 
   // Envia a foto para o Storage e devolve a URL pública, para ser usada

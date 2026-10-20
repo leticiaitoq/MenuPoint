@@ -9,8 +9,9 @@ import {
   HiCog,
   HiChevronUp,
   HiX,
+  HiOfficeBuilding
 } from 'react-icons/hi';
-import { MdPointOfSale } from 'react-icons/md';
+import { MdTableRestaurant, MdPointOfSale } from 'react-icons/md';
 import './RestaurantSidebar.css';
 
 interface NavItem {
@@ -36,8 +37,10 @@ const NAV_ITEMS: NavItem[] = [
     to: '/restaurante/produtos',
     subitems: [{ to: '/restaurante/categories', label: 'Categorias' }],
   },
+  { to: '/restaurante/mesas', icon: <MdTableRestaurant />, label: 'Mesas' },
   { to: '/restaurante/fila', icon: <HiUserGroup />, label: 'Fila' },
   { to: '/restaurante/relatorios', icon: <HiChartBar />, label: 'Relatórios' },
+  { to: '/restaurante/embreve', icon: <HiOfficeBuilding />, label: 'Filiais' },
   { to: '/restaurante/config', icon: <HiCog />, label: 'Configurações', bottom: true },
 ];
 
