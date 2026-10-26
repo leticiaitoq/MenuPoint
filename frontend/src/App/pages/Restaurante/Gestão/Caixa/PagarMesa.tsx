@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   HiArrowLeft,
@@ -12,7 +12,7 @@ import {
   HiDotsHorizontal,
   HiOutlineSwitchHorizontal,
   HiOutlineDocumentDuplicate,
-  HiOutlineXCircle,
+  HiOutlineTrash,
   HiOutlinePencil,
 } from 'react-icons/hi';
 import { MdCreditCard, MdPix } from 'react-icons/md';
@@ -21,6 +21,9 @@ import { ROTAS_CAIXA } from '../../../../routes/caixaRotas';
 import MesaService, { Mesa as MesaApi } from '../../../../services/mesa.service';
 import PedidoService, { Pedido as PedidoApi } from '../../../../services/pedido.service';
 import { mensagemDeErro } from '../../../../services/cliente.service';
+import TransferirMesaModal from '../../../../shared/components/TransferirMesa/TransferirMesaModal';
+import JuntarPedidosModal from '../../../../shared/components/JuntarPedidos/JuntarPedidosModal';
+import ConfirmarAcaoPedido, { TipoAcaoPedido } from '../../../../shared/components/ConfirmarAcaoPedido/ConfirmarAcaoPedido';
 import './PagarMesa.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -212,11 +215,24 @@ const montarPedidoDaApi = (mesa: MesaApi, pedidos: PedidoApi[]): PedidoDetalhe =
 };
 
 // ── Componente ─────────────────────────────────────────────────────────────────
-const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = ({ id, pedidoBase }) => {
+const PagarMesaConteudo: React.FC<{
+  id: string;
+  pedidoBase: PedidoDetalhe;
+  /** Recarrega a mesa na API (depois de editar/excluir/transferir/juntar) */
+  onAtualizar: () => Promise<void>;
+}> = ({ id, pedidoBase, onAtualizar }) => {
   const navigate = useNavigate();
 
   const [itens, setItens]           = useState<ItemPedido[]>(pedidoBase.itens);
   const [menuAberto, setMenuAberto] = useState(false);
+
+  // Transferir mesa/pedidos e Juntar comandas (modal)
+  const [modalMesa, setModalMesa] = useState<'transferir' | 'juntar' | null>(null);
+
+  // Editar / excluir UM pedido da comanda (pede confirmação antes)
+  const [acaoPedido, setAcaoPedido]   = useState<{ tipo: TipoAcaoPedido; pedido: PedidoApi } | null>(null);
+  const [acaoSalvando, setAcaoSalvando] = useState(false);
+  const [acaoErro, setAcaoErro]       = useState<string | null>(null);
 
   // Desconto agora vive no state (antes vinha fixo do mock) pra poder ser
   // atualizado pelo modal de Descontos.
@@ -271,6 +287,59 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
       }
       return [...prev, { id: gerarIdItem(), nome: produto.nome, quantidade: 1, precoUnitario: produto.preco }];
     });
+  };
+
+  // ── Transferir pedidos / juntar pedidos ──────────────────────────────────────────────────────
+  const aoConcluirTransferencia = ({ origemLiberada }: { origemLiberada: boolean; destinoNumero: number }) => {
+    setModalMesa(null);
+    // Transferiu tudo: esta mesa ficou livre, então não há mais o que cobrar aqui
+    if (origemLiberada) {
+      navigate(ROTAS_CAIXA.lista);
+      return;
+    }
+    void onAtualizar().catch(() => undefined);
+  };
+
+  // Juntou pedidos da própria mesa: só recarrega a comanda com o pedido unido
+  const aoConcluirJuncao = () => {
+    setModalMesa(null);
+    void onAtualizar().catch(() => undefined);
+  };
+
+  // ── Editar / excluir um pedido ───────────────────────────────────────────────
+  const abrirAcaoPedido = (tipo: TipoAcaoPedido, pedido: PedidoApi) => {
+    setAcaoErro(null);
+    setAcaoPedido({ tipo, pedido });
+  };
+
+  const fecharAcaoPedido = () => {
+    if (acaoSalvando) return;
+    setAcaoPedido(null);
+    setAcaoErro(null);
+  };
+
+  const confirmarAcaoPedido = async (motivo?: string) => {
+    if (!acaoPedido || acaoSalvando) return;
+    const { tipo, pedido } = acaoPedido;
+
+    if (tipo === 'editar') {
+      navigate(`/restaurante/pedido?editar=${pedido.id}`);
+      return;
+    }
+
+    setAcaoSalvando(true);
+    setAcaoErro(null);
+    try {
+      await PedidoService.cancelarPedido(pedido.id, motivo ?? 'Removido pelo caixa');
+      setAcaoPedido(null);
+      // Era o último pedido: a mesa foi liberada, volta para o caixa
+      if ((pedidoBase.pedidos?.length ?? 0) <= 1) navigate(ROTAS_CAIXA.lista);
+      else await onAtualizar();
+    } catch (err: any) {
+      setAcaoErro(mensagemDeErro(err, 'Não foi possível excluir o pedido.'));
+    } finally {
+      setAcaoSalvando(false);
+    }
   };
 
   // ── Pagamento ────────────────────────────────────────────────────────────────
@@ -390,14 +459,20 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
 
               {menuAberto && (
                 <div className="pagar__menu" onClick={(e) => e.stopPropagation()}>
-                  <button className="pagar__menu-item">
-                    <HiOutlineSwitchHorizontal /> Transferir mesa
+                  <button
+                    className="pagar__menu-item"
+                    disabled={!pedidoBase.pedidos?.length}
+                    onClick={() => { setMenuAberto(false); setModalMesa('transferir'); }}
+                  >
+                    <HiOutlineSwitchHorizontal /> Transferir pedidos
                   </button>
-                  <button className="pagar__menu-item">
-                    <HiOutlineDocumentDuplicate /> Juntar comandas
-                  </button>
-                  <button className="pagar__menu-item pagar__menu-item--perigo">
-                    <HiOutlineXCircle /> Cancelar pedido
+                  <button
+                    className="pagar__menu-item"
+                    disabled={(pedidoBase.pedidos?.length ?? 0) < 2}
+                    title={(pedidoBase.pedidos?.length ?? 0) < 2 ? 'A mesa precisa ter pelo menos 2 pedidos' : undefined}
+                    onClick={() => { setMenuAberto(false); setModalMesa('juntar'); }}
+                  >
+                    <HiOutlineDocumentDuplicate /> Juntar pedidos
                   </button>
                 </div>
               )}
@@ -410,6 +485,9 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
 
           {/* ── Itens do pedido ── */}
           <div className="pagar__coluna-itens">
+            {/* Mesa real: os itens aparecem por pedido em "Pedidos da mesa" (abaixo).
+                Esta lista consolidada só existe nas mesas de demonstração. */}
+            {!pedidoBase.pedidos && (
             <div className="pagar__caixa">
               <h3 className="pagar__subtitulo">Itens do pedido</h3>
 
@@ -427,6 +505,7 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
                 ))}
               </div>
             </div>
+            )}
 
             <button className="pagar__btn-adicionar" onClick={adicionarItem}>
               <HiPlus /> Adicionar item
@@ -471,13 +550,24 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
                     <div key={p.id} className="pagar__det-pedido">
                       <div className="pagar__det-pedido-linha">
                         <strong>Pedido #{p.numero_pedido}</strong>
-                        <button
-                          className="pagar__det-editar"
-                          onClick={() => navigate(`/restaurante/pedido?editar=${p.id}`)}
-                          aria-label={`Editar pedido ${p.numero_pedido}`}
-                        >
-                          <HiOutlinePencil /> Editar
-                        </button>
+                        <div className="pagar__det-acoes">
+                          <button
+                            className="pagar__det-editar"
+                            onClick={() => abrirAcaoPedido('editar', p)}
+                            aria-label={`Editar pedido ${p.numero_pedido}`}
+                            title="Editar pedido"
+                          >
+                            <HiOutlinePencil />
+                          </button>
+                          <button
+                            className="pagar__det-editar pagar__det-lixeira"
+                            onClick={() => abrirAcaoPedido('excluir', p)}
+                            aria-label={`Excluir pedido ${p.numero_pedido}`}
+                            title="Excluir pedido"
+                          >
+                            <HiOutlineTrash />
+                          </button>
+                        </div>
                       </div>
                       <span className="pagar__det-pedido-meta">
                         {p.cliente_nome} · {horaDoPedido(p.criado_em)} · {ROTULO_STATUS_PEDIDO[p.status] ?? p.status}
@@ -758,6 +848,34 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
         )}
 
       </div>
+
+      {modalMesa === 'transferir' && pedidoBase.pedidos && (
+        <TransferirMesaModal
+          mesa={{ id, numero: pedidoBase.mesaNumero }}
+          pedidos={pedidoBase.pedidos}
+          onFechar={() => setModalMesa(null)}
+          onConcluido={aoConcluirTransferencia}
+        />
+      )}
+
+      {modalMesa === 'juntar' && pedidoBase.pedidos && (
+        <JuntarPedidosModal
+          mesa={{ id, numero: pedidoBase.mesaNumero }}
+          pedidos={pedidoBase.pedidos}
+          onFechar={() => setModalMesa(null)}
+          onConcluido={aoConcluirJuncao}
+        />
+      )}
+
+      <ConfirmarAcaoPedido
+        aberto={acaoPedido !== null}
+        tipo={acaoPedido?.tipo ?? 'editar'}
+        pedido={acaoPedido?.pedido ?? null}
+        salvando={acaoSalvando}
+        erro={acaoErro}
+        onConfirmar={(motivo) => void confirmarAcaoPedido(motivo)}
+        onFechar={fecharAcaoPedido}
+      />
     </RestaurantLayout>
   );
 };
@@ -774,6 +892,25 @@ type EstadoCarga =
   | { tipo: 'naoEncontrada' }
   | { tipo: 'ok'; pedido: PedidoDetalhe };
 
+// Busca a mesa e os pedidos em andamento dela na API
+const buscarMesa = async (mesaId: string): Promise<EstadoCarga> => {
+  try {
+    const [mesas, pedidos] = await Promise.all([
+      MesaService.listar(),
+      PedidoService.listar({ status: STATUS_EM_ANDAMENTO, modalidade: 'MESA', mesa_id: mesaId }),
+    ]);
+
+    const mesa = mesas.find((m) => m.id === mesaId);
+    if (!mesa) return { tipo: 'naoEncontrada' };
+
+    // Garante que só entram pedidos desta mesa, mesmo se a API ignorar o filtro
+    const daMesa = pedidos.filter((p) => p.mesa?.id === mesaId);
+    return { tipo: 'ok', pedido: montarPedidoDaApi(mesa, daMesa) };
+  } catch (err: any) {
+    return { tipo: 'erro', mensagem: mensagemDeErro(err, 'Não foi possível carregar a mesa.') };
+  }
+};
+
 const PagarMesa: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -781,6 +918,8 @@ const PagarMesa: React.FC = () => {
 
   const [estado, setEstado]       = useState<EstadoCarga>({ tipo: 'carregando' });
   const [tentativa, setTentativa] = useState(0);
+  // Muda a cada recarga: faz o conteúdo recomeçar com os dados novos da API
+  const [versao, setVersao]       = useState(0);
 
   useEffect(() => {
     if (!id || pedidoMock) return;
@@ -788,39 +927,34 @@ const PagarMesa: React.FC = () => {
     let cancelado = false;
     setEstado({ tipo: 'carregando' });
 
-    (async () => {
-      try {
-        const [mesas, pedidos] = await Promise.all([
-          MesaService.listar(),
-          PedidoService.listar({ status: STATUS_EM_ANDAMENTO, modalidade: 'MESA', mesa_id: id }),
-        ]);
-        if (cancelado) return;
-
-        const mesa = mesas.find((m) => m.id === id);
-        if (!mesa) {
-          setEstado({ tipo: 'naoEncontrada' });
-          return;
-        }
-
-        // Garante que só entram pedidos desta mesa, mesmo se a API ignorar o filtro
-        const daMesa = pedidos.filter((p) => p.mesa?.id === id);
-        setEstado({ tipo: 'ok', pedido: montarPedidoDaApi(mesa, daMesa) });
-      } catch (err: any) {
-        if (cancelado) return;
-        setEstado({ tipo: 'erro', mensagem: mensagemDeErro(err, 'Não foi possível carregar a mesa.') });
-      }
-    })();
+    buscarMesa(id).then((novo) => {
+      if (!cancelado) setEstado(novo);
+    });
 
     return () => { cancelado = true; };
   }, [id, pedidoMock, tentativa]);
 
+  // Recarrega sem piscar a tela de "Carregando": usado depois de editar/excluir/transferir/juntar
+  const recarregar = useCallback(async () => {
+    if (!id) return;
+    const novo = await buscarMesa(id);
+    if (novo.tipo === 'ok') {
+      setEstado(novo);
+      setVersao((v) => v + 1);
+    } else if (novo.tipo === 'naoEncontrada') {
+      navigate(ROTAS_CAIXA.lista);
+    } else if (novo.tipo === 'erro') {
+      throw new Error(novo.mensagem);
+    }
+  }, [id, navigate]);
+
   if (!id) return <Navigate to={ROTAS_CAIXA.lista} replace />;
 
-  if (pedidoMock) return <PagarMesaConteudo key={id} id={id} pedidoBase={pedidoMock} />;
+  if (pedidoMock) return <PagarMesaConteudo key={id} id={id} pedidoBase={pedidoMock} onAtualizar={async () => undefined} />;
 
   if (estado.tipo === 'naoEncontrada') return <Navigate to={ROTAS_CAIXA.lista} replace />;
 
-  if (estado.tipo === 'ok') return <PagarMesaConteudo key={id} id={id} pedidoBase={estado.pedido} />;
+  if (estado.tipo === 'ok') return <PagarMesaConteudo key={`${id}-${versao}`} id={id} pedidoBase={estado.pedido} onAtualizar={recarregar} />;
 
   return (
     <RestaurantLayout>

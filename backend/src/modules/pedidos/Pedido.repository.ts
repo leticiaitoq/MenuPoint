@@ -66,7 +66,10 @@ export class PedidoRepository extends BaseRepository<
           },
         },
         mesa: { select: { id: true, numero: true } },
-        pagamento: { select: { id: true, status: true, metodo: true } },
+        atendido_por: { select: { id: true, nome: true } },
+        pagamento: {
+          select: { id: true, status: true, metodo: true, valor: true, desconto_valor: true },
+        },
       },
       orderBy: { criado_em: 'desc' },
     })

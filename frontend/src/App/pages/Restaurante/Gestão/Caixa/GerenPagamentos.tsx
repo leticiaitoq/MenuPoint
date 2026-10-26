@@ -103,6 +103,11 @@ const daApi = (m: MesaApi, pedidos: PedidoApi[] = []): MesaCaixa => {
     ...(pedidos.length > 0 && {
       itens: pedidos.reduce((acc, p) => acc + p.itens.reduce((q, i) => q + i.quantidade, 0), 0),
       total: pedidos.reduce((acc, p) => acc + p.total, 0),
+      // Pagamento já confirmado: impede o cancelamento (precisaria de estorno)
+      pagamentosRealizados: pedidos.reduce(
+        (acc, p) => acc + (p.pagamento?.status === 'CONFIRMADO' ? p.pagamento.valor ?? p.total : 0),
+        0
+      ),
       tempoMinutos: Math.max(0, Math.floor((Date.now() - (maisAntigo as number)) / 60000)),
     }),
   };
@@ -142,6 +147,8 @@ const GerenPagamentos: React.FC = () => {
 
   // mesa que está sendo cancelada — null = modal fechado
   const [cancelarMesa, setCancelarMesa] = useState<MesaCaixa | null>(null);
+  const [cancelando, setCancelando] = useState(false);
+  const [cancelarErro, setCancelarErro] = useState<string | null>(null);
 
   // mesa cujo QR Code está aberto — null = modal fechado
   const [qrMesa, setQrMesa] = useState<MesaCaixa | null>(null);
@@ -425,22 +432,31 @@ const GerenPagamentos: React.FC = () => {
   const abrirCancelamento = (mesa: MesaCaixa, e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuAberto(null);
+    setCancelarErro(null);
     setCancelarMesa(mesa);
   };
 
-  // TODO: chamar a API — pedido.service.ts: cancelar(pedidoId, motivo)
-  //       (Pedido.status = CANCELADO, Pedido.cancelamento_motivo = motivo, Mesa.status = LIVRE)
-  const confirmarCancelamento = (_motivo: string) => {
-    if (!cancelarMesa) return;
-    // Mesa volta a ficar livre: mantém só os dados de cadastro, limpa o pedido
-    setMesas((prev) =>
-      prev.map((m) =>
-        m.id === cancelarMesa.id
-          ? { id: m.id, numero: m.numero, capacidade: m.capacidade, observacao: m.observacao, qrToken: m.qrToken, status: 'livre' }
-          : m
-      )
-    );
+  const fecharCancelamento = () => {
+    if (cancelando) return;
     setCancelarMesa(null);
+    setCancelarErro(null);
+  };
+
+  // Cancela TODOS os pedidos em andamento da mesa (POST /pedidos/mesa/:id/cancelar):
+  // o backend marca os pedidos como CANCELADO com o motivo e libera a mesa, tudo numa transação.
+  const confirmarCancelamento = async (motivo: string) => {
+    if (!cancelarMesa || cancelando) return;
+    setCancelando(true);
+    setCancelarErro(null);
+    try {
+      await PedidoService.cancelarMesa(cancelarMesa.id, motivo);
+      setCancelarMesa(null);
+      await carregarMesas(); // recarrega do banco: a mesa volta como livre
+    } catch (err: any) {
+      setCancelarErro(mensagemDeErro(err, 'Não foi possível cancelar o pedido da mesa.'));
+    } finally {
+      setCancelando(false);
+    }
   };
 
   const mensagemVazio =
@@ -863,8 +879,10 @@ const GerenPagamentos: React.FC = () => {
           itens={cancelarMesa?.itens}
           total={cancelarMesa?.total}
           pagamentosRealizados={cancelarMesa?.pagamentosRealizados}
-          onFechar={() => setCancelarMesa(null)}
-          onConfirmar={confirmarCancelamento}
+          salvando={cancelando}
+          erro={cancelarErro}
+          onFechar={fecharCancelamento}
+          onConfirmar={(motivo) => void confirmarCancelamento(motivo)}
         />
 
       </div>

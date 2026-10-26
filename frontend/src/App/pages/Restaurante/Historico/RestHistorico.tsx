@@ -1,155 +1,30 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FiSearch, FiDownload, FiX, FiChevronRight, FiCreditCard, FiUsers, FiCalendar } from 'react-icons/fi';
 import { HiOutlineTable, HiOutlineCash } from 'react-icons/hi';
 import { MdPix } from 'react-icons/md';
 import RestaurantLayout from '../../../shared/components/layout/Restaurantelayout';
+import PedidoService, { Pedido as PedidoApi, StatusPedido } from '../../../services/pedido.service';
+import { mensagemDeErro } from '../../../services/cliente.service';
 import './RestHistorico.css';
 
 // ── Tipos ──────────────────────────────────────────────
-interface ItemPedido {
-  nome: string;
-  quantidade: number;
-  precoUnitario: number;
-}
+type Aba = 'pedidos' | 'mesas';
+type Situacao = 'concluido' | 'cancelado' | 'andamento';
+type Forma = 'Pix' | 'Cartão' | 'Dinheiro' | 'Sem pagamento';
 
-type FormaPagamento = 'Pix' | 'Débito' | 'Crédito' | 'Dinheiro';
-type StatusPagamento = 'Pago' | 'Estornado' | 'Pendente';
-
-interface Pedido {
-  id: number;
-  dataHora: string; // dd/MM/yyyy HH:mm
+/** Uma "passagem" por uma mesa: pedidos da mesma mesa no mesmo dia */
+interface SessaoMesa {
+  chave: string;
   mesa: string;
-  pessoas: number;
-  itens: ItemPedido[];
-  cliente: string | null;
-  garcom: string;
-  taxaServicoPercentual: number;
-  desconto?: { codigo: string; valor: number };
-  formaPagamento: FormaPagamento;
-  status: StatusPagamento;
-  observacoes?: string;
+  dia: string; // yyyy-MM-dd (data local)
+  dataHora: string; // ISO do primeiro pedido
+  ultimaHora: number; // timestamp do último pedido (ordenação)
+  pedidos: PedidoApi[];
+  itens: number;
+  clientes: string[];
+  total: number; // soma dos pedidos que não foram cancelados
+  situacao: Situacao;
 }
-
-// ── Mock (substituir por chamada à API futuramente) ──────
-const PEDIDOS_MOCK: Pedido[] = [
-  {
-    id: 1257, dataHora: '21/06/2025 15:43', mesa: 'Mesa 02', pessoas: 4,
-    itens: [
-      { nome: 'Picanha na Chapa', quantidade: 1, precoUnitario: 89.9 },
-      { nome: 'Refrigerante Lata', quantidade: 2, precoUnitario: 11.0 },
-      { nome: 'Batata Frita', quantidade: 1, precoUnitario: 19.9 },
-      { nome: 'Água com Gás', quantidade: 1, precoUnitario: 8.0 },
-      { nome: 'Brownie com Sorvete', quantidade: 1, precoUnitario: 21.9 },
-      { nome: 'Suco de Laranja', quantidade: 1, precoUnitario: 12.0 },
-      { nome: 'Café Expresso', quantidade: 1, precoUnitario: 4.9 },
-    ],
-    cliente: null, garcom: 'João', taxaServicoPercentual: 10,
-    desconto: { codigo: 'CUPOM10', valor: 15.0 },
-    formaPagamento: 'Pix', status: 'Pago',
-    observacoes: 'Sem cebola na picanha. Uma das refrigerantes sem gelo.',
-  },
-  {
-    id: 1256, dataHora: '21/06/2025 15:20', mesa: 'Mesa 01', pessoas: 2,
-    itens: [
-      { nome: 'Filé à Parmegiana', quantidade: 1, precoUnitario: 52.9 },
-      { nome: 'Refrigerante Lata', quantidade: 1, precoUnitario: 11.0 },
-      { nome: 'Pudim', quantidade: 1, precoUnitario: 14.9 },
-    ],
-    cliente: null, garcom: 'João', taxaServicoPercentual: 10,
-    formaPagamento: 'Débito', status: 'Pago',
-  },
-  {
-    id: 1255, dataHora: '21/06/2025 14:58', mesa: 'Mesa 03', pessoas: 3,
-    itens: [
-      { nome: 'Frango à Parmegiana', quantidade: 1, precoUnitario: 48.9 },
-      { nome: 'Risoto de Camarão', quantidade: 1, precoUnitario: 62.9 },
-      { nome: 'Suco de Laranja', quantidade: 2, precoUnitario: 12.0 },
-    ],
-    cliente: null, garcom: 'Maria', taxaServicoPercentual: 10,
-    formaPagamento: 'Crédito', status: 'Pago',
-  },
-  {
-    id: 1254, dataHora: '21/06/2025 14:35', mesa: 'Mesa 05', pessoas: 2,
-    itens: [
-      { nome: 'Porção de Pastel', quantidade: 1, precoUnitario: 25.9 },
-    ],
-    cliente: null, garcom: 'João', taxaServicoPercentual: 0,
-    formaPagamento: 'Pix', status: 'Pago',
-  },
-  {
-    id: 1253, dataHora: '21/06/2025 14:10', mesa: 'Mesa 02', pessoas: 4,
-    itens: [
-      { nome: 'Hambúrguer Artesanal', quantidade: 2, precoUnitario: 28.9 },
-      { nome: 'Refrigerante Lata', quantidade: 2, precoUnitario: 6.0 },
-    ],
-    cliente: null, garcom: 'João', taxaServicoPercentual: 0,
-    formaPagamento: 'Dinheiro', status: 'Estornado',
-    observacoes: 'Cliente devolveu um dos hambúrgueres por engano no pedido.',
-  },
-  {
-    id: 1252, dataHora: '21/06/2025 13:45', mesa: 'Mesa 07', pessoas: 2,
-    itens: [
-      { nome: 'Salada Caesar', quantidade: 1, precoUnitario: 32.9 },
-      { nome: 'Água com Gás', quantidade: 1, precoUnitario: 8.0 },
-    ],
-    cliente: null, garcom: 'Pedro', taxaServicoPercentual: 10,
-    formaPagamento: 'Crédito', status: 'Pago',
-  },
-  {
-    id: 1251, dataHora: '21/06/2025 13:20', mesa: 'Mesa 04', pessoas: 6,
-    itens: [
-      { nome: 'Picanha na Chapa', quantidade: 2, precoUnitario: 89.9 },
-      { nome: 'Batata Frita', quantidade: 2, precoUnitario: 19.9 },
-      { nome: 'Refrigerante 1L', quantidade: 1, precoUnitario: 16.0 },
-    ],
-    cliente: null, garcom: 'Maria', taxaServicoPercentual: 10,
-    formaPagamento: 'Débito', status: 'Pago',
-  },
-  {
-    id: 1250, dataHora: '21/06/2025 12:55', mesa: 'Mesa 01', pessoas: 2,
-    itens: [
-      { nome: 'Prato Executivo', quantidade: 2, precoUnitario: 32.9 },
-      { nome: 'Suco de Laranja', quantidade: 2, precoUnitario: 12.0 },
-    ],
-    cliente: null, garcom: 'Pedro', taxaServicoPercentual: 0,
-    formaPagamento: 'Pix', status: 'Pago',
-  },
-  {
-    id: 1249, dataHora: '20/06/2025 22:15', mesa: 'Mesa 03', pessoas: 3,
-    itens: [
-      { nome: 'Pizza Grande', quantidade: 1, precoUnitario: 68.0 },
-      { nome: 'Refrigerante 2L', quantidade: 1, precoUnitario: 18.0 },
-      { nome: 'Sorvete', quantidade: 2, precoUnitario: 12.9 },
-    ],
-    cliente: null, garcom: 'João', taxaServicoPercentual: 10,
-    formaPagamento: 'Crédito', status: 'Pago',
-  },
-  {
-    id: 1248, dataHora: '20/06/2025 21:47', mesa: 'Mesa 06', pessoas: 2,
-    itens: [
-      { nome: 'Moqueca de Peixe', quantidade: 1, precoUnitario: 54.9 },
-    ],
-    cliente: null, garcom: 'Maria', taxaServicoPercentual: 0,
-    formaPagamento: 'Dinheiro', status: 'Pago',
-  },
-  {
-    id: 1247, dataHora: '20/06/2025 20:30', mesa: 'Delivery', pessoas: 1,
-    itens: [
-      { nome: 'Marmita Fitness', quantidade: 1, precoUnitario: 29.9 },
-      { nome: 'Suco Natural', quantidade: 1, precoUnitario: 9.9 },
-    ],
-    cliente: 'Carla Menezes', garcom: 'Pedro', taxaServicoPercentual: 0,
-    formaPagamento: 'Pix', status: 'Pendente',
-  },
-  {
-    id: 1246, dataHora: '20/06/2025 19:10', mesa: 'Delivery', pessoas: 1,
-    itens: [
-      { nome: 'Combo Burger Duplo', quantidade: 1, precoUnitario: 42.9 },
-    ],
-    cliente: 'Rafael Torres', garcom: 'João', taxaServicoPercentual: 0,
-    formaPagamento: 'Crédito', status: 'Pago',
-  },
-];
 
 const ITENS_POR_PAGINA = 10;
 
@@ -157,46 +32,121 @@ const ITENS_POR_PAGINA = 10;
 const formatarMoeda = (valor: number) =>
   valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-const parseDataBR = (dataHora: string): Date => {
-  const [dataParte, horaParte] = dataHora.split(' ');
-  const [dia, mes, ano] = dataParte.split('/').map(Number);
-  const [hora, minuto] = (horaParte ?? '00:00').split(':').map(Number);
-  return new Date(ano, mes - 1, dia, hora, minuto);
+const formatarDataHora = (iso: string) =>
+  new Date(iso)
+    .toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    .replace(',', '');
+
+const formatarHora = (iso: string) =>
+  new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const diaLocal = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+const formatarDia = (dia: string) => dia.split('-').reverse().join('/');
+
+const situacaoDoPedido = (status: StatusPedido): Situacao =>
+  status === 'ENTREGUE' ? 'concluido' : status === 'CANCELADO' ? 'cancelado' : 'andamento';
+
+const ROTULO_SITUACAO: Record<Situacao, string> = {
+  concluido: 'Concluído',
+  cancelado: 'Cancelado',
+  andamento: 'Em andamento',
+};
+const CLASSE_SITUACAO: Record<Situacao, string> = {
+  concluido: 'hist__badge--verde',
+  cancelado: 'hist__badge--vermelho',
+  andamento: 'hist__badge--amarelo',
 };
 
-const totalItens = (pedido: Pedido) =>
-  pedido.itens.reduce((soma, item) => soma + item.quantidade, 0);
+const formaDoPedido = (p: PedidoApi): Forma => {
+  const metodo = p.pagamento?.metodo ?? p.forma_pagamento;
+  if (metodo === 'PIX_ONLINE' || metodo === 'PIX_PRESENCIAL') return 'Pix';
+  if (metodo === 'CARTAO') return 'Cartão';
+  if (metodo === 'DINHEIRO') return 'Dinheiro';
+  return 'Sem pagamento';
+};
 
-const subtotalPedido = (pedido: Pedido) =>
-  pedido.itens.reduce((soma, item) => soma + item.quantidade * item.precoUnitario, 0);
-
-const taxaServicoPedido = (pedido: Pedido) =>
-  subtotalPedido(pedido) * (pedido.taxaServicoPercentual / 100);
-
-const totalPedido = (pedido: Pedido) =>
-  subtotalPedido(pedido) + taxaServicoPedido(pedido) - (pedido.desconto?.valor ?? 0);
-
-const ICONE_PAGAMENTO: Record<FormaPagamento, React.ReactNode> = {
+const ICONE_PAGAMENTO: Record<Forma, React.ReactNode> = {
   Pix: <MdPix />,
-  Débito: <FiCreditCard />,
-  Crédito: <FiCreditCard />,
+  Cartão: <FiCreditCard />,
   Dinheiro: <HiOutlineCash />,
+  'Sem pagamento': null,
 };
 
-const CLASSE_STATUS: Record<StatusPagamento, string> = {
-  Pago: 'hist__badge--verde',
-  Estornado: 'hist__badge--vermelho',
-  Pendente: 'hist__badge--amarelo',
+const STATUS_PAGAMENTO: Record<string, string> = {
+  PENDENTE: 'Pendente',
+  CONFIRMADO: 'Confirmado',
+  ESTORNADO: 'Estornado',
+  FALHOU: 'Falhou',
+};
+
+const rotuloLocal = (p: PedidoApi) =>
+  p.mesa ? `Mesa ${pad(p.mesa.numero)}` : p.modalidade === 'ENTREGA' ? 'Entrega' : 'Retirada';
+
+const rotuloModalidade = (p: PedidoApi) =>
+  p.modalidade === 'MESA' ? 'Salão' : p.modalidade === 'ENTREGA' ? 'Delivery' : 'Retirada';
+
+const totalItens = (p: PedidoApi) => p.itens.reduce((soma, i) => soma + i.quantidade, 0);
+
+const unicos = (nomes: string[]) => {
+  const vistos = new Map<string, string>();
+  nomes.forEach((n) => {
+    const limpo = n.trim().replace(/\s+/g, ' ');
+    if (limpo && !vistos.has(limpo.toLowerCase())) vistos.set(limpo.toLowerCase(), limpo);
+  });
+  return Array.from(vistos.values());
+};
+
+// Junta os pedidos de mesa em "passagens": mesma mesa + mesmo dia
+const agruparPorMesa = (pedidos: PedidoApi[]): SessaoMesa[] => {
+  const mapa = new Map<string, PedidoApi[]>();
+  pedidos.forEach((p) => {
+    if (!p.mesa) return;
+    const chave = `${p.mesa.id}|${diaLocal(p.criado_em)}`;
+    mapa.set(chave, [...(mapa.get(chave) ?? []), p]);
+  });
+
+  return Array.from(mapa.entries())
+    .map(([chave, lista]): SessaoMesa => {
+      const ordenados = [...lista].sort((a, b) => new Date(a.criado_em).getTime() - new Date(b.criado_em).getTime());
+      const situacoes = ordenados.map((p) => situacaoDoPedido(p.status));
+      return {
+        chave,
+        mesa: rotuloLocal(ordenados[0]),
+        dia: diaLocal(ordenados[0].criado_em),
+        dataHora: ordenados[0].criado_em,
+        ultimaHora: new Date(ordenados[ordenados.length - 1].criado_em).getTime(),
+        pedidos: ordenados,
+        itens: ordenados.reduce((s, p) => s + totalItens(p), 0),
+        clientes: unicos(ordenados.map((p) => p.cliente_nome)),
+        total: ordenados.reduce((s, p) => s + (p.status === 'CANCELADO' ? 0 : p.total), 0),
+        situacao: situacoes.includes('andamento')
+          ? 'andamento'
+          : situacoes.every((s) => s === 'cancelado')
+            ? 'cancelado'
+            : 'concluido',
+      };
+    })
+    .sort((a, b) => b.ultimaHora - a.ultimaHora);
 };
 
 const RestHistorico: React.FC = () => {
+  // Dados reais
+  const [pedidos, setPedidos] = useState<PedidoApi[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+
+  const [aba, setAba] = useState<Aba>('pedidos');
 
   // Filtros
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [mesaFiltro, setMesaFiltro] = useState('todas');
-  const [statusFiltro, setStatusFiltro] = useState('todos');
-  const [pagamentoFiltro, setPagamentoFiltro] = useState('todas');
+  const [situacaoFiltro, setSituacaoFiltro] = useState<'todos' | Situacao>('todos');
+  const [pagamentoFiltro, setPagamentoFiltro] = useState<'todas' | Forma>('todas');
   const [busca, setBusca] = useState('');
   const [periodoAberto, setPeriodoAberto] = useState(false);
 
@@ -204,83 +154,119 @@ const RestHistorico: React.FC = () => {
   const [paginaAtual, setPaginaAtual] = useState(1);
 
   // Painel de detalhes
-  const [pedidoSelecionado, setPedidoSelecionado] = useState<Pedido | null>(null);
+  const [pedidoSelecionado, setPedidoSelecionado] = useState<PedidoApi | null>(null);
+  const [sessaoSelecionada, setSessaoSelecionada] = useState<SessaoMesa | null>(null);
   const [mostrarObservacoes, setMostrarObservacoes] = useState(false);
 
-  const mesasDisponiveis = useMemo(
-    () => Array.from(new Set(PEDIDOS_MOCK.map((p) => p.mesa))).sort(),
-    []
+  // ── Busca no backend (o período é filtrado lá; o resto é filtrado aqui) ──
+  const carregar = useCallback(async () => {
+    setCarregando(true);
+    setErro(null);
+    try {
+      const lista = await PedidoService.listar({
+        data_inicio: dataInicio ? new Date(`${dataInicio}T00:00:00`).toISOString() : undefined,
+        data_fim: dataFim ? new Date(`${dataFim}T23:59:59.999`).toISOString() : undefined,
+      });
+      setPedidos(lista);
+    } catch (err: any) {
+      setErro(mensagemDeErro(err, 'Não foi possível carregar o histórico.'));
+    } finally {
+      setCarregando(false);
+    }
+  }, [dataInicio, dataFim]);
+
+  useEffect(() => {
+    void carregar();
+  }, [carregar]);
+
+  const locaisDisponiveis = useMemo(
+    () => Array.from(new Set(pedidos.map(rotuloLocal))).sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true })),
+    [pedidos]
   );
 
   const filtrosAtivos =
     !!dataInicio || !!dataFim || mesaFiltro !== 'todas' ||
-    statusFiltro !== 'todos' || pagamentoFiltro !== 'todas' || !!busca;
+    situacaoFiltro !== 'todos' || pagamentoFiltro !== 'todas' || !!busca;
 
-  // ── Aplica os filtros (client-side, sobre o mock) ──
+  // ── Aplica os filtros ──
   const pedidosFiltrados = useMemo(() => {
-    return PEDIDOS_MOCK.filter((pedido) => {
-      const dataPedido = parseDataBR(pedido.dataHora);
-
-      if (dataInicio && dataPedido < new Date(`${dataInicio}T00:00:00`)) return false;
-      if (dataFim && dataPedido > new Date(`${dataFim}T23:59:59`)) return false;
-      if (mesaFiltro !== 'todas' && pedido.mesa !== mesaFiltro) return false;
-      if (statusFiltro !== 'todos' && pedido.status !== statusFiltro) return false;
-      if (pagamentoFiltro !== 'todas' && pedido.formaPagamento !== pagamentoFiltro) return false;
-
-      if (busca) {
-        const termo = busca.trim().toLowerCase();
-        const noPedido = String(pedido.id).includes(termo);
-        const noCliente = (pedido.cliente ?? '').toLowerCase().includes(termo);
-        const noGarcom = pedido.garcom.toLowerCase().includes(termo);
-        if (!noPedido && !noCliente && !noGarcom) return false;
+    const termo = busca.trim().toLowerCase();
+    return pedidos.filter((p) => {
+      if (mesaFiltro !== 'todas' && rotuloLocal(p) !== mesaFiltro) return false;
+      if (situacaoFiltro !== 'todos' && situacaoDoPedido(p.status) !== situacaoFiltro) return false;
+      if (pagamentoFiltro !== 'todas' && formaDoPedido(p) !== pagamentoFiltro) return false;
+      if (termo) {
+        const alvo = [
+          String(p.numero_pedido),
+          p.cliente_nome,
+          p.atendido_por?.nome ?? '',
+          rotuloLocal(p),
+        ].join(' ').toLowerCase();
+        if (!alvo.includes(termo)) return false;
       }
-
       return true;
-    }).sort((a, b) => parseDataBR(b.dataHora).getTime() - parseDataBR(a.dataHora).getTime());
-  }, [dataInicio, dataFim, mesaFiltro, statusFiltro, pagamentoFiltro, busca]);
+    });
+  }, [pedidos, mesaFiltro, situacaoFiltro, pagamentoFiltro, busca]);
 
-  // Sempre que os filtros mudam, volta para a primeira página
+  const sessoesFiltradas = useMemo(() => agruparPorMesa(pedidosFiltrados), [pedidosFiltrados]);
+
+  const totalRegistros = aba === 'pedidos' ? pedidosFiltrados.length : sessoesFiltradas.length;
+
+  // Sempre que filtros/aba mudam, volta para a primeira página
   useEffect(() => {
     setPaginaAtual(1);
-  }, [dataInicio, dataFim, mesaFiltro, statusFiltro, pagamentoFiltro, busca]);
+  }, [dataInicio, dataFim, mesaFiltro, situacaoFiltro, pagamentoFiltro, busca, aba]);
 
-  const totalPaginas = Math.max(1, Math.ceil(pedidosFiltrados.length / ITENS_POR_PAGINA));
+  const totalPaginas = Math.max(1, Math.ceil(totalRegistros / ITENS_POR_PAGINA));
   const indiceInicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
   const pedidosDaPagina = pedidosFiltrados.slice(indiceInicio, indiceInicio + ITENS_POR_PAGINA);
+  const sessoesDaPagina = sessoesFiltradas.slice(indiceInicio, indiceInicio + ITENS_POR_PAGINA);
 
   const limparFiltros = () => {
     setDataInicio('');
     setDataFim('');
     setMesaFiltro('todas');
-    setStatusFiltro('todos');
+    setSituacaoFiltro('todos');
     setPagamentoFiltro('todas');
     setBusca('');
   };
 
-  const abrirDetalhes = (pedido: Pedido) => {
-    setPedidoSelecionado(pedido);
-    setMostrarObservacoes(false);
-  };
-
   const fecharDetalhes = () => {
     setPedidoSelecionado(null);
+    setSessaoSelecionada(null);
     setMostrarObservacoes(false);
   };
+  const abrirPedido = (p: PedidoApi) => {
+    setSessaoSelecionada(null);
+    setPedidoSelecionado(p);
+    setMostrarObservacoes(false);
+  };
+  const abrirSessao = (s: SessaoMesa) => {
+    setPedidoSelecionado(null);
+    setSessaoSelecionada(s);
+  };
+  const trocarAba = (nova: Aba) => {
+    fecharDetalhes();
+    setAba(nova);
+  };
 
-  // ── Exporta os pedidos filtrados em CSV ──
+  // ── Exporta a lista da aba atual em CSV ──
   const exportarCsv = () => {
-    const cabecalho = ['Pedido', 'Data/Hora', 'Mesa', 'Itens', 'Cliente', 'Garçom', 'Total', 'Pagamento', 'Status'];
-    const linhas = pedidosFiltrados.map((p) => [
-      `#${p.id}`,
-      p.dataHora,
-      p.mesa,
-      String(totalItens(p)),
-      p.cliente ?? '-',
-      p.garcom,
-      formatarMoeda(totalPedido(p)),
-      p.formaPagamento,
-      p.status,
-    ]);
+    const cabecalho =
+      aba === 'pedidos'
+        ? ['Pedido', 'Data/Hora', 'Local', 'Itens', 'Cliente', 'Garçom', 'Total', 'Pagamento', 'Situação', 'Motivo do cancelamento']
+        : ['Data', 'Mesa', 'Pedidos', 'Itens', 'Clientes', 'Total', 'Situação'];
+    const linhas =
+      aba === 'pedidos'
+        ? pedidosFiltrados.map((p) => [
+            `#${p.numero_pedido}`, formatarDataHora(p.criado_em), rotuloLocal(p), String(totalItens(p)),
+            p.cliente_nome || '-', p.atendido_por?.nome ?? '-', formatarMoeda(p.total), formaDoPedido(p),
+            ROTULO_SITUACAO[situacaoDoPedido(p.status)], p.cancelamento_motivo ?? '',
+          ])
+        : sessoesFiltradas.map((s) => [
+            formatarDia(s.dia), s.mesa, String(s.pedidos.length), String(s.itens),
+            s.clientes.join(', ') || '-', formatarMoeda(s.total), ROTULO_SITUACAO[s.situacao],
+          ]);
 
     const conteudo = [cabecalho, ...linhas]
       .map((linha) => linha.map((campo) => `"${campo.replace(/"/g, '""')}"`).join(';'))
@@ -290,14 +276,17 @@ const RestHistorico: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `historico-pedidos_${dataInicio || 'todos'}_${dataFim || 'periodo'}.csv`;
+    link.download = `historico-${aba}_${dataInicio || 'todos'}_${dataFim || 'periodo'}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
 
   const rotuloPeriodo = dataInicio && dataFim
-    ? `${dataInicio.split('-').reverse().join('/')} - ${dataFim.split('-').reverse().join('/')}`
+    ? `${formatarDia(dataInicio)} - ${formatarDia(dataFim)}`
     : 'Selecionar período';
+
+  const painelAberto = pedidoSelecionado !== null || sessaoSelecionada !== null;
+  const colunas = aba === 'pedidos' ? 10 : 8;
 
   return (
     <RestaurantLayout>
@@ -306,16 +295,13 @@ const RestHistorico: React.FC = () => {
         {/* ── Cabeçalho ── */}
         <div className="hist__header">
           <div>
-            <h2 className="hist__titulo">Histórico de pedidos</h2>
-            <p className="hist__subtitulo">Consulte e acompanhe todos os pedidos pagos.</p>
+            <h2 className="hist__titulo">Histórico</h2>
+            <p className="hist__subtitulo">Consulte o histórico de pedidos e de mesas do restaurante.</p>
           </div>
 
           <div className="hist__header-acoes">
             <div className="hist__periodo">
-              <button
-                className="hist__periodo-btn"
-                onClick={() => setPeriodoAberto((aberto) => !aberto)}
-              >
+              <button className="hist__periodo-btn" onClick={() => setPeriodoAberto((aberto) => !aberto)}>
                 <FiCalendar /> {rotuloPeriodo}
               </button>
               {periodoAberto && (
@@ -333,10 +319,30 @@ const RestHistorico: React.FC = () => {
               )}
             </div>
 
-            <button className="hist__btn-exportar" onClick={exportarCsv}>
+            <button className="hist__btn-exportar" onClick={exportarCsv} disabled={totalRegistros === 0}>
               <FiDownload /> Exportar
             </button>
           </div>
+        </div>
+
+        {/* ── Abas: pedidos / mesas ── */}
+        <div className="hist__abas" role="tablist">
+          <button
+            role="tab"
+            aria-selected={aba === 'pedidos'}
+            className={`hist__aba${aba === 'pedidos' ? ' hist__aba--ativa' : ''}`}
+            onClick={() => trocarAba('pedidos')}
+          >
+            Pedidos ({pedidosFiltrados.length})
+          </button>
+          <button
+            role="tab"
+            aria-selected={aba === 'mesas'}
+            className={`hist__aba${aba === 'mesas' ? ' hist__aba--ativa' : ''}`}
+            onClick={() => trocarAba('mesas')}
+          >
+            Mesas ({sessoesFiltradas.length})
+          </button>
         </div>
 
         {/* ── Painel de filtros ── */}
@@ -345,29 +351,29 @@ const RestHistorico: React.FC = () => {
             <HiOutlineTable className="hist__select-icone" />
             <select value={mesaFiltro} onChange={(e) => setMesaFiltro(e.target.value)}>
               <option value="todas">Todas as mesas</option>
-              {mesasDisponiveis.map((mesa) => (
-                <option key={mesa} value={mesa}>{mesa}</option>
+              {locaisDisponiveis.map((local) => (
+                <option key={local} value={local}>{local}</option>
               ))}
             </select>
           </div>
 
           <div className="hist__select">
-            <select value={statusFiltro} onChange={(e) => setStatusFiltro(e.target.value)}>
-              <option value="todos">Todos os status</option>
-              <option value="Pago">Pago</option>
-              <option value="Pendente">Pendente</option>
-              <option value="Estornado">Estornado</option>
+            <select value={situacaoFiltro} onChange={(e) => setSituacaoFiltro(e.target.value as 'todos' | Situacao)}>
+              <option value="todos">Todas as situações</option>
+              <option value="concluido">Concluído</option>
+              <option value="andamento">Em andamento</option>
+              <option value="cancelado">Cancelado</option>
             </select>
           </div>
 
           <div className="hist__select">
             <FiCreditCard className="hist__select-icone" />
-            <select value={pagamentoFiltro} onChange={(e) => setPagamentoFiltro(e.target.value)}>
+            <select value={pagamentoFiltro} onChange={(e) => setPagamentoFiltro(e.target.value as 'todas' | Forma)}>
               <option value="todas">Forma de pagamento</option>
               <option value="Pix">Pix</option>
-              <option value="Débito">Débito</option>
-              <option value="Crédito">Crédito</option>
+              <option value="Cartão">Cartão</option>
               <option value="Dinheiro">Dinheiro</option>
+              <option value="Sem pagamento">Sem pagamento</option>
             </select>
           </div>
 
@@ -375,7 +381,7 @@ const RestHistorico: React.FC = () => {
             <FiSearch />
             <input
               type="text"
-              placeholder="Buscar por pedido, cliente ou garçom..."
+              placeholder="Buscar por pedido, cliente, mesa ou garçom..."
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -387,78 +393,145 @@ const RestHistorico: React.FC = () => {
         </div>
 
         {/* ── Conteúdo: tabela + painel de detalhes ── */}
-        <div className={`hist__conteudo ${pedidoSelecionado ? 'hist__conteudo--com-painel' : ''}`}>
+        <div className={`hist__conteudo ${painelAberto ? 'hist__conteudo--com-painel' : ''}`}>
 
           <div className="hist__tabela-wrapper">
-            <h3 className="hist__tabela-titulo">Pedidos pagos</h3>
+            <h3 className="hist__tabela-titulo">{aba === 'pedidos' ? 'Pedidos' : 'Histórico de mesas'}</h3>
+
+            {erro && (
+              <p className="hist__aviso hist__aviso--erro" role="alert">
+                {erro} <button className="hist__aviso-btn" onClick={() => void carregar()}>Tentar novamente</button>
+              </p>
+            )}
 
             <div className="hist__tabela-scroll">
-              <table className="hist__tabela">
-                <thead>
-                  <tr>
-                    <th>Data/Hora</th>
-                    <th>Pedido</th>
-                    <th>Mesa</th>
-                    <th>Itens</th>
-                    <th>Cliente</th>
-                    <th>Garçom</th>
-                    <th>Total</th>
-                    <th>Pagamento</th>
-                    <th>Status</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pedidosDaPagina.length === 0 && (
+              {aba === 'pedidos' ? (
+                <table className="hist__tabela">
+                  <thead>
                     <tr>
-                      <td colSpan={10} className="hist__vazio">Nenhum pedido encontrado para os filtros selecionados.</td>
+                      <th>Data/Hora</th>
+                      <th>Pedido</th>
+                      <th>Local</th>
+                      <th>Itens</th>
+                      <th>Cliente</th>
+                      <th>Garçom</th>
+                      <th>Total</th>
+                      <th>Pagamento</th>
+                      <th>Situação</th>
+                      <th></th>
                     </tr>
-                  )}
-                  {pedidosDaPagina.map((pedido) => (
-                    <tr
-                      key={pedido.id}
-                      className={pedidoSelecionado?.id === pedido.id ? 'hist__linha--ativa' : ''}
-                      onClick={() => abrirDetalhes(pedido)}
-                    >
-                      <td>{pedido.dataHora}</td>
-                      <td className="hist__id">#{pedido.id}</td>
-                      <td>
-                        <div className="hist__mesa">{pedido.mesa}</div>
-                        <div className="hist__mesa-sub">{pedido.pessoas} pessoas</div>
-                      </td>
-                      <td>{totalItens(pedido)} {totalItens(pedido) === 1 ? 'item' : 'itens'}</td>
-                      <td>{pedido.cliente ?? '-'}</td>
-                      <td>{pedido.garcom}</td>
-                      <td>{formatarMoeda(totalPedido(pedido))}</td>
-                      <td>
-                        <span className="hist__pagamento">
-                          {ICONE_PAGAMENTO[pedido.formaPagamento]} {pedido.formaPagamento}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`hist__badge ${CLASSE_STATUS[pedido.status]}`}>
-                          {pedido.status}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          className="hist__btn-abrir"
-                          onClick={(e) => { e.stopPropagation(); abrirDetalhes(pedido); }}
-                          aria-label={`Ver detalhes do pedido #${pedido.id}`}
+                  </thead>
+                  <tbody>
+                    {carregando && (
+                      <tr><td colSpan={colunas} className="hist__vazio">Carregando histórico…</td></tr>
+                    )}
+                    {!carregando && pedidosDaPagina.length === 0 && (
+                      <tr>
+                        <td colSpan={colunas} className="hist__vazio">
+                          {erro ? 'Não foi possível carregar os pedidos.' : 'Nenhum pedido encontrado para os filtros selecionados.'}
+                        </td>
+                      </tr>
+                    )}
+                    {!carregando && pedidosDaPagina.map((p) => {
+                      const situacao = situacaoDoPedido(p.status);
+                      const forma = formaDoPedido(p);
+                      return (
+                        <tr
+                          key={p.id}
+                          className={pedidoSelecionado?.id === p.id ? 'hist__linha--ativa' : ''}
+                          onClick={() => abrirPedido(p)}
                         >
-                          <FiChevronRight />
-                        </button>
-                      </td>
+                          <td>{formatarDataHora(p.criado_em)}</td>
+                          <td className="hist__id">#{p.numero_pedido}</td>
+                          <td>
+                            <div className="hist__mesa">{rotuloLocal(p)}</div>
+                            <div className="hist__mesa-sub">{rotuloModalidade(p)}</div>
+                          </td>
+                          <td>{totalItens(p)} {totalItens(p) === 1 ? 'item' : 'itens'}</td>
+                          <td>{p.cliente_nome || '-'}</td>
+                          <td>{p.atendido_por?.nome ?? '-'}</td>
+                          <td>{formatarMoeda(p.total)}</td>
+                          <td>
+                            <span className="hist__pagamento">{ICONE_PAGAMENTO[forma]} {forma}</span>
+                          </td>
+                          <td>
+                            <span className={`hist__badge ${CLASSE_SITUACAO[situacao]}`}>{ROTULO_SITUACAO[situacao]}</span>
+                          </td>
+                          <td>
+                            <button
+                              className="hist__btn-abrir"
+                              onClick={(e) => { e.stopPropagation(); abrirPedido(p); }}
+                              aria-label={`Ver detalhes do pedido #${p.numero_pedido}`}
+                            >
+                              <FiChevronRight />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <table className="hist__tabela">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Mesa</th>
+                      <th>Pedidos</th>
+                      <th>Itens</th>
+                      <th>Clientes</th>
+                      <th>Total</th>
+                      <th>Situação</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {carregando && (
+                      <tr><td colSpan={colunas} className="hist__vazio">Carregando histórico…</td></tr>
+                    )}
+                    {!carregando && sessoesDaPagina.length === 0 && (
+                      <tr>
+                        <td colSpan={colunas} className="hist__vazio">
+                          {erro ? 'Não foi possível carregar as mesas.' : 'Nenhuma mesa encontrada para os filtros selecionados.'}
+                        </td>
+                      </tr>
+                    )}
+                    {!carregando && sessoesDaPagina.map((s) => (
+                      <tr
+                        key={s.chave}
+                        className={sessaoSelecionada?.chave === s.chave ? 'hist__linha--ativa' : ''}
+                        onClick={() => abrirSessao(s)}
+                      >
+                        <td>{formatarDia(s.dia)}</td>
+                        <td className="hist__id">{s.mesa}</td>
+                        <td>{s.pedidos.length} {s.pedidos.length === 1 ? 'pedido' : 'pedidos'}</td>
+                        <td>{s.itens} {s.itens === 1 ? 'item' : 'itens'}</td>
+                        <td>{s.clientes.join(', ') || '-'}</td>
+                        <td>{formatarMoeda(s.total)}</td>
+                        <td>
+                          <span className={`hist__badge ${CLASSE_SITUACAO[s.situacao]}`}>{ROTULO_SITUACAO[s.situacao]}</span>
+                        </td>
+                        <td>
+                          <button
+                            className="hist__btn-abrir"
+                            onClick={(e) => { e.stopPropagation(); abrirSessao(s); }}
+                            aria-label={`Ver detalhes da ${s.mesa} em ${formatarDia(s.dia)}`}
+                          >
+                            <FiChevronRight />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
 
               {/* ── Paginação ── */}
               <div className="hist__paginacao">
                 <span className="hist__paginacao-info">
-                  Mostrando {pedidosFiltrados.length === 0 ? 0 : indiceInicio + 1} a{' '}
-                  {Math.min(indiceInicio + ITENS_POR_PAGINA, pedidosFiltrados.length)} de {pedidosFiltrados.length} pedidos
+                  Mostrando {totalRegistros === 0 ? 0 : indiceInicio + 1} a{' '}
+                  {Math.min(indiceInicio + ITENS_POR_PAGINA, totalRegistros)} de {totalRegistros}{' '}
+                  {aba === 'pedidos' ? 'pedidos' : 'mesas'}
                 </span>
                 <div className="hist__paginacao-botoes">
                   <button onClick={() => setPaginaAtual((p) => Math.max(1, p - 1))} disabled={paginaAtual === 1}>‹</button>
@@ -477,40 +550,57 @@ const RestHistorico: React.FC = () => {
             </div>
           </div>
 
-          {/* ── Painel lateral de detalhes ── */}
+          {/* ── Painel lateral: detalhes do pedido ── */}
           {pedidoSelecionado && (
             <>
               <div className="hist__painel-overlay" onClick={fecharDetalhes} />
               <aside className="hist__painel">
                 <div className="hist__painel-header">
-                  <h3>Detalhes do pedido #{pedidoSelecionado.id}</h3>
+                  <h3>Detalhes do pedido #{pedidoSelecionado.numero_pedido}</h3>
                   <button className="hist__painel-fechar" onClick={fecharDetalhes} aria-label="Fechar detalhes">
                     <FiX />
                   </button>
                 </div>
 
                 <div className="hist__painel-info">
-                  <span><FiUsers /> {pedidoSelecionado.mesa} · {pedidoSelecionado.pessoas} pessoas</span>
-                  <span><FiCalendar /> {pedidoSelecionado.dataHora}</span>
+                  <span><FiUsers /> {rotuloLocal(pedidoSelecionado)}{pedidoSelecionado.cliente_nome ? ` · ${pedidoSelecionado.cliente_nome}` : ''}</span>
+                  <span><FiCalendar /> {formatarDataHora(pedidoSelecionado.criado_em)}</span>
+                </div>
+
+                <div className="hist__painel-secao">
+                  <h4>Situação</h4>
+                  <span className={`hist__badge ${CLASSE_SITUACAO[situacaoDoPedido(pedidoSelecionado.status)]}`}>
+                    {ROTULO_SITUACAO[situacaoDoPedido(pedidoSelecionado.status)]}
+                  </span>
+                  {pedidoSelecionado.status === 'CANCELADO' && (
+                    <p className="hist__painel-observacoes-texto">
+                      Motivo do cancelamento: {pedidoSelecionado.cancelamento_motivo || 'não informado'}
+                    </p>
+                  )}
                 </div>
 
                 <div className="hist__painel-secao">
                   <h4>Itens do pedido ({pedidoSelecionado.itens.length})</h4>
                   <ul className="hist__painel-itens">
-                    {pedidoSelecionado.itens.map((item, index) => (
-                      <li key={index}>
-                        <span>{item.quantidade}x {item.nome}</span>
-                        <span>{formatarMoeda(item.quantidade * item.precoUnitario)}</span>
-                      </li>
-                    ))}
+                    {pedidoSelecionado.itens.map((item) => {
+                      const adicionais = (item.itens_adicionais ?? [])
+                        .map((a) => a.nome_adicional)
+                        .filter((n): n is string => !!n);
+                      return (
+                        <li key={item.id}>
+                          <span>
+                            {item.quantidade}x {item.produto?.nome ?? 'Item'}
+                            {adicionais.length > 0 && <small> (+ {adicionais.join(', ')})</small>}
+                          </span>
+                          <span>{formatarMoeda(item.preco_total)}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
 
                 {pedidoSelecionado.observacoes && (
-                  <button
-                    className="hist__painel-observacoes-btn"
-                    onClick={() => setMostrarObservacoes((v) => !v)}
-                  >
+                  <button className="hist__painel-observacoes-btn" onClick={() => setMostrarObservacoes((v) => !v)}>
                     {mostrarObservacoes ? 'Ocultar observações' : 'Ver observações'}
                   </button>
                 )}
@@ -519,42 +609,103 @@ const RestHistorico: React.FC = () => {
                 )}
 
                 <div className="hist__painel-secao">
-                  <h4>Resumo do pagamento</h4>
+                  <h4>Resumo</h4>
                   <div className="hist__painel-linha">
                     <span>Subtotal</span>
-                    <span>{formatarMoeda(subtotalPedido(pedidoSelecionado))}</span>
+                    <span>{formatarMoeda(pedidoSelecionado.subtotal)}</span>
                   </div>
-                  {pedidoSelecionado.taxaServicoPercentual > 0 && (
+                  {(pedidoSelecionado.taxa_entrega ?? 0) > 0 && (
                     <div className="hist__painel-linha">
-                      <span>Taxa de serviço ({pedidoSelecionado.taxaServicoPercentual}%)</span>
-                      <span>{formatarMoeda(taxaServicoPedido(pedidoSelecionado))}</span>
+                      <span>Taxa de entrega</span>
+                      <span>{formatarMoeda(pedidoSelecionado.taxa_entrega ?? 0)}</span>
                     </div>
                   )}
-                  {pedidoSelecionado.desconto && (
+                  {(pedidoSelecionado.desconto ?? 0) > 0 && (
                     <div className="hist__painel-linha hist__painel-linha--desconto">
-                      <span>Desconto ({pedidoSelecionado.desconto.codigo})</span>
-                      <span>- {formatarMoeda(pedidoSelecionado.desconto.valor)}</span>
+                      <span>Desconto</span>
+                      <span>- {formatarMoeda(pedidoSelecionado.desconto ?? 0)}</span>
                     </div>
                   )}
                   <div className="hist__painel-linha hist__painel-linha--total">
-                    <span>Total pago</span>
-                    <span>{formatarMoeda(totalPedido(pedidoSelecionado))}</span>
+                    <span>Total</span>
+                    <span>{formatarMoeda(pedidoSelecionado.total)}</span>
                   </div>
                 </div>
 
                 <div className="hist__painel-secao">
-                  <h4>Forma de pagamento</h4>
+                  <h4>Pagamento</h4>
                   <div className="hist__painel-linha">
                     <span className="hist__pagamento">
-                      {ICONE_PAGAMENTO[pedidoSelecionado.formaPagamento]} {pedidoSelecionado.formaPagamento}
+                      {ICONE_PAGAMENTO[formaDoPedido(pedidoSelecionado)]} {formaDoPedido(pedidoSelecionado)}
                     </span>
-                    <span>{formatarMoeda(totalPedido(pedidoSelecionado))}</span>
+                    <span>
+                      {pedidoSelecionado.pagamento
+                        ? STATUS_PAGAMENTO[pedidoSelecionado.pagamento.status] ?? pedidoSelecionado.pagamento.status
+                        : 'Não registrado'}
+                    </span>
                   </div>
                 </div>
 
                 <div className="hist__painel-secao hist__painel-secao--garcom">
                   <h4>Garçom</h4>
-                  <span>{pedidoSelecionado.garcom}</span>
+                  <span>{pedidoSelecionado.atendido_por?.nome ?? '-'}</span>
+                </div>
+              </aside>
+            </>
+          )}
+
+          {/* ── Painel lateral: detalhes da mesa (passagem) ── */}
+          {sessaoSelecionada && (
+            <>
+              <div className="hist__painel-overlay" onClick={fecharDetalhes} />
+              <aside className="hist__painel">
+                <div className="hist__painel-header">
+                  <h3>{sessaoSelecionada.mesa} · {formatarDia(sessaoSelecionada.dia)}</h3>
+                  <button className="hist__painel-fechar" onClick={fecharDetalhes} aria-label="Fechar detalhes">
+                    <FiX />
+                  </button>
+                </div>
+
+                <div className="hist__painel-info">
+                  <span><FiUsers /> {sessaoSelecionada.clientes.join(', ') || 'Sem cliente informado'}</span>
+                  <span><FiCalendar /> Primeiro pedido às {formatarHora(sessaoSelecionada.dataHora)}</span>
+                </div>
+
+                {sessaoSelecionada.pedidos.map((p) => {
+                  const situacao = situacaoDoPedido(p.status);
+                  return (
+                    <div className="hist__painel-secao" key={p.id}>
+                      <h4>
+                        Pedido #{p.numero_pedido} · {formatarHora(p.criado_em)}{' '}
+                        <span className={`hist__badge ${CLASSE_SITUACAO[situacao]}`}>{ROTULO_SITUACAO[situacao]}</span>
+                      </h4>
+                      <ul className="hist__painel-itens">
+                        {p.itens.map((item) => (
+                          <li key={item.id}>
+                            <span>{item.quantidade}x {item.produto?.nome ?? 'Item'}</span>
+                            <span>{formatarMoeda(item.preco_total)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {p.status === 'CANCELADO' && (
+                        <p className="hist__painel-observacoes-texto">
+                          Motivo do cancelamento: {p.cancelamento_motivo || 'não informado'}
+                        </p>
+                      )}
+                      <div className="hist__painel-linha">
+                        <span>Total do pedido</span>
+                        <span>{formatarMoeda(p.total)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div className="hist__painel-secao">
+                  <div className="hist__painel-linha hist__painel-linha--total">
+                    <span>Total consumido</span>
+                    <span>{formatarMoeda(sessaoSelecionada.total)}</span>
+                  </div>
+                  <p className="hist__painel-observacoes-texto">Pedidos cancelados não entram no total.</p>
                 </div>
               </aside>
             </>

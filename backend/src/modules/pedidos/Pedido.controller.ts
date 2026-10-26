@@ -134,6 +134,89 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
     }
   )
 
+  // POST /transferir — Caixa: transfere pedidos de uma mesa para outra
+  app.post(
+    '/transferir',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = request.user as JWTPayload
+
+      if (!user.estabelecimento_id) {
+        throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+      }
+      if (!['ADMIN', 'CAIXA'].includes(user.perfil)) {
+        throw new AppError('Apenas caixa ou administrador podem transferir pedidos', 403)
+      }
+
+      const data = z
+        .object({
+          origem_mesa_id: z.string().uuid('origem_mesa_id inválido'),
+          destino_mesa_id: z.string().uuid('destino_mesa_id inválido'),
+          pedido_ids: z.array(z.string().uuid()).min(1).optional(),
+          confirmar_mesa_ocupada: z.boolean().optional(),
+        })
+        .parse(request.body)
+
+      const resultado = await service.transferirPedidos(data, user.estabelecimento_id)
+      return reply.send(resultado)
+    }
+  )
+
+  // POST /juntar — Caixa: une vários pedidos da MESMA mesa em um só
+  app.post(
+    '/juntar',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = request.user as JWTPayload
+
+      if (!user.estabelecimento_id) {
+        throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+      }
+      if (!['ADMIN', 'CAIXA'].includes(user.perfil)) {
+        throw new AppError('Apenas caixa ou administrador podem juntar pedidos', 403)
+      }
+
+      const data = z
+        .object({
+          mesa_id: z.string().uuid('mesa_id inválido'),
+          pedido_ids: z.array(z.string().uuid()).min(2, 'Escolha pelo menos 2 pedidos'),
+        })
+        .parse(request.body)
+
+      const resultado = await service.juntarPedidos(data, user.estabelecimento_id)
+      return reply.send(resultado)
+    }
+  )
+
+  // POST /mesa/:mesa_id/cancelar — Caixa: cancela todos os pedidos em andamento da mesa
+  app.post(
+    '/mesa/:mesa_id/cancelar',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = request.user as JWTPayload
+
+      if (!user.estabelecimento_id) {
+        throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+      }
+      // Ação sensível: só caixa e administrador
+      if (!['ADMIN', 'CAIXA'].includes(user.perfil)) {
+        throw new AppError('Apenas caixa ou administrador podem cancelar pedidos', 403)
+      }
+
+      const { mesa_id } = z
+        .object({ mesa_id: z.string().uuid('mesa_id inválido') })
+        .parse(request.params)
+      const { motivo } = z
+        .object({ motivo: z.string().trim().min(3, 'Informe o motivo').max(500) })
+        .parse(request.body)
+
+      const resultado = await service.cancelarPedidosDaMesa(
+        mesa_id,
+        motivo,
+        user.estabelecimento_id
+      )
+
+      return reply.send(resultado)
+    }
+  )
+
   // PATCH /:id/atendente — vincula atendente ao pedido
   app.patch(
     '/:id/atendente',

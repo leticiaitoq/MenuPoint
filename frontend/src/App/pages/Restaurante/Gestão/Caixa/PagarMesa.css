@@ -796,3 +796,11 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ── Ações por pedido (editar / lixeira) ── */
+.pagar__det-acoes { display: inline-flex; align-items: center; gap: 2px; }
+.pagar__det-editar { font-size: 18px; padding: 6px 8px; }
+.pagar__det-lixeira { color: #b3261e; }
+.pagar__det-lixeira:hover { background: #fdecea; }
+
+.pagar__menu-item:disabled { opacity: 0.5; cursor: not-allowed; }
