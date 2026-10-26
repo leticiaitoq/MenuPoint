@@ -240,3 +240,17 @@
   .comanda-folha__grupo,
   .comanda-folha__item { break-inside: avoid; }
 }
+
+/* ── Estados do modal: carregando / erro ── */
+.comanda__estado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+}
+.comanda__estado--erro { color: #b3261e; }
+.comanda__btn:disabled { opacity: 0.5; cursor: not-allowed; }

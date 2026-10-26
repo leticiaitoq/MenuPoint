@@ -496,3 +496,112 @@
     margin: 0 16px;
   }
 }
+/* ── Quantidade com +/- na tabela de itens ── */
+.pedido__qtd {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pedido__qtd-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 6px;
+  color: #555555;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.pedido__qtd-btn:hover:not(:disabled) { background: #eaeaea; }
+.pedido__qtd-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.pedido__qtd-valor {
+  min-width: 22px;
+  text-align: center;
+  font-weight: 600;
+  color: #333333;
+}
+
+/* ── Botões desabilitados ── */
+.pedido__btn-add:disabled,
+.pedido__btn-salvar:disabled,
+.pedido__btn-cancelar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Seletor de produtos ── */
+.pedido__seletor {
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  margin: 0 16px;
+}
+
+.pedido__seletor-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pedido__seletor-titulo {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #333333;
+}
+
+.pedido__seletor-lista {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pedido__seletor-categoria {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #999999;
+}
+
+.pedido__seletor-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 8px;
+  padding: 8px;
+  transition: background-color 0.15s;
+}
+
+.pedido__seletor-item:hover { background: #f5f5f5; }
+
+.pedido__seletor-nome {
+  flex: 1;
+  font-size: 15px;
+  color: #333333;
+}
+
+.pedido__seletor-preco {
+  font-size: 14px;
+  font-weight: 600;
+  color: #c0392b;
+}

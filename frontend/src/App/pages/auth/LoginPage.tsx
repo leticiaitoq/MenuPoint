@@ -60,8 +60,11 @@ const LoginPage: React.FC = () => {
     } catch (err: any) {
       if (err?.response?.data?.code === 'EMAIL_NAO_VERIFICADO') {
         setEmailNaoVerificado(true);
+      } else if (!err?.response) {
+        // Sem resposta do servidor (timeout/rede): não é senha errada
+        setErro('Não foi possível conectar ao servidor. Tente novamente em instantes.');
       } else {
-        setErro(err?.response?.data?.message ?? 'Email ou senha inválidos.');
+        setErro(err.response.data?.message ?? 'Email ou senha inválidos.');
       }
       setCarregando(false);
     }

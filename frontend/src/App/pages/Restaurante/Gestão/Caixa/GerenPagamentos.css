@@ -767,3 +767,37 @@
   .caixa__campo-linha { grid-template-columns: 1fr; }
   .caixa__modal-acoes { flex-direction: column-reverse; }
 }
+/* ── Botão Reservar / Liberar dentro do card ── */
+.caixa__card-btn-alternar {
+  width: 100%;
+  margin-top: 6px;
+  padding: 7px 10px;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.caixa__card-btn-alternar:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #bbb;
+  color: #333;
+}
+
+.caixa__card--reservada .caixa__card-btn-alternar {
+  border-color: #f0c78a;
+  color: #b9770e;
+}
+
+.caixa__card--reservada .caixa__card-btn-alternar:hover:not(:disabled) {
+  background: #fff3e0;
+}
+
+.caixa__card-btn-alternar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

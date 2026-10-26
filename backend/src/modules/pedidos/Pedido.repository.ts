@@ -34,8 +34,9 @@ export class PedidoRepository extends BaseRepository<
   async findByEstabelecimento(
     estabelecimento_id: string,
     filtros?: {
-      status?: string
+      status?: string[]
       modalidade?: string
+      mesa_id?: string
       data_inicio?: Date
       data_fim?: Date
     }
@@ -43,7 +44,8 @@ export class PedidoRepository extends BaseRepository<
     return prisma.pedido.findMany({
       where: {
         estabelecimento_id,
-        ...(filtros?.status && { status: filtros.status as any }),
+        ...(filtros?.status?.length && { status: { in: filtros.status as any[] } }),
+        ...(filtros?.mesa_id && { mesa_id: filtros.mesa_id }),
         ...(filtros?.modalidade && { modalidade: filtros.modalidade as any }),
         ...(filtros?.data_inicio || filtros?.data_fim
           ? {
@@ -64,7 +66,10 @@ export class PedidoRepository extends BaseRepository<
           },
         },
         mesa: { select: { id: true, numero: true } },
-        pagamento: { select: { id: true, status: true, metodo: true } },
+        atendido_por: { select: { id: true, nome: true } },
+        pagamento: {
+          select: { id: true, status: true, metodo: true, valor: true, desconto_valor: true },
+        },
       },
       orderBy: { criado_em: 'desc' },
     })
@@ -72,6 +77,7 @@ export class PedidoRepository extends BaseRepository<
 
   async criarComItens(data: CriarPedidoDTO & {
     estabelecimento_id: string
+    atendido_por_id?: string
     subtotal: number
     total: number
   }) {

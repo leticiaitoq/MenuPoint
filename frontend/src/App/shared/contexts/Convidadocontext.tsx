@@ -15,11 +15,19 @@ const CHAVE = '@menupoint:convidado'
 
 export interface Convidado {
   nome: string
+  /** Número da mesa para exibir (ex.: "05") */
   mesa: string
+  /** Preenchidos quando o cliente entra pelo QR Code da mesa (/mesa/:token) */
+  mesaId?: string
+  mesaToken?: string
+  estabelecimentoId?: string
+  restauranteNome?: string
+  restauranteLogo?: string | null
 }
 
 interface ConvidadoContextData extends Convidado {
-  definirConvidado: (dados: Convidado) => void
+  /** Mescla os dados novos com os atuais (campos não informados são mantidos) */
+  definirConvidado: (dados: Partial<Convidado>) => void
   limparConvidado: () => void
 }
 
@@ -39,13 +47,16 @@ function lerSalvo(): Convidado {
 export const ConvidadoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [convidado, setConvidado] = useState<Convidado>(lerSalvo)
 
-  const definirConvidado = useCallback((dados: Convidado) => {
-    setConvidado(dados)
-    try {
-      sessionStorage.setItem(CHAVE, JSON.stringify(dados))
-    } catch {
-      /* storage indisponível: segue só em memória */
-    }
+  const definirConvidado = useCallback((dados: Partial<Convidado>) => {
+    setConvidado((atual) => {
+      const proximo = { ...atual, ...dados }
+      try {
+        sessionStorage.setItem(CHAVE, JSON.stringify(proximo))
+      } catch {
+        /* storage indisponível: segue só em memória */
+      }
+      return proximo
+    })
   }, [])
 
   const limparConvidado = useCallback(() => {

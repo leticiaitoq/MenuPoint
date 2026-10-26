@@ -1,17 +1,19 @@
-import React, { useEffect, useRef } from 'react';
-import { HiX, HiPrinter, HiDownload } from 'react-icons/hi';
+import React, { useEffect, useRef, useState } from 'react';
+import { HiX, HiPrinter, HiDownload, HiClipboardCopy, HiCheck } from 'react-icons/hi';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import './QrCodeMesa.css';
 
 // ── URL codificada no QR ───────────────────────────────────────────────────────
-// Mesma regra usada na tela de Gestão de Mesas: quando o cliente escaneia, o
-// celular abre essa URL. Fica num lugar só para, se o endereço mudar, mudar aqui.
-const BASE_URL = process.env.REACT_APP_API_URL ?? 'http://localhost:3333';
-export const urlDaMesa = (numero: number) => `${BASE_URL}/mesa/${numero}`;
+// Quando o cliente escaneia, o celular abre /mesa/:token no SITE (front-end), que
+// descobre a mesa e o restaurante pelo token e leva para a /welcomepage.
+// Usa o endereço em que o sistema está aberto; em desenvolvimento, defina
+// REACT_APP_FRONTEND_URL (ex.: http://192.168.0.10:3000) para o celular alcançar o PC.
+const BASE_URL = (process.env.REACT_APP_FRONTEND_URL || window.location.origin).replace(/\/$/, '');
+export const urlDaMesa = (token: string) => `${BASE_URL}/mesa/${encodeURIComponent(token)}`;
 
 interface QrCodeMesaProps {
   /** Mesa cujo QR será mostrado. null = modal fechado. */
-  mesa: { numero: number; capacidade?: number } | null;
+  mesa: { numero: number; capacidade?: number; /** qr_code_token da mesa (API) */ token?: string } | null;
   onFechar: () => void;
 }
 
@@ -22,6 +24,7 @@ interface QrCodeMesaProps {
 const QrCodeMesa: React.FC<QrCodeMesaProps> = ({ mesa, onFechar }) => {
   // Aponta para o div que contém o <svg> (tela/impressão) e o <canvas> (download)
   const qrWrapRef = useRef<HTMLDivElement>(null);
+  const [copiado, setCopiado] = useState(false);
 
   // Esc fecha
   useEffect(() => {
@@ -35,13 +38,31 @@ const QrCodeMesa: React.FC<QrCodeMesaProps> = ({ mesa, onFechar }) => {
 
   if (!mesa) return null;
 
-  const url = urlDaMesa(mesa.numero);
+  // Sem token (mesa antiga/sem QR gerado) não há link válido para mostrar
+  const url = mesa.token ? urlDaMesa(mesa.token) : null;
   const detalheCapacidade =
     mesa.capacidade !== undefined ? `${mesa.capacidade} pessoas` : '';
 
   // ── Download como PNG ────────────────────────────────────────────────────────
   // O QRCodeCanvas renderiza um <canvas> real, então dá para extrair a imagem
   // com toDataURL e disparar o download por um link temporário.
+  const handleCopiar = async () => {
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Sem permissão/HTTP: seleciona via campo temporário
+      const campo = document.createElement('textarea');
+      campo.value = url;
+      document.body.appendChild(campo);
+      campo.select();
+      document.execCommand('copy');
+      document.body.removeChild(campo);
+    }
+    setCopiado(true);
+    window.setTimeout(() => setCopiado(false), 2000);
+  };
+
   const handleDownload = () => {
     const canvas = qrWrapRef.current?.querySelector('canvas');
     if (!canvas) return;
@@ -56,6 +77,7 @@ const QrCodeMesa: React.FC<QrCodeMesaProps> = ({ mesa, onFechar }) => {
   // Abre uma janela só com o QR e o título da mesa e chama window.print().
   // Usa o SVG (não o canvas) porque escala sem perder qualidade na impressora.
   const handleImprimir = () => {
+    if (!url) return;
     const svgEl = qrWrapRef.current?.querySelector('svg');
     if (!svgEl) return;
 
@@ -105,7 +127,7 @@ const QrCodeMesa: React.FC<QrCodeMesaProps> = ({ mesa, onFechar }) => {
 
         <div className="qrmesa__corpo">
           <p className="qrmesa__info">
-            Escaneie para acessar o cardápio da <strong>Mesa {mesa.numero}</strong>
+            Escaneie para entrar na <strong>Mesa {mesa.numero}</strong>
             {detalheCapacidade && <> ({detalheCapacidade})</>}.
           </p>
 
@@ -114,24 +136,37 @@ const QrCodeMesa: React.FC<QrCodeMesaProps> = ({ mesa, onFechar }) => {
             - QRCodeSVG    → visível na tela e usado na impressão
             - QRCodeCanvas → escondido, usado só para gerar o PNG do download
           */}
-          <div className="qrmesa__qr" ref={qrWrapRef}>
-            <QRCodeSVG value={url} size={200} bgColor="#ffffff" fgColor="#1a1a1a" level="H" />
-            <div style={{ display: 'none' }}>
-              <QRCodeCanvas value={url} size={400} bgColor="#ffffff" fgColor="#1a1a1a" level="H" />
-            </div>
-          </div>
+          {url ? (
+            <>
+              <div className="qrmesa__qr" ref={qrWrapRef}>
+                <QRCodeSVG value={url} size={200} bgColor="#ffffff" fgColor="#1a1a1a" level="H" />
+                <div style={{ display: 'none' }}>
+                  <QRCodeCanvas value={url} size={400} bgColor="#ffffff" fgColor="#1a1a1a" level="H" />
+                </div>
+              </div>
 
-          <p className="qrmesa__url">{url}</p>
+              <p className="qrmesa__url">
+                <a href={url} target="_blank" rel="noreferrer">{url}</a>
+              </p>
+            </>
+          ) : (
+            <p className="qrmesa__url" role="alert">
+              Esta mesa ainda não tem QR Code. Atualize a tela do Caixa e tente de novo.
+            </p>
+          )}
         </div>
 
         <div className="qrmesa__acoes">
           <button className="qrmesa__btn qrmesa__btn--sec" onClick={onFechar}>
             Fechar
           </button>
-          <button className="qrmesa__btn qrmesa__btn--borda" onClick={handleImprimir}>
+          <button className="qrmesa__btn qrmesa__btn--borda" onClick={() => void handleCopiar()} disabled={!url}>
+            {copiado ? <HiCheck /> : <HiClipboardCopy />} {copiado ? 'Copiado!' : 'Copiar link'}
+          </button>
+          <button className="qrmesa__btn qrmesa__btn--borda" onClick={handleImprimir} disabled={!url}>
             <HiPrinter /> Imprimir
           </button>
-          <button className="qrmesa__btn qrmesa__btn--prim" onClick={handleDownload}>
+          <button className="qrmesa__btn qrmesa__btn--prim" onClick={handleDownload} disabled={!url}>
             <HiDownload /> Baixar PNG
           </button>
         </div>

@@ -11,6 +11,14 @@ export interface Mesa {
   ativo: boolean
 }
 
+// Corpo do POST /mesas (o backend valida de novo: número 1–9999, capacidade 1–100)
+export interface CriarMesaDTO {
+  numero: number
+  capacidade: number
+  localizacao?: string
+  status?: 'LIVRE' | 'RESERVADA'
+}
+
 export interface ResumoOcupacao {
   total: number
   livre: number
@@ -38,7 +46,7 @@ const MesaService = {
     return response.data
   },
 
-  async criar(data: Partial<Mesa>): Promise<Mesa> {
+  async criar(data: CriarMesaDTO): Promise<Mesa> {
     const response = await api.post<Mesa>('mesas', data)
     return response.data
   },
