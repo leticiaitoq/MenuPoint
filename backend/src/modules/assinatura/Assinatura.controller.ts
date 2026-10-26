@@ -5,7 +5,6 @@ import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
 import { env } from '@config/env'
 import prisma from '@config/prisma'
-import { PLANOS } from './Planos.config'
 
 const service = new AssinaturaService()
 
@@ -65,29 +64,6 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
   )
 
   /**
-   * POST /api/v1/assinatura/sincronizar
-   *
-   * Consulta o Mercado Pago e atualiza o status da assinatura da empresa na hora.
-   * Usada pela tela /assinatura/sucesso enquanto espera a aprovação.
-   */
-  app.post(
-    '/sincronizar',
-    {
-      onRequest: [async (request) => request.jwtVerify()],
-    },
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = request.user as JWTPayload
-
-      if (!user.empresa_id) {
-        throw new AppError('Usuário não vinculado a uma empresa', 400)
-      }
-
-      const resultado = await service.sincronizarStatus(user.empresa_id)
-      return reply.send(resultado)
-    }
-  )
-
-  /**
    * POST /api/v1/assinatura/webhook
    *
    * Endpoint PÚBLICO — o Mercado Pago chama automaticamente quando
@@ -132,8 +108,20 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
     '/planos',
     async (_request: FastifyRequest, reply: FastifyReply) => {
       return reply.send([
-        { id: env.MP_PLAN_ID_BASICO, plano: 'STARTER', ...PLANOS.STARTER },
-        { id: env.MP_PLAN_ID_PRO,    plano: 'PRO',     ...PLANOS.PRO },
+        {
+          id:     env.MP_PLAN_ID_BASICO,
+          nome:   'Starter',
+          slug:   'starter',
+          valor:  49.90,
+          plano:  'STARTER',
+        },
+        {
+          id:     env.MP_PLAN_ID_PRO,
+          nome:   'Pro',
+          slug:   'pro',
+          valor:  99.90,
+          plano:  'PRO',
+        },
       ])
     }
   )

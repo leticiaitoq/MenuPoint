@@ -15,8 +15,6 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "axios": "^1.15.0",
-    "baseline-browser-mapping": "^2.11.30",
-    "caniuse-lite": "^1.0.30001817",
     "dotenv": "^17.4.1",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.4",
