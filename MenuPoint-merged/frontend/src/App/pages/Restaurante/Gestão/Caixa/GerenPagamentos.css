@@ -1,0 +1,803 @@
+.caixa {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  padding: 8px 0;
+}
+
+/* ═══════════════════════════════════════════════
+   Cabeçalho
+═══════════════════════════════════════════════ */
+.caixa__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.caixa__titulo {
+  font-size: 26px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.caixa__subtitulo {
+  font-size: 14px;
+  color: #888;
+  margin: 4px 0 0;
+}
+
+.caixa__header-acoes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Chip informativo "Pedidos em aberto" ──────────────────────────────────
+   Propositalmente NÃO parece botão: fundo claro, sem sombra de elevação,
+   sem hover e sem cursor de ponteiro. O objetivo é comunicar "isto é uma
+   informação", diferente do botão "Histórico" ao lado. */
+.caixa__chip-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fdecea;
+  border: 1px solid #f3c8c2;
+  color: #c0392b;
+  border-radius: 20px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: default;
+  user-select: none;
+}
+
+.caixa__chip-info-icone {
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+.caixa__chip-info-texto {
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
+.caixa__chip-info-numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  background: #c0392b;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ── Botão "Histórico" ──────────────────────────────────────────────────────
+   Este SIM é uma ação: botão sólido, com hover, sombra e cursor de ponteiro —
+   o contraste visual com o chip acima deixa claro o que é clicável. */
+.caixa__btn-historico {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 26px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(192, 57, 43, 0.35);
+  transition: background 0.2s, transform 0.15s;
+}
+
+.caixa__btn-historico:hover {
+  background: #a53125;
+  transform: translateY(-1px);
+}
+
+/* ── Botão "Cadastrar mesa" ─────────────────────────────────────────────────
+   Versão "contorno" do Histórico: mesma família visual, mas sem preenchimento,
+   para os dois botões lado a lado não competirem entre si. */
+.caixa__btn-cadastrar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  color: #c0392b;
+  border: 1.5px solid #c0392b;
+  border-radius: 20px;
+  padding: 9px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.caixa__btn-cadastrar:hover {
+  background: #fdecea;
+  transform: translateY(-1px);
+}
+
+.caixa__btn-cadastrar:focus-visible {
+  outline: 2px solid #c0392b;
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════
+   Painel
+═══════════════════════════════════════════════ */
+.caixa__painel {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  padding: 20px 24px 28px;
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Filtros (abas) + alternância de visualização ── */
+.caixa__filtros {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 0;
+}
+
+.caixa__abas {
+  display: flex;
+  gap: 28px;
+}
+
+.caixa__aba {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 2px 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.caixa__aba:hover {
+  color: #c0392b;
+}
+
+.caixa__aba--ativa {
+  color: #c0392b;
+  border-bottom-color: #c0392b;
+}
+
+.caixa__visualizacao {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.caixa__btn-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  color: #999;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.caixa__btn-view:hover {
+  color: #c0392b;
+}
+
+.caixa__btn-view--ativo {
+  background: #fdecea;
+  border-color: #f3c8c2;
+  color: #c0392b;
+}
+
+/* ── Estado vazio ── */
+.caixa__vazio {
+  text-align: center;
+  padding: 40px 0;
+  color: #999;
+  font-size: 14px;
+}
+
+/* ═══════════════════════════════════════════════
+   Grid de cards
+═══════════════════════════════════════════════ */
+.caixa__grid--grade {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.caixa__grid--lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.caixa__card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+/* Só as mesas com pedido (aberta/fechada) parecem clicáveis.
+   Mesas livres/reservadas não têm hover no card — a ação fica só no botão "Abrir mesa". */
+.caixa__card--clicavel {
+  cursor: pointer;
+}
+
+.caixa__card--clicavel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  border-color: #f3c8c2;
+}
+
+.caixa__card--clicavel:focus-visible {
+  outline: 2px solid #c0392b;
+  outline-offset: 2px;
+}
+
+.caixa__card--livre {
+  border-style: dashed;
+  background: #fafafa;
+}
+
+/* Mesa reservada: mesmo formato tracejado da livre, com tom âmbar */
+.caixa__card--reservada {
+  border-style: dashed;
+  border-color: #f0c78a;
+  background: #fffaf2;
+}
+
+.caixa__card-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.caixa__card-nome {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+/* ── Menu de ações (⋮) ── */
+.caixa__card-menu-wrap {
+  position: relative;
+}
+
+.caixa__card-menu-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 18px;
+  padding: 2px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.caixa__card-menu-btn:hover {
+  color: #555;
+  background: #f2f2f2;
+}
+
+.caixa__card-menu {
+  position: absolute;
+  top: 28px;
+  right: 0;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  z-index: 20;
+}
+
+.caixa__card-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 9px 10px;
+  font-size: 13px;
+  color: #444;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.caixa__card-menu-item:hover {
+  background: #f5f5f5;
+}
+
+.caixa__card-menu-item--perigo {
+  color: #c0392b;
+}
+
+/* ── Corpo do card (mesa ocupada) ── */
+.caixa__card-pessoas {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #888;
+}
+
+.caixa__card-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid #f2f2f2;
+  font-size: 14px;
+}
+
+.caixa__card-itens {
+  color: #888;
+}
+
+.caixa__card-total {
+  font-weight: 700;
+  color: #333;
+}
+
+.caixa__card-tempo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #999;
+}
+
+/* ── Badges de status ── */
+.caixa__badge {
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.caixa__badge--aberta  { background-color: #27ae60; }
+.caixa__badge--fechada { background-color: #7f8c8d; }
+
+/* ── Corpo do card (mesa livre / reservada) ── */
+.caixa__card-livre-label {
+  font-size: 13px;
+  color: #aaa;
+  font-weight: 600;
+}
+
+.caixa__card--reservada .caixa__card-livre-label {
+  color: #d68910;
+}
+
+/* Observação cadastrada na mesa (uma linha, com reticências) */
+.caixa__card-obs {
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.caixa__card-btn-abrir {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #e0a06a;
+  color: #c0392b;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.caixa__card-btn-abrir:hover {
+  background: #fdecea;
+}
+
+/* ═══════════════════════════════════════════════
+   Modo lista — cards em linha, informação lado a lado
+═══════════════════════════════════════════════ */
+.caixa__grid--lista .caixa__card {
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+  padding: 14px 18px;
+}
+
+.caixa__grid--lista .caixa__card-topo {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 90px;
+}
+
+.caixa__grid--lista .caixa__card-pessoas {
+  min-width: 110px;
+}
+
+.caixa__grid--lista .caixa__card-linha {
+  border-top: none;
+  padding-top: 0;
+  flex: 1;
+}
+
+.caixa__grid--lista .caixa__card-livre-label {
+  flex: 1;
+}
+
+.caixa__grid--lista .caixa__card-obs {
+  flex: 2;
+}
+
+/* ═══════════════════════════════════════════════
+   Modal: Cadastrar mesa
+═══════════════════════════════════════════════ */
+.caixa__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.45);
+  animation: caixa-fade 0.15s ease;
+}
+
+.caixa__modal {
+  width: 100%;
+  max-width: 500px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: caixa-subir 0.18s ease;
+}
+
+.caixa__modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 24px 8px;
+}
+
+.caixa__modal-titulo {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+}
+
+.caixa__modal-subtitulo {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #888;
+}
+
+.caixa__modal-fechar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: #aaa;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.caixa__modal-fechar:hover {
+  background: #f2f2f2;
+  color: #555;
+}
+
+.caixa__modal-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 24px 22px;
+  overflow-y: auto;
+}
+
+/* ── Campos ── */
+.caixa__campo-linha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.caixa__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.caixa__fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.caixa__label {
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+}
+
+.caixa__opcional {
+  font-weight: 400;
+  color: #aaa;
+}
+
+.caixa__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #333;
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.caixa__input:focus {
+  outline: none;
+  border-color: #c0392b;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+}
+
+.caixa__input--erro,
+.caixa__input--erro:focus {
+  border-color: #c0392b;
+  background: #fdf3f2;
+}
+
+.caixa__select   { cursor: pointer; }
+.caixa__textarea { resize: vertical; min-height: 72px; }
+
+.caixa__erro {
+  margin: 0;
+  font-size: 12px;
+  color: #c0392b;
+}
+
+.caixa__campo-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.caixa__contador {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.caixa__contador--excedido {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+/* ── Status inicial (opções em chip) ── */
+.caixa__opcoes {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.caixa__opcao {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fff;
+  color: #888;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+/* esconde o radio nativo, mas mantém acessível por teclado */
+.caixa__opcao input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.caixa__opcao:focus-within {
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+}
+
+.caixa__opcao--livre.caixa__opcao--ativa {
+  border-color: #27ae60;
+  background: #eafaf1;
+  color: #1e8449;
+}
+
+.caixa__opcao--reservada.caixa__opcao--ativa {
+  border-color: #e67e22;
+  background: #fef5e7;
+  color: #b9770e;
+}
+
+/* ── Ações ── */
+.caixa__modal-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.caixa__btn-cancelar,
+.caixa__btn-salvar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 20px;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.caixa__btn-cancelar {
+  background: #fff;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.caixa__btn-cancelar:hover {
+  background: #f2f2f2;
+}
+
+.caixa__btn-salvar {
+  background: #c0392b;
+  color: #fff;
+  border: 1px solid #c0392b;
+  box-shadow: 0 2px 6px rgba(192, 57, 43, 0.35);
+}
+
+.caixa__btn-salvar:hover {
+  background: #a53125;
+  border-color: #a53125;
+}
+
+.caixa__btn-cancelar:focus-visible,
+.caixa__btn-salvar:focus-visible {
+  outline: 2px solid #c0392b;
+  outline-offset: 2px;
+}
+
+.caixa__modal--qr {
+  max-width: 380px;
+}
+
+.caixa__modal-corpo--qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.caixa__qr-wrap {
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+}
+
+.caixa__qr-url {
+  margin: 0;
+  font-size: 12px;
+  color: #888;
+  word-break: break-all;
+  text-align: center;
+}
+
+/* ── Animações ── */
+@keyframes caixa-fade  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes caixa-subir { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .caixa__overlay,
+  .caixa__modal { animation: none; }
+}
+
+/* ── Responsivo (modal) ── */
+@media (max-width: 480px) {
+  .caixa__campo-linha { grid-template-columns: 1fr; }
+  .caixa__modal-acoes { flex-direction: column-reverse; }
+}
+/* ── Botão Reservar / Liberar dentro do card ── */
+.caixa__card-btn-alternar {
+  width: 100%;
+  margin-top: 6px;
+  padding: 7px 10px;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.caixa__card-btn-alternar:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #bbb;
+  color: #333;
+}
+
+.caixa__card--reservada .caixa__card-btn-alternar {
+  border-color: #f0c78a;
+  color: #b9770e;
+}
+
+.caixa__card--reservada .caixa__card-btn-alternar:hover:not(:disabled) {
+  background: #fff3e0;
+}
+
+.caixa__card-btn-alternar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

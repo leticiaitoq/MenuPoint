@@ -9,6 +9,13 @@ interface ComandaCozinhaProps {
   aberta: boolean;
   /** Pedido da mesa. A comanda é gerada a partir dele a cada abertura. */
   pedido: PedidoParaComanda | null;
+  /** Número da mesa — usado no título enquanto o pedido ainda está carregando */
+  mesaNumero?: number;
+  /** Pedido sendo buscado na API */
+  carregando?: boolean;
+  /** Mensagem de erro ao buscar o pedido (mostra botão "Tentar novamente") */
+  erro?: string | null;
+  onTentarNovamente?: () => void;
   onFechar: () => void;
   /** Mostra o preço de cada item na comanda (padrão: sim, como no protótipo) */
   mostrarPrecos?: boolean;
@@ -31,6 +38,10 @@ const ROTULO_PERFIL: Record<string, string> = {
 const ComandaCozinha: React.FC<ComandaCozinhaProps> = ({
   aberta,
   pedido,
+  mesaNumero,
+  carregando = false,
+  erro = null,
+  onTentarNovamente,
   onFechar,
   mostrarPrecos = true,
   ignorarCategorias,
@@ -61,7 +72,7 @@ const ComandaCozinha: React.FC<ComandaCozinhaProps> = ({
     };
   }, [aberta, onFechar]);
 
-  if (!aberta || !comanda) return null;
+  if (!aberta) return null;
 
   return createPortal(
     <div className="comanda__overlay" onClick={onFechar}>
@@ -75,7 +86,7 @@ const ComandaCozinha: React.FC<ComandaCozinhaProps> = ({
         {/* Barra do modal — não sai na impressão */}
         <div className="comanda__barra">
           <h3 id="comanda-titulo" className="comanda__barra-titulo">
-            Comanda da cozinha · Mesa {comanda.mesa}
+            Comanda da cozinha · Mesa {comanda?.mesa ?? String(mesaNumero ?? '').padStart(2, '0')}
           </h3>
           <button className="comanda__barra-fechar" onClick={onFechar} aria-label="Fechar">
             <HiX />
@@ -83,7 +94,21 @@ const ComandaCozinha: React.FC<ComandaCozinhaProps> = ({
         </div>
 
         <div className="comanda__corpo">
+          {carregando && <p className="comanda__estado">Carregando pedidos da mesa…</p>}
+
+          {!carregando && erro && (
+            <div className="comanda__estado comanda__estado--erro" role="alert">
+              <p>{erro}</p>
+              {onTentarNovamente && (
+                <button className="comanda__btn comanda__btn--sec" onClick={onTentarNovamente}>
+                  Tentar novamente
+                </button>
+              )}
+            </div>
+          )}
+
           {/* ── A comanda em si (é isto que vai para o papel) ── */}
+          {!carregando && !erro && comanda && (
           <div className="comanda-folha">
             <p className="comanda-folha__aviso">NÃO DESTACAR - COMANDA PARA COZINHA</p>
 
@@ -153,6 +178,7 @@ const ComandaCozinha: React.FC<ComandaCozinhaProps> = ({
 
             <p className="comanda-folha__rodape">TOTAL DE ITENS: {comanda.totalItens}</p>
           </div>
+          )}
         </div>
 
         {/* Ações — não saem na impressão */}
@@ -160,7 +186,11 @@ const ComandaCozinha: React.FC<ComandaCozinhaProps> = ({
           <button className="comanda__btn comanda__btn--sec" onClick={onFechar}>
             Fechar
           </button>
-          <button className="comanda__btn comanda__btn--prim" onClick={() => window.print()}>
+          <button
+            className="comanda__btn comanda__btn--prim"
+            onClick={() => window.print()}
+            disabled={!comanda || carregando || !!erro}
+          >
             <HiPrinter /> Imprimir
           </button>
         </div>

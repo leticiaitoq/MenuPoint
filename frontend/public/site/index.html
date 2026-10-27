@@ -457,6 +457,23 @@
   }
   toggle.addEventListener('change', updatePricing);
 
+  // Preços vêm do backend (Planos.config.ts): mudou lá, muda aqui. Se a API não responder,
+  // ficam os valores escritos acima. O anual segue a regra atual: 10 meses por ano.
+  const API_URL = 'https://menupoint-api.kindflower-23d9c6c8.brazilsouth.azurecontainerapps.io';
+  const CARD_DO_PLANO = { starter: 'price-basic', pro: 'price-pro' };
+  fetch(`${API_URL}/api/v1/assinatura/planos`)
+    .then((r) => (r.ok ? r.json() : Promise.reject()))
+    .then((lista) => {
+      lista.forEach((pl) => {
+        const alvo = plans.find((x) => x.priceEl === CARD_DO_PLANO[pl.slug]);
+        if (!alvo) return;
+        alvo.monthly = Number(pl.valor);
+        alvo.annual = Math.round(alvo.monthly * 10 / 12);
+      });
+      updatePricing();
+    })
+    .catch(() => {});
+
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => {

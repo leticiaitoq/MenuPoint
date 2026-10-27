@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BarChart,
@@ -19,7 +19,6 @@ import {
   HiTrendingUp,
 } from 'react-icons/hi';
 import { BsCashCoin, BsTrophy } from 'react-icons/bs';
-import { MdOutlineStorefront } from 'react-icons/md';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
 import './Relatorios.css';
 
@@ -85,12 +84,6 @@ const TOTAL_DESPESAS    = DESPESAS.reduce((acc, d) => acc + d.valor, 0);
 const FATURAMENTO_TOTAL = 7540;
 const LUCRO_LIQUIDO     = FATURAMENTO_TOTAL - TOTAL_DESPESAS;
 
-const ESTABELECIMENTOS = [
-  'Todos os estabelecimentos',
-  'Unidade Centro',
-  'Unidade Sul',
-];
-
 // ── Helpers ─────────────────────────────────────────────────────────────
 const formatarPreco = (valor: number): string =>
   `R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
@@ -136,8 +129,6 @@ const LabelPizza = ({ cx, cy, midAngle, innerRadius, outerRadius, value }: any) 
 const Relatorios: React.FC = () => {
   const navigate = useNavigate();
 
-  const [estabelecimento, setEstabelecimento] = useState(ESTABELECIMENTOS[0]);
-
   const maxProduto = PRODUTOS_MAIS_VENDIDOS[0].quantidade;
 
   return (
@@ -146,37 +137,6 @@ const Relatorios: React.FC = () => {
 
         {/* ── Título ── */}
         <h2 className="relatorios__titulo">Relatórios</h2>
-
-        {/* ── Filtros ── */}
-        <div className="relatorios__filtros">
-          <div className="relatorios__periodo">
-            <span className="relatorios__periodo-icone">
-              <HiCurrencyDollar />
-            </span>
-            <div>
-              <p className="relatorios__periodo-label">Período</p>
-              <p className="relatorios__periodo-valor">20/04/2024 até 27/04/2024</p>
-            </div>
-          </div>
-
-          <div className="relatorios__filtros-direita">
-            <div className="relatorios__select-wrap">
-              <MdOutlineStorefront className="relatorios__select-icone" />
-              <select
-                className="relatorios__select"
-                value={estabelecimento}
-                onChange={(e) => setEstabelecimento(e.target.value)}
-              >
-                {ESTABELECIMENTOS.map((e) => (
-                  <option key={e} value={e}>{e}</option>
-                ))}
-              </select>
-            </div>
-            <button className="relatorios__btn-aplicar">
-              <HiRefresh /> Aplicar
-            </button>
-          </div>
-        </div>
 
         {/* ── Cards de resumo ── */}
         <div className="relatorios__cards">

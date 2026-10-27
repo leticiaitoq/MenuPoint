@@ -1,0 +1,90 @@
+.customer-sidebar {
+  width: 72px;
+  min-height: 100%;
+  background-color: #f5f5f5;
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: 0 40px 40px 0;
+}
+
+.customer-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+/* NavLink e button compartilham o mesmo visual */
+.customer-sidebar__item {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: none;
+  background: none;
+  text-decoration: none;
+  color: #bbbbbb;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.customer-sidebar__item:hover {
+  background-color: #ebebeb;
+  color: #c0392b;
+}
+
+.customer-sidebar__item.active {
+  background-color: #fdecea;
+  color: #c0392b;
+}
+
+.customer-sidebar__icon {
+  font-size: 24px;
+}
+
+/* ── Mobile: sidebar vira barra de navegação inferior ── */
+@media (max-width: 768px) {
+  .customer-sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    min-height: unset;
+    height: 60px;
+    flex-direction: row;
+    padding: 0 8px;
+    border-radius: 0;
+    border-top: 1px solid #e0e0e0;
+    background-color: #ffffff;
+    z-index: 100;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
+  }
+
+  .customer-sidebar__nav {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    height: 100%;
+    gap: 0;
+    width: 100%;
+  }
+
+  .customer-sidebar__item {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    flex: 1;
+    max-width: 70px;
+  }
+
+  .customer-sidebar__icon {
+    font-size: 22px;
+  }
+}

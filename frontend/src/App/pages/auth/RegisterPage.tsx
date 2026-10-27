@@ -21,6 +21,7 @@ import {
   HiOutlineShieldCheck,
   HiOutlineUser,
   HiOutlineXCircle,
+  HiOutlineCalendarDays,
 } from 'react-icons/hi2';
 import AuthService from '../../services/auth.service';
 import { useAuth } from '../../shared/contexts/Authcontext';
@@ -87,6 +88,35 @@ const cnpjValido = (valor: string) => {
 };
 
 const emailValido = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
+const dataNascimentoValida = (valor: string) => {
+  const d = somenteDigitos(valor);
+  if (d.length !== 8) return false;
+  const dia = Number(d.slice(0, 2));
+  const mes = Number(d.slice(2, 4));
+  const ano = Number(d.slice(4));
+  const data = new Date(ano, mes - 1, dia);
+  // Rejeita datas inexistentes (ex.: 31/02) e datas futuras
+  if (data.getFullYear() !== ano || data.getMonth() !== mes - 1 || data.getDate() !== dia) return false;
+  return ano >= 1900 && data <= new Date();
+};
+
+const maiorDeIdade = (valor: string) => {
+  const d = somenteDigitos(valor);
+  const dia = Number(d.slice(0, 2));
+  const mes = Number(d.slice(2, 4));
+  const ano = Number(d.slice(4));
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - ano;
+  if (hoje.getMonth() + 1 < mes || (hoje.getMonth() + 1 === mes && hoje.getDate() < dia)) idade--;
+  return idade >= 18;
+};
+
+/** '25/12/1990' → '1990-12-25' (formato que a API costuma esperar) */
+const dataParaISO = (valor: string) => {
+  const [dia, mes, ano] = valor.split('/');
+  return `${ano}-${mes}-${dia}`;
+};
 
 type Erros = Record<string, string>;
 
@@ -195,6 +225,7 @@ const RegisterPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [aceitaTermos, setAceitaTermos] = useState(false);
+  const [dataNascimento, setDataNascimento] = useState('');
 
   // Estado da tela
   const [erros, setErros] = useState<Erros>({});
@@ -293,6 +324,11 @@ const RegisterPage: React.FC = () => {
     limparErro('cnpj');
   };
 
+  const handleDataNascimentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDataNascimento(mascarar(e.target.value, '00/00/0000'));
+    limparErro('dataNascimento');
+  };
+
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCpf(mascarar(e.target.value, '000.000.000-00'));
     limparErro('cpf');
@@ -362,6 +398,8 @@ const RegisterPage: React.FC = () => {
     const e: Erros = {};
     if (nomeCompleto.trim().split(/\s+/).length < 2) e.nomeCompleto = 'Informe nome e sobrenome.';
     if (!cpfValido(cpf)) e.cpf = 'Informe um CPF válido.';
+    if (!dataNascimentoValida(dataNascimento)) e.dataNascimento = 'Informe uma data válida.';
+    else if (!maiorDeIdade(dataNascimento)) e.dataNascimento = 'É preciso ter 18 anos ou mais.';
     if (!emailValido(email)) e.email = 'Informe um e-mail válido.';
     if (!senhaForte) e.senha = 'A senha não atende aos requisitos.';
     if (senha !== confirmarSenha) e.confirmarSenha = 'As senhas não coincidem.';
@@ -413,6 +451,7 @@ const RegisterPage: React.FC = () => {
         // responsável
         nome_responsavel: nomeCompleto.trim(),
         cpf,
+        data_nascimento: dataParaISO(dataNascimento),
         email: email.trim(),
         senha,
         confirmar_senha: confirmarSenha,
@@ -656,11 +695,18 @@ const RegisterPage: React.FC = () => {
               </Field>
 
               <Field name="email" label="E-mail" icon={<HiOutlineEnvelope />}
-                error={erros.email} layout={span(12)}>
+                error={erros.email} layout={span(7)}>
                 <input id="rp-email" type="email" className="register-page__input"
                   placeholder="Digite seu e-mail" value={email}
                   onChange={(e) => { setEmail(e.target.value); limparErro('email'); }}
                   maxLength={150} autoComplete="email" aria-invalid={!!erros.email} />
+              </Field>
+
+              <Field name="dataNascimento" label="Data de nascimento" icon={<HiOutlineCalendarDays />}
+                error={erros.dataNascimento} layout={span(5)}>
+                <input id="rp-dataNascimento" type="text" inputMode="numeric" className="register-page__input"
+                  placeholder="DD/MM/AAAA" value={dataNascimento} onChange={handleDataNascimentoChange}
+                  autoComplete="bday" aria-invalid={!!erros.dataNascimento} />
               </Field>
 
               <Field name="senha" label="Senha" icon={<HiOutlineLockClosed />}

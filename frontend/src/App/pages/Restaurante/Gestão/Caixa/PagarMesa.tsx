@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   HiArrowLeft,
@@ -12,11 +12,18 @@ import {
   HiDotsHorizontal,
   HiOutlineSwitchHorizontal,
   HiOutlineDocumentDuplicate,
-  HiOutlineXCircle,
+  HiOutlineTrash,
+  HiOutlinePencil,
 } from 'react-icons/hi';
 import { MdCreditCard, MdPix } from 'react-icons/md';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
 import { ROTAS_CAIXA } from '../../../../routes/caixaRotas';
+import MesaService, { Mesa as MesaApi } from '../../../../services/mesa.service';
+import PedidoService, { Pedido as PedidoApi } from '../../../../services/pedido.service';
+import { mensagemDeErro } from '../../../../services/cliente.service';
+import TransferirMesaModal from '../../../../shared/components/TransferirMesa/TransferirMesaModal';
+import JuntarPedidosModal from '../../../../shared/components/JuntarPedidos/JuntarPedidosModal';
+import ConfirmarAcaoPedido, { TipoAcaoPedido } from '../../../../shared/components/ConfirmarAcaoPedido/ConfirmarAcaoPedido';
 import './PagarMesa.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -38,6 +45,16 @@ interface PedidoDetalhe {
   itens: ItemPedido[];
   descontoValor: number;
   pagamentosRealizados: number;
+
+  // ── Só preenchidos quando a mesa vem da API (mesa real) ──
+  /** Texto do cabeçalho no lugar de "N pessoas" (ex.: "1 cliente") */
+  pessoasLabel?: string;
+  capacidade?: number;
+  observacao?: string;
+  /** Nomes dos clientes cadastrados na mesa (sem repetir) */
+  clientes?: string[];
+  /** Pedidos em andamento da mesa. Se existir, a mesa é real (não é o mock). */
+  pedidos?: PedidoApi[];
 }
 
 interface CupomDesconto {
@@ -133,12 +150,89 @@ const FORMAS_PAGAMENTO: { id: FormaPagamento; nome: string; info: string; icone:
 
 const gerarIdItem = () => `it${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
+// ── Dados reais (API) ──────────────────────────────────────────────────────────
+const STATUS_EM_ANDAMENTO: PedidoApi['status'][] = ['RECEBIDO', 'PREPARO', 'PRONTO'];
+
+const ROTULO_STATUS_PEDIDO: Record<string, string> = {
+  RECEBIDO: 'Recebido',
+  PREPARO: 'Em preparo',
+  PRONTO: 'Pronto',
+};
+
+const horaDoPedido = (iso: string) =>
+  new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+// Clientes da mesa = nomes diferentes nos pedidos (ignora maiúsculas e espaços a mais)
+const clientesDaMesa = (pedidos: PedidoApi[]): string[] => {
+  const vistos = new Map<string, string>();
+  pedidos.forEach((p) => {
+    const nome = p.cliente_nome.trim().replace(/\s+/g, ' ');
+    const chave = nome.toLowerCase();
+    if (nome && !vistos.has(chave)) vistos.set(chave, nome);
+  });
+  return Array.from(vistos.values());
+};
+
+// Junta os pedidos em andamento da mesa numa única comanda: itens iguais somam a quantidade.
+const montarPedidoDaApi = (mesa: MesaApi, pedidos: PedidoApi[]): PedidoDetalhe => {
+  const agrupados = new Map<string, ItemPedido>();
+  pedidos.forEach((p) =>
+    p.itens.forEach((i) => {
+      const unitario = i.quantidade > 0 ? i.preco_total / i.quantidade : i.preco_unitario;
+      const chave = `${i.produto_id}|${unitario.toFixed(2)}`;
+      const atual = agrupados.get(chave);
+      if (atual) {
+        atual.quantidade += i.quantidade;
+      } else {
+        agrupados.set(chave, {
+          id: chave,
+          nome: i.produto?.nome ?? 'Produto',
+          quantidade: i.quantidade,
+          precoUnitario: unitario,
+        });
+      }
+    })
+  );
+
+  const clientes = clientesDaMesa(pedidos);
+
+  return {
+    mesaNumero: mesa.numero,
+    pessoas: clientes.length,
+    pessoasLabel:
+      clientes.length > 0
+        ? `${clientes.length} ${clientes.length === 1 ? 'cliente' : 'clientes'}`
+        : `${mesa.capacidade} lugares`,
+    status: 'aberta',
+    itens: Array.from(agrupados.values()),
+    descontoValor: 0,
+    pagamentosRealizados: 0, // TODO: vir da API de pagamentos quando existir
+    capacidade: mesa.capacidade,
+    observacao: mesa.localizacao ?? undefined,
+    clientes,
+    pedidos,
+  };
+};
+
 // ── Componente ─────────────────────────────────────────────────────────────────
-const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = ({ id, pedidoBase }) => {
+const PagarMesaConteudo: React.FC<{
+  id: string;
+  pedidoBase: PedidoDetalhe;
+  /** Recarrega a mesa na API (depois de editar/excluir/transferir/juntar) */
+  onAtualizar: () => Promise<void>;
+}> = ({ id, pedidoBase, onAtualizar }) => {
   const navigate = useNavigate();
 
   const [itens, setItens]           = useState<ItemPedido[]>(pedidoBase.itens);
   const [menuAberto, setMenuAberto] = useState(false);
+
+  // Transferir mesa/pedidos e Juntar comandas (modal)
+  const [modalMesa, setModalMesa] = useState<'transferir' | 'juntar' | null>(null);
+
+  // Editar / excluir UM pedido da comanda (pede confirmação antes)
+  const [acaoPedido, setAcaoPedido]   = useState<{ tipo: TipoAcaoPedido; pedido: PedidoApi } | null>(null);
+  const [acaoSalvando, setAcaoSalvando] = useState(false);
+  const [acaoErro, setAcaoErro]       = useState<string | null>(null);
 
   // Desconto agora vive no state (antes vinha fixo do mock) pra poder ser
   // atualizado pelo modal de Descontos.
@@ -179,6 +273,12 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
 
   // ── "+ Adicionar item" — adiciona um item mockado direto na comanda ─────────
   const adicionarItem = () => {
+    // Mesa real: lança um novo pedido na tela de pedidos, já com esta mesa escolhida
+    if (pedidoBase.pedidos) {
+      navigate(`/restaurante/pedido?mesa=${id}`);
+      return;
+    }
+
     const produto = PRODUTOS_DISPONIVEIS[Math.floor(Math.random() * PRODUTOS_DISPONIVEIS.length)];
     setItens((prev) => {
       const existente = prev.find((i) => i.nome === produto.nome);
@@ -187,6 +287,59 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
       }
       return [...prev, { id: gerarIdItem(), nome: produto.nome, quantidade: 1, precoUnitario: produto.preco }];
     });
+  };
+
+  // ── Transferir pedidos / juntar pedidos ──────────────────────────────────────────────────────
+  const aoConcluirTransferencia = ({ origemLiberada }: { origemLiberada: boolean; destinoNumero: number }) => {
+    setModalMesa(null);
+    // Transferiu tudo: esta mesa ficou livre, então não há mais o que cobrar aqui
+    if (origemLiberada) {
+      navigate(ROTAS_CAIXA.lista);
+      return;
+    }
+    void onAtualizar().catch(() => undefined);
+  };
+
+  // Juntou pedidos da própria mesa: só recarrega a comanda com o pedido unido
+  const aoConcluirJuncao = () => {
+    setModalMesa(null);
+    void onAtualizar().catch(() => undefined);
+  };
+
+  // ── Editar / excluir um pedido ───────────────────────────────────────────────
+  const abrirAcaoPedido = (tipo: TipoAcaoPedido, pedido: PedidoApi) => {
+    setAcaoErro(null);
+    setAcaoPedido({ tipo, pedido });
+  };
+
+  const fecharAcaoPedido = () => {
+    if (acaoSalvando) return;
+    setAcaoPedido(null);
+    setAcaoErro(null);
+  };
+
+  const confirmarAcaoPedido = async (motivo?: string) => {
+    if (!acaoPedido || acaoSalvando) return;
+    const { tipo, pedido } = acaoPedido;
+
+    if (tipo === 'editar') {
+      navigate(`/restaurante/pedido?editar=${pedido.id}`);
+      return;
+    }
+
+    setAcaoSalvando(true);
+    setAcaoErro(null);
+    try {
+      await PedidoService.cancelarPedido(pedido.id, motivo ?? 'Removido pelo caixa');
+      setAcaoPedido(null);
+      // Era o último pedido: a mesa foi liberada, volta para o caixa
+      if ((pedidoBase.pedidos?.length ?? 0) <= 1) navigate(ROTAS_CAIXA.lista);
+      else await onAtualizar();
+    } catch (err: any) {
+      setAcaoErro(mensagemDeErro(err, 'Não foi possível excluir o pedido.'));
+    } finally {
+      setAcaoSalvando(false);
+    }
   };
 
   // ── Pagamento ────────────────────────────────────────────────────────────────
@@ -286,7 +439,7 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
                 </span>
               </div>
               <span className="pagar__pessoas">
-                <HiUserGroup /> {pedidoBase.pessoas} pessoas
+                <HiUserGroup /> {pedidoBase.pessoasLabel ?? `${pedidoBase.pessoas} pessoas`}
               </span>
             </div>
           </div>
@@ -306,14 +459,20 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
 
               {menuAberto && (
                 <div className="pagar__menu" onClick={(e) => e.stopPropagation()}>
-                  <button className="pagar__menu-item">
-                    <HiOutlineSwitchHorizontal /> Transferir mesa
+                  <button
+                    className="pagar__menu-item"
+                    disabled={!pedidoBase.pedidos?.length}
+                    onClick={() => { setMenuAberto(false); setModalMesa('transferir'); }}
+                  >
+                    <HiOutlineSwitchHorizontal /> Transferir pedidos
                   </button>
-                  <button className="pagar__menu-item">
-                    <HiOutlineDocumentDuplicate /> Juntar comandas
-                  </button>
-                  <button className="pagar__menu-item pagar__menu-item--perigo">
-                    <HiOutlineXCircle /> Cancelar pedido
+                  <button
+                    className="pagar__menu-item"
+                    disabled={(pedidoBase.pedidos?.length ?? 0) < 2}
+                    title={(pedidoBase.pedidos?.length ?? 0) < 2 ? 'A mesa precisa ter pelo menos 2 pedidos' : undefined}
+                    onClick={() => { setMenuAberto(false); setModalMesa('juntar'); }}
+                  >
+                    <HiOutlineDocumentDuplicate /> Juntar pedidos
                   </button>
                 </div>
               )}
@@ -326,6 +485,9 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
 
           {/* ── Itens do pedido ── */}
           <div className="pagar__coluna-itens">
+            {/* Mesa real: os itens aparecem por pedido em "Pedidos da mesa" (abaixo).
+                Esta lista consolidada só existe nas mesas de demonstração. */}
+            {!pedidoBase.pedidos && (
             <div className="pagar__caixa">
               <h3 className="pagar__subtitulo">Itens do pedido</h3>
 
@@ -343,10 +505,93 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
                 ))}
               </div>
             </div>
+            )}
 
             <button className="pagar__btn-adicionar" onClick={adicionarItem}>
               <HiPlus /> Adicionar item
             </button>
+
+            {/* ── Pedidos da mesa (conteúdo que antes ficava no modal de detalhes) ── */}
+            {pedidoBase.pedidos && (
+              <div className="pagar__caixa pagar__pedidos">
+                <h3 className="pagar__subtitulo">Pedidos da mesa</h3>
+
+                {(pedidoBase.capacidade !== undefined || pedidoBase.observacao) && (
+                  <div className="pagar__det-mesa">
+                    {pedidoBase.capacidade !== undefined && (
+                      <span className="pagar__det-lugares">
+                        <HiUserGroup /> {pedidoBase.capacidade} lugares
+                      </span>
+                    )}
+                    {pedidoBase.observacao && (
+                      <span className="pagar__det-obs">{pedidoBase.observacao}</span>
+                    )}
+                  </div>
+                )}
+
+                {pedidoBase.clientes && pedidoBase.clientes.length > 0 && (
+                  <div className="pagar__det-clientes">
+                    <strong>
+                      {pedidoBase.clientes.length}{' '}
+                      {pedidoBase.clientes.length === 1 ? 'cliente' : 'clientes'} na mesa
+                    </strong>
+                    <div className="pagar__det-clientes-lista">
+                      {pedidoBase.clientes.map((nome) => (
+                        <span key={nome} className="pagar__det-cliente">{nome}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {pedidoBase.pedidos.length === 0 ? (
+                  <p className="pagar__det-vazio">Nenhum pedido em andamento nesta mesa.</p>
+                ) : (
+                  pedidoBase.pedidos.map((p) => (
+                    <div key={p.id} className="pagar__det-pedido">
+                      <div className="pagar__det-pedido-linha">
+                        <strong>Pedido #{p.numero_pedido}</strong>
+                        <div className="pagar__det-acoes">
+                          <button
+                            className="pagar__det-editar"
+                            onClick={() => abrirAcaoPedido('editar', p)}
+                            aria-label={`Editar pedido ${p.numero_pedido}`}
+                            title="Editar pedido"
+                          >
+                            <HiOutlinePencil />
+                          </button>
+                          <button
+                            className="pagar__det-editar pagar__det-lixeira"
+                            onClick={() => abrirAcaoPedido('excluir', p)}
+                            aria-label={`Excluir pedido ${p.numero_pedido}`}
+                            title="Excluir pedido"
+                          >
+                            <HiOutlineTrash />
+                          </button>
+                        </div>
+                      </div>
+                      <span className="pagar__det-pedido-meta">
+                        {p.cliente_nome} · {horaDoPedido(p.criado_em)} · {ROTULO_STATUS_PEDIDO[p.status] ?? p.status}
+                      </span>
+
+                      <ul className="pagar__det-itens">
+                        {p.itens.map((i) => (
+                          <li key={i.id}>
+                            <span>{i.quantidade}x {i.produto?.nome ?? 'Produto'}</span>
+                            <span>{formatarMoeda(i.preco_total)}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {p.observacoes && <p className="pagar__det-obs">Obs.: {p.observacoes}</p>}
+                      <div className="pagar__det-subtotal">
+                        <span>Total do pedido</span>
+                        <strong>{formatarMoeda(p.total)}</strong>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           {/* ── Resumo / pagamento ── */}
@@ -387,12 +632,13 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
               <button
                 className="pagar__btn-parcial"
                 onClick={() => navigate(ROTAS_CAIXA.pagarParcial(id))}
+                disabled={itens.length === 0}
               >
                 Pagamento parcial
               </button>
 
               {/* Este é o botão que abre o modal "Forma de pagamento" */}
-              <button className="pagar__btn-finalizar" onClick={abrirModalPagamento}>
+              <button className="pagar__btn-finalizar" onClick={abrirModalPagamento} disabled={itens.length === 0}>
                 Finalizar pagamento
               </button>
 
@@ -602,21 +848,137 @@ const PagarMesaConteudo: React.FC<{ id: string; pedidoBase: PedidoDetalhe }> = (
         )}
 
       </div>
+
+      {modalMesa === 'transferir' && pedidoBase.pedidos && (
+        <TransferirMesaModal
+          mesa={{ id, numero: pedidoBase.mesaNumero }}
+          pedidos={pedidoBase.pedidos}
+          onFechar={() => setModalMesa(null)}
+          onConcluido={aoConcluirTransferencia}
+        />
+      )}
+
+      {modalMesa === 'juntar' && pedidoBase.pedidos && (
+        <JuntarPedidosModal
+          mesa={{ id, numero: pedidoBase.mesaNumero }}
+          pedidos={pedidoBase.pedidos}
+          onFechar={() => setModalMesa(null)}
+          onConcluido={aoConcluirJuncao}
+        />
+      )}
+
+      <ConfirmarAcaoPedido
+        aberto={acaoPedido !== null}
+        tipo={acaoPedido?.tipo ?? 'editar'}
+        pedido={acaoPedido?.pedido ?? null}
+        salvando={acaoSalvando}
+        erro={acaoErro}
+        onConfirmar={(motivo) => void confirmarAcaoPedido(motivo)}
+        onFechar={fecharAcaoPedido}
+      />
     </RestaurantLayout>
   );
 };
 
 // ── Rota: descobre a mesa pelo :id da URL ─────────────────────────────────────
-// Sem id, ou com id que não existe → volta para o caixa (antes caía em silêncio
-// na mesa m1 e mostrava os itens errados). O key={id} faz o state interno
+// • id do mock (m1…m6)  → usa os dados de demonstração acima
+// • qualquer outro id   → é o id de uma mesa real: busca a mesa e os pedidos em
+//                         andamento dela na API (é o id que o card do Caixa envia)
+// Mesa inexistente → volta para o caixa. O key={id} faz o state interno
 // (itens, desconto...) recomeçar do zero se o id da URL mudar.
+type EstadoCarga =
+  | { tipo: 'carregando' }
+  | { tipo: 'erro'; mensagem: string }
+  | { tipo: 'naoEncontrada' }
+  | { tipo: 'ok'; pedido: PedidoDetalhe };
+
+// Busca a mesa e os pedidos em andamento dela na API
+const buscarMesa = async (mesaId: string): Promise<EstadoCarga> => {
+  try {
+    const [mesas, pedidos] = await Promise.all([
+      MesaService.listar(),
+      PedidoService.listar({ status: STATUS_EM_ANDAMENTO, modalidade: 'MESA', mesa_id: mesaId }),
+    ]);
+
+    const mesa = mesas.find((m) => m.id === mesaId);
+    if (!mesa) return { tipo: 'naoEncontrada' };
+
+    // Garante que só entram pedidos desta mesa, mesmo se a API ignorar o filtro
+    const daMesa = pedidos.filter((p) => p.mesa?.id === mesaId);
+    return { tipo: 'ok', pedido: montarPedidoDaApi(mesa, daMesa) };
+  } catch (err: any) {
+    return { tipo: 'erro', mensagem: mensagemDeErro(err, 'Não foi possível carregar a mesa.') };
+  }
+};
+
 const PagarMesa: React.FC = () => {
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const pedido = id ? PEDIDOS_DETALHE_MOCK[id] : undefined;
+  const pedidoMock = id ? PEDIDOS_DETALHE_MOCK[id] : undefined;
 
-  if (!id || !pedido) return <Navigate to={ROTAS_CAIXA.lista} replace />;
+  const [estado, setEstado]       = useState<EstadoCarga>({ tipo: 'carregando' });
+  const [tentativa, setTentativa] = useState(0);
+  // Muda a cada recarga: faz o conteúdo recomeçar com os dados novos da API
+  const [versao, setVersao]       = useState(0);
 
-  return <PagarMesaConteudo key={id} id={id} pedidoBase={pedido} />;
+  useEffect(() => {
+    if (!id || pedidoMock) return;
+
+    let cancelado = false;
+    setEstado({ tipo: 'carregando' });
+
+    buscarMesa(id).then((novo) => {
+      if (!cancelado) setEstado(novo);
+    });
+
+    return () => { cancelado = true; };
+  }, [id, pedidoMock, tentativa]);
+
+  // Recarrega sem piscar a tela de "Carregando": usado depois de editar/excluir/transferir/juntar
+  const recarregar = useCallback(async () => {
+    if (!id) return;
+    const novo = await buscarMesa(id);
+    if (novo.tipo === 'ok') {
+      setEstado(novo);
+      setVersao((v) => v + 1);
+    } else if (novo.tipo === 'naoEncontrada') {
+      navigate(ROTAS_CAIXA.lista);
+    } else if (novo.tipo === 'erro') {
+      throw new Error(novo.mensagem);
+    }
+  }, [id, navigate]);
+
+  if (!id) return <Navigate to={ROTAS_CAIXA.lista} replace />;
+
+  if (pedidoMock) return <PagarMesaConteudo key={id} id={id} pedidoBase={pedidoMock} onAtualizar={async () => undefined} />;
+
+  if (estado.tipo === 'naoEncontrada') return <Navigate to={ROTAS_CAIXA.lista} replace />;
+
+  if (estado.tipo === 'ok') return <PagarMesaConteudo key={`${id}-${versao}`} id={id} pedidoBase={estado.pedido} onAtualizar={recarregar} />;
+
+  return (
+    <RestaurantLayout>
+      <div className="pagar">
+        <div className="pagar__caixa pagar__estado" role={estado.tipo === 'erro' ? 'alert' : 'status'}>
+          {estado.tipo === 'erro' ? (
+            <>
+              <span>{estado.mensagem}</span>
+              <div className="pagar__estado-acoes">
+                <button className="pagar__btn-parcial" onClick={() => setTentativa((t) => t + 1)}>
+                  Tentar de novo
+                </button>
+                <button className="pagar__btn-parcial" onClick={() => navigate(ROTAS_CAIXA.lista)}>
+                  Voltar ao caixa
+                </button>
+              </div>
+            </>
+          ) : (
+            <span>Carregando mesa...</span>
+          )}
+        </div>
+      </div>
+    </RestaurantLayout>
+  );
 };
 
 export default PagarMesa;

@@ -1,3 +1,4 @@
+import prisma from '@config/prisma'
 import { Mesa, StatusMesa } from '@prisma/client'
 import { AppError } from '@shared/errors/AppError'
 import { MesaRepository } from './Mesa.repository'
@@ -42,12 +43,21 @@ export class MesaService {
 
     const qr_code_url = `${env.FRONTEND_URL}/mesa/${qr_code_token}`
 
-    return this.repository.create({
-      ...data,
-      estabelecimento_id,
-      qr_code_token,
-      qr_code_url,
-    })
+    try {
+      return await this.repository.create({
+        ...data,
+        estabelecimento_id,
+        qr_code_token,
+        qr_code_url,
+      })
+    } catch (err) {
+      // Duas requisições com o mesmo número ao mesmo tempo passam pela checagem acima;
+      // quem barra de verdade é o índice único do banco (estabelecimento_id + numero).
+      if ((err as { code?: string })?.code === 'P2002') {
+        throw new AppError(`Já existe uma mesa com o número ${data.numero}`, 409)
+      }
+      throw err
+    }
   }
 
   async findById(id: string, estabelecimento_id: string): Promise<Mesa> {
@@ -147,6 +157,24 @@ export class MesaService {
 
   if (!mesa.ativo) {
     throw new AppError('Não é possível alterar o status de uma mesa inativa', 400)
+  }
+
+  // Mesa com pedido em andamento não pode ser liberada nem reservada
+  if (data.status !== 'OCUPADA') {
+    const emAndamento = await prisma.pedido.count({
+      where: {
+        mesa_id: id,
+        estabelecimento_id,
+        status: { in: ['RECEBIDO', 'PREPARO', 'PRONTO'] },
+      },
+    })
+
+    if (emAndamento > 0) {
+      throw new AppError(
+        `A Mesa ${mesa.numero} tem pedido em andamento. Finalize ou cancele o pedido antes.`,
+        400
+      )
+    }
   }
 
   return this.repository.update(id, {

@@ -1,0 +1,14 @@
+.contador-caracteres {
+  display: block;
+  text-align: right;
+  color: #888;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+/* a partir de 90% do limite */
+.contador-caracteres--aviso { color: #b7791f; }
+
+/* limite atingido */
+.contador-caracteres--limite { color: #c0392b; font-weight: 600; }

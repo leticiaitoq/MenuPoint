@@ -1,0 +1,64 @@
+.transf__overlay {
+  position: fixed; inset: 0; z-index: 1100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; background: rgba(0, 0, 0, 0.45);
+}
+.transf__modal {
+  width: 100%; max-width: 520px; max-height: calc(100vh - 32px);
+  display: flex; flex-direction: column; overflow: hidden;
+  background: #fff; border-radius: 16px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+.transf__header { display: flex; align-items: flex-start; gap: 12px; padding: 18px 20px 8px; }
+.transf__icone {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #fdecea; color: #c0392b; font-size: 22px;
+}
+.transf__header-texto { flex: 1; }
+.transf__titulo { margin: 0; font-size: 17px; font-weight: 700; color: #222; }
+.transf__subtitulo { margin: 2px 0 0; font-size: 13px; color: #888; }
+.transf__fechar {
+  display: flex; background: none; border: none; font-size: 22px; color: #666;
+  cursor: pointer; border-radius: 8px; padding: 4px;
+}
+.transf__fechar:hover { background: #f0f0f0; }
+.transf__corpo { padding: 4px 20px 16px; overflow-y: auto; }
+.transf__secao { margin-bottom: 16px; font-size: 14px; color: #333; }
+.transf__secao-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.transf__link {
+  background: none; border: none; padding: 0; color: #c0392b;
+  font-size: 13px; font-weight: 600; text-decoration: underline; cursor: pointer;
+}
+.transf__pedido {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-top: 6px;
+  border: 1px solid #eee; border-radius: 10px; font-size: 14px; cursor: pointer;
+}
+.transf__pedido-valor { margin-left: auto; font-weight: 600; }
+.transf__dica { margin: 8px 0 0; font-size: 12px; color: #888; }
+.transf__estado { margin: 10px 0 0; font-size: 14px; color: #666; }
+.transf__estado--erro { color: #b3261e; }
+.transf__grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 10px; }
+.transf__mesa {
+  display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; text-align: left;
+  border: 2px solid #eee; border-radius: 12px; background: #fff; cursor: pointer;
+}
+.transf__mesa:hover { border-color: #e0b4ae; }
+.transf__mesa--ativa { border-color: #c0392b; background: #fdf0ee; }
+.transf__mesa-numero { font-weight: 700; font-size: 14px; }
+.transf__mesa-status { font-size: 12px; font-weight: 600; }
+.transf__mesa--livre .transf__mesa-status { color: #1e8e4e; }
+.transf__mesa--ocupada .transf__mesa-status { color: #c0392b; }
+.transf__mesa--reservada .transf__mesa-status { color: #b7791f; }
+.transf__mesa-sub { font-size: 12px; color: #777; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.transf__aviso {
+  display: flex; gap: 10px; padding: 14px; border-radius: 12px;
+  background: #fff7e6; color: #6b4a00; font-size: 14px;
+}
+.transf__aviso svg { flex-shrink: 0; font-size: 22px; margin-top: 2px; }
+.transf__aviso p { margin: 6px 0 0; }
+.transf__erro { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: #fdecea; color: #b3261e; font-size: 13px; }
+.transf__acoes { display: flex; gap: 10px; padding: 12px 20px 18px; }
+.transf__btn { flex: 1; padding: 12px 14px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.transf__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.transf__btn--sec { background: #f2f2f2; color: #444; }
+.transf__btn--prim { background: #c0392b; color: #fff; }

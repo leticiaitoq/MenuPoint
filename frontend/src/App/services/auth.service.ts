@@ -76,6 +76,7 @@ export interface RegistrarDTO {
   razao_social?: string
   nome_responsavel?: string
   cpf?: string
+  data_nascimento?: string
   cnpj?: string
   email: string
   cep?: string
@@ -99,9 +100,18 @@ const AuthService = {
   },
 
   // Faz login e retorna token + dados do usuário
+  // Se o servidor estiver acordando (cold start) a 1ª chamada pode estourar o tempo
+  // ou cair por rede, sem resposta nenhuma. Login é seguro de repetir, então tentamos
+  // mais uma vez sozinho — a pessoa não precisa clicar duas vezes.
   async login(data: LoginDTO): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>('auth/login', data)
-    return response.data
+    const tentar = () => api.post<LoginResponse>('auth/login', data, { timeout: 30000 })
+    try {
+      return (await tentar()).data
+    } catch (err: any) {
+      const semResposta = !err?.response // timeout / rede / servidor ainda subindo
+      if (!semResposta) throw err
+      return (await tentar()).data
+    }
   },
 
   // Usuário + empresa + estabelecimento lidos do BANCO (não do token)

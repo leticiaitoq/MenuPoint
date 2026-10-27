@@ -8,8 +8,13 @@ const itemAdicionalSchema = z.object({
 
 const itemPedidoSchema = z.object({
   produto_id: z.string().uuid('ID do produto inválido'),
-  quantidade: z.number().int().min(1, 'Quantidade deve ser ao menos 1'),
-  preco_unitario: z.number().min(0, 'Preço unitário inválido'),
+  quantidade: z
+    .number()
+    .int()
+    .min(1, 'Quantidade deve ser ao menos 1')
+    .max(999, 'Quantidade deve ser no máximo 999'),
+  // Ignorado: o service sempre usa o preço do produto no banco. Fica só por compatibilidade.
+  preco_unitario: z.number().min(0, 'Preço unitário inválido').default(0),
   observacoes: z.string().max(500).optional(),
   itens_adicionais: z.array(itemAdicionalSchema).default([]),
 })
@@ -38,13 +43,17 @@ export const criarPedidoSchema = z.object({
 
   cliente_nome: z
     .string()
+    .trim()
     .min(1, 'Nome do cliente é obrigatório')
-    .max(100),
+    .max(100, 'Nome do cliente deve ter no máximo 100 caracteres'),
 
+  // Pedido de mesa lançado no salão não precisa de telefone (a coluna é NOT NULL, então guarda "").
+  // Entrega e retirada continuam exigindo (a refine abaixo confere).
   cliente_telefone: z
     .string()
-    .min(1, 'Telefone do cliente é obrigatório')
-    .max(20),
+    .trim()
+    .max(20, 'Telefone deve ter no máximo 20 caracteres')
+    .default(''),
 
   endereco_entrega: enderecoEntregaSchema.optional(),
 
@@ -61,8 +70,16 @@ export const criarPedidoSchema = z.object({
 
   itens: z
     .array(itemPedidoSchema)
-    .min(1, 'O pedido deve ter ao menos 1 item'),
+    .min(1, 'O pedido deve ter ao menos 1 item')
+    .max(100, 'O pedido deve ter no máximo 100 itens'),
 })
+  .refine(
+    (data) => data.modalidade === 'MESA' || data.cliente_telefone.length > 0,
+    {
+      message: 'Telefone do cliente é obrigatório',
+      path: ['cliente_telefone'],
+    }
+  )
   .refine(
     (data) => {
       if (data.modalidade === 'ENTREGA' && !data.endereco_entrega) {
@@ -100,3 +117,37 @@ export const atualizarStatusPedidoSchema = z.object({
 })
 
 export type AtualizarStatusPedidoDTO = z.infer<typeof atualizarStatusPedidoSchema>
+
+
+// Edição de um pedido em andamento: nome do cliente, observações e lista de itens.
+// Preço nunca vem do front: itens que já estavam no pedido mantêm o preço de quando foram lançados;
+// itens novos usam o preço atual do produto.
+export const atualizarPedidoSchema = z.object({
+  cliente_nome: z
+    .string()
+    .trim()
+    .min(1, 'Nome do cliente é obrigatório')
+    .max(100, 'Nome do cliente deve ter no máximo 100 caracteres'),
+
+  observacoes: z
+    .string()
+    .trim()
+    .max(1000, 'Observações devem ter no máximo 1000 caracteres')
+    .optional(),
+
+  itens: z
+    .array(
+      z.object({
+        produto_id: z.string().uuid('ID do produto inválido'),
+        quantidade: z
+          .number()
+          .int()
+          .min(1, 'Quantidade deve ser ao menos 1')
+          .max(999, 'Quantidade deve ser no máximo 999'),
+      })
+    )
+    .min(1, 'O pedido deve ter ao menos 1 item')
+    .max(100, 'O pedido deve ter no máximo 100 itens'),
+})
+
+export type AtualizarPedidoDTO = z.infer<typeof atualizarPedidoSchema>

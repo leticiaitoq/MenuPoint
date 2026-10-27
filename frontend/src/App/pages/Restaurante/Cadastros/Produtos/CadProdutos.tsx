@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HiUpload, HiPlus } from 'react-icons/hi';
+import { HiUpload, HiPlus, HiExclamationCircle, HiX } from 'react-icons/hi';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
 import CategoriaService, { Categoria } from '../../../../services/categoria.service';
 import ProdutoService from '../../../../services/produto.service';
@@ -41,6 +41,7 @@ const precoParaNumero = (preco: string): number =>
 const CadProdutos: React.FC = () => {
   const navigate = useNavigate();
   const inputFotoRef = useRef<HTMLInputElement>(null);
+  const erroRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState<FormProduto>(FORM_INICIAL);
 
@@ -69,6 +70,11 @@ const CadProdutos: React.FC = () => {
   }, []);
 
   // ── Atualiza qualquer campo do form de uma vez
+  // Rola até o aviso quando aparece um erro
+  useEffect(() => {
+    if (erro) erroRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [erro]);
+
   const atualizarForm = (campo: Partial<FormProduto>) => {
     setForm((prev) => ({ ...prev, ...campo }));
   };
@@ -182,6 +188,21 @@ const CadProdutos: React.FC = () => {
           </div>
         </div>
 
+        {erro && (
+          <div className="cadprod__erro" role="alert" ref={erroRef}>
+            <HiExclamationCircle className="cadprod__erro-icon" />
+            <span>{erro}</span>
+            <button
+              type="button"
+              className="cadprod__erro-fechar"
+              onClick={() => setErro('')}
+              aria-label="Fechar mensagem"
+            >
+              <HiX />
+            </button>
+          </div>
+        )}
+
         {/* ── Card principal ── */}
         <div className="cadprod__card">
 
@@ -275,8 +296,6 @@ const CadProdutos: React.FC = () => {
               </label>
             </div>
 
-            {/* Erro */}
-            {erro && <p className="cadprod__erro">{erro}</p>}
 
           </div>
 

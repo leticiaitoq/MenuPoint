@@ -1,0 +1,131 @@
+@host = http://localhost:3333/api/v1
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZjA2ZmI0NS1jN2ExLTQwNWItODQ5My02MDU1NWM3ZTdhNmMiLCJub21lIjoiQWRtaW5nbG9iYWwiLCJlbWFpbCI6ImFkbWluZ2xvYmFsQGVtYWlsLmNvbSIsInBlcmZpbCI6IkFETUlOIiwiZXNjb3BvIjoiR0xPQkFMIiwiZXN0YWJlbGVjaW1lbnRvX2lkIjoiZDMyNDY3NGQtYTc5NS00MGI4LTg4YWItODg1YWQxMWZiNWUyIiwiZW1wcmVzYV9pZCI6bnVsbCwiaWF0IjoxNzc1MTcwMTMzLCJleHAiOjE3NzU3NzQ5MzN9.-E6cmDJt4efjAky8ckP1EPFh778CCNEnCKEQ5aDImYg
+@produto_id = cc0f2f74-9527-4a8e-b552-2fb3697ebe76
+@categoria_id = bdc76863-f52e-41ba-a543-d5dfc99f6f4a
+
+# @estabelecimento_id = d324674d-a795-40b8-88ab-885ad11fb5e2    # "estabelecimento_id": "{{estabelecimento_id}}"
+### Criar produto simples (sem adicionais) 
+# @name criarProduto
+POST {{host}}/produtos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "categoria_id": "{{categoria_id}}",
+  "nome": "Pizza Margherita",
+  "descricao": "Molho de tomate, mussarela e manjericão",
+  "preco": 45.90,
+  "tempo_preparo_min": 25,
+  "destaque": true,
+  "ordem": 0
+}
+
+###
+
+### Criar produto com adicionais
+POST {{host}}/produtos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "categoria_id": "{{categoria_id}}",
+  "nome": "X-Burguer",
+  "descricao": "Pão, carne 150g, queijo e alface",
+  "preco": 28.90,
+  "tempo_preparo_min": 15,
+  "ordem": 1,
+  "grupos_adicionais": [
+    {
+      "nome": "Ponto da carne",
+      "obrigatorio": true,
+      "selecao_multipla": false,
+      "min_selecoes": 1,
+      "max_selecoes": 1,
+      "ordem": 0,
+      "adicionais": [
+        { "nome": "Mal passado", "preco_extra": 0, "ordem": 0 },
+        { "nome": "Ao ponto", "preco_extra": 0, "ordem": 1 },
+        { "nome": "Bem passado", "preco_extra": 0, "ordem": 2 }
+      ]
+    },
+    {
+      "nome": "Ingredientes extras",
+      "obrigatorio": false,
+      "selecao_multipla": true,
+      "min_selecoes": 0,
+      "max_selecoes": 5,
+      "ordem": 1,
+      "adicionais": [
+        { "nome": "Bacon", "preco_extra": 4.00, "ordem": 0 },
+        { "nome": "Ovo", "preco_extra": 2.00, "ordem": 1 },
+        { "nome": "Cheddar extra", "preco_extra": 3.00, "ordem": 2 }
+      ]
+    }
+  ]
+}
+
+###
+
+### Listar todos os produtos
+GET {{host}}/produtos
+Authorization: Bearer {{token}}
+
+###
+
+### Listar só os destaques
+GET {{host}}/produtos?destaque=true
+Authorization: Bearer {{token}}
+
+###
+
+### Listar por categoria
+GET {{host}}/produtos?categoria_id={{categoria_id}}
+Authorization: Bearer {{token}}
+
+###
+
+### Buscar produto por ID
+GET {{host}}/produtos/{{produto_id}}
+Authorization: Bearer {{token}}
+
+###
+
+### Mais vendidos
+GET {{host}}/produtos/mais-vendidos?limite=5
+Authorization: Bearer {{token}}
+
+###
+
+### Alternar disponibilidade
+PATCH {{host}}/produtos/{{produto_id}}/disponibilidade
+Authorization: Bearer {{token}}
+
+###
+
+### Atualizar produto
+PUT {{host}}/produtos/{{produto_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "preco_promocional": 39.90,
+  "destaque": true
+}
+
+###
+
+### Reordenar produtos
+PATCH {{host}}/produtos/reordenar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+[
+  { "id": "ID_PRODUTO_1", "ordem": 0 },
+  { "id": "ID_PRODUTO_2", "ordem": 1 }
+]
+
+###
+
+### Desativar produto
+DELETE {{host}}/produtos/{{produto_id}}
+Authorization: Bearer {{token}}

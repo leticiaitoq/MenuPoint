@@ -30,6 +30,10 @@ interface CancelarPedidoProps {
   total?: number;
   /** Se > 0, o cancelamento é bloqueado (precisaria de estorno) */
   pagamentosRealizados?: number;
+  /** Chamada à API em andamento: trava os botões */
+  salvando?: boolean;
+  /** Erro devolvido pela API (ex.: mesa já tem pagamento) */
+  erro?: string | null;
   onFechar: () => void;
   /** Recebe o texto do motivo — vai para Pedido.cancelamento_motivo no backend */
   onConfirmar: (motivo: string) => void;
@@ -48,6 +52,8 @@ const CancelarPedido: React.FC<CancelarPedidoProps> = ({
   itens,
   total,
   pagamentosRealizados = 0,
+  salvando = false,
+  erro = null,
   onFechar,
   onConfirmar,
 }) => {
@@ -68,11 +74,11 @@ const CancelarPedido: React.FC<CancelarPedidoProps> = ({
   useEffect(() => {
     if (!aberto) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onFechar();
+      if (e.key === 'Escape' && !salvando) onFechar();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [aberto, onFechar]);
+  }, [aberto, onFechar, salvando]);
 
   if (!aberto) return null;
 
@@ -90,7 +96,7 @@ const CancelarPedido: React.FC<CancelarPedidoProps> = ({
   // ── Validação do motivo ──────────────────────────────────────────────────────
   const outroValido =
     outroTexto.trim().length >= OUTRO_MIN && outroTexto.length <= OUTRO_MAX;
-  const podeConfirmar = motivoId !== null && (motivoId !== 'outro' || outroValido);
+  const podeConfirmar = !salvando && motivoId !== null && (motivoId !== 'outro' || outroValido);
 
   const handleConfirmar = () => {
     if (!podeConfirmar || bloqueio) return;
@@ -102,7 +108,7 @@ const CancelarPedido: React.FC<CancelarPedidoProps> = ({
   };
 
   return (
-    <div className="cancelar__overlay" onClick={onFechar}>
+    <div className="cancelar__overlay" onClick={() => !salvando && onFechar()}>
       <div
         className="cancelar__modal"
         role="dialog"
@@ -175,6 +181,8 @@ const CancelarPedido: React.FC<CancelarPedidoProps> = ({
               )}
             </>
           )}
+
+          {erro && <div className="cancelar__bloqueio" role="alert">{erro}</div>}
         </div>
 
         <div className="cancelar__acoes">
@@ -182,13 +190,13 @@ const CancelarPedido: React.FC<CancelarPedidoProps> = ({
             <button className="cancelar__btn cancelar__btn--sec" onClick={onFechar}>Entendi</button>
           ) : (
             <>
-              <button className="cancelar__btn cancelar__btn--sec" onClick={onFechar}>Voltar</button>
+              <button className="cancelar__btn cancelar__btn--sec" onClick={onFechar} disabled={salvando}>Voltar</button>
               <button
                 className="cancelar__btn cancelar__btn--perigo"
                 onClick={handleConfirmar}
                 disabled={!podeConfirmar}
               >
-                Cancelar pedido
+                {salvando ? 'Cancelando…' : 'Cancelar pedido'}
               </button>
             </>
           )}

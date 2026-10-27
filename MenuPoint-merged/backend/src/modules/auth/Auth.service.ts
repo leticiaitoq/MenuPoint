@@ -1,0 +1,494 @@
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
+import { AuthRepository } from './Auth.repository'
+import { AppError } from '@shared/errors/AppError'
+import { transporter } from '@config/mailer'
+import { env } from '@config/env'
+import prisma from '@config/prisma'
+import { temPagamentoPendente } from '@modules/assinatura/Pagamento.temporario'
+import {
+  LoginDTO,
+  LoginResponseDTO,
+  JWTPayload,
+  EsqueciSenhaDTO,
+  RedefinirSenhaDTO,
+  VerificarCodigoDTO,
+  ReenviarCodigoDTO,
+  AtualizarDadosSensiveisDTO,
+  VerificarSenhaDTO,
+} from './Auth.schema'
+import {
+  templateRecuperacaoSenha,
+  templateSenhaRedefinida,
+  templateConfirmacaoEmail,
+} from '@shared/emails/templates'
+
+// Validade do código (configurável: CODIGO_EXPIRA_MINUTOS no .env)
+const EXPIRACAO_CODIGO_MINUTOS = env.CODIGO_EXPIRA_MINUTOS
+
+export class AuthService {
+
+  constructor(
+    private readonly repository: AuthRepository
+  ) {}
+
+  private async gerarEPersistirRefreshToken(
+    payload: JWTPayload,
+    usuario_id: string
+  ): Promise<string> {
+    const token = jwt.sign(payload, env.JWT_REFRESH_SECRET, { expiresIn: '7d' })
+
+    const expira_em = new Date()
+    expira_em.setDate(expira_em.getDate() + 7)
+
+    await prisma.refreshToken.create({
+      data: {
+        usuario_id,
+        token,
+        expira_em,
+      },
+    })
+
+    return token
+  }
+
+  // ── LOGIN ────────────────────────────────────────────────────────────────
+  async login(
+    data: LoginDTO,
+    jwtSign: (payload: JWTPayload) => string
+  ): Promise<LoginResponseDTO> {
+
+    const usuario = await this.repository.findByEmail(data.email)
+
+    if (!usuario) {
+      throw new AppError('E-mail ou senha incorretos', 401)
+    }
+
+    if (!usuario.ativo) {
+      throw new AppError('Usuário inativo. Entre em contato com o administrador', 401)
+    }
+
+    if (usuario.estabelecimento && !usuario.estabelecimento.ativo) {
+      throw new AppError('Estabelecimento suspenso. Entre em contato com o suporte', 403)
+    }
+
+    const senhaCorreta = await bcrypt.compare(data.senha, usuario.senha_hash)
+
+    if (!senhaCorreta) {
+      throw new AppError('E-mail ou senha incorretos', 401)
+    }
+
+    // O front reconhece o `code` e mostra "E-mail não verificado" + botão "Reenviar código"
+    if (!usuario.email_verificado) {
+      throw new AppError('E-mail não verificado', 403, true, 'EMAIL_NAO_VERIFICADO')
+    }
+
+    this.repository.atualizarUltimoAcesso(usuario.id).catch(console.error)
+
+    const payload: JWTPayload = {
+      sub: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      perfil: usuario.perfil,
+      escopo: usuario.escopo,
+      estabelecimento_id: usuario.estabelecimento_id,
+      empresa_id: usuario.empresa_id,
+    }
+
+    const token = jwtSign(payload)
+    const refresh_token = await this.gerarEPersistirRefreshToken(payload, usuario.id)
+
+    return {
+      token,
+      refresh_token,
+      usuario: {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        perfil: usuario.perfil,
+        escopo: usuario.escopo,
+        estabelecimento_id: usuario.estabelecimento_id,
+        empresa_id: usuario.empresa_id,
+        pagamento_pendente: await temPagamentoPendente(usuario.empresa_id),
+      },
+    }
+  }
+
+  // ── REGISTRO ─────────────────────────────────────────────────────────────
+  async registrar(
+    data: import('./Auth.schema').RegistrarDTO,
+    jwtSign: (payload: JWTPayload) => string
+  ): Promise<import('./Auth.schema').RegistrarResponseDTO> {
+
+    const emailExistente = await this.repository.findByEmail(data.email)
+    if (emailExistente) {
+      throw new AppError('Este e-mail já está cadastrado', 409)
+    }
+
+    if (await this.repository.cnpjEmUso(data.cnpj)) {
+      throw new AppError('Este CNPJ já está cadastrado', 409)
+    }
+
+    const senha_hash = await bcrypt.hash(data.senha, 10)
+
+    // Cria Empresa + Estabelecimento + Usuário numa única transação:
+    // o usuário já nasce com estabelecimento_id (as rotas de produtos, mesas,
+    // reservas etc. dependem dele).
+    const { usuario, pagamento_pendente } = await this.repository.registrar({
+      nome_empresa: data.nome_restaurante,
+      razao_social: data.razao_social,
+      cnpj: data.cnpj,
+      endereco: {
+        rua: data.endereco,
+        numero: data.numero,
+        bairro: data.bairro,
+        cidade: data.cidade,
+        estado: data.estado,
+        cep: data.cep,
+      },
+      nome_responsavel: data.nome_responsavel,
+      cpf: data.cpf,
+      email: data.email,
+      senha_hash,
+      token_pagamento: data.token_pagamento,
+      plano: data.plano,
+    })
+
+    // E-mail de confirmação em SEGUNDO PLANO: se o SMTP estiver lento ou fora do ar,
+    // o cadastro não trava (antes a resposta esperava o envio e o front estourava o
+    // timeout mesmo com a conta já criada). Quem não receber usa "reenviar código".
+    void (async () => {
+      try {
+        const codigo = await this.repository.criarTokenConfirmacaoEmail(
+          usuario.id,
+          EXPIRACAO_CODIGO_MINUTOS
+        )
+
+        await transporter.sendMail({
+          from: env.MAIL_FROM,
+          to: usuario.email,
+          subject: 'Seu código de verificação do Menupoint',
+          html: templateConfirmacaoEmail(usuario.nome, codigo, EXPIRACAO_CODIGO_MINUTOS),
+        })
+      } catch (err) {
+        console.error('Falha ao enviar e-mail de confirmação:', err)
+      }
+    })()
+
+    const payload: JWTPayload = {
+      sub: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      perfil: usuario.perfil,
+      escopo: usuario.escopo,
+      estabelecimento_id: usuario.estabelecimento_id,
+      empresa_id: usuario.empresa_id,
+    }
+
+    const token = jwtSign(payload)
+    const refresh_token = await this.gerarEPersistirRefreshToken(payload, usuario.id)
+
+    return {
+      token,
+      refresh_token,
+      usuario: {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        perfil: usuario.perfil,
+        escopo: usuario.escopo,
+        estabelecimento_id: usuario.estabelecimento_id!,
+        empresa_id: usuario.empresa_id!,
+        pagamento_pendente,
+      },
+    }
+  }
+
+  // ── VERIFICAR SENHA (só confere; não altera nada) ───────────────────────────
+  async verificarSenha(usuario_id: string, data: VerificarSenhaDTO): Promise<void> {
+    const atual = await prisma.usuario.findUnique({ where: { id: usuario_id } })
+    if (!atual || !atual.ativo) {
+      throw new AppError('Usuário não encontrado', 404)
+    }
+    const senhaCorreta = await bcrypt.compare(data.senha, atual.senha_hash)
+    if (!senhaCorreta) {
+      throw new AppError('Senha incorreta', 403)
+    }
+  }
+
+  // ── ALTERAR DADOS SENSÍVEIS (nome do responsável, e-mail, razão social, nome da empresa) ──
+  // Só executa se a senha atual estiver correta.
+  async atualizarDadosSensiveis(
+    usuario_id: string,
+    data: AtualizarDadosSensiveisDTO,
+    jwtSign: (payload: JWTPayload) => string
+  ): Promise<{ token: string; email_alterado: boolean }> {
+    const atual = await prisma.usuario.findUnique({ where: { id: usuario_id } })
+
+    if (!atual || !atual.ativo) {
+      throw new AppError('Usuário não encontrado', 404)
+    }
+
+    // 403 (e não 401) de propósito: o front trata 401 como "sessão expirada" e desloga.
+    const senhaCorreta = await bcrypt.compare(data.senha_atual, atual.senha_hash)
+    if (!senhaCorreta) {
+      throw new AppError('Senha incorreta', 403)
+    }
+
+    const mexeNaEmpresa = data.razao_social !== undefined || data.nome_empresa !== undefined
+    if (mexeNaEmpresa && (atual.perfil !== 'ADMIN' || !atual.empresa_id)) {
+      throw new AppError('Apenas o administrador pode alterar os dados da empresa', 403)
+    }
+
+    const emailAlterado = data.email !== undefined && data.email !== atual.email
+    if (emailAlterado && (await this.repository.findByEmail(data.email as string))) {
+      throw new AppError('Este e-mail já está cadastrado', 409)
+    }
+
+    const usuario = await this.repository.atualizarDadosSensiveis(atual.id, atual.empresa_id, {
+      nome_responsavel: data.nome_responsavel,
+      email: emailAlterado ? data.email : undefined,
+      razao_social: data.razao_social,
+      nome_empresa: data.nome_empresa,
+    })
+
+    if (emailAlterado) {
+      // Código de confirmação para o e-mail novo, em segundo plano (mesmo padrão do cadastro)
+      void (async () => {
+        try {
+          const codigo = await this.repository.criarTokenConfirmacaoEmail(
+            usuario.id,
+            EXPIRACAO_CODIGO_MINUTOS
+          )
+          await transporter.sendMail({
+            from: env.MAIL_FROM,
+            to: usuario.email,
+            subject: 'Confirme seu novo e-mail no Menupoint',
+            html: templateConfirmacaoEmail(usuario.nome, codigo, EXPIRACAO_CODIGO_MINUTOS),
+          })
+        } catch (err) {
+          console.error('Falha ao enviar e-mail de confirmação do novo e-mail:', err)
+        }
+      })()
+    }
+
+    const token = jwtSign({
+      sub: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      perfil: usuario.perfil,
+      escopo: usuario.escopo,
+      estabelecimento_id: usuario.estabelecimento_id,
+      empresa_id: usuario.empresa_id,
+    })
+
+    return { token, email_alterado: emailAlterado }
+  }
+
+  // ── VERIFICAR CÓDIGO (cadastro ou recuperação) ─────────────────────────────
+  async verificarCodigo(data: VerificarCodigoDTO): Promise<void> {
+    if (data.tipo === 'registro') {
+      const registro = await this.repository.findTokenConfirmacaoPorCodigo(
+        data.email,
+        data.codigo
+      )
+
+      if (!registro) {
+        throw new AppError('Código inválido ou expirado.', 400)
+      }
+
+      await this.repository.confirmarEmailUsuario(registro.usuario_id, registro.id)
+      return
+    }
+
+    // tipo === 'recuperacao': só valida a existência do código aqui.
+    // Ele é consumido de fato no passo de redefinirSenha, junto com a nova senha.
+    const registro = await this.repository.findTokenRecuperacaoPorCodigo(
+      data.email,
+      data.codigo
+    )
+
+    if (!registro) {
+      throw new AppError('Código inválido ou expirado.', 400)
+    }
+  }
+
+  // ── REENVIAR CÓDIGO (cadastro ou recuperação) ──────────────────────────────
+  async reenviarCodigo(data: ReenviarCodigoDTO): Promise<void> {
+    const usuario = await this.repository.findByEmail(data.email)
+
+    // Resposta sempre "silenciosa" — não revela se o e-mail existe ou não.
+    if (!usuario) return
+
+    if (data.tipo === 'registro') {
+      if (usuario.email_verificado) return
+
+      // Limite contra reenvios seguidos: o último código define quando dá para pedir outro
+      const ultimo = await this.repository.ultimoTokenConfirmacao(usuario.id)
+      if (ultimo) {
+        const espera = Math.ceil(
+          env.REENVIO_INTERVALO_SEGUNDOS - (Date.now() - ultimo.criado_em.getTime()) / 1000
+        )
+        if (espera > 0) {
+          throw new AppError(`Aguarde ${espera} segundo(s) para pedir um novo código.`, 429)
+        }
+      }
+
+      const codigo = await this.repository.criarTokenConfirmacaoEmail(
+        usuario.id,
+        EXPIRACAO_CODIGO_MINUTOS
+      )
+
+      await transporter.sendMail({
+        from: env.MAIL_FROM,
+        to: usuario.email,
+        subject: 'Seu código de verificação do Menupoint',
+        html: templateConfirmacaoEmail(usuario.nome, codigo, EXPIRACAO_CODIGO_MINUTOS),
+      })
+      return
+    }
+
+    if (!usuario.ativo) return
+
+    const codigo = await this.repository.criarTokenRecuperacao(
+      usuario.id,
+      EXPIRACAO_CODIGO_MINUTOS
+    )
+
+    await transporter.sendMail({
+      from: env.MAIL_FROM,
+      to: usuario.email,
+      subject: '🔐 Recuperação de senha — Menupoint',
+      html: templateRecuperacaoSenha(usuario.nome, codigo, EXPIRACAO_CODIGO_MINUTOS),
+    })
+  }
+
+  // ── ESQUECI MINHA SENHA ──────────────────────────────────────────────────
+  async esqueciSenha(data: EsqueciSenhaDTO): Promise<void> {
+
+    const usuario = await this.repository.findByEmail(data.email)
+
+    if (!usuario || !usuario.ativo) {
+      return
+    }
+
+    const codigo = await this.repository.criarTokenRecuperacao(
+      usuario.id,
+      EXPIRACAO_CODIGO_MINUTOS
+    )
+
+    await transporter.sendMail({
+      from: env.MAIL_FROM,
+      to: usuario.email,
+      subject: '🔐 Recuperação de senha — Menupoint',
+      html: templateRecuperacaoSenha(
+        usuario.nome,
+        codigo,
+        EXPIRACAO_CODIGO_MINUTOS
+      ),
+    })
+  }
+
+  // ── REDEFINIR SENHA ──────────────────────────────────────────────────────
+  async redefinirSenha(data: RedefinirSenhaDTO): Promise<void> {
+
+    const tokenRegistro = await this.repository.findTokenRecuperacaoPorCodigo(
+      data.email,
+      data.codigo
+    )
+
+    if (!tokenRegistro) {
+      throw new AppError(
+        'Código inválido ou expirado. Solicite um novo código de recuperação.',
+        400
+      )
+    }
+
+    const usuario = tokenRegistro.usuario as any
+
+    if (!usuario.ativo) {
+      throw new AppError('Usuário inativo', 401)
+    }
+
+    const nova_senha_hash = await bcrypt.hash(data.nova_senha, 10)
+
+    await this.repository.redefinirSenha(
+      tokenRegistro.id,
+      usuario.id,
+      nova_senha_hash
+    )
+
+    transporter.sendMail({
+      from: env.MAIL_FROM,
+      to: usuario.email,
+      subject: '✅ Senha redefinida com sucesso — Menupoint',
+      html: templateSenhaRedefinida(usuario.nome),
+    }).catch(console.error)
+  }
+
+  // ── REFRESH TOKEN ────────────────────────────────────────────────────────
+  async refreshToken(
+    data: { refresh_token: string },
+    jwtSign: (payload: JWTPayload) => string
+  ) {
+    try {
+      const decoded = jwt.verify(
+        data.refresh_token,
+        env.JWT_REFRESH_SECRET
+      ) as JWTPayload
+
+      // Refresh token de cliente tem rota própria (/auth/cliente/refresh)
+      if (decoded.perfil === 'CLIENTE') {
+        throw new AppError('Refresh token inválido, expirado ou já utilizado', 401)
+      }
+
+      const tokenNoBanco = await prisma.refreshToken.findFirst({
+        where: {
+          token: data.refresh_token,
+          usado: false,
+          expira_em: { gt: new Date() },
+        },
+      })
+
+      if (!tokenNoBanco) {
+        throw new AppError('Refresh token inválido, expirado ou já utilizado', 401)
+      }
+
+      // Marca o token atual como usado (rotação de tokens)
+      await prisma.refreshToken.update({
+        where: { id: tokenNoBanco.id },
+        data: { usado: true },
+      })
+
+      const payload: JWTPayload = {
+        sub: decoded.sub,
+        nome: decoded.nome,
+        email: decoded.email,
+        perfil: decoded.perfil,
+        escopo: decoded.escopo,
+        estabelecimento_id: decoded.estabelecimento_id,
+        empresa_id: decoded.empresa_id,
+      }
+
+      const token = jwtSign(payload)
+      const refresh_token = await this.gerarEPersistirRefreshToken(
+        payload,
+        decoded.sub
+      )
+
+      return { token, refresh_token }
+
+    } catch (error) {
+      if (error instanceof AppError) throw error
+      throw new AppError('Refresh token inválido ou expirado', 401)
+    }
+  }
+
+  // ── LOGOUT ───────────────────────────────────────────────────────────────
+  async logout(refresh_token: string): Promise<void> {
+    await prisma.refreshToken.updateMany({
+      where: { token: refresh_token },
+      data: { usado: true },
+    })
+  }
+}

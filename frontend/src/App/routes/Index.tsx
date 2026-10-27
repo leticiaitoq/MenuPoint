@@ -7,6 +7,7 @@ import AssinaturaSucesso from "../pages/assinatura/AssinaturaSucesso";
 import PagamentoPage from "../pages/assinatura/PagamentoPage";
 import NovaSenha from "../pages/auth/NovaSenha";
 import WelcomePage from "../pages/ClienteLocal/WelcomePage/WelcomePage";
+import MesaQr from "../pages/ClienteLocal/MesaQr/MesaQr";
 import HomeRestaurante from "../pages/Restaurante/Home/HomeRestaurante";
 import DWelcomePage from "../pages/cliente/Welcome/DWelcomePage";
 import MenuCliente from "../pages/cliente/Menu/MenuCliente";
@@ -46,6 +47,7 @@ import PagarMesa from "../pages/Restaurante/Gestão/Caixa/PagarMesa";
 import PagarParcial from "../pages/Restaurante/Gestão/Caixa/PagarParcial";
 import Despesas from "../pages/Restaurante/Gestão/Relatorios/Despesas/Despesa";
 import CadDespesa from "../pages/Restaurante/Gestão/Relatorios/Despesas/CadDespesa";
+import { EmBreve } from "../pages/Restaurante/Embreve/EmBreve";
 /**
  * Entrada do sistema: o cadastro fica em /cadastro (aberto a partir do site, com ?plano=).
  * "/" mantém os links antigos (/?plano=pro) funcionando e leva ao mesmo lugar;
@@ -66,6 +68,8 @@ const AppRoutes: React.FC = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/welcomepage" element={<WelcomePage />} />
+        {/* Link/QR Code da mesa: resolve o token e redireciona para a /welcomepage */}
+        <Route path="/mesa/:token" element={<MesaQr />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/r/:slug" element={<RestauranteLink />} />
         <Route path="/acesso-pelo-link" element={<AcessoPeloLink />} />
@@ -123,6 +127,7 @@ const AppRoutes: React.FC = () => {
           <Route path={ROTAS_CAIXA.pagarParcialPadrao} element={<PagarParcial />} />
           <Route path="/restaurante/despesas" element={<Despesas />} />
           <Route path="/restaurante/despesas/cadastrodespe" element={<CadDespesa />} />
+          <Route path="/restaurante/embreve" element={<EmBreve />} />
         </Route>
       </Routes>
     </BrowserRouter>

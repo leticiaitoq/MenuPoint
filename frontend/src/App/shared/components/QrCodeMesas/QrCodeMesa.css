@@ -96,3 +96,7 @@
 .qrmesa__btn--borda:hover { background: #f7f7f7; }
 .qrmesa__btn--prim { background: #e8a838; color: #fff; font-weight: 600; }
 .qrmesa__btn--prim:hover { background: #d4952e; }
+
+.qrmesa__url a { color: inherit; word-break: break-all; }
+.qrmesa__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.qrmesa__acoes { flex-wrap: wrap; }

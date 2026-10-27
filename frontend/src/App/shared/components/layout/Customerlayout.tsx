@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from './Navbar/Navbar';
 import { useNavigate } from 'react-router-dom';
 import Footer from './Footer/Footer';
 import CustomerSidebar, { CustomerSidebarItem } from './Sidebar/CustomerSidebar';
 import { useClienteAuth } from '../../contexts/ClienteAuthContext';
 import { useConvidado } from '../../contexts/Convidadocontext';
+import ContaConvidadoModal from '../ContaConvidadoModal/ContaConvidadoModal';
 import './Customerlayout.css';
 
 // ── Tipos ──────────────────────────────────────────────
@@ -46,14 +47,20 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
   onOrdersClick,
 }) => {
   // ── cliente logado (nome na navbar)
-  const { cliente } = useClienteAuth();
+  const { cliente, isAuthenticated } = useClienteAuth();
 
   // Nome digitado na WelcomePage (só existe no fluxo do cliente local)
-  const { nome: nomeConvidado } = useConvidado();
+  // e a mesa em que ele está (vem do QR Code; continua valendo depois de entrar na conta)
+  const { nome: nomeConvidado, mesa: mesaConvidado } = useConvidado();
 
   // ── navegação
   const navigate = useNavigate();
-  const handleClick = () => navigate(mode === 'guest' ? '/perfillocal' : '/perfil');
+  // Convidado não tem perfil: o ícone oferece entrar/criar conta. Logado vai para o perfil.
+  const [mostrarConta, setMostrarConta] = useState(false);
+  const handleClick = () => {
+    if (isAuthenticated) navigate('/perfil');
+    else setMostrarConta(true);
+  };
 
   // Sempre mostra o perfil na navbar, independente do modo
   const rightIcon = (
@@ -75,9 +82,10 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
   // Guest: mostra o nome digitado na WelcomePage (cai em 'MenuPoint' se ainda não houver)
   const subtitle =
     mode === 'guest'
-      ? (nomeConvidado || 'MenuPoint')
+      ? (nomeConvidado || primeiroNome || 'MenuPoint')
       : mode === 'logged' && primeiroNome
-        ? `Olá, ${primeiroNome}`
+        // Cliente logado que entrou pela mesa continua identificado com a mesa
+        ? `Olá, ${primeiroNome}${mesaConvidado ? ` · Mesa ${mesaConvidado}` : ''}`
         : '(Cliente)';
 
   const showSidebar = mode !== 'welcome';
@@ -105,6 +113,12 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
       </div>
 
       <Footer />
+
+      <ContaConvidadoModal
+        aberto={mostrarConta}
+        mesa={mesaConvidado || undefined}
+        onFechar={() => setMostrarConta(false)}
+      />
     </div>
   );
 };
