@@ -81,7 +81,7 @@ const LoginCliente: React.FC = () => {
         <AuthCard />
 
         <div className="login-cliente__form-side">
-          <h1 className="login-cliente__title">Entrar</h1>
+          <h1 className="login-cliente__title">Entrar como Cliente</h1>
 
           <form className="login-cliente__form" onSubmit={handleSubmitCliente}>
 

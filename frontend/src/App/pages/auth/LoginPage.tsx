@@ -93,7 +93,7 @@ const LoginPage: React.FC = () => {
         <AuthCard />
 
         <div className="login-page__form-side">
-          <h1 className="login-page__title">Entrar</h1>
+          <h1 className="login-page__title">Entrar como Restaurante</h1>
 
           <form className="login-page__form" onSubmit={handleSubmit}>
 
