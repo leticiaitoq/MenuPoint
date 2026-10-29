@@ -33,9 +33,9 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     icon: <HiViewList />,
-    label: 'Produtos',
-    to: '/restaurante/produtos',
-    subitems: [{ to: '/restaurante/categories', label: 'Categorias' }],
+    label: 'Categorias',
+    to: '/restaurante/categories',
+    subitems: [{ to: '/restaurante/produtos', label: 'Produtos' }],
   },
   { to: '/restaurante/fila', icon: <HiUserGroup />, label: 'Fila' },
   { to: '/restaurante/relatorios', icon: <HiChartBar />, label: 'Relatórios' },
