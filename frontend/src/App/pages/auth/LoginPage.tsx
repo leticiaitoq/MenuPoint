@@ -196,7 +196,7 @@ const LoginPage: React.FC = () => {
             Não possui uma conta?{' '}
             <button
               className="login-page__redirect-link"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/cadastro')}
             >
               Criar conta
             </button>

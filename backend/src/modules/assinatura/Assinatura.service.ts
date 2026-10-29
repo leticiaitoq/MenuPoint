@@ -119,9 +119,21 @@ export class AssinaturaService {
       throw new AppError('Nenhum pagamento pendente para esta conta', 404)
     }
 
-    // Já gerou o link antes (usuário voltou do checkout sem pagar): reaproveita
-    if (pendente.gateway === 'mercadopago' && pendente.checkout_url) {
-      return { init_point: pendente.checkout_url }
+    // E-mail que o Mercado Pago vai exigir no checkout (o pagador precisa ser exatamente este)
+    const emailPagador = (env.MP_PAYER_EMAIL_TESTE?.trim() || email).toLowerCase()
+
+    // Já gerou o link antes (usuário voltou do checkout sem pagar): reaproveita, mas só se o
+    // e-mail do pagador desse link ainda for o esperado. Um link gerado com outro e-mail
+    // (ex.: variável de teste antiga) daria "Seu e-mail não corresponde ao da assinatura".
+    if (pendente.gateway === 'mercadopago' && pendente.checkout_url && pendente.gateway_id) {
+      try {
+        const antiga: any = await preApprovalClient.get({ id: pendente.gateway_id } as any)
+        if (String(antiga?.payer_email ?? '').toLowerCase() === emailPagador) {
+          return { init_point: pendente.checkout_url }
+        }
+      } catch {
+        // não conseguiu conferir o link antigo: gera um novo abaixo
+      }
     }
 
     try {
@@ -130,7 +142,7 @@ export class AssinaturaService {
           reason:             `MenuPoint - Plano ${pendente.plano}`,
           external_reference: empresa_id,
           // Modo teste: MP_PAYER_EMAIL_TESTE substitui o e-mail do cadastro (pagador de teste do MP)
-          payer_email:        env.MP_PAYER_EMAIL_TESTE?.trim() || email,
+          payer_email:        emailPagador,
           back_url:           `${FRONTEND_PRINCIPAL}/assinatura/sucesso`,
           notification_url:   `${env.API_URL}/api/v1/assinatura/webhook`,
           status:             'pending',

@@ -231,7 +231,7 @@ const VerifyCodePage: React.FC = () => {
             <button
               type="button"
               className="verify-page__back-btn"
-              onClick={() => navigate(mode === 'register' ? '/' : '/recover')}
+              onClick={() => navigate(mode === 'register' ? '/cadastro' : '/recover')}
             >
               ← Voltar
             </button>
