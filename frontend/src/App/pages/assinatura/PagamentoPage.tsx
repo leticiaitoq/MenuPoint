@@ -91,6 +91,13 @@ const PagamentoPage: React.FC = () => {
               </div>
             )}
 
+            {(state.email || usuario?.email) && (
+              <p className="pagamento__seguro" style={{ marginBottom: 12 }}>
+                ⚠️ No Mercado Pago, entre ou pague com a conta do e-mail{' '}
+                <strong>{state.email || usuario?.email}</strong>. Com outro e-mail, o pagamento é recusado.
+              </p>
+            )}
+
             {erro && <p className="pagamento__erro">{erro}</p>}
 
             <button
@@ -103,7 +110,7 @@ const PagamentoPage: React.FC = () => {
             </button>
 
             <p className="pagamento__seguro">
-              🔒 Você será levado ao Mercado Pago para concluir o pagamento com segurança.
+              Você será levado ao Mercado Pago para concluir o pagamento com segurança.
             </p>
           </div>
         </div>

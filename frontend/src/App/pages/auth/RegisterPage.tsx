@@ -40,8 +40,14 @@ const ESTADOS_BR = [
 
 // Plano escolhido no site: guardado aqui para sobreviver a recarregar a página
 const CHAVE_PLANO = '@menupoint:plano';
-// Endereço do site institucional (REACT_APP_SITE_URL). Sem ele, o cadastro abre direto.
-const SITE_URL = '/site/index.html';
+
+// Planos oferecidos na etapa final do cadastro (os valores reais cobrados vêm do backend)
+const PLANOS_CADASTRO = [
+  { slug: 'starter', nome: 'Starter', valor: 97 },
+  { slug: 'pro', nome: 'Pro', valor: 197 },
+];
+const slugPlanoValido = (v: string | null) =>
+  PLANOS_CADASTRO.some((p) => p.slug === v) ? v : null;
 
 const somenteDigitos = (v: string) => v.replace(/\D/g, '');
 
@@ -190,18 +196,19 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { entrar } = useAuth();
   const [searchParams] = useSearchParams();
-  // Plano escolhido no site (ex: /cadastro?plano=pro). Fica guardado durante todo o cadastro.
-  const [planoDesejado] = useState<string | null>(() => {
-    const doSite = searchParams.get('plano');
+  // Plano: pode vir do site (/cadastro?plano=pro) e fica pré-selecionado; se não vier,
+  // a pessoa escolhe na etapa final do cadastro, antes de ir para o pagamento.
+  const [planoDesejado, setPlanoDesejado] = useState<string | null>(() => {
+    const doSite = slugPlanoValido(searchParams.get('plano'));
     if (doSite) sessionStorage.setItem(CHAVE_PLANO, doSite);
-    return doSite ?? sessionStorage.getItem(CHAVE_PLANO);
+    return doSite ?? slugPlanoValido(sessionStorage.getItem(CHAVE_PLANO));
   });
   const [redirecionandoPagamento, setRedirecionandoPagamento] = useState(false);
 
-  // Cadastro sem plano escolhido: a primeira tela é o site, onde o plano é escolhido
-  useEffect(() => {
-    if (!planoDesejado && SITE_URL) window.location.replace(SITE_URL);
-  }, [planoDesejado]);
+  const escolherPlano = (slug: string) => {
+    setPlanoDesejado(slug);
+    sessionStorage.setItem(CHAVE_PLANO, slug);
+  };
 
   const [etapa, setEtapa] = useState<1 | 2>(1);
 
@@ -430,6 +437,11 @@ const RegisterPage: React.FC = () => {
       return;
     }
 
+    if (!planoDesejado) {
+      setErro('Escolha um plano para continuar.');
+      return;
+    }
+
     if (!aceitaTermos) {
       setErro('Você precisa aceitar os Termos de Uso para continuar.');
       return;
@@ -492,9 +504,6 @@ const RegisterPage: React.FC = () => {
     setShowSucesso(false);
     navigate('/verify-code', { state: { email: email.trim(), mode: 'register' } });
   };
-
-  // Redirecionando para o site para escolher o plano
-  if (!planoDesejado && SITE_URL) return null;
 
   /* ────────────────────────────────────────────────────────────
      Render
@@ -756,6 +765,45 @@ const RegisterPage: React.FC = () => {
                     ))}
                   </ul>
                 </div>
+              </div>
+
+              {/* Escolha do plano (a cobrança só acontece na próxima tela) */}
+              <div style={{ gridColumn: '1 / -1' }}>
+                <p style={{ margin: '0 0 8px', fontWeight: 700, color: 'var(--rp-ink)' }}>
+                  Escolha seu plano
+                </p>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  {PLANOS_CADASTRO.map((pl) => {
+                    const ativo = planoDesejado === pl.slug;
+                    return (
+                      <button
+                        key={pl.slug}
+                        type="button"
+                        onClick={() => escolherPlano(pl.slug)}
+                        aria-pressed={ativo}
+                        style={{
+                          flex: '1 1 180px',
+                          textAlign: 'left',
+                          padding: '14px 16px',
+                          borderRadius: 10,
+                          cursor: 'pointer',
+                          background: ativo ? '#fdf2f2' : '#fff',
+                          border: `2px solid ${ativo ? 'var(--rp-red)' : 'var(--rp-line)'}`,
+                          color: 'var(--rp-ink)',
+                        }}
+                      >
+                        <strong style={{ display: 'block', fontSize: 16 }}>{pl.nome}</strong>
+                        <span style={{ fontSize: 20, fontWeight: 700 }}>
+                          {pl.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                        <small style={{ color: 'var(--rp-muted)' }}> /mês</small>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--rp-muted)' }}>
+                  O pagamento é feito na próxima tela, pelo Mercado Pago.
+                </p>
               </div>
 
               {/* Termos de uso */}
