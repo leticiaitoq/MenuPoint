@@ -4,7 +4,7 @@ import { AppError } from '@shared/errors/AppError'
 import { CriarAssinaturaDTO } from './Assinatura.schema'
 import prisma from '@config/prisma'
 import { Plano, StatusAssinatura } from '@prisma/client'
-import { pagamentoRecusado } from './Pagamento.temporario'
+import { pagamentoRecusado, planoDoSlug, GATEWAY_TEMPORARIO } from './Pagamento.temporario'
 import { PLANOS } from './Planos.config'
 
 // FRONTEND_URL pode ter várias origens separadas por vírgula (CORS): o retorno do MP usa a primeira
@@ -85,6 +85,44 @@ export class AssinaturaService {
   }
 
   /**
+   * ESCOLHA DO PLANO (tela /planos): define ou troca o plano da cobrança pendente antes do
+   * pagamento. Trocar o plano descarta o link de checkout antigo (o valor mudou).
+   */
+  async escolherPlano(empresa_id: string, slug: string) {
+    const plano = planoDoSlug(slug)
+    if (!plano) throw new AppError('Plano inválido', 400)
+
+    const ativa = await prisma.assinatura.findFirst({
+      where: { empresa_id, status: 'ATIVA' },
+      select: { id: true },
+    })
+    if (ativa) throw new AppError('Sua empresa já possui uma assinatura ativa', 409)
+
+    const valor = PLANOS[plano as 'STARTER' | 'PRO'].valor
+
+    const pendente = await prisma.assinatura.findFirst({
+      where: { empresa_id, status: 'PENDENTE' },
+      orderBy: { criado_em: 'desc' },
+    })
+
+    if (pendente) {
+      if (pendente.plano !== plano) {
+        await prisma.assinatura.update({
+          where: { id: pendente.id },
+          data: { plano, valor, gateway: GATEWAY_TEMPORARIO, gateway_id: null, checkout_url: null },
+        })
+      }
+    } else {
+      // Pagamento recusado/cancelado antes: abre uma nova tentativa com o plano escolhido
+      await prisma.assinatura.create({
+        data: { empresa_id, plano, status: 'PENDENTE', gateway: GATEWAY_TEMPORARIO, valor, periodo: 'MENSAL' },
+      })
+    }
+
+    return { plano, valor }
+  }
+
+  /**
    * CHECKOUT DO CADASTRO: cria a assinatura no Mercado Pago para a cobrança
    * PENDENTE criada no cadastro e devolve o link de pagamento (init_point).
    * Sem plano pré-criado no MP: valor e recorrência vêm daqui (VALOR do plano).
@@ -123,8 +161,7 @@ export class AssinaturaService {
     const emailPagador = (env.MP_PAYER_EMAIL_TESTE?.trim() || email).toLowerCase()
 
     // Já gerou o link antes (usuário voltou do checkout sem pagar): reaproveita, mas só se o
-    // e-mail do pagador desse link ainda for o esperado. Um link gerado com outro e-mail
-    // (ex.: variável de teste antiga) daria "Seu e-mail não corresponde ao da assinatura".
+    // e-mail do pagador desse link ainda for o esperado.
     if (pendente.gateway === 'mercadopago' && pendente.checkout_url && pendente.gateway_id) {
       try {
         const antiga: any = await preApprovalClient.get({ id: pendente.gateway_id } as any)

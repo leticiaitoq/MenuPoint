@@ -91,11 +91,17 @@ const PagamentoPage: React.FC = () => {
               </div>
             )}
 
-            {(state.email || usuario?.email) && (
+            {process.env.REACT_APP_MP_MODO_TESTE === 'true' ? (
               <p className="pagamento__seguro" style={{ marginBottom: 12 }}>
-                ⚠️ No Mercado Pago, entre ou pague com a conta do e-mail{' '}
-                <strong>{state.email || usuario?.email}</strong>. Com outro e-mail, o pagamento é recusado.
+                🧪 Modo de teste: no Mercado Pago, entre com o usuário comprador de teste.
               </p>
+            ) : (
+              (state.email || usuario?.email) && (
+                <p className="pagamento__seguro" style={{ marginBottom: 12 }}>
+                  No Mercado Pago, entre ou pague com a conta do e-mail{' '}
+                  <strong>{state.email || usuario?.email}</strong>.
+                </p>
+              )
             )}
 
             {erro && <p className="pagamento__erro">{erro}</p>}
@@ -110,7 +116,16 @@ const PagamentoPage: React.FC = () => {
             </button>
 
             <p className="pagamento__seguro">
-              Você será levado ao Mercado Pago para concluir o pagamento com segurança.
+              🔒 Você será levado ao Mercado Pago para concluir o pagamento com segurança.
+            </p>
+            <p className="pagamento__seguro">
+              <button
+                type="button"
+                onClick={() => navigate('/planos')}
+                style={{ background: 'none', border: 0, color: '#a91e22', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Alterar plano
+              </button>
             </p>
           </div>
         </div>
