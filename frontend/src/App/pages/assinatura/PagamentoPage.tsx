@@ -26,26 +26,65 @@ const PagamentoPage: React.FC = () => {
   const [plano, setPlano] = useState<{ plano: string; valor: number } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
+  const [verificando, setVerificando] = useState(false);
+  const [aviso, setAviso] = useState<{ tipo: 'ok' | 'info' | 'erro'; texto: string } | null>(null);
 
-  // Mostra o plano escolhido. Se o pagamento já foi aprovado (ex.: pagou e fechou a aba),
-  // libera o sistema e segue para a confirmação do e-mail, se ainda faltar.
+  // Pagamento aprovado: libera o sistema e segue para a confirmação do e-mail, se ainda faltar.
+  const liberarAcesso = () => {
+    if (token && usuario) entrar({ token, usuario: { ...usuario, pagamento_pendente: false } });
+    let pos: { email?: string; verificarEmail?: boolean } = {};
+    try { pos = JSON.parse(localStorage.getItem('@menupoint:pos_pagamento') || '{}'); } catch { /* ignora */ }
+    localStorage.removeItem('@menupoint:pos_pagamento');
+    if (pos.verificarEmail && pos.email) AuthService.resendCode(pos.email, 'registro').catch(() => undefined);
+    if (pos.verificarEmail) navigate('/verify-code', { state: { email: pos.email, mode: 'register' }, replace: true });
+    else navigate(ROTA_APOS_LOGIN, { replace: true });
+  };
+
+  // Consulta o Mercado Pago agora e conta ao usuário o que aconteceu com o pagamento dele.
+  // Resolve o caso "paguei, mas fechei a aba antes de voltar": o banco é atualizado aqui.
+  const verificarPagamento = async (manual: boolean) => {
+    if (manual) { setVerificando(true); setAviso(null); }
+    try {
+      const { status, status_mp } = await AssinaturaService.sincronizar();
+      if (status === 'ATIVA') {
+        setAviso({ tipo: 'ok', texto: 'Pagamento confirmado! Liberando seu acesso...' });
+        setTimeout(liberarAcesso, 800);
+        return true;
+      }
+      if (status === 'CANCELADA' || status === 'FALHOU') {
+        setAviso({ tipo: 'erro', texto: 'O pagamento foi cancelado ou recusado pelo Mercado Pago. Você pode tentar novamente.' });
+      } else if (status_mp === 'pending') {
+        setAviso({
+          tipo: 'info',
+          texto: manual
+            ? 'O Mercado Pago ainda não confirmou o pagamento. Se você acabou de pagar, aguarde alguns segundos e verifique de novo.'
+            : 'Você iniciou um pagamento que ainda não foi concluído. Se já pagou, clique em "Já paguei".',
+        });
+      } else if (manual) {
+        setAviso({ tipo: 'info', texto: 'Ainda não encontramos um pagamento. Clique em "Pagar com Mercado Pago" para começar.' });
+      }
+    } catch {
+      if (manual) setAviso({ tipo: 'erro', texto: 'Não foi possível consultar o pagamento agora. Tente novamente em instantes.' });
+    } finally {
+      if (manual) setVerificando(false);
+    }
+    return false;
+  };
+
+  // Ao abrir a tela: confere o pagamento no Mercado Pago (sem esperar o webhook) e mostra o plano.
   useEffect(() => {
-    AssinaturaService.minha()
-      .then((a) => {
-        // Pendente, recusado ou cancelado: mostra o botão para pagar (de novo)
-        if (a.status !== 'ATIVA') {
-          setPlano({ plano: a.plano, valor: Number(a.valor) });
-          return;
-        }
-        if (token && usuario) entrar({ token, usuario: { ...usuario, pagamento_pendente: false } });
-        let pos: { email?: string; verificarEmail?: boolean } = {};
-        try { pos = JSON.parse(localStorage.getItem('@menupoint:pos_pagamento') || '{}'); } catch { /* ignora */ }
-        localStorage.removeItem('@menupoint:pos_pagamento');
-        if (pos.verificarEmail && pos.email) AuthService.resendCode(pos.email, 'registro').catch(() => undefined);
-        if (pos.verificarEmail) navigate('/verify-code', { state: { email: pos.email, mode: 'register' }, replace: true });
-        else navigate(ROTA_APOS_LOGIN, { replace: true });
-      })
-      .catch(() => navigate(ROTA_APOS_LOGIN, { replace: true }));
+    let cancelado = false;
+    (async () => {
+      const liberado = await verificarPagamento(false);
+      if (liberado || cancelado) return;
+      try {
+        const a = await AssinaturaService.minha();
+        if (!cancelado) setPlano({ plano: a.plano, valor: Number(a.valor) });
+      } catch {
+        if (!cancelado) navigate(ROTA_APOS_LOGIN, { replace: true });
+      }
+    })();
+    return () => { cancelado = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -104,6 +143,15 @@ const PagamentoPage: React.FC = () => {
               )
             )}
 
+            {aviso && (
+              <p
+                className={aviso.tipo === 'erro' ? 'pagamento__erro' : 'pagamento__seguro'}
+                style={aviso.tipo === 'ok' ? { color: '#1e8e4e', fontWeight: 600 } : { marginBottom: 12 }}
+              >
+                {aviso.texto}
+              </p>
+            )}
+
             {erro && <p className="pagamento__erro">{erro}</p>}
 
             <button
@@ -113,6 +161,15 @@ const PagamentoPage: React.FC = () => {
               disabled={carregando || !plano}
             >
               {carregando ? 'Abrindo pagamento...' : 'Pagar com Mercado Pago'}
+            </button>
+
+            <button
+              type="button"
+              className="pagamento__botao pagamento__botao--secundario"
+              onClick={() => verificarPagamento(true)}
+              disabled={verificando || carregando}
+            >
+              {verificando ? 'Verificando...' : 'Já paguei, verificar agora'}
             </button>
 
             <p className="pagamento__seguro">
