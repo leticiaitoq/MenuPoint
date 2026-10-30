@@ -528,6 +528,7 @@ const Pedido: React.FC = () => {
                 className="pedido__input"
                 type="text"
                 placeholder="Buscar produto"
+                maxLength={100}
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 autoFocus

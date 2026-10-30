@@ -857,3 +857,33 @@ button.register-page__step-dot:focus-visible {
     font-size: 15px;
   }
 }
+
+/* Ícone clicável (abre o calendário da data de nascimento) */
+.register-page__icon--btn {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.register-page__icon--btn:hover { color: var(--rp-red); }
+
+.register-page__icon--btn:focus-visible {
+  outline: 2px solid var(--rp-red);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Calendário nativo: invisível, só serve para abrir o seletor ancorado no ícone */
+.register-page__date-native {
+  position: absolute;
+  left: 13px;
+  top: 0;
+  width: 20px;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  border: 0;
+  padding: 0;
+}

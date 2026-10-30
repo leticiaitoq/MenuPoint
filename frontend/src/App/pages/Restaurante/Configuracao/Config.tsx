@@ -851,6 +851,7 @@ const PassoSenha: React.FC<{
           <input
             id="m-senha"
             ref={campoRef}
+            maxLength={60}
             className="config__input"
             type={mostrarSenha ? 'text' : 'password'}
             autoComplete="current-password"
@@ -1034,6 +1035,7 @@ const PassoEditar: React.FC<{
       >
         <input
           id="m-email"
+          maxLength={150}
           className="config__input"
           type="email"
           value={campos.email}
@@ -1163,6 +1165,7 @@ const ModalSenhaPix: React.FC<{
           <input
             id="pix-senha"
             ref={campoRef}
+            maxLength={60}
             className="config__input"
             type="password"
             autoComplete="current-password"
@@ -1748,6 +1751,7 @@ const Config: React.FC = () => {
                   >
                     <input
                       id="email-contato"
+                      maxLength={150}
                       className="config__input"
                       type="email"
                       placeholder="contato@seurestaurante.com.br"

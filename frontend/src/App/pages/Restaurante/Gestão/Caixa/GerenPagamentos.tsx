@@ -824,6 +824,7 @@ const GerenPagamentos: React.FC = () => {
                     className={`caixa__input caixa__textarea${erros.observacao ? ' caixa__input--erro' : ''}`}
                     rows={3}
                     placeholder="Ex.: perto da janela, acessível para cadeirantes"
+                    maxLength={OBSERVACAO_MAX}
                     value={observacao}
                     onChange={(e) => setObservacao(e.target.value)}
                   />

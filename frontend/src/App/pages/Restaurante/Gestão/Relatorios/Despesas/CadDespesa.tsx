@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   HiOutlineDocumentText,
   HiOutlineTag,
-  HiOutlineOfficeBuilding,
   HiOutlineCalendar,
   HiOutlineCreditCard,
   HiOutlineUser,
@@ -22,6 +21,7 @@ import {
 } from 'react-icons/hi';
 import { BsPercent, BsMegaphone } from 'react-icons/bs';
 import RestaurantLayout from '../../../../../shared/components/layout/Restaurantelayout';
+import ContadorCaracteres from '../../../../../shared/components/ContadorCaracteres/ContadorCaracteres';
 import './CadDespesa.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────
@@ -34,7 +34,6 @@ interface CategoriaDespesa {
 interface FormDespesa {
   descricao: string;
   categoria: string;
-  estabelecimento: string;
   dataISO: string;
   pagamento: string;
   fornecedor: string;
@@ -46,6 +45,7 @@ interface FormDespesa {
 // ── Constantes ────────────────────────────────────────────────────────
 const FORMAS_PAGAMENTO = ['Pix', 'Boleto', 'Cartão', 'Dinheiro'];
 const LIMITE_OBSERVACOES = 500;
+const LIMITE_NOME_CATEGORIA = 50;
 
 const CATEGORIAS_PADRAO: CategoriaDespesa[] = [
   { nome: 'Custos dos Produtos', icone: <HiOutlineShoppingCart />, cor: '#16a34a' },
@@ -59,7 +59,6 @@ const CATEGORIA_PADRAO_NOVA: CategoriaDespesa['icone'] = <HiOutlineTag />;
 const FORMULARIO_VAZIO: FormDespesa = {
   descricao: '',
   categoria: '',
-  estabelecimento: '',
   dataISO: '',
   pagamento: '',
   fornecedor: '',
@@ -122,7 +121,6 @@ const CadDespesa: React.FC = () => {
   const irParaRevisao = () => {
     if (!formulario.descricao.trim())      { setErro('Informe a descrição da despesa.'); return; }
     if (!formulario.categoria)             { setErro('Selecione uma categoria.'); return; }
-    if (!formulario.estabelecimento)       { setErro('Selecione o estabelecimento.'); return; }
     if (!formulario.dataISO)               { setErro('Informe a data da despesa.'); return; }
     if (!formulario.pagamento)             { setErro('Selecione a forma de pagamento.'); return; }
     if (!formulario.valorNumerico)         { setErro('Informe o valor da despesa.'); return; }
@@ -338,11 +336,13 @@ const CadDespesa: React.FC = () => {
                     <input
                       type="text"
                       placeholder="Nome da categoria"
+                      maxLength={LIMITE_NOME_CATEGORIA}
                       value={novaCategoriaNome}
                       onChange={(e) => setNovaCategoriaNome(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleNovaCategoria()}
                       autoFocus
                     />
+                    <ContadorCaracteres valor={novaCategoriaNome} max={LIMITE_NOME_CATEGORIA} />
                     <button type="button" onClick={handleNovaCategoria} aria-label="Confirmar nova categoria">
                       <HiCheck />
                     </button>
@@ -415,13 +415,6 @@ const CadDespesa: React.FC = () => {
                   <span>
                     <span className="cadd__revisao-label">Valor</span>
                     <span className="cadd__revisao-valor">{formatarPreco(formulario.valorNumerico)}</span>
-                  </span>
-                </div>
-                <div className="cadd__revisao-item">
-                  <span className="cadd__revisao-icone"><HiOutlineOfficeBuilding /></span>
-                  <span>
-                    <span className="cadd__revisao-label">Estabelecimento</span>
-                    <span className="cadd__revisao-valor">{formulario.estabelecimento}</span>
                   </span>
                 </div>
                 <div className="cadd__revisao-item">

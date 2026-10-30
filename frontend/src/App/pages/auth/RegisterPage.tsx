@@ -118,6 +118,18 @@ const dataParaISO = (valor: string) => {
   return `${ano}-${mes}-${dia}`;
 };
 
+// "AAAA-MM-DD" (calendário nativo) → "DD/MM/AAAA" (campo com máscara)
+const isoParaData = (iso: string) => {
+  const [ano, mes, dia] = iso.split('-');
+  return ano && mes && dia ? `${dia}/${mes}/${ano}` : '';
+};
+
+// Hoje no formato do calendário nativo (usa a data local, não UTC)
+const hojeISO = () => {
+  const h = new Date();
+  return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
+};
+
 type Erros = Record<string, string>;
 
 /**
@@ -143,15 +155,25 @@ interface FieldProps {
   error?: string;
   layout: React.CSSProperties;
   children: React.ReactNode;
+  /** Se informado, o ícone vira um botão clicável (ex.: abrir o calendário) */
+  onIconClick?: () => void;
+  iconLabel?: string;
 }
 
-const Field: React.FC<FieldProps> = ({ name, label, icon, error, layout, children }) => (
+const Field: React.FC<FieldProps> = ({ name, label, icon, error, layout, children, onIconClick, iconLabel }) => (
   <div className="register-page__field" style={layout}>
     <label className="register-page__label" htmlFor={`rp-${name}`}>
       {label} <span className="register-page__req" aria-hidden="true">*</span>
     </label>
     <div className={`register-page__control${error ? ' register-page__control--error' : ''}`}>
-      <span className="register-page__icon" aria-hidden="true">{icon}</span>
+      {onIconClick ? (
+        <button type="button" className="register-page__icon register-page__icon--btn"
+          onClick={onIconClick} aria-label={iconLabel}>
+          {icon}
+        </button>
+      ) : (
+        <span className="register-page__icon" aria-hidden="true">{icon}</span>
+      )}
       {children}
     </div>
     {error && (
@@ -302,6 +324,21 @@ const RegisterPage: React.FC = () => {
       return novo;
     });
 
+  // Compara as senhas enquanto o usuário digita (sem esperar o clique em "Finalizar").
+  // Só avisa depois que o campo "Confirmar senha" tiver algo digitado.
+  useEffect(() => {
+    if (!confirmarSenha) return;
+    if (senha !== confirmarSenha) {
+      setErros((prev) =>
+        prev.confirmarSenha === 'As senhas não coincidem.'
+          ? prev
+          : { ...prev, confirmarSenha: 'As senhas não coincidem.' });
+    } else {
+      limparErro('confirmarSenha');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [senha, confirmarSenha]);
+
   const focarPrimeiroErro = (e: Erros) => {
     const primeiro = Object.keys(e)[0];
     if (primeiro) document.getElementById(`rp-${primeiro}`)?.focus();
@@ -326,6 +363,19 @@ const RegisterPage: React.FC = () => {
 
   const handleDataNascimentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDataNascimento(mascarar(e.target.value, '00/00/0000'));
+    limparErro('dataNascimento');
+  };
+
+  // Calendário nativo aberto pelo ícone do campo
+  const calendarioRef = useRef<HTMLInputElement>(null);
+  const abrirCalendario = () => {
+    const el = calendarioRef.current;
+    if (!el) return;
+    try { el.showPicker(); } catch { el.focus(); el.click(); }
+  };
+  const handleCalendarioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.value) return;
+    setDataNascimento(isoParaData(e.target.value));
     limparErro('dataNascimento');
   };
 
@@ -703,10 +753,15 @@ const RegisterPage: React.FC = () => {
               </Field>
 
               <Field name="dataNascimento" label="Data de nascimento" icon={<HiOutlineCalendarDays />}
-                error={erros.dataNascimento} layout={span(5)}>
+                error={erros.dataNascimento} layout={span(5)}
+                onIconClick={abrirCalendario} iconLabel="Abrir calendário">
                 <input id="rp-dataNascimento" type="text" inputMode="numeric" className="register-page__input"
                   placeholder="DD/MM/AAAA" value={dataNascimento} onChange={handleDataNascimentoChange}
                   autoComplete="bday" aria-invalid={!!erros.dataNascimento} />
+                <input ref={calendarioRef} type="date" className="register-page__date-native"
+                  tabIndex={-1} aria-hidden="true" min="1900-01-01" max={hojeISO()}
+                  value={dataNascimentoValida(dataNascimento) ? dataParaISO(dataNascimento) : ''}
+                  onChange={handleCalendarioChange} />
               </Field>
 
               <Field name="senha" label="Senha" icon={<HiOutlineLockClosed />}
