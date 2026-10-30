@@ -40,14 +40,9 @@ const ESTADOS_BR = [
 
 // Plano escolhido no site: guardado aqui para sobreviver a recarregar a página
 const CHAVE_PLANO = '@menupoint:plano';
-
-// Planos oferecidos na etapa final do cadastro (os valores reais cobrados vêm do backend)
-const PLANOS_CADASTRO = [
-  { slug: 'starter', nome: 'Starter', valor: 97 },
-  { slug: 'pro', nome: 'Pro', valor: 197 },
-];
-const slugPlanoValido = (v: string | null) =>
-  PLANOS_CADASTRO.some((p) => p.slug === v) ? v : null;
+// Planos aceitos no link do site (/cadastro?plano=pro). Qualquer outro valor é ignorado.
+const PLANOS_VALIDOS = ['starter', 'basico', 'pro'];
+const slugPlanoValido = (v: string | null) => (v && PLANOS_VALIDOS.includes(v) ? v : null);
 
 const somenteDigitos = (v: string) => v.replace(/\D/g, '');
 
@@ -196,19 +191,13 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { entrar } = useAuth();
   const [searchParams] = useSearchParams();
-  // Plano: pode vir do site (/cadastro?plano=pro) e fica pré-selecionado; se não vier,
-  // a pessoa escolhe na etapa final do cadastro, antes de ir para o pagamento.
-  const [planoDesejado, setPlanoDesejado] = useState<string | null>(() => {
+  // Plano escolhido no site (ex: /cadastro?plano=pro). Sem ele, o cadastro é direto e o plano
+  // é escolhido na tela /planos, depois da verificação do e-mail.
+  const [planoDesejado] = useState<string | null>(() => {
     const doSite = slugPlanoValido(searchParams.get('plano'));
     if (doSite) sessionStorage.setItem(CHAVE_PLANO, doSite);
     return doSite ?? slugPlanoValido(sessionStorage.getItem(CHAVE_PLANO));
   });
-  const [redirecionandoPagamento, setRedirecionandoPagamento] = useState(false);
-
-  const escolherPlano = (slug: string) => {
-    setPlanoDesejado(slug);
-    sessionStorage.setItem(CHAVE_PLANO, slug);
-  };
 
   const [etapa, setEtapa] = useState<1 | 2>(1);
 
@@ -437,11 +426,6 @@ const RegisterPage: React.FC = () => {
       return;
     }
 
-    if (!planoDesejado) {
-      setErro('Escolha um plano para continuar.');
-      return;
-    }
-
     if (!aceitaTermos) {
       setErro('Você precisa aceitar os Termos de Uso para continuar.');
       return;
@@ -476,15 +460,8 @@ const RegisterPage: React.FC = () => {
         usuario: resultado.usuario,
       });
 
-      // Veio do site com um plano: segue para o pagamento (o código de e-mail já foi enviado
-      // e será confirmado logo depois). Sem plano, mantém o fluxo de confirmação de e-mail.
-      if (planoDesejado) {
-        sessionStorage.removeItem(CHAVE_PLANO);
-        setRedirecionandoPagamento(true);
-        navigate('/pagamento', { state: { email: email.trim(), verificarEmail: true } });
-        return;
-      }
-
+      // Cadastro feito: primeiro confirma o e-mail (código enviado). Depois da confirmação,
+      // o sistema leva para a escolha do plano (se ainda não veio do site) e para o pagamento.
       setShowSucesso(true);
     } catch (err: any) {
       // Se o backend já mandou um motivo específico (ex: "Este e-mail já
@@ -767,45 +744,6 @@ const RegisterPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Escolha do plano (a cobrança só acontece na próxima tela) */}
-              <div style={{ gridColumn: '1 / -1' }}>
-                <p style={{ margin: '0 0 8px', fontWeight: 700, color: 'var(--rp-ink)' }}>
-                  Escolha seu plano
-                </p>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  {PLANOS_CADASTRO.map((pl) => {
-                    const ativo = planoDesejado === pl.slug;
-                    return (
-                      <button
-                        key={pl.slug}
-                        type="button"
-                        onClick={() => escolherPlano(pl.slug)}
-                        aria-pressed={ativo}
-                        style={{
-                          flex: '1 1 180px',
-                          textAlign: 'left',
-                          padding: '14px 16px',
-                          borderRadius: 10,
-                          cursor: 'pointer',
-                          background: ativo ? '#fdf2f2' : '#fff',
-                          border: `2px solid ${ativo ? 'var(--rp-red)' : 'var(--rp-line)'}`,
-                          color: 'var(--rp-ink)',
-                        }}
-                      >
-                        <strong style={{ display: 'block', fontSize: 16 }}>{pl.nome}</strong>
-                        <span style={{ fontSize: 20, fontWeight: 700 }}>
-                          {pl.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </span>
-                        <small style={{ color: 'var(--rp-muted)' }}> /mês</small>
-                      </button>
-                    );
-                  })}
-                </div>
-                <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--rp-muted)' }}>
-                  O pagamento é feito na próxima tela, pelo Mercado Pago.
-                </p>
-              </div>
-
               {/* Termos de uso */}
               <div className="register-page__terms">
                 <label>
@@ -833,15 +771,13 @@ const RegisterPage: React.FC = () => {
 
               <div className="register-page__actions">
                 <button type="submit" className="register-page__submit"
-                  disabled={carregando || redirecionandoPagamento}>
-                  {redirecionandoPagamento
-                    ? 'Levando você ao pagamento...'
-                    : carregando
+                  disabled={carregando}>
+                  {carregando
                     ? 'Criando conta...'
                     : <>Finalizar cadastro <HiOutlineCheck /></>}
                 </button>
                 <button type="button" className="register-page__back"
-                  onClick={() => irParaEtapa(1)} disabled={carregando || redirecionandoPagamento}>
+                  onClick={() => irParaEtapa(1)} disabled={carregando}>
                   <HiOutlineArrowLeft /> Voltar para a etapa anterior
                 </button>
               </div>

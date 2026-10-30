@@ -19,9 +19,11 @@ export function RotaProtegida({ children, perfisPermitidos }: RotaProtegidaProps
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
-  // Cadastro feito mas pagamento ainda não confirmado: só a tela de pagamento é liberada
-  if (usuario?.pagamento_pendente && location.pathname !== '/pagamento') {
-    return <Navigate to="/pagamento" replace />
+  // Cadastro feito mas pagamento ainda não confirmado: só as telas de plano e pagamento são
+  // liberadas. Quem já escolheu o plano (no site ou em /planos) vai direto ao pagamento.
+  if (usuario?.pagamento_pendente && !['/planos', '/pagamento'].includes(location.pathname)) {
+    const jaEscolheuPlano = Boolean(sessionStorage.getItem('@menupoint:plano'))
+    return <Navigate to={jaEscolheuPlano ? '/pagamento' : '/planos'} replace />
   }
 
   if (perfisPermitidos && usuario && !perfisPermitidos.includes(usuario.perfil)) {

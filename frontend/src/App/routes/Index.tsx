@@ -5,6 +5,7 @@ import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import AssinaturaSucesso from "../pages/assinatura/AssinaturaSucesso";
 import PagamentoPage from "../pages/assinatura/PagamentoPage";
+import PlanosPage from "../pages/assinatura/PlanosPage";
 import NovaSenha from "../pages/auth/NovaSenha";
 import WelcomePage from "../pages/ClienteLocal/WelcomePage/WelcomePage";
 import MesaQr from "../pages/ClienteLocal/MesaQr/MesaQr";
@@ -107,6 +108,7 @@ const AppRoutes: React.FC = () => {
 
         {/* Rotas do restaurante: exigem login */}
         <Route element={<RotaProtegida />}>
+          <Route path="/planos" element={<PlanosPage />} />
           <Route path="/pagamento" element={<PagamentoPage />} />
           <Route path="/restaurante/home" element={<HomeRestaurante /> } />
           <Route path="/restaurante/pedido" element={<Pedido />} />

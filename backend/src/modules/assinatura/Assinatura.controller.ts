@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+import { z } from 'zod'
 import { AssinaturaService } from './Assinatura.service'
 import { criarAssinaturaSchema, webhookMPSchema } from './Assinatura.schema'
 import { AppError } from '@shared/errors/AppError'
@@ -61,6 +62,30 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
 
       const resultado = await service.criarCheckout(user.empresa_id, user.email)
       return reply.status(201).send(resultado)
+    }
+  )
+
+  /**
+   * POST /api/v1/assinatura/plano
+   *
+   * Tela /planos: define (ou troca) o plano da cobrança pendente antes do pagamento.
+   * Body: { plano: 'starter' | 'pro' }
+   */
+  app.post(
+    '/plano',
+    {
+      onRequest: [async (request) => request.jwtVerify()],
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = request.user as JWTPayload
+
+      if (!user.empresa_id) {
+        throw new AppError('Usuário não vinculado a uma empresa', 400)
+      }
+
+      const { plano } = z.object({ plano: z.string().min(1) }).parse(request.body)
+      const resultado = await service.escolherPlano(user.empresa_id, plano)
+      return reply.status(200).send(resultado)
     }
   )
 
