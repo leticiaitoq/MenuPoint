@@ -12,6 +12,7 @@ import {
 import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
 import { z } from 'zod'
+import { parsePeriodo } from '@shared/utils/periodo'
 import { PagamentoMesaService } from './PagamentoMesa.service'
 
 const repository = new PagamentoRepository()
@@ -137,8 +138,7 @@ export async function pagamentosRoutes(app: FastifyInstance): Promise<void> {
       const pagamentos = await service.listar(user.estabelecimento_id, {
         ...(status && { status }),
         ...(metodo && { metodo }),
-        ...(data_inicio && { data_inicio: new Date(data_inicio) }),
-        ...(data_fim && { data_fim: new Date(data_fim) }),
+        ...parsePeriodo(data_inicio, data_fim),
       })
 
       return reply.send(pagamentos)

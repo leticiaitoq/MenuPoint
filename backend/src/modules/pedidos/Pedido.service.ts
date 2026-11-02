@@ -5,6 +5,12 @@ import prisma from '@config/prisma'
 import { enviarMensagemWhatsApp } from '@config/whatsapp'
 import { templateNovoPedido, templateStatusPedido } from '@shared/whatsapp/template'
 import { env } from '@config/env'
+import {
+  travarMesa,
+  subtotalDaConta,
+  garantirContaCobrePagos,
+  r2,
+} from '@modules/pagamentos/conta'
 
 export class PedidoService {
   constructor(private readonly repository: PedidoRepository) {}
@@ -176,41 +182,60 @@ export class PedidoService {
       throw new AppError('Motivo de cancelamento é obrigatório', 400)
     }
 
-    // Item já pago em pagamento parcial: desfaça o parcial antes de cancelar o pedido
-    if (data.status === 'CANCELADO') {
-      const itemPago = await prisma.pagamentoMesaItem.findFirst({
-        where: { item_pedido: { pedido_id: id }, pagamento_mesa: { liquidado_em: null } },
-        select: { id: true },
-      })
-      if (itemPago) {
-        throw new AppError(
-          'Este pedido tem itens já pagos em pagamento parcial. Desfaça o pagamento parcial antes de cancelar.',
-          409
-        )
-      }
-    }
+    const mesaId: string | null = (pedido as any).mesa_id ?? null
+    let pedidoAtualizado: any
 
-    // Pedido já pago não se cancela: o valor precisa ser estornado antes
     if (data.status === 'CANCELADO') {
-      const pago = await prisma.pagamento.findFirst({
-        where: { pedido_id: id, status: 'CONFIRMADO' },
-        select: { id: true },
-      })
-      if (pago) {
-        throw new AppError(
-          'Este pedido já tem pagamento confirmado. Estorne o valor antes de cancelar.',
-          409
-        )
-      }
-    }
+      // Cancelar mexe no dinheiro da mesa: valida e grava na MESMA transação, com a mesa travada
+      pedidoAtualizado = await prisma.$transaction(async (tx) => {
+        if (mesaId) await travarMesa(tx, mesaId)
 
-    const pedidoAtualizado = await this.repository.update(id, {
-      status: data.status,
-      ...(data.cancelamento_motivo && {
-        cancelamento_motivo: data.cancelamento_motivo,
-      }),
-      ...(data.status === 'ENTREGUE' && { entregue_em: new Date() }),
-    })
+        // Item já pago em pagamento parcial: desfaça o parcial antes de cancelar o pedido
+        const itemPago = await tx.pagamentoMesaItem.findFirst({
+          where: { item_pedido: { pedido_id: id }, pagamento_mesa: { liquidado_em: null } },
+          select: { id: true },
+        })
+        if (itemPago) {
+          throw new AppError(
+            'Este pedido tem itens já pagos em pagamento parcial. Desfaça o pagamento parcial antes de cancelar.',
+            409
+          )
+        }
+
+        // Pedido já pago não se cancela: o valor precisa ser estornado antes
+        const pago = await tx.pagamento.findFirst({
+          where: { pedido_id: id, status: 'CONFIRMADO' },
+          select: { id: true },
+        })
+        if (pago) {
+          throw new AppError(
+            'Este pedido já tem pagamento confirmado. Estorne o valor antes de cancelar.',
+            409
+          )
+        }
+
+        // A conta não pode ficar menor que o que já foi pago em parcial/abatimento
+        if (mesaId) {
+          const subtotalSemEste = await subtotalDaConta(tx, mesaId, estabelecimento_id, {
+            ignorarPedidoId: id,
+          })
+          await garantirContaCobrePagos(tx, mesaId, estabelecimento_id, subtotalSemEste, 'Cancelar este pedido')
+        }
+
+        return tx.pedido.update({
+          where: { id },
+          data: { status: 'CANCELADO', cancelamento_motivo: data.cancelamento_motivo },
+        })
+      })
+    } else {
+      pedidoAtualizado = await this.repository.update(id, {
+        status: data.status,
+        ...(data.cancelamento_motivo && {
+          cancelamento_motivo: data.cancelamento_motivo,
+        }),
+        ...(data.status === 'ENTREGUE' && { entregue_em: new Date() }),
+      })
+    }
 
     // Libera a mesa quando o pedido finaliza — mas só se não sobrou outro pedido em andamento
     // nela (mesa com vários pedidos não pode ficar "livre" por causa de um só)
@@ -285,6 +310,9 @@ export class PedidoService {
     }
 
     return prisma.$transaction(async (tx) => {
+      // Uma operação por vez nas duas mesas (ordem fixa, sem deadlock)
+      await travarMesa(tx, origem_mesa_id, destino_mesa_id)
+
       const origem = await tx.mesa.findFirst({
         where: { id: origem_mesa_id, estabelecimento_id },
         select: { id: true, numero: true },
@@ -384,6 +412,8 @@ export class PedidoService {
     }
 
     return prisma.$transaction(async (tx) => {
+      await travarMesa(tx, data.mesa_id)
+
       const pedidos = await tx.pedido.findMany({
         where: { id: { in: ids }, estabelecimento_id },
         include: { pagamento: { select: { status: true } } },
@@ -497,6 +527,8 @@ export class PedidoService {
     }
 
     return prisma.$transaction(async (tx) => {
+      await travarMesa(tx, mesa_id)
+
       const pedidos = await tx.pedido.findMany({
         where: {
           mesa_id,
@@ -631,6 +663,48 @@ export class PedidoService {
       )
 
     await prisma.$transaction(async (tx) => {
+      if (pedido.mesa_id) {
+        await travarMesa(tx, pedido.mesa_id)
+
+        // Itens que já têm unidades pagas em pagamento parcial não podem sumir nem encolher
+        // (apagar o item apagaria o registro do que foi pago)
+        const alocados = await tx.pagamentoMesaItem.findMany({
+          where: {
+            item_pedido_id: { in: existentes.map((i) => i.id) },
+            pagamento_mesa: { liquidado_em: null },
+          },
+          select: { item_pedido_id: true, quantidade: true },
+        })
+        const pagoPorItem = new Map<string, number>()
+        alocados.forEach((a) =>
+          pagoPorItem.set(a.item_pedido_id, (pagoPorItem.get(a.item_pedido_id) ?? 0) + a.quantidade)
+        )
+        for (const item of existentes) {
+          const pagas = pagoPorItem.get(item.id) ?? 0
+          if (pagas === 0) continue
+          const nome = item.produto?.nome ?? 'Item'
+          const mantido = mantidos.find((m) => m.id === item.id)
+          if (!mantido) {
+            throw new AppError(
+              `"${nome}" tem ${pagas} unidade(s) já paga(s) em pagamento parcial e não pode ser removido. Desfaça o pagamento parcial antes.`,
+              409
+            )
+          }
+          if (mantido.quantidade < pagas) {
+            throw new AppError(
+              `"${nome}" tem ${pagas} unidade(s) já paga(s) em pagamento parcial: a quantidade não pode ficar abaixo de ${pagas}. Desfaça o pagamento parcial antes.`,
+              409
+            )
+          }
+        }
+
+        // A conta editada não pode ficar menor que o já pago em parcial/abatimento
+        const subtotalOutros = await subtotalDaConta(tx, pedido.mesa_id, estabelecimento_id, {
+          ignorarPedidoId: id,
+        })
+        await garantirContaCobrePagos(tx, pedido.mesa_id, estabelecimento_id, r2(subtotalOutros + total), 'Esta edição')
+      }
+
       if (idsRemovidos.length > 0) {
         await tx.itemPedido.deleteMany({ where: { id: { in: idsRemovidos }, pedido_id: id } })
       }

@@ -9,6 +9,7 @@ import {
 import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
 import { z } from 'zod'
+import { parsePeriodo } from '@shared/utils/periodo'
 
 const repository = new PedidoRepository()
 const service = new PedidoService(repository)
@@ -70,8 +71,7 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
         ...(listaStatus.length > 0 && { status: listaStatus }),
         ...(mesa_id && { mesa_id }),
         ...(modalidade && { modalidade }),
-        ...(data_inicio && { data_inicio: new Date(data_inicio) }),
-        ...(data_fim && { data_fim: new Date(data_fim) }),
+        ...parsePeriodo(data_inicio, data_fim),
       })
 
       return reply.send(pedidos)

@@ -123,7 +123,6 @@ const PagarParcialConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ i
           valor: f.valor,
           valor_recebido: f.meio === 'Dinheiro' && f.recebido > 0 ? f.recebido : undefined,
         })),
-        taxa_servico_percentual: pct,
       });
       navigate(ROTAS_CAIXA.pagarMesa(id));
     } catch (err: any) {

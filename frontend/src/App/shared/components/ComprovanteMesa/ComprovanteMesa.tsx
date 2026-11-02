@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { HiOutlineDownload, HiOutlinePrinter, HiOutlineShare, HiX } from 'react-icons/hi';
 import { DadosComprovante, gerarImagemComprovante, Linha, ModoComprovante, montarLinhas } from './comprovante';
 import './ComprovanteMesa.css';
@@ -23,6 +23,8 @@ const ComprovanteMesa: React.FC<Props> = ({ aberto, dados, permitirTrocarModo = 
   const [modo, setModo] = useState<ModoComprovante>('comanda');
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Imagem já gerada para o conteúdo atual (zera quando o conteúdo muda)
+  const imagemRef = useRef<{ chave: string; blob: Blob } | null>(null);
 
   useEffect(() => {
     if (aberto && dados) {
@@ -43,17 +45,29 @@ const ComprovanteMesa: React.FC<Props> = ({ aberto, dados, permitirTrocarModo = 
 
   if (!aberto || !atual) return null;
 
+  // Gera o PNG uma única vez por conteúdo e reaproveita nas duas ações
+  const obterImagem = async (): Promise<Blob> => {
+    const chave = JSON.stringify(linhas);
+    if (imagemRef.current?.chave === chave) return imagemRef.current.blob;
+    const blob = await gerarImagemComprovante(linhas);
+    imagemRef.current = { chave, blob };
+    return blob;
+  };
+
+  const baixarBlob = (blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nomeArquivo(atual);
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const baixar = async () => {
     setGerando(true);
     setErro(null);
     try {
-      const blob = await gerarImagemComprovante(linhas);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = nomeArquivo(atual);
-      link.click();
-      URL.revokeObjectURL(url);
+      baixarBlob(await obterImagem());
     } catch {
       setErro('Não foi possível gerar a imagem.');
     } finally {
@@ -65,14 +79,14 @@ const ComprovanteMesa: React.FC<Props> = ({ aberto, dados, permitirTrocarModo = 
     setGerando(true);
     setErro(null);
     try {
-      const blob = await gerarImagemComprovante(linhas);
+      const blob = await obterImagem();
       const arquivo = new File([blob], nomeArquivo(atual), { type: 'image/png' });
       const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
       if (nav.share && nav.canShare?.({ files: [arquivo] })) {
         await nav.share({ files: [arquivo], title: atual.modo === 'comprovante' ? 'Comprovante' : 'Comanda' });
       } else {
-        // Navegador sem compartilhamento de arquivos: baixa a imagem para enviar manualmente
-        await baixar();
+        // Navegador sem compartilhamento de arquivos: baixa a MESMA imagem para enviar manualmente
+        baixarBlob(blob);
       }
     } catch (err: any) {
       if (err?.name !== 'AbortError') setErro('Não foi possível compartilhar a imagem.');

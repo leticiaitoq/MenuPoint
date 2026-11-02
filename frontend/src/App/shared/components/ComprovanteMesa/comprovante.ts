@@ -28,6 +28,8 @@ export interface DadosComprovante {
   total: number;
   /** Só no comprovante: como foi pago */
   pagamentos?: { rotulo: string; valor: number }[];
+  /** Dinheiro entregue pelo cliente (aparece só se informado) */
+  valorRecebido?: number;
   troco?: number;
 }
 
@@ -79,6 +81,7 @@ export const montarLinhas = (d: DadosComprovante): Linha[] => {
     l.push({ tipo: 'divisor' });
     l.push({ tipo: 'texto', texto: 'PAGAMENTOS', negrito: true });
     (d.pagamentos ?? []).forEach((p) => l.push({ tipo: 'par', esquerda: p.rotulo, direita: moeda(p.valor) }));
+    if ((d.valorRecebido ?? 0) > 0) l.push({ tipo: 'par', esquerda: 'Valor recebido', direita: moeda(d.valorRecebido ?? 0) });
     if ((d.troco ?? 0) > 0) l.push({ tipo: 'par', esquerda: 'Troco', direita: moeda(d.troco ?? 0) });
     l.push({ tipo: 'espaco' });
     l.push({ tipo: 'texto', texto: 'Obrigado pela preferência!', alinhar: 'centro', negrito: true });

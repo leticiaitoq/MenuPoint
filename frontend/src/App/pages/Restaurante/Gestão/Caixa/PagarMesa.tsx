@@ -64,6 +64,10 @@ interface PedidoDetalhe {
   /** Soma dos pagamentos parciais/abatimentos já registrados (ainda não liquidados) */
   pagoParcial?: number;
   pagamentosParciais?: PagamentoParcialRegistrado[];
+  /** Subtotal, taxa e percentual calculados pelo servidor (fonte de verdade das mesas reais) */
+  subtotalApi?: number;
+  taxaServicoApi?: number;
+  taxaPercentualApi?: number;
 }
 
 interface CupomDesconto {
@@ -224,6 +228,9 @@ const montarPedidoDaApi = (mesa: MesaApi, pedidos: PedidoApi[], resumo: ResumoCo
     descontoValor: 0,
     pagamentosRealizados: resumo?.pago ?? 0,
     pagoParcial: resumo?.pago ?? 0,
+    subtotalApi: resumo?.subtotal,
+    taxaServicoApi: resumo?.taxa_servico,
+    taxaPercentualApi: resumo?.taxa_servico_percentual,
     pagamentosParciais: resumo?.pagamentos ?? [],
     capacidade: mesa.capacidade,
     observacao: mesa.localizacao ?? undefined,
@@ -308,8 +315,14 @@ const PagarMesaConteudo: React.FC<{
     setValorRecebidoCentavos(somenteDigitos ? Number(somenteDigitos) : 0);
   };
 
-  const subtotal    = useMemo(() => itens.reduce((acc, i) => acc + i.precoUnitario * i.quantidade, 0), [itens]);
-  const taxaServico = subtotal * TAXA_SERVICO_PERCENT;
+  // Mesa real: subtotal e taxa vêm do servidor (as mesmas contas do pagamento). A soma local dos
+  // itens só é usada nas mesas de demonstração.
+  const subtotal    = useMemo(
+    () => pedidoBase.subtotalApi ?? itens.reduce((acc, i) => acc + i.precoUnitario * i.quantidade, 0),
+    [itens, pedidoBase.subtotalApi]
+  );
+  const taxaPct     = pedidoBase.taxaPercentualApi ?? Math.round(TAXA_SERVICO_PERCENT * 100);
+  const taxaServico = pedidoBase.taxaServicoApi ?? subtotal * TAXA_SERVICO_PERCENT;
   // Parciais/abatimentos já pagos saem da conta: `total` é o que ainda falta pagar
   const pagoParcial  = pedidoBase.pagoParcial ?? 0;
   const total        = Math.max(subtotal + taxaServico - descontoValor - pagoParcial, 0);
@@ -335,7 +348,7 @@ const PagarMesaConteudo: React.FC<{
   // ── Comanda / comprovante ────────────────────────────────────────────────────
   const montarComprovante = (
     modo: ModoComprovante,
-    extra?: { pagamentos: { rotulo: string; valor: number }[]; troco: number }
+    extra?: { pagamentos: { rotulo: string; valor: number }[]; troco: number; valorRecebido?: number }
   ): DadosComprovante => ({
     modo,
     restaurante: nomeRestaurante,
@@ -358,13 +371,14 @@ const PagarMesaConteudo: React.FC<{
       })),
     })),
     subtotal,
-    taxaPercentual: Math.round(TAXA_SERVICO_PERCENT * 100),
+    taxaPercentual: taxaPct,
     taxaServico,
     desconto: descontoValor,
     jaPago: pagoParcial,
     total,
     pagamentos: extra?.pagamentos,
     troco: extra?.troco,
+    valorRecebido: extra?.valorRecebido,
   });
 
   const fecharComprovante = () => {
@@ -487,7 +501,6 @@ const PagarMesaConteudo: React.FC<{
         forma,
         valor_recebido: forma === 'DINHEIRO' && total > 0.004 ? valorRecebidoNumero : undefined,
         desconto_valor: descontoValor,
-        taxa_servico_percentual: Math.round(TAXA_SERVICO_PERCENT * 100),
       });
       setModalPagamentoAberto(false);
 
@@ -501,7 +514,7 @@ const PagarMesaConteudo: React.FC<{
         ...(r.restante > 0.004 ? [{ rotulo: rotuloForma ?? 'Pagamento', valor: r.restante }] : []),
       ];
       setContaFechada(true);
-      setComprovante(montarComprovante('comprovante', { pagamentos, troco: r.troco }));
+      setComprovante(montarComprovante('comprovante', { pagamentos, troco: r.troco, valorRecebido: r.valor_recebido ?? undefined }));
     } catch (err: any) {
       setErroPagamento(mensagemDeErro(err, 'Não foi possível registrar o pagamento.'));
     } finally {
@@ -553,9 +566,14 @@ const PagarMesaConteudo: React.FC<{
     return 0;
   }, [abaDesconto, cupomAplicado, descontoManualCentavos, subtotal]);
 
+  // O desconto não pode passar do que ainda é devido (total da conta menos o já pago em parcial)
+  const descontoMaximo = Math.max(subtotal + taxaServico - pagoParcial, 0);
+  const descontoExcedeLimite = descontoPreview > descontoMaximo + 0.005;
+
   const podeAplicarDesconto =
-    (abaDesconto === 'cupom' && cupomAplicado !== null) ||
-    (abaDesconto === 'manual' && descontoManualCentavos > 0);
+    !descontoExcedeLimite &&
+    ((abaDesconto === 'cupom' && cupomAplicado !== null) ||
+      (abaDesconto === 'manual' && descontoManualCentavos > 0));
 
   const handleAplicarDesconto = () => {
     if (!podeAplicarDesconto) return;
@@ -755,7 +773,7 @@ const PagarMesaConteudo: React.FC<{
               </div>
 
               <div className="pagar__resumo-linha">
-                <span>Taxa de serviço (10%)</span>
+                <span>Taxa de serviço ({taxaPct}%)</span>
                 <span>{formatarMoeda(taxaServico)}</span>
               </div>
 
@@ -862,17 +880,7 @@ const PagarMesaConteudo: React.FC<{
                   </button>
                 ))}
 
-                <button
-                  className={`pagar__forma pagar__forma--larga${formaSelecionada === 'outras' ? ' pagar__forma--ativa' : ''}`}
-                  onClick={() => setFormaSelecionada('outras')}
-                  aria-pressed={formaSelecionada === 'outras'}
-                >
-                  <span className="pagar__forma-icone"><HiDotsHorizontal /></span>
-                  <span className="pagar__forma-textos">
-                    <span className="pagar__forma-nome">Outras formas</span>
-                    <span className="pagar__forma-info">Vale-refeição, Vale-alimentação, etc.</span>
-                  </span>
-                </button>
+                {/* "Outras formas" (vale-refeição etc.) só volta quando o backend tiver essa forma de pagamento */}
               </div>
 
               {formaSelecionada === 'dinheiro' && (
@@ -1013,6 +1021,14 @@ const PagarMesaConteudo: React.FC<{
                 </div>
               </div>
 
+              {descontoExcedeLimite && (
+                <p className="pagar__dinheiro-erro" role="alert">
+                  {pagoParcial > 0
+                    ? `O desconto não pode passar de ${formatarMoeda(descontoMaximo)}: a conta já tem ${formatarMoeda(pagoParcial)} pagos em parcial.`
+                    : `O desconto não pode ser maior que o total da conta (${formatarMoeda(descontoMaximo)}).`}
+                </p>
+              )}
+
               <button
                 className="pagar__btn-finalizar"
                 onClick={handleAplicarDesconto}
@@ -1083,8 +1099,9 @@ const buscarMesa = async (mesaId: string): Promise<EstadoCarga> => {
     const [mesas, pedidos, resumo] = await Promise.all([
       MesaService.listar(),
       PedidoService.listar({ status: STATUS_EM_ANDAMENTO, modalidade: 'MESA', mesa_id: mesaId }),
-      // Pagamentos parciais já feitos nesta mesa (se falhar, a conta aparece sem eles)
-      PagamentoService.resumoMesa(mesaId).catch(() => null),
+      // Conta com o que já foi pago em parcial. Se falhar, a tela NÃO abre (erro + tentar novamente):
+      // mostrar a conta sem os pagamentos faria o caixa cobrar/dar troco errado.
+      PagamentoService.resumoMesa(mesaId),
     ]);
 
     const mesa = mesas.find((m) => m.id === mesaId);
@@ -1131,7 +1148,8 @@ const PagarMesa: React.FC = () => {
     } else if (novo.tipo === 'naoEncontrada') {
       navigate(ROTAS_CAIXA.lista);
     } else if (novo.tipo === 'erro') {
-      throw new Error(novo.mensagem);
+      // Não deixa a tela operar com dados velhos: mostra o erro com "Tentar novamente"
+      setEstado(novo);
     }
   }, [id, navigate]);
 

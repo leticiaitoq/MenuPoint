@@ -1,7 +1,15 @@
-import { Prisma } from '@prisma/client'
 import { AppError } from '@shared/errors/AppError'
 import prisma from '@config/prisma'
 import { AbatimentoDTO, PagamentoParcialDTO } from './Pagamento.schema'
+import {
+  TAXA_SERVICO_PERCENTUAL,
+  STATUS_EM_ANDAMENTO,
+  Tx,
+  r2,
+  travarMesa,
+  alocarUnidades,
+  ajustarAlocacoes,
+} from './conta'
 
 // O enum do banco não separa débito/crédito: os dois viram CARTAO
 const METODO_DO_BANCO = {
@@ -18,10 +26,6 @@ const ROTULO_FORMA = {
   DINHEIRO: 'Dinheiro',
 } as const
 
-const r2 = (v: number) => Math.round(v * 100) / 100
-const EM_ANDAMENTO = ['RECEBIDO', 'PREPARO', 'PRONTO'] as const
-
-type Tx = Prisma.TransactionClient
 
 interface ContaItem {
   item_pedido_id: string
@@ -45,7 +49,7 @@ async function carregarConta(
   pct: number
 ) {
   const pedidos = await tx.pedido.findMany({
-    where: { mesa_id, estabelecimento_id, status: { in: [...EM_ANDAMENTO] } },
+    where: { mesa_id, estabelecimento_id, status: { in: [...STATUS_EM_ANDAMENTO] } },
     include: {
       pagamento: { select: { status: true } },
       itens: {
@@ -113,7 +117,8 @@ async function exigirMesa(mesa_id: string, estabelecimento_id: string) {
 
 export class PagamentoMesaService {
   // Conta da mesa: itens com o que já foi pago, totais e pagamentos parciais registrados
-  async resumo(mesa_id: string, estabelecimento_id: string, pct = 10) {
+  async resumo(mesa_id: string, estabelecimento_id: string) {
+    const pct = TAXA_SERVICO_PERCENTUAL
     const mesa = await exigirMesa(mesa_id, estabelecimento_id)
     const conta = await prisma.$transaction((tx) => carregarConta(tx, mesa_id, estabelecimento_id, pct))
 
@@ -156,9 +161,12 @@ export class PagamentoMesaService {
     estabelecimento_id: string
   ) {
     const mesa = await exigirMesa(mesa_id, estabelecimento_id)
-    const pct = data.taxa_servico_percentual
+    // A taxa é do servidor: o percentual enviado pelo front é ignorado
+    const pct = TAXA_SERVICO_PERCENTUAL
 
     return prisma.$transaction(async (tx) => {
+      // Uma operação financeira por vez na mesa: o saldo lido abaixo vale até o fim da transação
+      await travarMesa(tx, mesa_id)
       const conta = await carregarConta(tx, mesa_id, estabelecimento_id, pct)
 
       if (conta.itens.length === 0) {
@@ -208,7 +216,20 @@ export class PagamentoMesaService {
             valor: r2(porId.get(id)!.valor_unitario_com_taxa * qtd),
           })
         }
-        const valorItens = Math.min(r2(alocacoes.reduce((s, a) => s + a.valor, 0)), conta.restante)
+        const somaItens = r2(alocacoes.reduce((s, a) => s + a.valor, 0))
+        // Quitou TODOS os itens que faltavam: absorve os centavos de arredondamento da taxa
+        // (a taxa é calculada sobre o subtotal; por item pode sobrar/faltar 1 ou 2 centavos)
+        const quitaTudo = conta.itens.every(
+          (i) => (selecionados.get(i.item_pedido_id) ?? 0) === i.quantidade - i.quantidade_paga
+        )
+        const valorItens =
+          quitaTudo && Math.abs(conta.restante - somaItens) <= Math.max(0.05, 0.02 * selecionados.size)
+            ? conta.restante
+            : Math.min(somaItens, conta.restante)
+        // As alocações nunca podem somar mais (nem menos) do que o valor efetivamente pago
+        const ajustadas = ajustarAlocacoes(alocacoes, valorItens)
+        alocacoes.length = 0
+        alocacoes.push(...ajustadas)
         const somaFormas = r2(dto.formas.reduce((s, f) => s + f.valor, 0))
         // O servidor é quem manda no valor: aceita uma folga de centavos (arredondamento por item
         // no front) e acerta a diferença na última forma, para fechar exatamente
@@ -255,17 +276,17 @@ export class PagamentoMesaService {
           troco: dto.forma === 'DINHEIRO' ? r2(dado - abatido) : 0,
         })
 
-        // Se escolheu itens, o valor quita unidades inteiras deles, na ordem escolhida
-        let sobra = abatido
-        for (const [id, qtd] of selecionados) {
-          const custo = porId.get(id)!.valor_unitario_com_taxa
-          const unidades = custo > 0 ? Math.min(qtd, Math.floor((sobra + 0.005) / custo)) : qtd
-          if (unidades > 0) {
-            const valor = r2(custo * unidades)
-            alocacoes.push({ item_pedido_id: id, quantidade: unidades, valor })
-            sobra = r2(sobra - valor)
-          }
-        }
+        // Se escolheu itens, o valor quita unidades inteiras deles, na ordem escolhida;
+        // o que sobrar fica como crédito geral da conta
+        const { alocacoes: quitadas } = alocarUnidades(
+          abatido,
+          Array.from(selecionados).map(([id, qtd]) => ({
+            item_pedido_id: id,
+            quantidade: qtd,
+            custo_unitario: porId.get(id)!.valor_unitario_com_taxa,
+          }))
+        )
+        alocacoes.push(...quitadas)
       }
 
       const totalAbatido = r2(linhas.reduce((s, l) => s + l.valor, 0))
@@ -316,12 +337,15 @@ export class PagamentoMesaService {
   // Desfaz um pagamento parcial que ainda não foi liquidado (ex.: registrado por engano)
   async desfazer(mesa_id: string, id: string, estabelecimento_id: string) {
     await exigirMesa(mesa_id, estabelecimento_id)
-    const existe = await prisma.pagamentoMesa.findFirst({
-      where: { id, mesa_id, estabelecimento_id, liquidado_em: null },
-      select: { id: true },
+    return prisma.$transaction(async (tx) => {
+      await travarMesa(tx, mesa_id)
+      const existe = await tx.pagamentoMesa.findFirst({
+        where: { id, mesa_id, estabelecimento_id, liquidado_em: null },
+        select: { id: true },
+      })
+      if (!existe) throw new AppError('Pagamento parcial não encontrado ou já liquidado', 404)
+      await tx.pagamentoMesa.delete({ where: { id } })
+      return { removido: true }
     })
-    if (!existe) throw new AppError('Pagamento parcial não encontrado ou já liquidado', 404)
-    await prisma.pagamentoMesa.delete({ where: { id } })
-    return { removido: true }
   }
 }

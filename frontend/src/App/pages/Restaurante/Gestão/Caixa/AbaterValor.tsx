@@ -84,7 +84,6 @@ const AbaterValorConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ id
               quantidade: (porId.get(item_pedido_id)?.quantidade ?? 0) - (porId.get(item_pedido_id)?.quantidade_paga ?? 0),
             }))
           : undefined,
-        taxa_servico_percentual: pct,
       });
       navigate(ROTAS_CAIXA.pagarMesa(id));
     } catch (err: any) {

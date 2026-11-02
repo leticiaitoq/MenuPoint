@@ -7,6 +7,7 @@ import {
   FinalizarMesaDTO,
 } from './Pagamento.schema'
 import prisma from '@config/prisma'
+import { TAXA_SERVICO_PERCENTUAL, travarMesa } from './conta'
 
 // O enum do banco não separa débito/crédito: os dois viram CARTAO (o detalhe vai em `observacoes`)
 const METODO_DO_BANCO = {
@@ -158,6 +159,9 @@ export class PagamentoService {
     if (!mesa) throw new AppError('Mesa não encontrada', 404)
 
     return prisma.$transaction(async (tx) => {
+      // Uma operação financeira por vez na mesa (o saldo lido abaixo vale até o fim da transação)
+      await travarMesa(tx, mesa_id)
+
       const pedidos = await tx.pedido.findMany({
         where: { mesa_id, estabelecimento_id, status: { in: ['RECEBIDO', 'PREPARO', 'PRONTO'] } },
         include: {
@@ -176,7 +180,8 @@ export class PagamentoService {
         throw new AppError('Todos os pedidos desta mesa já estão pagos', 400)
       }
 
-      const pct = data.taxa_servico_percentual
+      // A taxa é do servidor: o percentual enviado pelo front é ignorado
+      const pct = TAXA_SERVICO_PERCENTUAL
       const subtotal = arredondar(aPagar.reduce((s, p) => s + Number(p.total), 0))
       const taxaTotal = arredondar((subtotal * pct) / 100)
       if (data.desconto_valor > subtotal + taxaTotal) {

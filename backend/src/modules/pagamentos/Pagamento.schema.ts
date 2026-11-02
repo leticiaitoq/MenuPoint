@@ -49,7 +49,8 @@ export const finalizarMesaSchema = z.object({
   // Só para DINHEIRO: quanto o cliente entregou (para calcular o troco)
   valor_recebido: z.number().positive().optional(),
   desconto_valor: z.number().min(0).default(0),
-  taxa_servico_percentual: z.number().min(0).max(30).default(10),
+  // Ignorado: a taxa de serviço é definida pelo servidor (conta.ts)
+  taxa_servico_percentual: z.number().min(0).max(30).optional(),
   observacoes: z.string().max(300).optional(),
 })
 
@@ -73,9 +74,11 @@ export const pagamentoParcialSchema = z.object({
         valor_recebido: z.number().positive().optional(), // só DINHEIRO (para o troco)
       })
     )
-    .min(1, 'Informe a forma de pagamento'),
-  itens: z.array(itemSelecionadoSchema).min(1, 'Selecione ao menos um item'),
-  taxa_servico_percentual: z.number().min(0).max(30).default(10),
+    .min(1, 'Informe a forma de pagamento')
+    .max(6, 'Formas de pagamento demais'),
+  itens: z.array(itemSelecionadoSchema).min(1, 'Selecione ao menos um item').max(200),
+  // Ignorado: a taxa de serviço é definida pelo servidor (conta.ts)
+  taxa_servico_percentual: z.number().min(0).max(30).optional(),
   observacoes: z.string().max(300).optional(),
 })
 
@@ -83,8 +86,9 @@ export const pagamentoParcialSchema = z.object({
 export const abatimentoSchema = z.object({
   forma: formaMesaSchema,
   valor: z.number().positive('Informe o valor a abater'),
-  itens: z.array(itemSelecionadoSchema).optional(),
-  taxa_servico_percentual: z.number().min(0).max(30).default(10),
+  itens: z.array(itemSelecionadoSchema).max(200).optional(),
+  // Ignorado: a taxa de serviço é definida pelo servidor (conta.ts)
+  taxa_servico_percentual: z.number().min(0).max(30).optional(),
   observacoes: z.string().max(300).optional(),
 })
 
