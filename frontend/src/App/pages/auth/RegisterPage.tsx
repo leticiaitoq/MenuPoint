@@ -40,8 +40,9 @@ const ESTADOS_BR = [
 
 // Plano escolhido no site: guardado aqui para sobreviver a recarregar a página
 const CHAVE_PLANO = '@menupoint:plano';
-// Endereço do site institucional (REACT_APP_SITE_URL). Sem ele, o cadastro abre direto.
-const SITE_URL = '/site/index.html';
+// Planos aceitos no link do site (/cadastro?plano=pro). Qualquer outro valor é ignorado.
+const PLANOS_VALIDOS = ['starter', 'basico', 'pro'];
+const slugPlanoValido = (v: string | null) => (v && PLANOS_VALIDOS.includes(v) ? v : null);
 
 const somenteDigitos = (v: string) => v.replace(/\D/g, '');
 
@@ -190,18 +191,13 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { entrar } = useAuth();
   const [searchParams] = useSearchParams();
-  // Plano escolhido no site (ex: /cadastro?plano=pro). Fica guardado durante todo o cadastro.
+  // Plano escolhido no site (ex: /cadastro?plano=pro). Sem ele, o cadastro é direto e o plano
+  // é escolhido na tela /planos, depois da verificação do e-mail.
   const [planoDesejado] = useState<string | null>(() => {
-    const doSite = searchParams.get('plano');
+    const doSite = slugPlanoValido(searchParams.get('plano'));
     if (doSite) sessionStorage.setItem(CHAVE_PLANO, doSite);
-    return doSite ?? sessionStorage.getItem(CHAVE_PLANO);
+    return doSite ?? slugPlanoValido(sessionStorage.getItem(CHAVE_PLANO));
   });
-  const [redirecionandoPagamento, setRedirecionandoPagamento] = useState(false);
-
-  // Cadastro sem plano escolhido: a primeira tela é o site, onde o plano é escolhido
-  useEffect(() => {
-    if (!planoDesejado && SITE_URL) window.location.replace(SITE_URL);
-  }, [planoDesejado]);
 
   const [etapa, setEtapa] = useState<1 | 2>(1);
 
@@ -464,15 +460,8 @@ const RegisterPage: React.FC = () => {
         usuario: resultado.usuario,
       });
 
-      // Veio do site com um plano: segue para o pagamento (o código de e-mail já foi enviado
-      // e será confirmado logo depois). Sem plano, mantém o fluxo de confirmação de e-mail.
-      if (planoDesejado) {
-        sessionStorage.removeItem(CHAVE_PLANO);
-        setRedirecionandoPagamento(true);
-        navigate('/pagamento', { state: { email: email.trim(), verificarEmail: true } });
-        return;
-      }
-
+      // Cadastro feito: primeiro confirma o e-mail (código enviado). Depois da confirmação,
+      // o sistema leva para a escolha do plano (se ainda não veio do site) e para o pagamento.
       setShowSucesso(true);
     } catch (err: any) {
       // Se o backend já mandou um motivo específico (ex: "Este e-mail já
@@ -492,9 +481,6 @@ const RegisterPage: React.FC = () => {
     setShowSucesso(false);
     navigate('/verify-code', { state: { email: email.trim(), mode: 'register' } });
   };
-
-  // Redirecionando para o site para escolher o plano
-  if (!planoDesejado && SITE_URL) return null;
 
   /* ────────────────────────────────────────────────────────────
      Render
@@ -785,15 +771,13 @@ const RegisterPage: React.FC = () => {
 
               <div className="register-page__actions">
                 <button type="submit" className="register-page__submit"
-                  disabled={carregando || redirecionandoPagamento}>
-                  {redirecionandoPagamento
-                    ? 'Levando você ao pagamento...'
-                    : carregando
+                  disabled={carregando}>
+                  {carregando
                     ? 'Criando conta...'
                     : <>Finalizar cadastro <HiOutlineCheck /></>}
                 </button>
                 <button type="button" className="register-page__back"
-                  onClick={() => irParaEtapa(1)} disabled={carregando || redirecionandoPagamento}>
+                  onClick={() => irParaEtapa(1)} disabled={carregando}>
                   <HiOutlineArrowLeft /> Voltar para a etapa anterior
                 </button>
               </div>

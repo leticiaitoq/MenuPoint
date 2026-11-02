@@ -216,8 +216,11 @@ export class AuthRepository {
 
       // Plano escolhido no site (sem token do Mercado Pago): a empresa nasce aguardando
       // a confirmação do pagamento (ver Pagamento.temporario.ts)
-      if (planoEscolhido) {
-        await criarCobrancaPendente(tx, empresa.id, planoEscolhido)
+      // Sem plano (cadastro direto): fica Starter provisório e a pessoa escolhe o plano
+      // na tela /planos antes de pagar. A conta só é liberada depois do pagamento.
+      const exigePagamento = !data.token_pagamento
+      if (exigePagamento) {
+        await criarCobrancaPendente(tx, empresa.id, planoEscolhido ?? Plano.STARTER)
       }
 
       // 2) Estabelecimento — criado SEMPRE junto com a empresa.
@@ -251,7 +254,7 @@ export class AuthRepository {
         },
       })
 
-      return { empresa, estabelecimento, usuario, pagamento_pendente: Boolean(planoEscolhido) }
+      return { empresa, estabelecimento, usuario, pagamento_pendente: exigePagamento }
     })
   }
 

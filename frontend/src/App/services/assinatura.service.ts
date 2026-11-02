@@ -25,6 +25,12 @@ const AssinaturaService = {
     return data
   },
 
+  /** Define (ou troca) o plano da cobrança pendente, antes de ir para o pagamento. */
+  async escolherPlano(plano: string): Promise<{ plano: string; valor: number }> {
+    const { data } = await api.post('/assinatura/plano', { plano })
+    return data
+  },
+
   /** Confere o pagamento direto no Mercado Pago e devolve o status atual. */
   async sincronizar(): Promise<{ status: string; status_mp?: string | null }> {
     const { data } = await api.post('/assinatura/sincronizar')
