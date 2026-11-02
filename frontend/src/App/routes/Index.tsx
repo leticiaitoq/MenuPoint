@@ -47,7 +47,6 @@ import PagarMesa from "../pages/Restaurante/Gestão/Caixa/PagarMesa";
 import PagarParcial from "../pages/Restaurante/Gestão/Caixa/PagarParcial";
 import Despesas from "../pages/Restaurante/Gestão/Relatorios/Despesas/Despesa";
 import CadDespesa from "../pages/Restaurante/Gestão/Relatorios/Despesas/CadDespesa";
-import { EmBreve } from "../pages/Restaurante/Embreve/EmBreve";
 /**
  * Entrada do sistema: o cadastro fica em /cadastro (aberto a partir do site, com ?plano=).
  * "/" mantém os links antigos (/?plano=pro) funcionando e leva ao mesmo lugar;
@@ -127,7 +126,6 @@ const AppRoutes: React.FC = () => {
           <Route path={ROTAS_CAIXA.pagarParcialPadrao} element={<PagarParcial />} />
           <Route path="/restaurante/despesas" element={<Despesas />} />
           <Route path="/restaurante/despesas/cadastrodespe" element={<CadDespesa />} />
-          <Route path="/restaurante/embreve" element={<EmBreve />} />
         </Route>
       </Routes>
     </BrowserRouter>

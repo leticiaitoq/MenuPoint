@@ -804,3 +804,5 @@
 .pagar__det-lixeira:hover { background: #fdecea; }
 
 .pagar__menu-item:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pagar__dinheiro-erro { margin: 8px 0 0; color: #b3261e; font-size: 13px; font-weight: 600; }

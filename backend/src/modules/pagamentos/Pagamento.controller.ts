@@ -5,9 +5,11 @@ import {
   criarPagamentoSchema,
   confirmarPagamentoSchema,
   estornarPagamentoSchema,
+  finalizarMesaSchema,
 } from './Pagamento.schema'
 import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
+import { z } from 'zod'
 
 const repository = new PagamentoRepository()
 const service = new PagamentoService(repository)
@@ -32,6 +34,34 @@ export async function pagamentosRoutes(app: FastifyInstance): Promise<void> {
       const pagamento = await service.criar(data, user.estabelecimento_id)
 
       return reply.status(201).send(pagamento)
+    }
+  )
+
+  // POST /mesa/:mesa_id/finalizar — Caixa: paga a conta INTEIRA da mesa (CAIXA ou ADMIN)
+  app.post(
+    '/mesa/:mesa_id/finalizar',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = request.user as JWTPayload
+
+      if (!user.estabelecimento_id) {
+        throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+      }
+      if (user.perfil !== 'ADMIN' && user.perfil !== 'CAIXA') {
+        throw new AppError('Apenas ADMIN ou CAIXA podem registrar pagamentos', 403)
+      }
+
+      const { mesa_id } = z
+        .object({ mesa_id: z.string().uuid('mesa_id inválido') })
+        .parse(request.params)
+      const data = finalizarMesaSchema.parse(request.body)
+
+      const resultado = await service.finalizarMesa(
+        mesa_id,
+        data,
+        user.sub,
+        user.estabelecimento_id
+      )
+      return reply.send(resultado)
     }
   )
 

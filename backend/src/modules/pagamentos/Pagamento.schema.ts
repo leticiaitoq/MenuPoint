@@ -36,3 +36,18 @@ export const estornarPagamentoSchema = z.object({
 })
 
 export type EstornarPagamentoDTO = z.infer<typeof estornarPagamentoSchema>
+
+// Caixa: fechar a conta INTEIRA da mesa (todos os pedidos em andamento de uma vez).
+// Os valores (subtotal, taxa, total) são calculados no servidor; o front só diz como foi pago.
+export const finalizarMesaSchema = z.object({
+  forma: z.enum(['PIX', 'DEBITO', 'CREDITO', 'DINHEIRO'] as const, {
+    message: 'Forma de pagamento inválida',
+  }),
+  // Só para DINHEIRO: quanto o cliente entregou (para calcular o troco)
+  valor_recebido: z.number().positive().optional(),
+  desconto_valor: z.number().min(0).default(0),
+  taxa_servico_percentual: z.number().min(0).max(30).default(10),
+  observacoes: z.string().max(300).optional(),
+})
+
+export type FinalizarMesaDTO = z.infer<typeof finalizarMesaSchema>

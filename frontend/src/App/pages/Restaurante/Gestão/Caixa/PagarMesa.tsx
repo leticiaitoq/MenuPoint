@@ -21,6 +21,7 @@ import { ROTAS_CAIXA } from '../../../../routes/caixaRotas';
 import MesaService, { Mesa as MesaApi } from '../../../../services/mesa.service';
 import PedidoService, { Pedido as PedidoApi } from '../../../../services/pedido.service';
 import { mensagemDeErro } from '../../../../services/cliente.service';
+import PagamentoService, { FormaPagamentoApi } from '../../../../services/pagameto.service';
 import TransferirMesaModal from '../../../../shared/components/TransferirMesa/TransferirMesaModal';
 import JuntarPedidosModal from '../../../../shared/components/JuntarPedidos/JuntarPedidosModal';
 import ConfirmarAcaoPedido, { TipoAcaoPedido } from '../../../../shared/components/ConfirmarAcaoPedido/ConfirmarAcaoPedido';
@@ -226,6 +227,10 @@ const PagarMesaConteudo: React.FC<{
   const [itens, setItens]           = useState<ItemPedido[]>(pedidoBase.itens);
   const [menuAberto, setMenuAberto] = useState(false);
 
+  // Pagamento inteiro: chamada à API em andamento / erro devolvido (ex.: valor recebido menor)
+  const [pagando, setPagando] = useState(false);
+  const [erroPagamento, setErroPagamento] = useState<string | null>(null);
+
   // Transferir mesa/pedidos e Juntar comandas (modal)
   const [modalMesa, setModalMesa] = useState<'transferir' | 'juntar' | null>(null);
 
@@ -346,6 +351,7 @@ const PagarMesaConteudo: React.FC<{
   const abrirModalPagamento = () => {
     setFormaSelecionada(null);
     setValorRecebidoCentavos(0);
+    setErroPagamento(null);
     setModalPagamentoAberto(true);
   };
 
@@ -355,14 +361,47 @@ const PagarMesaConteudo: React.FC<{
   }, [valorRecebidoNumero, total]);
 
   const podeConcluir =
+    !pagando &&
     formaSelecionada !== null &&
     (formaSelecionada !== 'dinheiro' || valorRecebidoNumero >= total);
 
-  const handleConcluirPagamento = () => {
-    if (!podeConcluir) return;
-    // TODO: chamar pagameto.service.ts — { mesaId: id, forma: formaSelecionada, total }
-    setModalPagamentoAberto(false);
-    navigate('/restaurante/caixa');
+  const FORMA_PARA_API: Record<FormaPagamento, FormaPagamentoApi | null> = {
+    pix: 'PIX', debito: 'DEBITO', credito: 'CREDITO', dinheiro: 'DINHEIRO', outras: null,
+  };
+
+  // Paga a conta inteira: o servidor confirma o pagamento de cada pedido, entrega os pedidos
+  // e libera a mesa. Mesa de demonstração (sem pedidos reais) só volta para o caixa.
+  const handleConcluirPagamento = async () => {
+    if (!podeConcluir || !formaSelecionada) return;
+
+    if (!pedidoBase.pedidos) {
+      setModalPagamentoAberto(false);
+      navigate(ROTAS_CAIXA.lista);
+      return;
+    }
+
+    const forma = FORMA_PARA_API[formaSelecionada];
+    if (!forma) {
+      setErroPagamento('Escolha Pix, débito, crédito ou dinheiro.');
+      return;
+    }
+
+    setPagando(true);
+    setErroPagamento(null);
+    try {
+      await PagamentoService.finalizarMesa(id, {
+        forma,
+        valor_recebido: forma === 'DINHEIRO' ? valorRecebidoNumero : undefined,
+        desconto_valor: descontoValor,
+        taxa_servico_percentual: Math.round(TAXA_SERVICO_PERCENT * 100),
+      });
+      setModalPagamentoAberto(false);
+      navigate(ROTAS_CAIXA.lista);
+    } catch (err: any) {
+      setErroPagamento(mensagemDeErro(err, 'Não foi possível registrar o pagamento.'));
+    } finally {
+      setPagando(false);
+    }
   };
 
   // ── Desconto ─────────────────────────────────────────────────────────────────
@@ -723,12 +762,16 @@ const PagarMesaConteudo: React.FC<{
                 </div>
               )}
 
+              {erroPagamento && (
+                <p className="pagar__dinheiro-erro" role="alert">{erroPagamento}</p>
+              )}
+
               <button
                 className="pagar__btn-concluir"
-                onClick={handleConcluirPagamento}
+                onClick={() => void handleConcluirPagamento()}
                 disabled={!podeConcluir}
               >
-                concluir
+                {pagando ? 'registrando…' : 'concluir'}
               </button>
 
             </div>
