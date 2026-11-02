@@ -39,10 +39,13 @@ export type EstornarPagamentoDTO = z.infer<typeof estornarPagamentoSchema>
 
 // Caixa: fechar a conta INTEIRA da mesa (todos os pedidos em andamento de uma vez).
 // Os valores (subtotal, taxa, total) são calculados no servidor; o front só diz como foi pago.
+const formaMesaSchema = z.enum(['PIX', 'DEBITO', 'CREDITO', 'DINHEIRO'] as const, {
+  message: 'Forma de pagamento inválida',
+})
+
 export const finalizarMesaSchema = z.object({
-  forma: z.enum(['PIX', 'DEBITO', 'CREDITO', 'DINHEIRO'] as const, {
-    message: 'Forma de pagamento inválida',
-  }),
+  // Só pode faltar quando os pagamentos parciais já quitaram a conta inteira
+  forma: formaMesaSchema.optional(),
   // Só para DINHEIRO: quanto o cliente entregou (para calcular o troco)
   valor_recebido: z.number().positive().optional(),
   desconto_valor: z.number().min(0).default(0),
@@ -51,3 +54,39 @@ export const finalizarMesaSchema = z.object({
 })
 
 export type FinalizarMesaDTO = z.infer<typeof finalizarMesaSchema>
+
+// ── Pagamentos parciais da mesa ─────────────────────────────────────────────
+
+const itemSelecionadoSchema = z.object({
+  item_pedido_id: z.string().uuid('item_pedido_id inválido'),
+  quantidade: z.number().int().positive(),
+})
+
+// PAGAMENTO PARCIAL: o cliente paga só os itens escolhidos (o valor é calculado no servidor)
+export const pagamentoParcialSchema = z.object({
+  // O valor dos itens pode ser dividido entre várias formas (ex.: parte Pix, parte dinheiro)
+  formas: z
+    .array(
+      z.object({
+        forma: formaMesaSchema,
+        valor: z.number().positive(),
+        valor_recebido: z.number().positive().optional(), // só DINHEIRO (para o troco)
+      })
+    )
+    .min(1, 'Informe a forma de pagamento'),
+  itens: z.array(itemSelecionadoSchema).min(1, 'Selecione ao menos um item'),
+  taxa_servico_percentual: z.number().min(0).max(30).default(10),
+  observacoes: z.string().max(300).optional(),
+})
+
+// ABATER UM VALOR: o cliente entrega um valor e ele é descontado da conta; os itens são opcionais
+export const abatimentoSchema = z.object({
+  forma: formaMesaSchema,
+  valor: z.number().positive('Informe o valor a abater'),
+  itens: z.array(itemSelecionadoSchema).optional(),
+  taxa_servico_percentual: z.number().min(0).max(30).default(10),
+  observacoes: z.string().max(300).optional(),
+})
+
+export type PagamentoParcialDTO = z.infer<typeof pagamentoParcialSchema>
+export type AbatimentoDTO = z.infer<typeof abatimentoSchema>

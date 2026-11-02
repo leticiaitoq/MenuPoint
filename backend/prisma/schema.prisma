@@ -72,6 +72,7 @@ model Estabelecimento {
   reservas   Reserva[]
   pedidos    Pedido[]
   pagamentos Pagamento[]
+  pagamentos_mesa PagamentoMesa[]
 
   @@map("estabelecimentos")
 }
@@ -101,6 +102,7 @@ model Usuario {
   pedidos_atendidos    Pedido[]    @relation("AtendidoPor")
   reservas_confirmadas Reserva[]   @relation("ConfirmadaPor")
   pagamentos_confirmados Pagamento[] @relation("ConfirmadoPor")
+  pagamentos_mesa_registrados PagamentoMesa[] @relation("RegistradoPor")
   tokens_recuperacao TokenRecuperacaoSenha[]
   tokens_confirmacao_email TokenConfirmacaoEmail[]
   refresh_tokens     RefreshToken[]
@@ -216,6 +218,7 @@ model Mesa {
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   reservas        Reserva[]
   pedidos         Pedido[]
+  pagamentos_mesa PagamentoMesa[]
 
   @@unique([estabelecimento_id, numero])
   @@map("mesas")
@@ -303,6 +306,7 @@ model ItemPedido {
   pedido           Pedido          @relation(fields: [pedido_id], references: [id])
   produto          Produto         @relation(fields: [produto_id], references: [id])
   itens_adicionais ItemAdicional[]
+  pagamentos_mesa  PagamentoMesaItem[]
 
   @@map("itens_pedido")
 }
@@ -346,6 +350,49 @@ model Pagamento {
   confirmado_por  Usuario?        @relation("ConfirmadoPor", fields: [confirmado_por_id], references: [id])
 
   @@map("pagamentos")
+}
+
+// ------------------------------------------------------------
+// Pagamentos PARCIAIS da mesa (Caixa): pagar só alguns itens ou abater um valor da conta.
+// Ficam "abertos" (liquidado_em = null) até a conta da mesa ser fechada; aí são liquidados.
+// ------------------------------------------------------------
+
+model PagamentoMesa {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String            @db.Uuid
+  mesa_id            String            @db.Uuid
+  registrado_por_id  String?           @db.Uuid
+  tipo               TipoPagamentoMesa
+  metodo             FormaPagamento
+  valor              Decimal           @db.Decimal(10, 2) // quanto foi abatido da conta (com taxa de serviço)
+  valor_recebido     Decimal?          @db.Decimal(10, 2) // dinheiro entregue pelo cliente
+  troco              Decimal?          @db.Decimal(10, 2)
+  observacoes        String?
+  liquidado_em       DateTime?         @db.Timestamptz
+  criado_em          DateTime          @default(now()) @db.Timestamptz
+
+  estabelecimento Estabelecimento     @relation(fields: [estabelecimento_id], references: [id])
+  mesa            Mesa                @relation(fields: [mesa_id], references: [id])
+  registrado_por  Usuario?            @relation("RegistradoPor", fields: [registrado_por_id], references: [id])
+  itens           PagamentoMesaItem[]
+
+  @@index([mesa_id, liquidado_em])
+  @@map("pagamentos_mesa")
+}
+
+// Itens (e quantidades) que um pagamento parcial quitou
+model PagamentoMesaItem {
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pagamento_mesa_id String  @db.Uuid
+  item_pedido_id    String  @db.Uuid
+  quantidade        Int
+  valor             Decimal @db.Decimal(10, 2)
+
+  pagamento_mesa PagamentoMesa @relation(fields: [pagamento_mesa_id], references: [id], onDelete: Cascade)
+  item_pedido    ItemPedido    @relation(fields: [item_pedido_id], references: [id], onDelete: Cascade)
+
+  @@index([item_pedido_id])
+  @@map("pagamentos_mesa_itens")
 }
 
 // ============================================================
@@ -569,6 +616,13 @@ enum StatusPagamento {
   FALHOU
 
   @@map("status_pagamento")
+}
+
+enum TipoPagamentoMesa {
+  PARCIAL
+  ABATIMENTO
+
+  @@map("tipo_pagamento_mesa")
 }
 
 enum StatusAssinatura {

@@ -17,4 +17,7 @@ export const ROTAS_CAIXA = {
 
   pagarParcialPadrao: '/restaurante/caixa/pagarParcial/:id',
   pagarParcial: (mesaId: string) => `/restaurante/caixa/pagarParcial/${mesaId}`,
+
+  abaterValorPadrao: '/restaurante/caixa/abater/:id',
+  abaterValor: (mesaId: string) => `/restaurante/caixa/abater/${mesaId}`,
 };

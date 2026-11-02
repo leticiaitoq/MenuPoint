@@ -350,3 +350,37 @@
   cursor: not-allowed;
 }
 
+/* ── Pagamento parcial real / Abater valor ── */
+.pagar-parcial__estado { margin: 24px 0; font-size: 14px; color: #666; text-align: center; }
+.pagar-parcial__estado--erro { color: #b3261e; }
+.pagar-parcial__estado-acoes { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.pagar-parcial__item-nome small { display: block; color: #888; font-size: 12px; }
+.pagar-parcial__ordem { color: #c0392b; }
+.pagar-parcial__stepper { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+.pagar-parcial__stepper button {
+  width: 26px; height: 26px; border-radius: 50%; border: 1px solid #c0392b;
+  background: #fff; color: #c0392b; font-weight: 700; cursor: pointer;
+}
+.pagar-parcial__conta {
+  display: flex; flex-direction: column; gap: 6px; margin: 12px 0;
+  padding: 12px; border-radius: 10px; background: #faf6f5; font-size: 14px;
+}
+.pagar-parcial__conta > div { display: flex; justify-content: space-between; gap: 8px; }
+.pagar-parcial__conta-destaque { color: #1e8e4e; }
+.pagar-parcial__campo--recebido { grid-column: 1 / -1; }
+.pagar-parcial__troco { font-style: normal; font-size: 12px; color: #1e8e4e; }
+.pagar-parcial__input-valor {
+  width: 100%; box-sizing: border-box; padding: 12px; font-size: 20px; font-weight: 700;
+  border: 1px solid #ddd; border-radius: 10px;
+}
+.pagar-parcial__chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
+.pagar-parcial__chip {
+  padding: 8px 16px; border-radius: 50px; border: 1.5px solid #ddd;
+  background: #fff; color: #444; font-weight: 600; cursor: pointer;
+}
+.pagar-parcial__chip--ativo { border-color: #c0392b; background: #fdecea; color: #c0392b; }
+.pagar-parcial__badge { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 50px; white-space: nowrap; }
+.pagar-parcial__badge--ok { background: #e6f6ec; color: #1e8e4e; }
+.pagar-parcial__badge--parcial { background: #fff4d6; color: #8a5a00; }
+.pagar-parcial__badge--nao { background: #f2f2f2; color: #888; }
+.pagar-parcial__aviso--erro { color: #b3261e; }

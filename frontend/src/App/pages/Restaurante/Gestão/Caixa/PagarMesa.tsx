@@ -13,6 +13,7 @@ import {
   HiOutlineSwitchHorizontal,
   HiOutlineDocumentDuplicate,
   HiOutlineTrash,
+  HiOutlinePrinter,
   HiOutlinePencil,
 } from 'react-icons/hi';
 import { MdCreditCard, MdPix } from 'react-icons/md';
@@ -21,8 +22,12 @@ import { ROTAS_CAIXA } from '../../../../routes/caixaRotas';
 import MesaService, { Mesa as MesaApi } from '../../../../services/mesa.service';
 import PedidoService, { Pedido as PedidoApi } from '../../../../services/pedido.service';
 import { mensagemDeErro } from '../../../../services/cliente.service';
-import PagamentoService, { FormaPagamentoApi } from '../../../../services/pagameto.service';
+import PagamentoService, { FormaPagamentoApi, PagamentoParcialRegistrado, ResumoConta } from '../../../../services/pagameto.service';
 import TransferirMesaModal from '../../../../shared/components/TransferirMesa/TransferirMesaModal';
+import ComprovanteMesa from '../../../../shared/components/ComprovanteMesa/ComprovanteMesa';
+import { DadosComprovante, ModoComprovante } from '../../../../shared/components/ComprovanteMesa/comprovante';
+import EstabelecimentoService from '../../../../services/estabelecimento.service';
+import { useAuth } from '../../../../shared/contexts/Authcontext';
 import JuntarPedidosModal from '../../../../shared/components/JuntarPedidos/JuntarPedidosModal';
 import ConfirmarAcaoPedido, { TipoAcaoPedido } from '../../../../shared/components/ConfirmarAcaoPedido/ConfirmarAcaoPedido';
 import './PagarMesa.css';
@@ -56,6 +61,9 @@ interface PedidoDetalhe {
   clientes?: string[];
   /** Pedidos em andamento da mesa. Se existir, a mesa é real (não é o mock). */
   pedidos?: PedidoApi[];
+  /** Soma dos pagamentos parciais/abatimentos já registrados (ainda não liquidados) */
+  pagoParcial?: number;
+  pagamentosParciais?: PagamentoParcialRegistrado[];
 }
 
 interface CupomDesconto {
@@ -142,6 +150,13 @@ const CUPONS_DISPONIVEIS: CupomDesconto[] = [
 
 const TAXA_SERVICO_PERCENT = 0.10;
 
+const ROTULO_METODO: Record<PagamentoParcialRegistrado['metodo'], string> = {
+  PIX_ONLINE: 'Pix',
+  PIX_PRESENCIAL: 'Pix',
+  DINHEIRO: 'Dinheiro',
+  CARTAO: 'Cartão',
+};
+
 const FORMAS_PAGAMENTO: { id: FormaPagamento; nome: string; info: string; icone: React.ReactNode }[] = [
   { id: 'pix',      nome: 'Pix',                 info: 'Aprovação imediata',            icone: < MdPix/> },
   { id: 'debito',   nome: 'Cartão de Débito',     info: 'Aprovação imediata',            icone: <HiCreditCard />    },
@@ -175,7 +190,7 @@ const clientesDaMesa = (pedidos: PedidoApi[]): string[] => {
 };
 
 // Junta os pedidos em andamento da mesa numa única comanda: itens iguais somam a quantidade.
-const montarPedidoDaApi = (mesa: MesaApi, pedidos: PedidoApi[]): PedidoDetalhe => {
+const montarPedidoDaApi = (mesa: MesaApi, pedidos: PedidoApi[], resumo: ResumoConta | null = null): PedidoDetalhe => {
   const agrupados = new Map<string, ItemPedido>();
   pedidos.forEach((p) =>
     p.itens.forEach((i) => {
@@ -207,7 +222,9 @@ const montarPedidoDaApi = (mesa: MesaApi, pedidos: PedidoApi[]): PedidoDetalhe =
     status: 'aberta',
     itens: Array.from(agrupados.values()),
     descontoValor: 0,
-    pagamentosRealizados: 0, // TODO: vir da API de pagamentos quando existir
+    pagamentosRealizados: resumo?.pago ?? 0,
+    pagoParcial: resumo?.pago ?? 0,
+    pagamentosParciais: resumo?.pagamentos ?? [],
     capacidade: mesa.capacidade,
     observacao: mesa.localizacao ?? undefined,
     clientes,
@@ -226,6 +243,25 @@ const PagarMesaConteudo: React.FC<{
 
   const [itens, setItens]           = useState<ItemPedido[]>(pedidoBase.itens);
   const [menuAberto, setMenuAberto] = useState(false);
+
+  // Comanda / comprovante (impressão, imagem, compartilhar)
+  const { usuario } = useAuth();
+  const [nomeRestaurante, setNomeRestaurante] = useState('Restaurante');
+  const [comprovante, setComprovante] = useState<DadosComprovante | null>(null);
+  // Depois de fechar a conta o comprovante é a última tela antes de voltar ao caixa
+  const [contaFechada, setContaFechada] = useState(false);
+
+  useEffect(() => {
+    if (!usuario?.estabelecimento_id) return;
+    EstabelecimentoService.buscar(usuario.estabelecimento_id)
+      .then((e) => e.nome && setNomeRestaurante(e.nome))
+      .catch(() => undefined); // sem o nome o comprovante sai com "Restaurante"
+  }, [usuario?.estabelecimento_id]);
+
+  // Lista de pagamentos parciais (ver / desfazer)
+  const [mostrarParciais, setMostrarParciais] = useState(false);
+  const [desfazendoId, setDesfazendoId] = useState<string | null>(null);
+  const [erroParcial, setErroParcial] = useState<string | null>(null);
 
   // Pagamento inteiro: chamada à API em andamento / erro devolvido (ex.: valor recebido menor)
   const [pagando, setPagando] = useState(false);
@@ -274,7 +310,9 @@ const PagarMesaConteudo: React.FC<{
 
   const subtotal    = useMemo(() => itens.reduce((acc, i) => acc + i.precoUnitario * i.quantidade, 0), [itens]);
   const taxaServico = subtotal * TAXA_SERVICO_PERCENT;
-  const total        = subtotal + taxaServico - descontoValor;
+  // Parciais/abatimentos já pagos saem da conta: `total` é o que ainda falta pagar
+  const pagoParcial  = pedidoBase.pagoParcial ?? 0;
+  const total        = Math.max(subtotal + taxaServico - descontoValor - pagoParcial, 0);
 
   // ── "+ Adicionar item" — adiciona um item mockado direto na comanda ─────────
   const adicionarItem = () => {
@@ -292,6 +330,60 @@ const PagarMesaConteudo: React.FC<{
       }
       return [...prev, { id: gerarIdItem(), nome: produto.nome, quantidade: 1, precoUnitario: produto.preco }];
     });
+  };
+
+  // ── Comanda / comprovante ────────────────────────────────────────────────────
+  const montarComprovante = (
+    modo: ModoComprovante,
+    extra?: { pagamentos: { rotulo: string; valor: number }[]; troco: number }
+  ): DadosComprovante => ({
+    modo,
+    restaurante: nomeRestaurante,
+    mesa: `Mesa ${String(pedidoBase.mesaNumero).padStart(2, '0')}`,
+    emitidoEm: new Date(),
+    clientes: pedidoBase.clientes ?? [],
+    pedidos: (pedidoBase.pedidos ?? []).map((p) => ({
+      numero: p.numero_pedido,
+      hora: new Date(p.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      cliente: p.cliente_nome,
+      total: p.total,
+      itens: p.itens.map((i) => ({
+        nome: i.produto?.nome ?? 'Item',
+        quantidade: i.quantidade,
+        valor: i.preco_total,
+        detalhes: [
+          ...(i.observacoes?.trim() ? [i.observacoes.trim()] : []),
+          ...((i.itens_adicionais ?? []).map((a) => a.nome_adicional).filter((n): n is string => !!n).map((n) => `+ ${n}`)),
+        ],
+      })),
+    })),
+    subtotal,
+    taxaPercentual: Math.round(TAXA_SERVICO_PERCENT * 100),
+    taxaServico,
+    desconto: descontoValor,
+    jaPago: pagoParcial,
+    total,
+    pagamentos: extra?.pagamentos,
+    troco: extra?.troco,
+  });
+
+  const fecharComprovante = () => {
+    setComprovante(null);
+    if (contaFechada) navigate(ROTAS_CAIXA.lista);
+  };
+
+  // ── Desfazer um pagamento parcial (o valor volta para a conta) ───────────────
+  const desfazerParcial = async (pagamentoId: string) => {
+    if (!window.confirm('Desfazer este pagamento? O valor volta para a conta da mesa.')) return;
+    setDesfazendoId(pagamentoId);
+    setErroParcial(null);
+    try {
+      await PagamentoService.desfazerParcial(id, pagamentoId);
+      await onAtualizar();
+    } catch (err: any) {
+      setErroParcial(mensagemDeErro(err, 'Não foi possível desfazer o pagamento.'));
+      setDesfazendoId(null);
+    }
   };
 
   // ── Transferir pedidos / juntar pedidos ──────────────────────────────────────────────────────
@@ -360,10 +452,12 @@ const PagarMesaConteudo: React.FC<{
     return valorRecebidoNumero - total;
   }, [valorRecebidoNumero, total]);
 
+  // Conta já quitada em parciais (total = 0): não precisa escolher forma, só fechar a mesa
   const podeConcluir =
     !pagando &&
-    formaSelecionada !== null &&
-    (formaSelecionada !== 'dinheiro' || valorRecebidoNumero >= total);
+    (total <= 0.004 ||
+      (formaSelecionada !== null &&
+        (formaSelecionada !== 'dinheiro' || valorRecebidoNumero >= total)));
 
   const FORMA_PARA_API: Record<FormaPagamento, FormaPagamentoApi | null> = {
     pix: 'PIX', debito: 'DEBITO', credito: 'CREDITO', dinheiro: 'DINHEIRO', outras: null,
@@ -372,7 +466,7 @@ const PagarMesaConteudo: React.FC<{
   // Paga a conta inteira: o servidor confirma o pagamento de cada pedido, entrega os pedidos
   // e libera a mesa. Mesa de demonstração (sem pedidos reais) só volta para o caixa.
   const handleConcluirPagamento = async () => {
-    if (!podeConcluir || !formaSelecionada) return;
+    if (!podeConcluir) return;
 
     if (!pedidoBase.pedidos) {
       setModalPagamentoAberto(false);
@@ -380,8 +474,8 @@ const PagarMesaConteudo: React.FC<{
       return;
     }
 
-    const forma = FORMA_PARA_API[formaSelecionada];
-    if (!forma) {
+    const forma = (formaSelecionada ? FORMA_PARA_API[formaSelecionada] : null) ?? undefined;
+    if (total > 0.004 && !forma) {
       setErroPagamento('Escolha Pix, débito, crédito ou dinheiro.');
       return;
     }
@@ -389,14 +483,25 @@ const PagarMesaConteudo: React.FC<{
     setPagando(true);
     setErroPagamento(null);
     try {
-      await PagamentoService.finalizarMesa(id, {
+      const r = await PagamentoService.finalizarMesa(id, {
         forma,
-        valor_recebido: forma === 'DINHEIRO' ? valorRecebidoNumero : undefined,
+        valor_recebido: forma === 'DINHEIRO' && total > 0.004 ? valorRecebidoNumero : undefined,
         desconto_valor: descontoValor,
         taxa_servico_percentual: Math.round(TAXA_SERVICO_PERCENT * 100),
       });
       setModalPagamentoAberto(false);
-      navigate(ROTAS_CAIXA.lista);
+
+      // Mostra o comprovante (imprimir / imagem para o cliente); ao fechar, volta ao caixa
+      const rotuloForma = formaSelecionada ? FORMAS_PAGAMENTO.find((f) => f.id === formaSelecionada)?.nome : undefined;
+      const pagamentos = [
+        ...(pedidoBase.pagamentosParciais ?? []).map((p) => ({
+          rotulo: `${p.tipo === 'PARCIAL' ? 'Parcial' : 'Abatimento'} (${ROTULO_METODO[p.metodo]})`,
+          valor: p.valor,
+        })),
+        ...(r.restante > 0.004 ? [{ rotulo: rotuloForma ?? 'Pagamento', valor: r.restante }] : []),
+      ];
+      setContaFechada(true);
+      setComprovante(montarComprovante('comprovante', { pagamentos, troco: r.troco }));
     } catch (err: any) {
       setErroPagamento(mensagemDeErro(err, 'Não foi possível registrar o pagamento.'));
     } finally {
@@ -512,6 +617,13 @@ const PagarMesaConteudo: React.FC<{
                     onClick={() => { setMenuAberto(false); setModalMesa('juntar'); }}
                   >
                     <HiOutlineDocumentDuplicate /> Juntar pedidos
+                  </button>
+                  <button
+                    className="pagar__menu-item"
+                    disabled={!pedidoBase.pedidos?.length}
+                    onClick={() => { setMenuAberto(false); setComprovante(montarComprovante('comanda')); }}
+                  >
+                    <HiOutlinePrinter /> Imprimir comanda
                   </button>
                 </div>
               )}
@@ -659,41 +771,64 @@ const PagarMesaConteudo: React.FC<{
                 registrar desconto
               </button>
 
+              {pagoParcial > 0 && (
+                <div className="pagar__resumo-linha pagar__resumo-linha--desconto">
+                  <span>Já pago (parcial)</span>
+                  <span>- {formatarMoeda(pagoParcial)}</span>
+                </div>
+              )}
+
               <div className="pagar__resumo-total">
-                <span>Total</span>
+                <span>{pagoParcial > 0 ? 'Falta pagar' : 'Total'}</span>
                 <span>{formatarMoeda(total)}</span>
               </div>
 
-              {/*
-                "Pagamento parcial" é outra tela (ainda não existe no projeto).
-                TODO: criar a tela e registrar a rota /restaurante/caixa/mesa/:id/pagamento-parcial.
-              */}
-              <button
-                className="pagar__btn-parcial"
-                onClick={() => navigate(ROTAS_CAIXA.pagarParcial(id))}
-                disabled={itens.length === 0}
-              >
-                Pagamento parcial
-              </button>
+              {/* Pagamento parcial (itens escolhidos) e Abater um valor (valor livre) só existem para mesas reais */}
+              <div className="pagar__botoes-parciais">
+                <button
+                  className="pagar__btn-parcial"
+                  onClick={() => navigate(ROTAS_CAIXA.pagarParcial(id))}
+                  disabled={itens.length === 0 || !pedidoBase.pedidos || total <= 0}
+                >
+                  Pagamento parcial
+                </button>
+                <button
+                  className="pagar__btn-parcial"
+                  onClick={() => navigate(ROTAS_CAIXA.abaterValor(id))}
+                  disabled={itens.length === 0 || !pedidoBase.pedidos || total <= 0}
+                >
+                  Abater um valor
+                </button>
+              </div>
 
               {/* Este é o botão que abre o modal "Forma de pagamento" */}
               <button className="pagar__btn-finalizar" onClick={abrirModalPagamento} disabled={itens.length === 0}>
                 Finalizar pagamento
               </button>
 
-              {pedidoBase.pagamentosRealizados > 0 && (
+              {(pedidoBase.pagamentosParciais?.length ?? 0) > 0 && (
                 <div className="pagar__pagamentos-realizados">
-                  <div className="pagar__resumo-linha">
-                    <span>Pagamentos realizados</span>
-                    <span>{formatarMoeda(pedidoBase.pagamentosRealizados)}</span>
-                  </div>
-                  {/* TODO: criar a tela e registrar a rota /restaurante/caixa/mesa/:id/pagamentos */}
-                  <button
-                    className="pagar__link"
-                    onClick={() => navigate(`/restaurante/caixa/mesa/${id}/pagamentos`)}
-                  >
-                    Ver pagamentos
+                  <button className="pagar__link" onClick={() => setMostrarParciais((v) => !v)}>
+                    {mostrarParciais ? 'Ocultar pagamentos' : `Ver pagamentos (${pedidoBase.pagamentosParciais!.length})`}
                   </button>
+
+                  {mostrarParciais && pedidoBase.pagamentosParciais!.map((p) => (
+                    <div key={p.id} className="pagar__resumo-linha pagar__parcial-linha">
+                      <span>
+                        {p.tipo === 'PARCIAL' ? 'Parcial' : 'Abatimento'} · {ROTULO_METODO[p.metodo]} ·{' '}
+                        {new Date(p.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span>{formatarMoeda(p.valor)}</span>
+                      <button
+                        className="pagar__link"
+                        disabled={desfazendoId === p.id}
+                        onClick={() => void desfazerParcial(p.id)}
+                      >
+                        {desfazendoId === p.id ? 'desfazendo…' : 'desfazer'}
+                      </button>
+                    </div>
+                  ))}
+                  {erroParcial && <p className="pagar__dinheiro-erro" role="alert">{erroParcial}</p>}
                 </div>
               )}
 
@@ -874,7 +1009,7 @@ const PagarMesaConteudo: React.FC<{
                 </div>
                 <div className="pagar__resumo-total">
                   <span>Total com desconto</span>
-                  <span>{formatarMoeda(subtotal + taxaServico - descontoPreview)}</span>
+                  <span>{formatarMoeda(Math.max(subtotal + taxaServico - descontoPreview - pagoParcial, 0))}</span>
                 </div>
               </div>
 
@@ -891,6 +1026,13 @@ const PagarMesaConteudo: React.FC<{
         )}
 
       </div>
+
+      <ComprovanteMesa
+        aberto={comprovante !== null}
+        dados={comprovante}
+        permitirTrocarModo={false}
+        onFechar={fecharComprovante}
+      />
 
       {modalMesa === 'transferir' && pedidoBase.pedidos && (
         <TransferirMesaModal
@@ -938,9 +1080,11 @@ type EstadoCarga =
 // Busca a mesa e os pedidos em andamento dela na API
 const buscarMesa = async (mesaId: string): Promise<EstadoCarga> => {
   try {
-    const [mesas, pedidos] = await Promise.all([
+    const [mesas, pedidos, resumo] = await Promise.all([
       MesaService.listar(),
       PedidoService.listar({ status: STATUS_EM_ANDAMENTO, modalidade: 'MESA', mesa_id: mesaId }),
+      // Pagamentos parciais já feitos nesta mesa (se falhar, a conta aparece sem eles)
+      PagamentoService.resumoMesa(mesaId).catch(() => null),
     ]);
 
     const mesa = mesas.find((m) => m.id === mesaId);
@@ -948,7 +1092,7 @@ const buscarMesa = async (mesaId: string): Promise<EstadoCarga> => {
 
     // Garante que só entram pedidos desta mesa, mesmo se a API ignorar o filtro
     const daMesa = pedidos.filter((p) => p.mesa?.id === mesaId);
-    return { tipo: 'ok', pedido: montarPedidoDaApi(mesa, daMesa) };
+    return { tipo: 'ok', pedido: montarPedidoDaApi(mesa, daMesa, resumo) };
   } catch (err: any) {
     return { tipo: 'erro', mensagem: mensagemDeErro(err, 'Não foi possível carregar a mesa.') };
   }

@@ -176,6 +176,20 @@ export class PedidoService {
       throw new AppError('Motivo de cancelamento é obrigatório', 400)
     }
 
+    // Item já pago em pagamento parcial: desfaça o parcial antes de cancelar o pedido
+    if (data.status === 'CANCELADO') {
+      const itemPago = await prisma.pagamentoMesaItem.findFirst({
+        where: { item_pedido: { pedido_id: id }, pagamento_mesa: { liquidado_em: null } },
+        select: { id: true },
+      })
+      if (itemPago) {
+        throw new AppError(
+          'Este pedido tem itens já pagos em pagamento parcial. Desfaça o pagamento parcial antes de cancelar.',
+          409
+        )
+      }
+    }
+
     // Pedido já pago não se cancela: o valor precisa ser estornado antes
     if (data.status === 'CANCELADO') {
       const pago = await prisma.pagamento.findFirst({
@@ -318,13 +332,31 @@ export class PedidoService {
         )
       }
 
+      const origemLiberada = aMover.length === pedidosOrigem.length
+
+      // Pagamentos parciais pertencem à conta da mesa: só acompanham se a conta inteira se mover
+      const parciaisAbertos = await tx.pagamentoMesa.count({
+        where: { mesa_id: origem.id, estabelecimento_id, liquidado_em: null },
+      })
+      if (parciaisAbertos > 0 && !origemLiberada) {
+        throw new AppError(
+          `A Mesa ${origem.numero} tem pagamentos parciais registrados: transfira todos os pedidos de uma vez ou desfaça os pagamentos parciais.`,
+          409
+        )
+      }
+      if (parciaisAbertos > 0) {
+        await tx.pagamentoMesa.updateMany({
+          where: { mesa_id: origem.id, estabelecimento_id, liquidado_em: null },
+          data: { mesa_id: destino.id },
+        })
+      }
+
       await tx.pedido.updateMany({
         where: { id: { in: aMover.map((p) => p.id) } },
         data: { mesa_id: destino.id },
       })
       await tx.mesa.update({ where: { id: destino.id }, data: { status: 'OCUPADA' } })
 
-      const origemLiberada = aMover.length === pedidosOrigem.length
       if (origemLiberada) {
         await tx.mesa.update({ where: { id: origem.id }, data: { status: 'LIVRE' } })
       }
@@ -480,6 +512,17 @@ export class PedidoService {
 
       if (pedidos.length === 0) {
         throw new AppError(`A Mesa ${mesa.numero} não tem pedido em andamento`, 400)
+      }
+
+      // Já recebeu algo em pagamento parcial/abatimento: desfaça antes de cancelar a mesa
+      const parciais = await tx.pagamentoMesa.count({
+        where: { mesa_id, estabelecimento_id, liquidado_em: null },
+      })
+      if (parciais > 0) {
+        throw new AppError(
+          `A Mesa ${mesa.numero} tem pagamentos parciais registrados. Desfaça-os antes de cancelar.`,
+          409
+        )
       }
 
       // Pedido já pago não se cancela: o valor precisa ser estornado antes

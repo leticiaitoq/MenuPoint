@@ -806,3 +806,8 @@
 .pagar__menu-item:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .pagar__dinheiro-erro { margin: 8px 0 0; color: #b3261e; font-size: 13px; font-weight: 600; }
+
+/* ── Pagamento parcial + Abater um valor lado a lado ── */
+.pagar__botoes-parciais { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pagar__parcial-linha { align-items: center; gap: 8px; font-size: 13px; }
+.pagar__parcial-linha span:first-child { flex: 1; }

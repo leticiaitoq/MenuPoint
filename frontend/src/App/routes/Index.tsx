@@ -46,6 +46,7 @@ import Persopedido from "../shared/components/PersonalizaPedido/Persopedido";
 import GerenPagamentos from "../pages/Restaurante/Gestão/Caixa/GerenPagamentos";
 import PagarMesa from "../pages/Restaurante/Gestão/Caixa/PagarMesa";
 import PagarParcial from "../pages/Restaurante/Gestão/Caixa/PagarParcial";
+import AbaterValor from "../pages/Restaurante/Gestão/Caixa/AbaterValor";
 import Despesas from "../pages/Restaurante/Gestão/Relatorios/Despesas/Despesa";
 import CadDespesa from "../pages/Restaurante/Gestão/Relatorios/Despesas/CadDespesa";
 /**
@@ -126,6 +127,7 @@ const AppRoutes: React.FC = () => {
           <Route path={ROTAS_CAIXA.pagarMesaPadrao} element={<PagarMesa />} />
           <Route path="/restaurante/caixa/pagarParcial" element={<Navigate to={ROTAS_CAIXA.lista} replace />} />
           <Route path={ROTAS_CAIXA.pagarParcialPadrao} element={<PagarParcial />} />
+          <Route path={ROTAS_CAIXA.abaterValorPadrao} element={<AbaterValor />} />
           <Route path="/restaurante/despesas" element={<Despesas />} />
           <Route path="/restaurante/despesas/cadastrodespe" element={<CadDespesa />} />
         </Route>

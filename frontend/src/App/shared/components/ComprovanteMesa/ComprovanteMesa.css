@@ -1,0 +1,57 @@
+.comprov__overlay {
+  position: fixed; inset: 0; z-index: 1200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; background: rgba(0, 0, 0, 0.5);
+}
+.comprov__modal {
+  width: 100%; max-width: 440px; max-height: calc(100vh - 32px);
+  display: flex; flex-direction: column; overflow: hidden;
+  background: #fff; border-radius: 16px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+.comprov__header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 8px; }
+.comprov__header h3 { margin: 0; font-size: 17px; }
+.comprov__fechar { display: flex; background: none; border: none; font-size: 22px; color: #666; cursor: pointer; }
+.comprov__abas { display: flex; gap: 8px; padding: 0 20px 8px; }
+.comprov__abas button {
+  flex: 1; padding: 8px 10px; border-radius: 50px; border: 1.5px solid #ddd;
+  background: #fff; font-size: 13px; font-weight: 600; color: #555; cursor: pointer;
+}
+.comprov__abas .comprov__aba--ativa { border-color: #c0392b; background: #fdecea; color: #c0392b; }
+.comprov__corpo { padding: 8px 20px; overflow-y: auto; background: #f4f4f4; }
+
+/* A "folha" imita o cupom */
+.comprov-folha {
+  margin: 0 auto; width: 100%; max-width: 340px; padding: 18px 16px;
+  background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  font-family: "Courier New", monospace; font-size: 13px; color: #111;
+}
+.comprov__texto { margin: 0 0 4px; word-break: break-word; }
+.comprov__texto--centro { text-align: center; }
+.comprov__negrito { font-weight: 700; }
+.comprov__grande { font-size: 18px; }
+.comprov__pequeno { font-size: 11px; }
+.comprov__divisor { border: none; border-top: 1px dashed #555; margin: 8px 0; }
+.comprov__espaco { height: 8px; }
+.comprov__par { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 3px; }
+.comprov__par span:first-child { flex: 1; word-break: break-word; }
+.comprov__par span:last-child { white-space: nowrap; }
+.comprov__recuo { padding-left: 14px; font-size: 11px; color: #555; }
+.comprov__erro { margin: 0; padding: 8px 20px; color: #b3261e; font-size: 13px; }
+.comprov__acoes { display: flex; gap: 8px; padding: 12px 20px 16px; }
+.comprov__btn {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px 8px; border-radius: 10px; border: none; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.comprov__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.comprov__btn--sec { background: #f2f2f2; color: #444; }
+.comprov__btn--prim { background: #c0392b; color: #fff; }
+
+/* Impressão: só a folha sai no papel */
+@media print {
+  body * { visibility: hidden !important; }
+  .comprov-folha, .comprov-folha * { visibility: visible !important; }
+  .comprov-folha {
+    position: absolute; left: 0; top: 0; width: 100%; max-width: none;
+    box-shadow: none; padding: 0;
+  }
+}
