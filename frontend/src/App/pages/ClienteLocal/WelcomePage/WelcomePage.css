@@ -12,7 +12,7 @@
   height: 180px;
   border-radius: 50%;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 16px var(--shadow-color)
 }
 
 .welcome-page__logo {
@@ -36,9 +36,9 @@
   border: none;
   border-radius: 50px;
   font-size: 16px;
-  color: #1a1a1a;
-  background-color: #ffffff;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  color: var(--text);
+  background-color: var(--bg-surface);
+  box-shadow: 0 2px 12px var(--shadow-color);
   outline: none;
   transition: box-shadow 0.2s;
   box-sizing: border-box;
@@ -46,17 +46,17 @@
 }
 
 .welcome-page__input:focus {
-  box-shadow: 0 2px 16px rgba(192, 57, 43, 0.25);
+  box-shadow: 0 2px 16px var(--brand-tint);
 }
 
 .welcome-page__input--error {
-  border: 1.5px solid #c0392b;
-  box-shadow: 0 2px 12px rgba(192, 57, 43, 0.15);
+  border: 1.5px solid var(--brand);
+  box-shadow: 0 2px 12px var(--brand-tint);
 }
 
 .welcome-page__error {
   font-size: 13px;
-  color: #c0392b;
+  color: var(--brand);
   text-align: center;
 }
 
@@ -71,7 +71,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color:var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -84,7 +84,7 @@
  * e background branco no wrapper interno — criando a ilusão de borda colorida.
  */
 .welcome-page__modal {
-  background: linear-gradient(135deg, #f1c40f, #c0392b, #6b0f1a);
+  background: linear-gradient(135deg, var(--warning), var(--brand), #6b0f1a);
   padding: 4px;
   border-radius: 24px;
   width: 100%;
@@ -92,7 +92,7 @@
 }
 
 .welcome-page__modal-inner {
-  background-color: #ffffff;
+  background-color:  var(--bg-surface);
   border-radius: 21px;
   padding: 40px 48px;
   display: flex;
@@ -106,12 +106,12 @@
  * texto centralizado, bordas bem arredondadas.
  */
 .welcome-page__modal-pill {
-  background-color: #f0f0f0;
+  background-color: var(--bg-surface-alt);
   padding: 14px 32px;
   border-radius: 50px;
   font-size: 18px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--text);
   text-align: center;
   width: 100%;
   box-sizing: border-box;
@@ -119,15 +119,15 @@
 
 .welcome-page__modal-text {
   font-size: 15px;
-  color: #888888;
+  color: var(--text-faint);
   text-align: center;
   line-height: 1.6;
   margin: 0;
 }
 
 .welcome-page__modal-button {
-  background-color: #c0392b;
-  color: #ffffff;
+  background-color: var(--brand);
+  color:  var(--on-brand) ;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -140,14 +140,14 @@
 }
 
 .welcome-page__modal-button:hover {
-  background-color: #a93226;
+  background-color: var(--brand-hover);
 }
 
 .welcome-page__enter-btn {
   width: 100%;
   padding: 14px 24px;
-  background-color: #c0392b;
-  color: #ffffff;
+  background-color: var(--brand-hover);
+  color: var(--on-brand);
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -158,13 +158,13 @@
 }
 
 .welcome-page__enter-btn:disabled {
-  background-color: #d9a9a3;
+  background-color: var(--brand-soft-border);
   cursor: not-allowed;
   transform: none;
 }
 
 .welcome-page__enter-btn:hover {
-  background-color: #a93226;
+  background-color: var(--brand-hover);
 }
 
 .welcome-page__enter-btn:active {
@@ -191,18 +191,18 @@
   align-items: center;
   gap: 10px;
 }
-.welcome-page__conta-ou { font-size: 13px; color: #777; }
+.welcome-page__conta-ou { font-size: 13px; color: var(--text-muted); }
 .welcome-page__conta-botoes { display: flex; gap: 10px; width: 100%; }
 .welcome-page__conta-btn {
   flex: 1;
   padding: 12px 16px;
-  border: 2px solid #c0392b;
+  border: 2px solid var(--brand);
   border-radius: 50px;
   background: transparent;
-  color: #c0392b;
+  color: var(--brand);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition: background-color 0.2s;
 }
-.welcome-page__conta-btn:hover { background: rgba(192, 57, 43, 0.08); }
+.welcome-page__conta-btn:hover { background: var(--brand-tint); }

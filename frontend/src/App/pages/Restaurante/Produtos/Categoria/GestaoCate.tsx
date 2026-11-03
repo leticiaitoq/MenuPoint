@@ -79,7 +79,6 @@ const LinhaCategoria: React.FC<LinhaProps> = ({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    background: isDragging ? '#fdf0f0' : selecionada ? '#fff7f6' : 'white',
   };
 
   // Cliques nos botões da linha não podem abrir/fechar a aba de adicionais
@@ -89,7 +88,7 @@ const LinhaCategoria: React.FC<LinhaProps> = ({
     <tr
       ref={setNodeRef}
       style={style}
-      className={`cate__linha ${selecionada ? 'cate__linha--selecionada' : ''}`}
+      className={`cate__linha ${selecionada ? 'cate__linha--selecionada' : ''} ${isDragging ? 'cate__linha--arrastando' : ''}`}
       onClick={() => onSelecionar(categoria)}
       onKeyDown={(e) => {
         if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {

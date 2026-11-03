@@ -3,8 +3,6 @@
   flex-direction: column;
   gap: 20px;
   padding-bottom: 32px; 
-  background-repeat: repeat-y;
-  background-size: 100% auto;
   margin: -24px;
   padding: 24px;
   box-sizing: border-box;

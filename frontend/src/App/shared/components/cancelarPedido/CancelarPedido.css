@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--bg-card-glass);
 }
 
 .cancelar__modal {
@@ -15,9 +15,9 @@
   max-height: calc(100vh - 32px);
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--bg-surface);
   border-radius: 16px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 20px 50pxvar(--shadow-color);
   overflow: hidden;
 }
 
@@ -36,26 +36,26 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #fdecea;
-  color: #c0392b;
+  background: var(--accent);
+  color: var(--on-status);
   font-size: 22px;
 }
 
 .cancelar__header-texto { flex: 1; }
-.cancelar__titulo { margin: 0; font-size: 17px; font-weight: 700; color: #222; }
-.cancelar__subtitulo { margin: 2px 0 0; font-size: 13px; color: #888; }
+.cancelar__titulo { margin: 0; font-size: 17px; font-weight: 700; color: var(--text); }
+.cancelar__subtitulo { margin: 2px 0 0; font-size: 13px; color: var(--text-faint); }
 
 .cancelar__fechar {
   display: flex;
   background: none;
   border: none;
   font-size: 22px;
-  color: #666;
+  color: var(--text-muted);
   cursor: pointer;
   border-radius: 8px;
   padding: 4px;
 }
-.cancelar__fechar:hover { background: #f0f0f0; }
+.cancelar__fechar:hover { background: var(--bg-surface-alt); }
 
 .cancelar__corpo {
   padding: 4px 20px 16px;
@@ -68,28 +68,28 @@
   align-items: center;
   padding: 10px 14px;
   margin-bottom: 14px;
-  background: #f6f6f6;
+  background: var(--bg-surface-alt)6;
   border-radius: 10px;
   font-size: 14px;
-  color: #555;
+  color: var(--text-muted);
 }
-.cancelar__resumo strong { color: #222; font-size: 16px; }
+.cancelar__resumo strong { color: var(--text); font-size: 16px; }
 
 .cancelar__bloqueio {
   padding: 12px 14px;
-  background: #fff4e5;
-  border: 1px solid #f0c27a;
+  background: var(--warning-soft);
+  border: 1px solid var(--warning-soft);
   border-radius: 10px;
   font-size: 14px;
   line-height: 1.45;
-  color: #7a4a00;
+  color: var(--warning-text);
 }
 
 .cancelar__label {
   margin: 0 0 8px;
   font-size: 13px;
   font-weight: 700;
-  color: #444;
+  color: var(--text-muted);
 }
 
 .cancelar__motivos { display: flex; flex-direction: column; gap: 8px; }
@@ -99,16 +99,16 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border: 1.5px solid #e2e2e2;
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   font-size: 14px;
-  color: #333;
+  color: var(--text);
   cursor: pointer;
   transition: border-color 0.15s, background-color 0.15s;
 }
-.cancelar__motivo:hover { background: #fafafa; }
-.cancelar__motivo input { accent-color: #c0392b; }
-.cancelar__motivo--ativo { border-color: #c0392b; background: #fdecea; }
+.cancelar__motivo:hover { background: var(--bg-surface-alt); }
+.cancelar__motivo input { accent-color: var(--brand)b; }
+.cancelar__motivo--ativo { border-color: var(--brand); background: var(--brand-soft); }
 
 .cancelar__outro { margin-top: 10px; }
 
@@ -116,13 +116,13 @@
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
-  border: 1.5px solid #e2e2e2;
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   font: inherit;
   font-size: 14px;
   resize: vertical;
 }
-.cancelar__textarea:focus { outline: none; border-color: #c0392b; }
+.cancelar__textarea:focus { outline: none; border-color: var(--brand); }
 
 .cancelar__outro-rodape {
   display: flex;
@@ -130,15 +130,15 @@
   margin-top: 4px;
   font-size: 12px;
 }
-.cancelar__dica { color: #c0392b; }
-.cancelar__contador { color: #999; }
+.cancelar__dica { color: var(--accent); }
+.cancelar__contador { color: var(--text-faint); }
 
 .cancelar__acoes {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 20px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border);
 }
 
 .cancelar__btn {
@@ -150,10 +150,10 @@
   cursor: pointer;
   transition: background-color 0.15s, opacity 0.15s;
 }
-.cancelar__btn--sec { background: #eee; color: #444; }
-.cancelar__btn--sec:hover { background: #e2e2e2; }
-.cancelar__btn--perigo { background: #c0392b; color: #fff; }
-.cancelar__btn--perigo:hover:not(:disabled) { background: #a93226; }
+.cancelar__btn--sec { background: var(--border); color: var(--text-muted); }
+.cancelar__btn--sec:hover { background: var(--border); }
+.cancelar__btn--perigo { background: var(--brand); color: var(--on-brand); }
+.cancelar__btn--perigo:hover:not(:disabled) { background: var(--brand-hover); }
 .cancelar__btn--perigo:disabled { opacity: 0.4; cursor: not-allowed; }
 
 @media (max-width: 480px) {

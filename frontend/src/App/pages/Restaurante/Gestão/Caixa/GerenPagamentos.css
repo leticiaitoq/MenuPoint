@@ -20,13 +20,13 @@
 .caixa__titulo {
   font-size: 26px;
   font-weight: 700;
-  color: #333;
+  color: var(--text);
   margin: 0;
 }
 
 .caixa__subtitulo {
   font-size: 14px;
-  color: #888;
+  color: var(--text-faint);
   margin: 4px 0 0;
 }
 
@@ -45,9 +45,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #fdecea;
-  border: 1px solid #f3c8c2;
-  color: #c0392b;
+  background: var(--brand-soft);
+  border: 1px solid var(--brand-soft-border);
+  color: var(--accent);
   border-radius: 20px;
   padding: 9px 18px;
   font-size: 14px;
@@ -74,8 +74,8 @@
   min-width: 22px;
   height: 22px;
   padding: 0 6px;
-  background: #c0392b;
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-brand);
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
@@ -85,20 +85,20 @@
    Este SIM é uma ação: botão sólido, com hover, sombra e cursor de ponteiro —
    o contraste visual com o chip acima deixa claro o que é clicável. */
 .caixa__btn-historico {
-  background: #c0392b;
-  color: #fff;
+  background: var(--brand);
+  color: var(--on-brand);
   border: none;
   border-radius: 20px;
   padding: 10px 26px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(192, 57, 43, 0.35);
+  box-shadow: 0 2px 6px var(--shadow-color);
   transition: background 0.2s, transform 0.15s;
 }
 
 .caixa__btn-historico:hover {
-  background: #a53125;
+  background: var(--brand-hover);
   transform: translateY(-1px);
 }
 
@@ -109,9 +109,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #fff;
-  color: #c0392b;
-  border: 1.5px solid #c0392b;
+  background: var(--bg-surface);
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
   border-radius: 20px;
   padding: 9px 22px;
   font-size: 14px;
@@ -121,12 +121,12 @@
 }
 
 .caixa__btn-cadastrar:hover {
-  background: #fdecea;
+  background: var(--bg-surface-alt);
   transform: translateY(-1px);
 }
 
 .caixa__btn-cadastrar:focus-visible {
-  outline: 2px solid #c0392b;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -134,7 +134,7 @@
    Painel
 ═══════════════════════════════════════════════ */
 .caixa__painel {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--bg-card-glass);
   border-radius: 16px;
   padding: 20px 24px 28px;
   backdrop-filter: blur(4px);
@@ -150,7 +150,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--border);
   padding-bottom: 0;
 }
 
@@ -166,18 +166,18 @@
   padding: 10px 2px 12px;
   font-size: 15px;
   font-weight: 600;
-  color: #999;
+  color: var(--text-faint);
   cursor: pointer;
   transition: color 0.2s;
 }
 
 .caixa__aba:hover {
-  color: #c0392b;
+  color: var(--accent);
 }
 
 .caixa__aba--ativa {
-  color: #c0392b;
-  border-bottom-color: #c0392b;
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 .caixa__visualizacao {
@@ -192,9 +192,9 @@
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid #e0e0e0;
-  background: #fff;
-  color: #999;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-faint);
   border-radius: 8px;
   font-size: 16px;
   cursor: pointer;
@@ -202,20 +202,20 @@
 }
 
 .caixa__btn-view:hover {
-  color: #c0392b;
+  color: var(--accent);
 }
 
 .caixa__btn-view--ativo {
-  background: #fdecea;
-  border-color: #f3c8c2;
-  color: #c0392b;
+  background: var(--brand-soft);
+  border-color: var(--brand-soft-border);
+  color: var(--accent);
 }
 
 /* ── Estado vazio ── */
 .caixa__vazio {
   text-align: center;
   padding: 40px 0;
-  color: #999;
+  color: var(--text-faint);
   font-size: 14px;
 }
 
@@ -238,11 +238,11 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background: #fff;
-  border: 1px solid #eee;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 18px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 4px var(--overlay);
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
 
@@ -254,25 +254,25 @@
 
 .caixa__card--clicavel:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-  border-color: #f3c8c2;
+  box-shadow: 0 6px 16px var(--overlay);
+  border-color: var(--brand-soft-border);
 }
 
 .caixa__card--clicavel:focus-visible {
-  outline: 2px solid #c0392b;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 .caixa__card--livre {
   border-style: dashed;
-  background: #fafafa;
+  background: var(--bg-surface-alt);
 }
 
 /* Mesa reservada: mesmo formato tracejado da livre, com tom âmbar */
 .caixa__card--reservada {
   border-style: dashed;
-  border-color: #f0c78a;
-  background: #fffaf2;
+  border-color: var(--warning-soft);
+  background: var(--bg-surface);
 }
 
 .caixa__card-topo {
@@ -284,7 +284,7 @@
 .caixa__card-nome {
   font-size: 18px;
   font-weight: 700;
-  color: #333;
+  color: var(--text)3;
 }
 
 /* ── Menu de ações (⋮) ── */
@@ -295,7 +295,7 @@
 .caixa__card-menu-btn {
   background: none;
   border: none;
-  color: #aaa;
+  color: var(--text-faint);
   font-size: 18px;
   padding: 2px;
   cursor: pointer;
@@ -304,18 +304,18 @@
 }
 
 .caixa__card-menu-btn:hover {
-  color: #555;
-  background: #f2f2f2;
+  color: var(--text-muted);
+  background: var(--bg-surface-alt);
 }
 
 .caixa__card-menu {
   position: absolute;
   top: 28px;
   right: 0;
-  background: #fff;
-  border: 1px solid #eee;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px var(--shadow-color);
   min-width: 170px;
   display: flex;
   flex-direction: column;
@@ -332,17 +332,17 @@
   text-align: left;
   padding: 9px 10px;
   font-size: 13px;
-  color: #444;
+  color: var(--text-muted);
   border-radius: 6px;
   cursor: pointer;
 }
 
 .caixa__card-menu-item:hover {
-  background: #f5f5f5;
+  background: var(--bg-surface-alt);
 }
 
 .caixa__card-menu-item--perigo {
-  color: #c0392b;
+  color: var(--accent);
 }
 
 /* ── Corpo do card (mesa ocupada) ── */
@@ -351,7 +351,7 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #888;
+  color: var(--text-faint);
 }
 
 .caixa__card-linha {
@@ -359,17 +359,17 @@
   align-items: center;
   justify-content: space-between;
   padding-top: 8px;
-  border-top: 1px solid #f2f2f2;
+  border-top: 1px solid var(--bg-surface-alt);
   font-size: 14px;
 }
 
 .caixa__card-itens {
-  color: #888;
+  color: var(--text-faint);
 }
 
 .caixa__card-total {
   font-weight: 700;
-  color: #333;
+  color: var(--text);
 }
 
 .caixa__card-tempo {
@@ -377,7 +377,7 @@
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #999;
+  color: var(--text-faint);
 }
 
 /* ── Badges de status ── */
@@ -386,27 +386,27 @@
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
-  color: #fff;
+  color: var(--on-status);
 }
 
-.caixa__badge--aberta  { background-color: #27ae60; }
-.caixa__badge--fechada { background-color: #7f8c8d; }
+.caixa__badge--aberta  { background-color: var(--success); }
+.caixa__badge--fechada { background-color: var(--text-muted); }
 
 /* ── Corpo do card (mesa livre / reservada) ── */
 .caixa__card-livre-label {
   font-size: 13px;
-  color: #aaa;
+  color: var(--text-faint);
   font-weight: 600;
 }
 
 .caixa__card--reservada .caixa__card-livre-label {
-  color: #d68910;
+  color: var(--warning);
 }
 
 /* Observação cadastrada na mesa (uma linha, com reticências) */
 .caixa__card-obs {
   font-size: 12px;
-  color: #999;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -417,9 +417,9 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: #fff;
-  border: 1px solid #e0a06a;
-  color: #c0392b;
+  background: var(--bg-surface);
+  border: 1px solid var(--warning);
+  color: var(--accent);
   border-radius: 8px;
   padding: 10px 12px;
   font-size: 13px;
@@ -429,7 +429,7 @@
 }
 
 .caixa__card-btn-abrir:hover {
-  background: #fdecea;
+  background: var(--brand-soft);
 }
 
 /* ═══════════════════════════════════════════════
@@ -478,7 +478,7 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay);
   animation: caixa-fade 0.15s ease;
 }
 
@@ -488,9 +488,9 @@
   max-height: calc(100vh - 32px);
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--bg-surface);
   border-radius: 16px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 20px 50px var(--overlay);
   overflow: hidden;
   animation: caixa-subir 0.18s ease;
 }
@@ -507,13 +507,13 @@
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: #333;
+  color:var(--text) ;
 }
 
 .caixa__modal-subtitulo {
   margin: 4px 0 0;
   font-size: 13px;
-  color: #888;
+  color:var(--text-faint);
 }
 
 .caixa__modal-fechar {
@@ -525,15 +525,15 @@
   background: none;
   border: none;
   border-radius: 8px;
-  color: #aaa;
+  color: var(--text-faint);
   font-size: 20px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
 
 .caixa__modal-fechar:hover {
-  background: #f2f2f2;
-  color: #555;
+  background: var(--bg-surface-alt);
+  color: var(--text-muted);
 }
 
 .caixa__modal-corpo {
@@ -568,22 +568,22 @@
   padding: 0;
   font-size: 13px;
   font-weight: 600;
-  color: #444;
+  color: var(--text-muted);
 }
 
 .caixa__opcional {
   font-weight: 400;
-  color: #aaa;
+  color: var(--text-faint);
 }
 
 .caixa__input {
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fafafa;
-  color: #333;
+  background: var(--bg-surface-alt);
+  color: var(--text);
   font-family: inherit;
   font-size: 14px;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
@@ -591,15 +591,15 @@
 
 .caixa__input:focus {
   outline: none;
-  border-color: #c0392b;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+  border-color: var(--brand);
+  background: var(--bg-surface);
+  box-shadow: 0 0 0 3px var(--brand-tint);
 }
 
 .caixa__input--erro,
 .caixa__input--erro:focus {
-  border-color: #c0392b;
-  background: #fdf3f2;
+  border-color: var(--brand);
+  background: var(--brand-soft);
 }
 
 .caixa__select   { cursor: pointer; }
@@ -608,7 +608,7 @@
 .caixa__erro {
   margin: 0;
   font-size: 12px;
-  color: #c0392b;
+  color: var(--accent);
 }
 
 .caixa__campo-rodape {
@@ -620,11 +620,11 @@
 
 .caixa__contador {
   font-size: 12px;
-  color: #aaa;
+  color: var(--text-faint);
 }
 
 .caixa__contador--excedido {
-  color: #c0392b;
+  color: var(--accent);
   font-weight: 600;
 }
 
@@ -642,10 +642,10 @@
   align-items: center;
   justify-content: center;
   padding: 10px 12px;
-  border: 1.5px solid #e0e0e0;
+  border: 1.5px solid var(--border);
   border-radius: 8px;
-  background: #fff;
-  color: #888;
+  background: var(--bg-surface);
+  color:var(--text-faint);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -660,19 +660,19 @@
 }
 
 .caixa__opcao:focus-within {
-  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+  box-shadow: 0 0 0 3px var(--brand-tint);
 }
 
 .caixa__opcao--livre.caixa__opcao--ativa {
-  border-color: #27ae60;
-  background: #eafaf1;
-  color: #1e8449;
+  border-color: var(--success);
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .caixa__opcao--reservada.caixa__opcao--ativa {
-  border-color: #e67e22;
-  background: #fef5e7;
-  color: #b9770e;
+  border-color: var(--warning);
+  background: var(--warning-soft);
+  color: var(--warning-text);
 }
 
 /* ── Ações ── */
@@ -681,8 +681,8 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 16px 24px;
-  border-top: 1px solid #f0f0f0;
-  background: #fafafa;
+  border-top: 1px solid var(--bg-surface-alt);
+  background: var(--bg-surface-alt);
 }
 
 .caixa__btn-cancelar,
@@ -700,30 +700,30 @@
 }
 
 .caixa__btn-cancelar {
-  background: #fff;
-  color: #666;
-  border: 1px solid #ddd;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
 }
 
 .caixa__btn-cancelar:hover {
-  background: #f2f2f2;
+  background: var(--bg-surface-alt);
 }
 
 .caixa__btn-salvar {
-  background: #c0392b;
-  color: #fff;
-  border: 1px solid #c0392b;
-  box-shadow: 0 2px 6px rgba(192, 57, 43, 0.35);
+  background: var(--brand);
+  color: var(--on-brand);
+  border: 1px solid var(--brand);
+  box-shadow: 0 2px 6px var(--brand-tint);
 }
 
 .caixa__btn-salvar:hover {
-  background: #a53125;
-  border-color: #a53125;
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
 }
 
 .caixa__btn-cancelar:focus-visible,
 .caixa__btn-salvar:focus-visible {
-  outline: 2px solid #c0392b;
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 
@@ -740,15 +740,15 @@
 
 .caixa__qr-wrap {
   padding: 12px;
-  background: #fff;
-  border: 1px solid #e5e5e5;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
 .caixa__qr-url {
   margin: 0;
   font-size: 12px;
-  color: #888;
+  color:var(--text-faint);
   word-break: break-all;
   text-align: center;
 }
@@ -773,28 +773,28 @@
   margin-top: 6px;
   padding: 7px 10px;
   background: none;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #666;
+  color: var(--text-muted);
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .caixa__card-btn-alternar:hover:not(:disabled) {
-  background: #f5f5f5;
-  border-color: #bbb;
-  color: #333;
+  background: var(--bg-surface-alt);
+  border-color: var(--text-faint);
+  color: var(--text);
 }
 
 .caixa__card--reservada .caixa__card-btn-alternar {
-  border-color: #f0c78a;
-  color: #b9770e;
+  border-color: var(--warning-soft);
+  color: var(--warning-text);
 }
 
 .caixa__card--reservada .caixa__card-btn-alternar:hover:not(:disabled) {
-  background: #fff3e0;
+  background: var(--warning-soft);
 }
 
 .caixa__card-btn-alternar:disabled {

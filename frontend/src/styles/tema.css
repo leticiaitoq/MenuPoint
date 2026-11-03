@@ -1,0 +1,119 @@
+/* MenuPoint: tokens de tema. Claro = visual atual. Escuro = base do modelo (grafite, vermelho mais vivo, âmbar de destaque). */
+:root {
+  color-scheme: light;
+
+  /* Fundos */
+  --bg-page: #ececec;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #f5f5f5;
+  --bg-sidebar: rgba(221, 220, 220, 0.95);
+  --bg-card-glass: rgba(255, 255, 255, 0.79);
+
+  /* Texto */
+  --text: #333333;
+  --text-muted: #666666;
+  --text-faint: #999999;
+  --on-brand: #ffffff;
+  --on-status: #ffffff;
+
+  /* Bordas */
+  --border: #e0e0e0;
+  --border-strong: #cccccc;
+
+  /* Marca */
+  --brand: #c0392b;
+  --brand-hover: #a93226;
+  --accent: #c0392b;
+  --brand-soft: #fdecea;
+  --brand-soft-border: #f3c8c2;
+  --brand-tint: rgba(192, 57, 43, 0.12);
+
+  /* Status */
+  --success: #27ae60;
+  --success-soft: #e6f2e2;
+  --success-text: #166534;
+  --warning: #e6a817;
+  --warning-soft: #fff4e5;
+  --warning-text: #7a4a00;
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --info: #2563eb;
+  --info-soft: #dbeafe;
+  --info-text: #1e40af;
+
+  /* Sombra e camada */
+  --shadow-color: rgba(0, 0, 0, 0.08);
+  --overlay: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Fundos */
+  --bg-page: #161616;
+  --bg-surface: #262626;
+  --bg-surface-alt: #303030;
+  --bg-sidebar: rgba(30, 30, 30, 0.95);
+  --bg-card-glass: rgba(38, 38, 38, 0.82);
+
+  /* Texto */
+  --text: #f5f5f5;
+  --text-muted: #b3b3b3;
+  --text-faint: #858585;
+  --on-brand: #ffffff;
+  --on-status: #1a1a1a;
+
+  /* Bordas */
+  --border: #414141;
+  --border-strong: #5c5c5c;
+
+  /* Marca */
+  --brand: #b3261e;
+  --brand-hover: #c9362c;
+  --accent: #f5b35a;
+  --brand-soft: #3a1f1c;
+  --brand-soft-border: #5e2d28;
+  --brand-tint: rgba(245, 179, 90, 0.16);
+
+  /* Status */
+  --success: #4cc07a;
+  --success-soft: #1d3326;
+  --success-text: #7fdba0;
+  --warning: #f5b35a;
+  --warning-soft: #3b2f17;
+  --warning-text: #f5c26b;
+  --danger: #ff7a6e;
+  --danger-soft: #3a1f1f;
+  --info: #6ea0ff;
+  --info-soft: #1c2a44;
+  --info-text: #a3c0ff;
+
+  /* Sombra e camada */
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --overlay: rgba(0, 0, 0, 0.65);
+}
+
+/* Lista que abre ao clicar num <select>: o navegador não herda o fundo transparente do select */
+option,
+optgroup {
+  background-color: var(--bg-surface);
+  color: var(--text);
+}
+/* ── Fundos em imagem (menu) ── */
+.bg-arte {
+  position: relative;
+  isolation: isolate;
+}
+
+.bg-arte::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--bg-arte) top center / 100% auto repeat-y;
+  pointer-events: none;
+}
+
+[data-theme="dark"] .bg-arte--opaco::before {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85);
+}

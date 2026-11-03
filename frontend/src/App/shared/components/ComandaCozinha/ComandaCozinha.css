@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--overlay);
 }
 
 .comanda__modal {
@@ -16,9 +16,9 @@
   max-height: calc(100vh - 32px);
   display: flex;
   flex-direction: column;
-  background: #f1f1f1;
+  background: var(--bg-surface-alt);
   border-radius: 16px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 50px var(--shadow-color);
   overflow: hidden;
 }
 
@@ -27,15 +27,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
-  background: #fff;
-  border-bottom: 1px solid #e5e5e5;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
 }
 
 .comanda__barra-titulo {
   margin: 0;
   font-size: 16px;
   font-weight: 700;
-  color: #222;
+  color: var(--text);
 }
 
 .comanda__barra-fechar {
@@ -43,12 +43,12 @@
   background: none;
   border: none;
   font-size: 22px;
-  color: #666;
+  color: var(--text-muted);
   cursor: pointer;
   border-radius: 8px;
   padding: 4px;
 }
-.comanda__barra-fechar:hover { background: #f0f0f0; }
+.comanda__barra-fechar:hover { background: var(--bg-surface-alt); }
 
 .comanda__corpo {
   flex: 1;
@@ -61,8 +61,8 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 12px 18px;
-  background: #fff;
-  border-top: 1px solid #e5e5e5;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
 }
 
 .comanda__btn {
@@ -76,14 +76,14 @@
   cursor: pointer;
   border: none;
 }
-.comanda__btn--sec  { background: #eee; color: #444; }
-.comanda__btn--sec:hover  { background: #e2e2e2; }
-.comanda__btn--prim { background: #c0392b; color: #fff; }
-.comanda__btn--prim:hover { background: #a93226; }
+.comanda__btn--sec  { background: var(--border); color: var(--text-muted); }
+.comanda__btn--sec:hover  { background: var(--border)2; }
+.comanda__btn--prim { background: var(--brand); color: var(--on-brand); }
+.comanda__btn--prim:hover { background: var(--brand-hover); }
 
 /* ── Folha da comanda ──────────────────────────────────────────────────────── */
 .comanda-folha {
-  background: #fff;
+  background:  #ffffff;
   color: #111;
   padding: 20px 22px;
   font-family: Arial, Helvetica, sans-serif;
@@ -191,7 +191,7 @@
   padding: 24px 0;
   text-align: center;
   font-size: 13px;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .comanda-folha__rodape {
@@ -250,7 +250,7 @@
   padding: 32px 16px;
   text-align: center;
   font-size: 14px;
-  color: #555;
+  color: var(--text-muted);
 }
-.comanda__estado--erro { color: #b3261e; }
+.comanda__estado--erro { color: var(--brand); }
 .comanda__btn:disabled { opacity: 0.5; cursor: not-allowed; }

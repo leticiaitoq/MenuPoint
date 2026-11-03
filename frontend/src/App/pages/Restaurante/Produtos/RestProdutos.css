@@ -16,13 +16,13 @@
 .prod__titulo {
   font-size: 24px;
   font-weight: 700;
-  color: #333;
+  color: var(--text);
   margin: 0;
 }
 
 .prod__subtitulo {
   font-size: 14px;
-  color: #888;
+  color: var(--text-faint);
   margin: 4px 0 0 0;
 }
 
@@ -30,8 +30,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #c0392b;
-  color: #fff;
+  background-color: var(--brand);
+  color: var(--on-brand);
   border: none;
   border-radius: 20px;
   padding: 10px 22px;
@@ -41,7 +41,7 @@
   transition: background 0.2s;
 }
 
-.prod__btn-novo:hover { background-color: #a93226; }
+.prod__btn-novo:hover { background-color: var(--brand-hover); }
 
 /* Filtros */
 .prod__filtros {
@@ -55,15 +55,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #fff;
-  border: 1px solid #ddd;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 12px;
   flex: 1;
   min-width: 180px;
 }
 
-.prod__busca-icon { color: #999; font-size: 16px; }
+.prod__busca-icon { color: var(--text-faint); font-size: 16px; }
 
 .prod__busca {
   border: none;
@@ -74,11 +74,11 @@
 }
 
 .prod__select {
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 14px;
-  background: #fff;
+  background: var(--bg-surface);
   cursor: pointer;
   outline: none;
 }
@@ -94,7 +94,7 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background-color: #fdf0f0;
+  background-color: var(--brand-soft);
 }
 
 .prod__dica--bottom {
@@ -104,15 +104,15 @@
 
 /* Container da tabela */
 .prod__container {
-  background: #fff;
+  background: var(--bg-surface);
   border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  box-shadow: 0 1px 4px var(--shadow-color);
   padding: 16px 0 8px 0;
 }
 
 .prod__dica {
   font-size: 13px;
-  color: #c0392b;
+  color: var(--accent);
   padding: 0 16px 10px 16px;
   margin: 0;
 }
@@ -125,23 +125,23 @@
 }
 
 .prod__tabela thead tr {
-  background-color: #fdf0f0;
+  background-color: var(--brand-soft);
 }
 
 .prod__tabela tbody tr {
-  border-bottom: 1px solid #f2f2f2;
+  border-bottom: 1px solid var(--bg-surface-alt);
 }
 
 .prod__tabela th {
   text-align: left;
   padding: 12px 16px;
-  color: #555;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
 .prod__tabela td {
  padding: 12px 16px;
-  color: #333;
+  color: var(--text);
   border-bottom: none; 
   vertical-align: middle;
 }
@@ -149,12 +149,12 @@
 .prod__td-ordem {
   white-space: nowrap;
   gap: 8px;
-  color: #888;
+  color: var(--text-faint);
 }
 
 .prod__drag-icon {
   font-size: 18px;
-  color: #bbb;
+  color: var(--text-faint);
   cursor: grab;
     vertical-align: middle;
   margin-right: 6px;
@@ -172,7 +172,7 @@
   height: 40px;
   border-radius: 8px;
   object-fit: cover;
-  background: #f0f0f0;
+  background: var(--bg-surface-alt);
     vertical-align: middle;
   margin-right: 10px;
 }
@@ -183,11 +183,11 @@
   border-radius: 20px;
   font-size: 13px;
   font-weight: 500;
-  color: #fff;
+  color: var(--on-brand);
 }
 
-.prod__badge--ativo   { background-color: #27ae60; }
-.prod__badge--inativo { background-color: #aaa; }
+.prod__badge--ativo   { background-color: var(--success); }
+.prod__badge--inativo { background-color: var(--text-faint); }
 
 /* Botões de ação */
 .prod__td-acoes {
@@ -202,13 +202,13 @@
   border: none;
   cursor: pointer;
   font-size: 18px;
-  color: #888;
+  color: var(--text-faint);
   transition: color 0.2s;
   padding: 4px;
 }
 
-.prod__btn-acao:hover               { color: #333; }
-.prod__btn-acao--pausar:hover       { color: #c0392b; }
+.prod__btn-acao:hover               { color: var(--text); }
+.prod__btn-acao--pausar:hover       { color: var(--brand-hover); }
 /* Selo de destaque ao lado do nome */
 .prod__destaque {
   display: inline-flex;
@@ -217,8 +217,8 @@
   margin-left: 10px;
   padding: 2px 8px;
   border-radius: 12px;
-  background: #fff4d6;
-  color: #b7791f;
+  background: var(--warning-soft);
+  color: var(--warning);
   font-size: 12px;
   font-weight: 600;
   vertical-align: middle;

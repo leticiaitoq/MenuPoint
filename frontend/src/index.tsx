@@ -1,4 +1,5 @@
-import './responsive.css'; //traz a responsividade para todas as paginas de forma global
+import './styles/tema.css';
+import './responsive.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App/App';

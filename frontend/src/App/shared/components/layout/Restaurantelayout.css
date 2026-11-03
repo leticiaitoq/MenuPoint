@@ -2,7 +2,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #ececec;
+  background-color: var(--bg-page);
 }
 
 .restaurant-layout__body {

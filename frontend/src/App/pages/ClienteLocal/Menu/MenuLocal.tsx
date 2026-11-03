@@ -80,7 +80,10 @@ const MenuLocal: React.FC = () => {
       cartCount={totalCarrinho}
       onCartClick={() => setCarrinhoAberto(true)}
     >
-      <div className="menu" style={{ backgroundImage: 'url(/images/Fundo-menu.png)' }}>
+      <div
+  className="menu bg-arte bg-arte--opaco"
+  style={{ '--bg-arte': 'url(/images/Fundo-menu.png)' } as React.CSSProperties}
+>
 
         {/* Botão flutuante do carrinho — igual ao MenuCliente */}
        <button

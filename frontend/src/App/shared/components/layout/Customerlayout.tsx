@@ -99,7 +99,7 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
 
   return (
     <div className="customer-layout">
-      <Navbar subtitle={subtitle} rightIcon={rightIcon} leftIcon={leftIcon} />
+     <Navbar subtitle={subtitle} rightIcon={rightIcon} leftIcon={leftIcon} mostrarTema />
 
       <div className="customer-layout__body">
         {showSidebar && (
