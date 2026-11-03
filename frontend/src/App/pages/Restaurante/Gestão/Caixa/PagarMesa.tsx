@@ -172,11 +172,14 @@ const gerarIdItem = () => `it${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
 // ── Dados reais (API) ──────────────────────────────────────────────────────────
 const STATUS_EM_ANDAMENTO: PedidoApi['status'][] = ['RECEBIDO', 'PREPARO', 'PRONTO'];
+// A conta aberta da mesa também inclui o que já foi entregue e ainda não foi pago
+const STATUS_NA_CONTA: PedidoApi['status'][] = [...STATUS_EM_ANDAMENTO, 'ENTREGUE'];
 
 const ROTULO_STATUS_PEDIDO: Record<string, string> = {
   RECEBIDO: 'Recebido',
   PREPARO: 'Em preparo',
   PRONTO: 'Pronto',
+  ENTREGUE: 'Entregue (aguardando pagamento)',
 };
 
 const horaDoPedido = (iso: string) =>
@@ -719,6 +722,7 @@ const PagarMesaConteudo: React.FC<{
                     <div key={p.id} className="pagar__det-pedido">
                       <div className="pagar__det-pedido-linha">
                         <strong>Pedido #{p.numero_pedido}</strong>
+                        {p.status !== 'ENTREGUE' && (
                         <div className="pagar__det-acoes">
                           <button
                             className="pagar__det-editar"
@@ -737,6 +741,7 @@ const PagarMesaConteudo: React.FC<{
                             <HiOutlineTrash />
                           </button>
                         </div>
+                        )}
                       </div>
                       <span className="pagar__det-pedido-meta">
                         {p.cliente_nome} · {horaDoPedido(p.criado_em)} · {ROTULO_STATUS_PEDIDO[p.status] ?? p.status}
@@ -1098,7 +1103,7 @@ const buscarMesa = async (mesaId: string): Promise<EstadoCarga> => {
   try {
     const [mesas, pedidos, resumo] = await Promise.all([
       MesaService.listar(),
-      PedidoService.listar({ status: STATUS_EM_ANDAMENTO, modalidade: 'MESA', mesa_id: mesaId }),
+      PedidoService.listar({ status: STATUS_NA_CONTA, modalidade: 'MESA', mesa_id: mesaId, conta_aberta: true }),
       // Conta com o que já foi pago em parcial. Se falhar, a tela NÃO abre (erro + tentar novamente):
       // mostrar a conta sem os pagamentos faria o caixa cobrar/dar troco errado.
       PagamentoService.resumoMesa(mesaId),

@@ -47,12 +47,13 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
         throw new AppError('Usuário não vinculado a um estabelecimento', 400)
       }
 
-      const { status, modalidade, mesa_id, data_inicio, data_fim } = request.query as {
+      const { status, modalidade, mesa_id, data_inicio, data_fim, conta_aberta } = request.query as {
         status?: string // um ou vários separados por vírgula: RECEBIDO,PREPARO,PRONTO
         modalidade?: string
         mesa_id?: string
         data_inicio?: string
         data_fim?: string
+        conta_aberta?: string // 'true' = só pedidos da conta aberta da mesa (Caixa)
       }
 
       const statusValidos = ['RECEBIDO', 'PREPARO', 'PRONTO', 'ENTREGUE', 'CANCELADO']
@@ -71,6 +72,7 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
         ...(listaStatus.length > 0 && { status: listaStatus }),
         ...(mesa_id && { mesa_id }),
         ...(modalidade && { modalidade }),
+        ...(conta_aberta === 'true' && { conta_aberta: true }),
         ...parsePeriodo(data_inicio, data_fim),
       })
 

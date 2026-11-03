@@ -7,7 +7,7 @@ import {
   FinalizarMesaDTO,
 } from './Pagamento.schema'
 import prisma from '@config/prisma'
-import { TAXA_SERVICO_PERCENTUAL, travarMesa } from './conta'
+import { TAXA_SERVICO_PERCENTUAL, filtroContaAberta, travarMesa } from './conta'
 
 // O enum do banco não separa débito/crédito: os dois viram CARTAO (o detalhe vai em `observacoes`)
 const METODO_DO_BANCO = {
@@ -144,7 +144,7 @@ export class PagamentoService {
   }
 
   // Caixa — PAGAMENTO INTEIRO: fecha a conta de uma mesa de uma vez.
-  // Numa transação: confirma o pagamento de cada pedido em andamento (o valor é rateado entre
+  // Numa transação: confirma o pagamento de cada pedido da conta aberta (o valor é rateado entre
   // eles, com taxa de serviço e desconto), marca os pedidos como ENTREGUE e libera a mesa.
   async finalizarMesa(
     mesa_id: string,
@@ -163,7 +163,7 @@ export class PagamentoService {
       await travarMesa(tx, mesa_id)
 
       const pedidos = await tx.pedido.findMany({
-        where: { mesa_id, estabelecimento_id, status: { in: ['RECEBIDO', 'PREPARO', 'PRONTO'] } },
+        where: filtroContaAberta(mesa_id, estabelecimento_id),
         include: {
           itens: { select: { produto_id: true, quantidade: true } },
           pagamento: { select: { id: true, status: true } },
@@ -171,7 +171,7 @@ export class PagamentoService {
         orderBy: { numero_pedido: 'asc' },
       })
       if (pedidos.length === 0) {
-        throw new AppError(`A Mesa ${mesa.numero} não tem pedido em andamento`, 400)
+        throw new AppError(`A Mesa ${mesa.numero} não tem conta aberta`, 400)
       }
 
       // Pedido que já tem pagamento confirmado não entra na conta (só é encerrado)
@@ -267,15 +267,25 @@ export class PagamentoService {
         }
       }
 
-      // Encerra todos os pedidos da mesa
+      // Encerra todos os pedidos da conta. Os que já tinham sido entregues na mesa só saem da conta
+      // (liquidado_em); os que ainda não tinham sido entregues passam a ENTREGUE agora.
+      const aindaNaoEntregues = pedidos.filter((p) => p.status !== 'ENTREGUE')
+
       await tx.pedido.updateMany({
         where: { id: { in: pedidos.map((p) => p.id) } },
-        data: { status: 'ENTREGUE', entregue_em: agora, forma_pagamento: metodo },
+        data: { status: 'ENTREGUE', forma_pagamento: metodo, liquidado_em: agora },
       })
+      if (aindaNaoEntregues.length > 0) {
+        await tx.pedido.updateMany({
+          where: { id: { in: aindaNaoEntregues.map((p) => p.id) } },
+          data: { entregue_em: agora },
+        })
+      }
 
-      // Mesmo efeito de entregar pelo fluxo normal: soma nas vendas do produto
+      // Soma nas vendas do produto SÓ o que ainda não tinha sido contado: os pedidos entregues
+      // antes pelo fluxo normal já foram somados na hora da entrega (evita contar duas vezes)
       const vendidos = new Map<string, number>()
-      pedidos.forEach((p) =>
+      aindaNaoEntregues.forEach((p) =>
         p.itens.forEach((i) =>
           vendidos.set(i.produto_id, (vendidos.get(i.produto_id) ?? 0) + i.quantidade)
         )

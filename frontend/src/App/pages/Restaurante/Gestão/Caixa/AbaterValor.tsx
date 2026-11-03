@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { HiArrowLeft } from 'react-icons/hi';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
 import { ROTAS_CAIXA } from '../../../../routes/caixaRotas';
-import PagamentoService, { FormaPagamentoApi, ItemDaConta, ResumoConta } from '../../../../services/pagameto.service';
+import PagamentoService, { FormaPagamentoApi, ItemDaConta, ResultadoParcial, ResumoConta } from '../../../../services/pagameto.service';
 import { mensagemDeErro } from '../../../../services/cliente.service';
 import './PagarParcial.css';
 
@@ -41,6 +41,8 @@ const AbaterValorConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ id
   const [ordem, setOrdem] = useState<string[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Resultado REAL devolvido pelo servidor (não a prévia da tela)
+  const [resultado, setResultado] = useState<ResultadoParcial | null>(null);
 
   const valorDado = paraNumeroSimples(valorTexto);
   // Dinheiro a mais que o saldo vira troco; nas outras formas não pode passar do saldo
@@ -75,7 +77,7 @@ const AbaterValorConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ id
     setSalvando(true);
     setErro(null);
     try {
-      await PagamentoService.abater(id, {
+      const r = await PagamentoService.abater(id, {
         forma,
         valor: valorDado,
         itens: ordem.length > 0
@@ -85,12 +87,65 @@ const AbaterValorConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ id
             }))
           : undefined,
       });
-      navigate(ROTAS_CAIXA.pagarMesa(id));
+      setResultado(r);
+      setSalvando(false);
     } catch (err: any) {
       setErro(mensagemDeErro(err, 'Não foi possível abater o valor.'));
       setSalvando(false);
     }
   };
+
+  // Depois de abater: mostra o que o servidor de fato registrou
+  if (resultado) {
+    const quitados = resultado.alocacoes.map((a) => ({
+      ...a,
+      nome: resumo.itens.find((i) => i.item_pedido_id === a.item_pedido_id)?.produto_nome ?? 'Item',
+    }));
+    const somaQuitada = r2(resultado.alocacoes.reduce((s, a) => s + a.valor, 0));
+    const creditoGeral = r2(resultado.valor - somaQuitada);
+    return (
+      <RestaurantLayout>
+        <div className="pagar-parcial">
+          <div className="pagar-parcial__header">
+            <div>
+              <h2 className="pagar-parcial__titulo-pagina">Valor abatido · Mesa {String(resumo.mesa.numero).padStart(2, '0')}</h2>
+              <p className="pagar-parcial__subtitulo-pagina">Registrado com sucesso</p>
+            </div>
+          </div>
+          <section className="pagar-parcial__card pagar-parcial__card--pagamento">
+            <div className="pagar-parcial__conta">
+              <div className="pagar-parcial__conta-destaque"><span>Valor abatido da conta</span><strong>- {formatarMoeda(resultado.valor)}</strong></div>
+              {resultado.troco > 0 && <div><span>Troco</span><strong>{formatarMoeda(resultado.troco)}</strong></div>}
+              <div><strong>Falta pagar</strong><strong>{formatarMoeda(resultado.restante)}</strong></div>
+            </div>
+
+            {quitados.length > 0 && (
+              <>
+                <p className="pagar-parcial__subtitulo">Itens quitados</p>
+                <ul className="pagar-parcial__lista-itens">
+                  {quitados.map((q) => (
+                    <li key={q.item_pedido_id} className="pagar-parcial__item">
+                      <span className="pagar-parcial__item-nome">{q.quantidade}x {q.nome}</span>
+                      <span className="pagar-parcial__item-preco">{formatarMoeda(q.valor)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {creditoGeral > 0.004 && (
+              <p className="pagar-parcial__aviso">
+                {formatarMoeda(creditoGeral)} {quitados.length > 0 ? 'não completam outra unidade e ficaram' : 'ficaram'} como abatimento geral da conta.
+              </p>
+            )}
+
+            <button type="button" className="pagar-parcial__concluir" onClick={() => navigate(ROTAS_CAIXA.pagarMesa(id))}>
+              Voltar para a comanda
+            </button>
+          </section>
+        </div>
+      </RestaurantLayout>
+    );
+  }
 
   return (
     <RestaurantLayout>

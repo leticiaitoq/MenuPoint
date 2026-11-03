@@ -10,6 +10,7 @@ import {
   alocarUnidades,
   calcularTaxa,
   contaFicaAbaixoDoPago,
+  filtroContaAberta,
   garantirContaCobrePagos,
   subtotalDaConta,
   totalComTaxa,
@@ -101,24 +102,33 @@ const main = async () => {
     await garantirContaCobrePagos(tx, 'mesa', 'est', 60, 'Cancelar este pedido') // conta 66 >= 60
   })
 
-  await teste('subtotalDaConta ignora pedido já pago e o pedido a simular', async () => {
+  await teste('subtotalDaConta soma a conta aberta (entregues não pagos inclusos) e pode simular sem um pedido', async () => {
     let filtro: any
     const tx: any = {
       pedido: {
         findMany: async (arg: any) => {
           filtro = arg.where
-          return [
-            { total: 50, pagamento: null },
-            { total: 30, pagamento: { status: 'CONFIRMADO' } },
-            { total: 20.5, pagamento: { status: 'PENDENTE' } },
-          ]
+          return [{ total: 50 }, { total: 20.5 }]
         },
       },
     }
     assert.equal(await subtotalDaConta(tx, 'mesa', 'est'), 70.5)
+    // o filtro é o da conta aberta: em andamento OU entregue, não liquidado e não pago
+    assert.deepEqual(filtro.status.in, ['RECEBIDO', 'PREPARO', 'PRONTO', 'ENTREGUE'])
+    assert.equal(filtro.liquidado_em, null)
+    assert.deepEqual(filtro.NOT, { pagamento: { is: { status: 'CONFIRMADO' } } })
     assert.equal(filtro.id, undefined)
     await subtotalDaConta(tx, 'mesa', 'est', { ignorarPedidoId: 'p1' })
     assert.deepEqual(filtro.id, { not: 'p1' })
+  })
+
+  await teste('filtroContaAberta inclui pedidos entregues e exclui pagos/encerrados', () => {
+    const f = filtroContaAberta('m1', 'e1')
+    assert.equal(f.mesa_id, 'm1')
+    assert.equal(f.estabelecimento_id, 'e1')
+    assert.ok(f.status.in.includes('ENTREGUE'))
+    assert.ok(!(f.status.in as string[]).includes('CANCELADO'))
+    assert.equal(f.liquidado_em, null)
   })
 
   await teste('travarMesa trava cada mesa uma vez e em ordem fixa (evita deadlock)', async () => {

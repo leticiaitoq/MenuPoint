@@ -39,6 +39,8 @@ export class PedidoRepository extends BaseRepository<
       mesa_id?: string
       data_inicio?: Date
       data_fim?: Date
+      /** Só pedidos que ainda fazem parte da conta aberta da mesa (não pagos/encerrados) */
+      conta_aberta?: boolean
     }
   ) {
     return prisma.pedido.findMany({
@@ -47,6 +49,10 @@ export class PedidoRepository extends BaseRepository<
         ...(filtros?.status?.length && { status: { in: filtros.status as any[] } }),
         ...(filtros?.mesa_id && { mesa_id: filtros.mesa_id }),
         ...(filtros?.modalidade && { modalidade: filtros.modalidade as any }),
+        ...(filtros?.conta_aberta && {
+          liquidado_em: null,
+          NOT: { pagamento: { is: { status: 'CONFIRMADO' as const } } },
+        }),
         ...(filtros?.data_inicio || filtros?.data_fim
           ? {
               criado_em: {

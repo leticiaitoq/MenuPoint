@@ -282,6 +282,8 @@ model Pedido {
   criado_em          DateTime      @default(now()) @db.Timestamptz
   atualizado_em      DateTime      @default(now()) @updatedAt @db.Timestamptz
   entregue_em        DateTime?     @db.Timestamptz
+  // Quando o pedido saiu da conta aberta da mesa (conta paga/encerrada). Nulo = ainda faz parte da conta.
+  liquidado_em       DateTime?     @db.Timestamptz
 
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   mesa            Mesa?           @relation(fields: [mesa_id], references: [id])
@@ -291,6 +293,7 @@ model Pedido {
   itens           ItemPedido[]
   pagamento       Pagamento?
 
+  @@index([mesa_id, liquidado_em])
   @@map("pedidos")
 }
 

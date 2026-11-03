@@ -75,6 +75,8 @@ export interface ResultadoParcial {
   troco: number
   restante: number
   itens_quitados: number
+  /** O que o servidor realmente quitou */
+  alocacoes: { item_pedido_id: string; quantidade: number; valor: number }[]
 }
 
 export interface ResultadoFinalizacao {

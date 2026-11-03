@@ -69,6 +69,8 @@ const OBSERVACAO_MAX = 80; // vai para a coluna `localizacao` (máx. 100 no banc
 // Converte a mesa da API (+ seus pedidos em andamento) para o formato da tela do Caixa.
 // Mesa com pedido em andamento aparece como "aberta", com itens, total e tempo reais.
 const STATUS_EM_ANDAMENTO: PedidoApi['status'][] = ['RECEBIDO', 'PREPARO', 'PRONTO'];
+// A conta aberta da mesa também inclui o que já foi entregue e ainda não foi pago
+const STATUS_NA_CONTA: PedidoApi['status'][] = [...STATUS_EM_ANDAMENTO, 'ENTREGUE'];
 
 // Clientes da mesa = nomes diferentes nos pedidos em andamento (ignora maiúsculas e espaços a mais)
 const clientesDaMesa = (pedidos: PedidoApi[]): string[] => {
@@ -193,7 +195,7 @@ const GerenPagamentos: React.FC = () => {
     try {
       const [lista, pedidosAbertos] = await Promise.all([
         MesaService.listar(),
-        PedidoService.listar({ status: STATUS_EM_ANDAMENTO, modalidade: 'MESA' }),
+        PedidoService.listar({ status: STATUS_NA_CONTA, modalidade: 'MESA', conta_aberta: true }),
       ]);
 
       // Agrupa os pedidos em andamento por mesa

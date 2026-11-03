@@ -3,7 +3,7 @@ import prisma from '@config/prisma'
 import { AbatimentoDTO, PagamentoParcialDTO } from './Pagamento.schema'
 import {
   TAXA_SERVICO_PERCENTUAL,
-  STATUS_EM_ANDAMENTO,
+  filtroContaAberta,
   Tx,
   r2,
   travarMesa,
@@ -49,7 +49,7 @@ async function carregarConta(
   pct: number
 ) {
   const pedidos = await tx.pedido.findMany({
-    where: { mesa_id, estabelecimento_id, status: { in: [...STATUS_EM_ANDAMENTO] } },
+    where: filtroContaAberta(mesa_id, estabelecimento_id),
     include: {
       pagamento: { select: { status: true } },
       itens: {
@@ -170,7 +170,7 @@ export class PagamentoMesaService {
       const conta = await carregarConta(tx, mesa_id, estabelecimento_id, pct)
 
       if (conta.itens.length === 0) {
-        throw new AppError(`A Mesa ${mesa.numero} não tem pedido em andamento`, 400)
+        throw new AppError(`A Mesa ${mesa.numero} não tem conta aberta`, 400)
       }
       if (conta.restante <= 0.004) {
         throw new AppError('A conta desta mesa já está quitada. Feche a conta para liberar a mesa.', 400)
@@ -185,7 +185,7 @@ export class PagamentoMesaService {
       for (const [id, qtd] of selecionados) {
         const item = porId.get(id)
         if (!item) {
-          throw new AppError('Um dos itens não pertence aos pedidos em andamento desta mesa', 400)
+          throw new AppError('Um dos itens não pertence à conta aberta desta mesa', 400)
         }
         const faltam = item.quantidade - item.quantidade_paga
         if (qtd > faltam) {
@@ -330,6 +330,8 @@ export class PagamentoMesaService {
         troco: r2(linhas.reduce((s, l) => s + l.troco, 0)),
         restante: r2(conta.restante - totalAbatido),
         itens_quitados: alocacoes.length,
+        // O que o servidor realmente quitou (a tela mostra isto, não a prévia)
+        alocacoes: alocacoes.map((a) => ({ item_pedido_id: a.item_pedido_id, quantidade: a.quantidade, valor: a.valor })),
       }
     })
   }

@@ -12,6 +12,25 @@ export const TAXA_SERVICO_PERCENTUAL = 10
 
 export const STATUS_EM_ANDAMENTO: ('RECEBIDO' | 'PREPARO' | 'PRONTO')[] = ['RECEBIDO', 'PREPARO', 'PRONTO']
 
+/**
+ * A CONTA ABERTA de uma mesa = pedidos em andamento OU já entregues que ainda não foram pagos.
+ * (Entregar o pedido na mesa não o tira da conta: ele só sai quando a conta é paga/encerrada.)
+ */
+export const STATUS_NA_CONTA: ('RECEBIDO' | 'PREPARO' | 'PRONTO' | 'ENTREGUE')[] = [
+  ...STATUS_EM_ANDAMENTO,
+  'ENTREGUE',
+]
+
+/** Filtro Prisma dos pedidos que compõem a conta aberta da mesa */
+export const filtroContaAberta = (mesa_id: string, estabelecimento_id: string) => ({
+  mesa_id,
+  estabelecimento_id,
+  status: { in: STATUS_NA_CONTA },
+  liquidado_em: null,
+  // Pedido já pago pelo fluxo antigo (pagamento por pedido) também não faz mais parte da conta
+  NOT: { pagamento: { is: { status: 'CONFIRMADO' as const } } },
+})
+
 /** Arredondamento monetário padrão (centavos) */
 export const r2 = (v: number) => Math.round(v * 100) / 100
 
@@ -43,7 +62,7 @@ export async function totalPagoEmParciais(tx: Tx, mesa_id: string, estabelecimen
 }
 
 /**
- * Subtotal (sem taxa) da conta aberta da mesa: pedidos em andamento ainda não pagos.
+ * Subtotal (sem taxa) da conta aberta da mesa (pedidos em andamento ou entregues, ainda não pagos).
  * `ignorarPedidoId` serve para simular "como ficaria a conta sem este pedido".
  */
 export async function subtotalDaConta(
@@ -54,18 +73,12 @@ export async function subtotalDaConta(
 ) {
   const pedidos = await tx.pedido.findMany({
     where: {
-      mesa_id,
-      estabelecimento_id,
-      status: { in: STATUS_EM_ANDAMENTO },
+      ...filtroContaAberta(mesa_id, estabelecimento_id),
       ...(opcoes.ignorarPedidoId && { id: { not: opcoes.ignorarPedidoId } }),
     },
-    select: { total: true, pagamento: { select: { status: true } } },
+    select: { total: true },
   })
-  return r2(
-    pedidos
-      .filter((p) => p.pagamento?.status !== 'CONFIRMADO')
-      .reduce((s, p) => s + Number(p.total), 0)
-  )
+  return r2(pedidos.reduce((s, p) => s + Number(p.total), 0))
 }
 
 /** true se a conta (com taxa) ficaria menor que o que já foi pago em parciais */

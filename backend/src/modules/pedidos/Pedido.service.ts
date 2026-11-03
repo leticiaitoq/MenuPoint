@@ -9,6 +9,7 @@ import {
   travarMesa,
   subtotalDaConta,
   garantirContaCobrePagos,
+  filtroContaAberta,
   r2,
 } from '@modules/pagamentos/conta'
 
@@ -148,6 +149,7 @@ export class PedidoService {
       mesa_id?: string
       data_inicio?: Date
       data_fim?: Date
+      conta_aberta?: boolean
     }
   ) {
     return this.repository.findByEstabelecimento(estabelecimento_id, filtros)
@@ -237,21 +239,14 @@ export class PedidoService {
       })
     }
 
-    // Libera a mesa quando o pedido finaliza — mas só se não sobrou outro pedido em andamento
-    // nela (mesa com vários pedidos não pode ficar "livre" por causa de um só)
-    if (['ENTREGUE', 'CANCELADO'].includes(data.status) && (pedido as any).mesa_id) {
-      const aindaEmAndamento = await prisma.pedido.count({
-        where: {
-          mesa_id: (pedido as any).mesa_id,
-          id: { not: id },
-          status: { in: ['RECEBIDO', 'PREPARO', 'PRONTO'] },
-        },
+    // Mesa: ENTREGAR não libera a mesa — o pedido continua na conta até ser pago (ou cancelado).
+    // Só cancelar pode liberar, e só se não sobrar nenhum pedido na conta aberta da mesa.
+    if (data.status === 'CANCELADO' && mesaId) {
+      const aindaNaConta = await prisma.pedido.count({
+        where: { ...filtroContaAberta(mesaId, estabelecimento_id), id: { not: id } },
       })
-      if (aindaEmAndamento === 0) {
-        await prisma.mesa.update({
-          where: { id: (pedido as any).mesa_id },
-          data: { status: 'LIVRE' },
-        })
+      if (aindaNaConta === 0) {
+        await prisma.mesa.update({ where: { id: mesaId }, data: { status: 'LIVRE' } })
       }
     }
 
@@ -328,14 +323,12 @@ export class PedidoService {
         throw new AppError(`A Mesa ${destino.numero} está inativa`, 400)
       }
 
-      const emAndamento: ('RECEBIDO' | 'PREPARO' | 'PRONTO')[] = ['RECEBIDO', 'PREPARO', 'PRONTO']
-
       const pedidosOrigem = await tx.pedido.findMany({
-        where: { mesa_id: origem.id, estabelecimento_id, status: { in: emAndamento } },
+        where: filtroContaAberta(origem.id, estabelecimento_id),
         select: { id: true, numero_pedido: true },
       })
       if (pedidosOrigem.length === 0) {
-        throw new AppError(`A Mesa ${origem.numero} não tem pedido em andamento`, 400)
+        throw new AppError(`A Mesa ${origem.numero} não tem conta aberta`, 400)
       }
 
       let aMover = pedidosOrigem
@@ -343,12 +336,12 @@ export class PedidoService {
         const escolhidos = new Set(pedido_ids)
         aMover = pedidosOrigem.filter((p) => escolhidos.has(p.id))
         if (aMover.length !== escolhidos.size) {
-          throw new AppError('Algum pedido informado não está em andamento nesta mesa', 400)
+          throw new AppError('Algum pedido informado não está na conta aberta desta mesa', 400)
         }
       }
 
       const pedidosNoDestino = await tx.pedido.count({
-        where: { mesa_id: destino.id, estabelecimento_id, status: { in: emAndamento } },
+        where: filtroContaAberta(destino.id, estabelecimento_id),
       })
       const destinoOcupada =
         pedidosNoDestino > 0 || destino.status === 'OCUPADA' || destino.status === 'RESERVADA'
@@ -426,8 +419,16 @@ export class PedidoService {
       if (pedidos.some((p) => p.mesa_id !== data.mesa_id)) {
         throw new AppError('Só é possível juntar pedidos da mesma mesa', 400)
       }
-      if (pedidos.some((p) => !['RECEBIDO', 'PREPARO', 'PRONTO'].includes(p.status))) {
-        throw new AppError('Só é possível juntar pedidos em andamento', 400)
+      if (pedidos.some((p) => p.status === 'CANCELADO' || p.liquidado_em)) {
+        throw new AppError('Só é possível juntar pedidos da conta aberta (não cancelados nem pagos)', 400)
+      }
+      // Misturar entregue com não entregue faria a cozinha refazer o que já foi servido
+      const entregues = pedidos.filter((p) => p.status === 'ENTREGUE').length
+      if (entregues > 0 && entregues < pedidos.length) {
+        throw new AppError(
+          'Não é possível juntar pedidos já entregues com pedidos ainda em preparo. Junte só os entregues entre si ou só os que ainda estão na cozinha.',
+          400
+        )
       }
       if (pedidos.some((p) => p.pagamento?.status === 'CONFIRMADO')) {
         throw new AppError(
@@ -455,13 +456,14 @@ export class PedidoService {
       const total = Math.max(arredondar(subtotal + taxa_entrega - desconto), 0)
 
       // O pedido unido fica na etapa mais atrasada: itens novos ainda precisam ser preparados
-      const ordemStatus = ['RECEBIDO', 'PREPARO', 'PRONTO']
+      const ordemStatus = ['RECEBIDO', 'PREPARO', 'PRONTO', 'ENTREGUE']
       const status = [...pedidos]
         .map((p) => p.status as string)
         .sort((a, b) => ordemStatus.indexOf(a) - ordemStatus.indexOf(b))[0] as
         | 'RECEBIDO'
         | 'PREPARO'
         | 'PRONTO'
+        | 'ENTREGUE'
 
       const unicos = (valores: (string | null)[]) =>
         Array.from(
@@ -530,20 +532,25 @@ export class PedidoService {
       await travarMesa(tx, mesa_id)
 
       const pedidos = await tx.pedido.findMany({
-        where: {
-          mesa_id,
-          estabelecimento_id,
-          status: { in: ['RECEBIDO', 'PREPARO', 'PRONTO'] },
-        },
+        where: filtroContaAberta(mesa_id, estabelecimento_id),
         select: {
           id: true,
           numero_pedido: true,
+          status: true,
           pagamento: { select: { status: true } },
         },
       })
 
       if (pedidos.length === 0) {
-        throw new AppError(`A Mesa ${mesa.numero} não tem pedido em andamento`, 400)
+        throw new AppError(`A Mesa ${mesa.numero} não tem conta aberta`, 400)
+      }
+
+      // Pedido já servido não se cancela (a comida saiu e as vendas já foram contadas)
+      if (pedidos.some((p) => p.status === 'ENTREGUE')) {
+        throw new AppError(
+          `A Mesa ${mesa.numero} tem pedidos já entregues. Para encerrar sem cobrar, feche a conta com desconto total.`,
+          409
+        )
       }
 
       // Já recebeu algo em pagamento parcial/abatimento: desfaça antes de cancelar a mesa

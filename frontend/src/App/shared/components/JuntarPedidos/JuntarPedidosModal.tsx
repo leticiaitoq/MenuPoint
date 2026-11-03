@@ -15,8 +15,8 @@ interface Props {
 const moeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const rotuloMesa = (n: number) => `Mesa ${String(n).padStart(2, '0')}`;
 const hora = (iso: string) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-const ROTULO_STATUS: Record<string, string> = { RECEBIDO: 'Recebido', PREPARO: 'Em preparo', PRONTO: 'Pronto' };
-const ORDEM_STATUS = ['RECEBIDO', 'PREPARO', 'PRONTO'];
+const ROTULO_STATUS: Record<string, string> = { RECEBIDO: 'Recebido', PREPARO: 'Em preparo', PRONTO: 'Pronto', ENTREGUE: 'Entregue' };
+const ORDEM_STATUS = ['RECEBIDO', 'PREPARO', 'PRONTO', 'ENTREGUE'];
 
 const qtdItens = (p: PedidoApi) => p.itens.reduce((s, i) => s + i.quantidade, 0);
 
@@ -63,7 +63,11 @@ const JuntarPedidosModal: React.FC<Props> = ({ mesa, pedidos, onFechar, onConclu
   const statusDiferentes = new Set(escolhidos.map((p) => p.status)).size > 1;
   const numeros = escolhidos.map((p) => `#${p.numero_pedido}`).join(', ');
 
-  const podeContinuar = escolhidos.length >= 2 && !salvando;
+  // Entregue + ainda na cozinha: a cozinha refaria o que já foi servido (o servidor também recusa)
+  const entreguesEscolhidos = escolhidos.filter((p) => p.status === 'ENTREGUE').length;
+  const mistura = entreguesEscolhidos > 0 && entreguesEscolhidos < escolhidos.length;
+
+  const podeContinuar = escolhidos.length >= 2 && !mistura && !salvando;
 
   const alternar = (id: string) =>
     setSelecionados((atual) => {
@@ -123,7 +127,13 @@ const JuntarPedidosModal: React.FC<Props> = ({ mesa, pedidos, onFechar, onConclu
                 </label>
               ))}
 
-              {escolhidos.length >= 2 && principal && (
+              {mistura && (
+                <p className="transf__dica" role="alert" style={{ color: '#b3261e' }}>
+                  Não dá para juntar pedidos já entregues com pedidos que ainda estão na cozinha.
+                </p>
+              )}
+
+              {escolhidos.length >= 2 && principal && !mistura && (
                 <p className="transf__dica">
                   Resultado: pedido #{principal.numero_pedido} com {itensUnidos} {itensUnidos === 1 ? 'item' : 'itens'} · {moeda(totalUnido)}
                 </p>

@@ -94,6 +94,8 @@ export interface FiltrosPedido {
   /** ISO 8601 — filtra por criado_em */
   data_inicio?: string
   data_fim?: string
+  /** Só pedidos da CONTA ABERTA da mesa (em andamento ou entregues, ainda não pagos) — usado pelo Caixa */
+  conta_aberta?: boolean
 }
 
 // O Prisma serializa Decimal como string ("49.90"): converte para number aqui
@@ -128,6 +130,7 @@ const PedidoService = {
         mesa_id: filtros?.mesa_id,
         data_inicio: filtros?.data_inicio,
         data_fim: filtros?.data_fim,
+        conta_aberta: filtros?.conta_aberta ? 'true' : undefined,
       },
     })
     return response.data.map(normalizar)
