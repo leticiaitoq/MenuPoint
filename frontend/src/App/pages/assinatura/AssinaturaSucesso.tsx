@@ -12,8 +12,15 @@ import './PagamentoPage.css';
 
 type Estado = 'checando' | 'ativa' | 'demorando' | 'recusado';
 
-const INTERVALO_MS = 3000;
-const MAX_TENTATIVAS = 10;
+const INTERVALO_MS = 2000;
+const MAX_TENTATIVAS = 15;
+
+const STATUS_MP_PT: Record<string, string> = {
+  pending: 'aguardando confirmação',
+  authorized: 'aprovado',
+  cancelled: 'cancelado',
+  paused: 'pausado',
+};
 
 const AssinaturaSucesso: React.FC = () => {
   const navigate = useNavigate();
@@ -53,7 +60,7 @@ const AssinaturaSucesso: React.FC = () => {
           setEstado('ativa');
           // Pagamento aprovado: libera o restante do sistema
           if (token && usuario) entrar({ token, usuario: { ...usuario, pagamento_pendente: false } });
-          setTimeout(() => { if (!cancelado) irParaProximaTela(); }, 1500);
+          setTimeout(() => { if (!cancelado) irParaProximaTela(); }, 800);
           return;
         }
       } catch {
@@ -84,7 +91,7 @@ const AssinaturaSucesso: React.FC = () => {
               <>
                 <div className="pagamento__spinner" aria-hidden="true" />
                 <h1 className="pagamento__titulo">Confirmando seu pagamento...</h1>
-                <p className="pagamento__subtitulo">Isso leva só alguns segundos. Não feche esta página.</p>
+                <p className="pagamento__subtitulo">Estamos consultando o Mercado Pago. Isso leva só alguns segundos, não feche esta página.</p>
               </>
             )}
 
@@ -104,7 +111,9 @@ const AssinaturaSucesso: React.FC = () => {
                   Se você já pagou, pode levar alguns minutos. Se o pagamento não foi concluído, é só tentar de novo.
                 </p>
                 {statusMP && (
-                  <p className="pagamento__subtitulo">Status no Mercado Pago: <strong>{statusMP}</strong></p>
+                  <p className="pagamento__subtitulo">
+                    Status no Mercado Pago: <strong>{STATUS_MP_PT[statusMP] ?? statusMP}</strong>
+                  </p>
                 )}
                 <button type="button" className="pagamento__botao" onClick={() => setRodada((r) => r + 1)}>
                   Verificar novamente

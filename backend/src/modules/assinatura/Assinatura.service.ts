@@ -208,6 +208,7 @@ export class AssinaturaService {
       return { init_point: mpAssinatura.init_point }
     } catch (err: any) {
       if (err instanceof AppError) throw err
+      console.error('[checkout] erro do Mercado Pago:', JSON.stringify(err?.cause ?? err?.message ?? err))
       const msg = err?.cause?.[0]?.description ?? err?.message ?? 'Erro ao criar assinatura'
       throw new AppError(`Mercado Pago: ${msg}`, 502)
     }
@@ -237,7 +238,30 @@ export class AssinaturaService {
         // Falha ao consultar o MP: devolve o status que já temos e a tela tenta de novo
         console.error(`[sincronizar] falha ao consultar o MP: ${err?.message ?? err}`)
       }
-      const atual = await prisma.assinatura.findUnique({ where: { id: ultima.id } })
+      let atual = await prisma.assinatura.findUnique({ where: { id: ultima.id } })
+
+      // Ainda pendente: a pessoa pode ter pago por um link gerado antes (outra assinatura do MP
+      // da mesma empresa). Procura uma assinatura autorizada com o mesmo external_reference.
+      if (atual?.status === 'PENDENTE') {
+        try {
+          const busca: any = await (preApprovalClient as any).search({
+            options: { external_reference: empresa_id, status: 'authorized' },
+          })
+          const autorizada = busca?.results?.[0]
+          if (autorizada?.id) {
+            await prisma.assinatura.update({
+              where: { id: ultima.id },
+              data: { gateway: 'mercadopago', gateway_id: String(autorizada.id) },
+            })
+            const r2: any = await this.processarWebhook(String(autorizada.id), 'subscription_preapproval')
+            statusMP = r2?.status_mp ?? statusMP
+            atual = await prisma.assinatura.findUnique({ where: { id: ultima.id } })
+          }
+        } catch (err: any) {
+          console.error(`[sincronizar] busca por assinatura autorizada falhou: ${err?.message ?? err}`)
+        }
+      }
+
       return { status: atual?.status ?? ultima.status, status_mp: statusMP }
     }
 
