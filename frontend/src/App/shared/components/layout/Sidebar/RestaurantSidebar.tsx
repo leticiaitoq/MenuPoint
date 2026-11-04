@@ -12,6 +12,7 @@ import {
   HiOfficeBuilding,
 } from 'react-icons/hi';
 import { MdPointOfSale } from 'react-icons/md';
+import { FaWhatsapp } from 'react-icons/fa';
 import './RestaurantSidebar.css';
 
 interface NavItem {
@@ -40,6 +41,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/restaurante/fila', icon: <HiUserGroup />, label: 'Fila' },
   { to: '/restaurante/relatorios', icon: <HiChartBar />, label: 'Relatórios' },
   { to: '/restaurante/embreve', icon: <HiOfficeBuilding />, label: 'Filiais' },
+  { to: '/restaurante/whatsapp', icon: <FaWhatsapp />, label: 'WhatsApp' },
   { to: '/restaurante/config', icon: <HiCog />, label: 'Configurações', bottom: true },
 ];
 

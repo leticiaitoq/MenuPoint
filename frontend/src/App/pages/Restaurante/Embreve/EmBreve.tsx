@@ -3,7 +3,12 @@ import { useNavigate } from "react-router-dom";
 import RestaurantLayout from '../../../shared/components/layout/Restaurantelayout';
 import "./EmBreve.css";
 
-export function EmBreve() {
+interface EmBreveProps {
+  /** Texto da descrição. Se não vier, usa o texto padrão. */
+  descricao?: string;
+}
+
+export function EmBreve({ descricao }: EmBreveProps) {
   const navigate = useNavigate();
 
   return (
@@ -23,7 +28,7 @@ export function EmBreve() {
           </h1>
           <div className="em-breve__divisor" />
           <p className="em-breve__descricao">
-            Esta funcionalidade está em desenvolvimento e estará disponível em breve.
+            {descricao ?? "Esta funcionalidade está em desenvolvimento e estará disponível em breve."}
           </p>
           <p className="em-breve__agradecimento">Agradecemos a sua compreensão!</p>
 
