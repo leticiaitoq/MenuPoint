@@ -173,6 +173,8 @@ export interface ClienteResumoDTO {
   email: string
   telefone: string
   email_verificado: boolean
+  /** URL pública da foto de perfil; null = cliente ainda não enviou (o front mostra a imagem padrão) */
+  foto_url: string | null
 }
 
 // GET/PUT /me — o resumo + dados que só aparecem na tela de perfil

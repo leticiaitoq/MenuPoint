@@ -1,4 +1,5 @@
 import api from './api'
+import { prepararImagem } from './imagem'
 
 // ── Tipos que espelham o que o backend devolve (GET /auth/me e /estabelecimentos) ──
 
@@ -103,8 +104,9 @@ const EstabelecimentoService = {
 
   // Envia a logo (JPG/PNG até 5MB). O backend grava no Supabase Storage e devolve a URL pública.
   async enviarLogo(id: string, arquivo: File): Promise<string> {
+    const pronta = await prepararImagem(arquivo, { maxLado: 800 })
     const form = new FormData()
-    form.append('arquivo', arquivo)
+    form.append('arquivo', pronta)
 
     const response = await api.post<{ logo_url: string }>(`/estabelecimentos/${id}/logo`, form, {
       timeout: 60000,

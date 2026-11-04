@@ -14,6 +14,14 @@ export function extensaoDeImagem(buffer: Buffer, mimetype: string): 'png' | 'jpg
   return null
 }
 
+/** Chaves novas (sb_secret_...) não são JWT: só o header apikey. As legadas (JWT) usam os dois. */
+function headersAuth(): Record<string, string> {
+  const chave = (env.SUPABASE_SERVICE_KEY ?? '').trim()
+  return chave.startsWith('sb_')
+    ? { apikey: chave }
+    : { Authorization: `Bearer ${chave}`, apikey: chave }
+}
+
 /**
  * Envia a imagem para um bucket PÚBLICO do Supabase Storage e devolve a URL pública.
  * Requer SUPABASE_URL e SUPABASE_SERVICE_KEY (só no backend — nunca no frontend).
@@ -32,17 +40,45 @@ export async function enviarImagemPublica(
   try {
     await axios.post(`${base}/storage/v1/object/${env.SUPABASE_BUCKET}/${caminho}`, buffer, {
       headers: {
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-        apikey: env.SUPABASE_SERVICE_KEY,
+        ...headersAuth(),
         'Content-Type': contentType,
         'x-upsert': 'true',
       },
       maxBodyLength: Infinity,
     })
   } catch (err: any) {
-    console.error('Falha no upload para o Supabase Storage:', err?.response?.data ?? err?.message)
+    const detalhe = err?.response?.data ?? err?.message
+    console.error('Falha no upload para o Supabase Storage:', err?.response?.status, detalhe)
+
+    // Só em desenvolvimento: mostra o motivo real na tela/Network para facilitar a configuração
+    if (env.NODE_ENV === 'development') {
+      const texto = typeof detalhe === 'string' ? detalhe : JSON.stringify(detalhe)
+      throw new AppError(`Supabase recusou o upload (${err?.response?.status ?? 'sem resposta'}): ${texto}`, 502)
+    }
     throw new AppError('Não foi possível enviar a imagem. Tente novamente.', 502)
   }
 
   return `${base}/storage/v1/object/public/${env.SUPABASE_BUCKET}/${caminho}`
+}
+
+
+/**
+ * Apaga um arquivo do bucket a partir da URL pública que enviarImagemPublica devolveu.
+ * Best-effort: nunca lança erro (um arquivo órfão não pode quebrar a troca de foto).
+ */
+export async function removerImagemPublica(urlPublica: string): Promise<void> {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) return
+
+  const base = env.SUPABASE_URL.replace(/\/$/, '')
+  const prefixo = `${base}/storage/v1/object/public/${env.SUPABASE_BUCKET}/`
+  if (!urlPublica.startsWith(prefixo)) return // URL de outro lugar: não mexe
+
+  const caminho = urlPublica.slice(prefixo.length)
+  try {
+    await axios.delete(`${base}/storage/v1/object/${env.SUPABASE_BUCKET}/${caminho}`, {
+      headers: headersAuth(),
+    })
+  } catch (err: any) {
+    console.warn('Não foi possível apagar a imagem antiga:', err?.response?.data ?? err?.message)
+  }
 }

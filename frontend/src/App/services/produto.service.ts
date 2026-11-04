@@ -1,4 +1,5 @@
 import api from './api'
+import { prepararImagem } from './imagem'
 
 export interface Adicional {
   id?: string
@@ -137,8 +138,9 @@ const ProdutoService = {
   // Envia a foto para o Storage e devolve a URL pública, para ser usada
   // no campo imagem_url do criar()/atualizar()
   async uploadImagem(arquivo: File): Promise<string> {
+    const pronta = await prepararImagem(arquivo, { maxLado: 1200 })
     const formData = new FormData()
-    formData.append('arquivo', arquivo)
+    formData.append('arquivo', pronta)
 
     const response = await api.post<{ imagem_url: string }>(
       'produtos/upload-imagem',

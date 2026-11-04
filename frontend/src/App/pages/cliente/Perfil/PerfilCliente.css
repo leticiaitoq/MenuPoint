@@ -264,21 +264,9 @@
 .perfil__btn-editar-end:hover { background: #d4952e; }
 /* ── Perfil conectado ao back-end ─────────────────────────────────────────── */
 
-/* Avatar com iniciais (no lugar da foto: ainda não há upload para cliente) */
-.perfil__avatar {
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  background: #f0d0cc;
-  color: #c0392b;
-  font-size: 40px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 3px solid #e8b8b2;
-  flex-shrink: 0;
-}
+/* Botões da foto (as classes base .perfil__foto* estão no topo deste arquivo) */
+.perfil__foto-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.perfil__foto-btn--remover { border-color: #999; color: #666; }
 
 .perfil__estado {
   text-align: center;
