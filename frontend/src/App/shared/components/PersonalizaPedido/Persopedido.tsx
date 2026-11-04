@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import CustomerLayout from '../layout/Customerlayout';
 import { ItemCarrinho } from '../Carrinho/Carrinho';
 import { useCarrinho } from '../../contexts/CarrinhoContext';
+import ContadorCaracteres from '../ContadorCaracteres/ContadorCaracteres';
 import './Persopedido.css';
 
 /**
@@ -207,9 +208,11 @@ const PersoPedido: React.FC = () => {
           <textarea
             className="perso-pedido__observacao-campo"
             placeholder="escreva aqui a sua observação"
+            maxLength={500}
             value={observacao}
             onChange={(e) => setObservacao(e.target.value)}
           />
+          <ContadorCaracteres valor={observacao} max={500} />
         </div>
 
         {/* Confirmação */}

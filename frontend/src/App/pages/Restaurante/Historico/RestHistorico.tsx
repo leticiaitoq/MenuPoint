@@ -382,6 +382,7 @@ const RestHistorico: React.FC = () => {
             <input
               type="text"
               placeholder="Buscar por pedido, cliente, mesa ou garçom..."
+              maxLength={100}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />

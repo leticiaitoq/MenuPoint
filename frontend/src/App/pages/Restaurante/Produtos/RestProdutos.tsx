@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { HiSearch, HiPencil, HiPause, HiPlay, HiPlus, HiStar } from 'react-icons/hi';
+import { HiSearch, HiPencil, HiTrash, HiRefresh, HiPlus, HiStar } from 'react-icons/hi';
 import { MdDragIndicator } from 'react-icons/md';
 import RestaurantLayout from '../../../shared/components/layout/Restaurantelayout';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { CSS } from '@dnd-kit/utilities';
 import ProdutoService, { Produto } from '../../../services/produto.service';
 import CategoriaService, { Categoria } from '../../../services/categoria.service';
 import ContadorCaracteres from '../../../shared/components/ContadorCaracteres/ContadorCaracteres';
+import ModalAlerta from '../../../shared/components/ModalAlerta/ModalAlerta';
 
 const STATUS = ['Todos os status', 'Ativo', 'Inativo'];
 
@@ -23,11 +24,12 @@ interface LinhaProps {
   produto: Produto;
   posicao: number;
   onEditar: (produto: Produto) => void;
-  onAlternar: (id: string) => void;
+  onDesativar: (produto: Produto) => void;
+  onReativar: (id: string) => void;
   formatarMoeda: (valor: number) => string;
 }
 
-const LinhaProduto: React.FC<LinhaProps> = ({ produto, posicao, onEditar, onAlternar, formatarMoeda }) => {
+const LinhaProduto: React.FC<LinhaProps> = ({ produto, posicao, onEditar, onDesativar, onReativar, formatarMoeda }) => {
   const {
     attributes,
     listeners,
@@ -41,11 +43,14 @@ const LinhaProduto: React.FC<LinhaProps> = ({ produto, posicao, onEditar, onAlte
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    background: isDragging ? '#fdf0f0' : 'white',
   };
 
   return (
-    <tr ref={setNodeRef} style={style}>
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={`prod__linha ${isDragging ? 'prod__linha--arrastando' : ''}`}
+    >
       <td className="prod__td-ordem">
         {/* só o ícone recebe os listeners de drag */}
         <MdDragIndicator
@@ -79,9 +84,25 @@ const LinhaProduto: React.FC<LinhaProps> = ({ produto, posicao, onEditar, onAlte
         <button className="prod__btn-acao" onClick={() => onEditar(produto)} aria-label="Editar produto">
           <HiPencil />
         </button>
-        <button className="prod__btn-acao prod__btn-acao--pausar" onClick={() => onAlternar(produto.id)} aria-label="Pausar/Ativar">
-          {produto.disponivel ? <HiPause /> : <HiPlay />}
-        </button>
+        {produto.disponivel ? (
+          <button
+            className="prod__btn-acao prod__btn-acao--deletar"
+            onClick={() => onDesativar(produto)}
+            aria-label={`Desativar ${produto.nome}`}
+            title="Desativar produto"
+          >
+            <HiTrash />
+          </button>
+        ) : (
+          <button
+            className="prod__btn-acao prod__btn-acao--reativar"
+            onClick={() => onReativar(produto.id)}
+            aria-label={`Reativar ${produto.nome}`}
+            title="Reativar produto"
+          >
+            <HiRefresh />
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -96,6 +117,9 @@ const RestProdutos: React.FC = () => {
   const [busca, setBusca]                     = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState('Todas as categorias');
   const [statusFiltro, setStatusFiltro]       = useState('Todos os status');
+  // Confirmação de desativação (mesmo padrão da tela de categorias)
+  const [produtoParaDesativar, setProdutoParaDesativar] = useState<Produto | null>(null);
+  const [desativando, setDesativando]         = useState(false);
 
   const navigate = useNavigate();
 
@@ -141,6 +165,14 @@ const RestProdutos: React.FC = () => {
         prev.map((p) => p.id === id ? { ...p, disponivel: !p.disponivel } : p)
       );
     }
+  };
+
+  const confirmarDesativacao = async () => {
+    if (!produtoParaDesativar) return;
+    setDesativando(true);
+    await alternarDisponibilidade(produtoParaDesativar.id);
+    setDesativando(false);
+    setProdutoParaDesativar(null);
   };
 
   // ── Formata preço
@@ -252,7 +284,8 @@ const RestProdutos: React.FC = () => {
                             produto={produto}
                             posicao={produtos.findIndex((p) => p.id === produto.id) + 1}
                             onEditar={(p) => navigate(`/restaurante/editprodutos/${p.id}`)}
-                            onAlternar={alternarDisponibilidade}
+                            onDesativar={setProdutoParaDesativar}
+                            onReativar={alternarDisponibilidade}
                             formatarMoeda={formatarMoeda}
                           />
                         ))}
@@ -266,6 +299,17 @@ const RestProdutos: React.FC = () => {
             </>
           )}
         </div>
+
+        <ModalAlerta
+          aberto={!!produtoParaDesativar}
+          variante="aviso"
+          titulo="Desativar produto?"
+          mensagem={produtoParaDesativar && <>O produto <strong>"{produtoParaDesativar.nome}"</strong> deixará de aparecer no cardápio. Você pode reativá-lo depois.</>}
+          textoConfirmar={desativando ? 'Desativando...' : 'Sim, desativar'}
+          onConfirmar={confirmarDesativacao}
+          onFechar={() => setProdutoParaDesativar(null)}
+          carregando={desativando}
+        />
       </div>
     </RestaurantLayout>
   );

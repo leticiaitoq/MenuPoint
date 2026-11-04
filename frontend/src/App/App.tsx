@@ -6,9 +6,11 @@ import { RestauranteClienteProvider } from './shared/contexts/RestauranteCliente
 import { EstabelecimentoProvider } from './shared/contexts/Estabelecimentocontext';
 import { ConvidadoProvider } from './shared/contexts/Convidadocontext';
 import AppRoutes from './routes/Index';
+import { TemaProvider } from './shared/contexts/TemaContext';
 
 const App: React.FC = () => {
   return (
+    <TemaProvider>
     <AuthProvider>
        <ClienteAuthProvider>
         <RestauranteClienteProvider>
@@ -22,6 +24,7 @@ const App: React.FC = () => {
         </RestauranteClienteProvider>
       </ClienteAuthProvider>
     </AuthProvider>
+    </TemaProvider>
   );
 };
 

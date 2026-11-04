@@ -1,17 +1,11 @@
+/* As cores base (fundo, texto, borda, vermelho da marca, status) vêm do tema global (tema.css).
+   Aqui ficam só as 2 cores de categoria que não têm token (roxo e ciano) e o que não é cor. */
 .despesas {
-  --cor-vinho:      #8B1A1A;
-  --cor-vinho-soft: #fff0f0;
-  --cor-amber:      #d97706;
-  --cor-amber-soft: #fef3c7;
-  --cor-verde:      #16a34a;
-  --cor-verde-soft: #dcfce7;
-  --cor-azul:       #2563eb;
-  --cor-azul-soft:  #dbeafe;
-  --cor-texto:      #1f2937;
-  --cor-texto-fraco:#6b7280;
-  --cor-borda:      #e5e7eb;
-  --cor-fundo-card: #ffffff;
-  --sombra:         0 1px 4px rgba(0,0,0,0.08);
+  --desp-roxo-bg:   #ede9fe;
+  --desp-roxo-fg:   #7c3aed;
+  --desp-ciano-bg:  #cffafe;
+  --desp-ciano-fg:  #0e7490;
+  --sombra:         0 1px 4px var(--shadow-color);
   --raio:           14px;
   --raio-sm:        8px;
 
@@ -19,6 +13,13 @@
   flex-direction: column;
   gap: 16px;
   position: relative;
+}
+
+[data-theme="dark"] .despesas {
+  --desp-roxo-bg:   #2b2447;
+  --desp-roxo-fg:   #b79bff;
+  --desp-ciano-bg:  #153a42;
+  --desp-ciano-fg:  #5fd0e6;
 }
 
 /* ── Cabeçalho ── */
@@ -33,13 +34,13 @@
 .despesas__titulo {
   font-size: 28px;
   font-weight: 700;
-  color: var(--cor-texto);
+  color: var(--text);
   margin: 0 0 4px;
 }
 
 .despesas__subtitulo {
   font-size: 14px;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -50,8 +51,8 @@
   padding: 11px 20px;
   border-radius: var(--raio-sm);
   border: none;
-  background: var(--cor-vinho);
-  color: #ffffff;
+  background: var(--brand);
+  color: var(--on-brand);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -60,7 +61,7 @@
 }
 
 .despesas__btn-nova:hover {
-  background: #6f1414;
+  background: var(--brand-hover);
 }
 
 /* ── Filtros ── */
@@ -79,8 +80,8 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  background: var(--cor-fundo-card);
-  border: 1.5px solid var(--cor-borda);
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border);
   border-radius: var(--raio-sm);
   padding: 10px 14px;
   cursor: pointer;
@@ -92,8 +93,8 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--cor-vinho-soft);
-  color: var(--cor-vinho);
+  background: var(--brand-soft);
+  color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -111,7 +112,7 @@
 .despesas__filtro-label {
   display: block;
   font-size: 11px;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
   margin-bottom: 2px;
@@ -121,7 +122,7 @@
   display: block;
   font-size: 13px;
   font-weight: 700;
-  color: var(--cor-texto);
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -133,7 +134,7 @@
   outline: none;
   font-size: 13px;
   font-weight: 700;
-  color: var(--cor-texto);
+  color: var(--text);
   cursor: pointer;
   padding: 0;
   width: 100%;
@@ -145,10 +146,10 @@
   top: calc(100% + 6px);
   left: 0;
   z-index: 20;
-  background: var(--cor-fundo-card);
-  border: 1.5px solid var(--cor-borda);
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border);
   border-radius: var(--raio-sm);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); /* sombra preta funciona nos dois temas */
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -161,15 +162,16 @@
   flex-direction: column;
   gap: 4px;
   font-size: 12px;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
 }
 
 .despesas__periodo-campo input {
-  border: 1.5px solid var(--cor-borda);
+  border: 1.5px solid var(--border);
   border-radius: var(--raio-sm);
   padding: 7px 10px;
   font-size: 13px;
-  color: var(--cor-texto);
+  color: var(--text);
+  background: var(--bg-surface-alt);
 }
 
 .despesas__periodo-acoes {
@@ -191,13 +193,13 @@
 }
 
 .despesas__periodo-limpar {
-  background: #f3f4f6;
-  color: var(--cor-texto);
+  background: var(--bg-surface-alt);
+  color: var(--text);
 }
 
 .despesas__periodo-aplicar {
-  background: var(--cor-vinho);
-  color: #fff;
+  background: var(--brand);
+  color: var(--on-brand);
 }
 
 /* ── Resumo do período ── */
@@ -205,8 +207,8 @@
   display: flex;
   align-items: center;
   gap: 24px;
-  background: var(--cor-vinho-soft);
-  border: 1.5px solid #f9d5d5;
+  background: var(--brand-soft);
+  border: 1.5px solid var(--brand-soft-border);
   border-radius: var(--raio);
   padding: 16px 22px;
   flex-wrap: wrap;
@@ -221,7 +223,7 @@
 .despesas__resumo-divisor {
   width: 1.5px;
   align-self: stretch;
-  background: #f0d3d3;
+  background: var(--brand-soft-border);
 }
 
 .despesas__resumo-icone {
@@ -236,44 +238,44 @@
 }
 
 .despesas__resumo-icone--vermelho {
-  background: var(--cor-vinho);
-  color: #ffffff;
+  background: var(--brand);
+  color: var(--on-brand);
 }
 
 .despesas__resumo-icone--claro {
-  background: #ffffff;
-  color: var(--cor-vinho);
-  border: 1.5px solid #f9d5d5;
+  background: var(--bg-surface);
+  color: var(--accent);
+  border: 1.5px solid var(--brand-soft-border);
 }
 
 .despesas__resumo-label {
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: var(--cor-vinho);
+  color: var(--accent);
 }
 
 .despesas__resumo-valor {
   display: block;
   font-size: 22px;
   font-weight: 800;
-  color: var(--cor-vinho);
+  color: var(--accent);
 }
 
 .despesas__resumo-numero {
   font-size: 16px;
   font-weight: 800;
-  color: var(--cor-texto);
+  color: var(--text);
 }
 
 .despesas__resumo-sub {
   font-size: 13px;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
 }
 
 /* ── Tabela ── */
 .despesas__tabela-wrapper {
-  background: var(--cor-fundo-card);
+  background: var(--bg-surface);
   border-radius: var(--raio);
   box-shadow: var(--sombra);
   padding: 6px 0 0;
@@ -295,41 +297,41 @@
   text-align: left;
   font-size: 12px;
   font-weight: 700;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
   padding: 14px 18px;
-  border-bottom: 1.5px solid var(--cor-borda);
+  border-bottom: 1.5px solid var(--border);
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
 }
 
 .despesas__tabela thead th:hover {
-  color: var(--cor-texto);
+  color: var(--text);
 }
 
 .despesas__icone-ordenar {
   font-size: 13px;
   vertical-align: middle;
   margin-left: 2px;
-  color: #c7ccd3;
+  color: var(--text-faint);
 }
 
 .despesas__icone-ordenar--ativo {
-  color: var(--cor-vinho);
+  color: var(--accent);
 }
 
 .despesas__tabela tbody td {
   padding: 14px 18px;
   font-size: 14px;
-  color: var(--cor-texto);
-  border-bottom: 1px solid #f1f2f4;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
 .despesas__tabela tbody tr:hover {
-  background: #fafafa;
+  background: var(--bg-surface-alt);
 }
 
 .despesas__valor {
@@ -338,7 +340,7 @@
 
 .despesas__vazio {
   text-align: center !important;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
   padding: 32px 18px !important;
   white-space: normal !important;
 }
@@ -353,12 +355,12 @@
   white-space: nowrap;
 }
 
-.despesas__badge--rosa  { background: #fde2e2; color: #b91c1c; }
-.despesas__badge--azul  { background: #dbeafe; color: #1d4ed8; }
-.despesas__badge--roxo  { background: #ede9fe; color: #7c3aed; }
-.despesas__badge--ambar { background: #fef3c7; color: #b45309; }
-.despesas__badge--ciano { background: #cffafe; color: #0e7490; }
-.despesas__badge--cinza { background: #f3f4f6; color: #4b5563; }
+.despesas__badge--rosa  { background: var(--danger-soft); color: var(--danger); }
+.despesas__badge--azul  { background: var(--info-soft); color: var(--info-text); }
+.despesas__badge--roxo  { background: var(--desp-roxo-bg); color: var(--desp-roxo-fg); }
+.despesas__badge--ambar { background: var(--warning-soft); color: var(--warning-text); }
+.despesas__badge--ciano { background: var(--desp-ciano-bg); color: var(--desp-ciano-fg); }
+.despesas__badge--cinza { background: var(--bg-surface-alt); color: var(--text-muted); }
 
 /* Forma de pagamento */
 .despesas__pagamento {
@@ -366,7 +368,7 @@
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: var(--cor-texto);
+  color: var(--text);
 }
 
 .despesas__pagamento-icone {
@@ -380,10 +382,10 @@
   flex-shrink: 0;
 }
 
-.despesas__pagamento-icone--pix      { background: #d1fae5; color: #0d9488; }
-.despesas__pagamento-icone--boleto   { background: #e5e7eb; color: #4b5563; }
-.despesas__pagamento-icone--cartao   { background: var(--cor-azul-soft); color: var(--cor-azul); }
-.despesas__pagamento-icone--dinheiro { background: var(--cor-verde-soft); color: var(--cor-verde); }
+.despesas__pagamento-icone--pix      { background: var(--desp-ciano-bg); color: var(--desp-ciano-fg); }
+.despesas__pagamento-icone--boleto   { background: var(--border); color: var(--text-muted); }
+.despesas__pagamento-icone--cartao   { background: var(--info-soft); color: var(--info); }
+.despesas__pagamento-icone--dinheiro { background: var(--success-soft); color: var(--success); }
 
 /* Ações */
 .despesas__acoes {
@@ -405,22 +407,22 @@
 }
 
 .despesas__btn-acao--editar {
-  background: #f3f4f6;
-  color: var(--cor-texto-fraco);
+  background: var(--bg-surface-alt);
+  color: var(--text-muted);
 }
 
 .despesas__btn-acao--editar:hover {
-  background: var(--cor-azul-soft);
-  color: var(--cor-azul);
+  background: var(--info-soft);
+  color: var(--info);
 }
 
 .despesas__btn-acao--excluir {
-  background: #fdf0f0;
-  color: var(--cor-vinho);
+  background: var(--brand-soft);
+  color: var(--accent);
 }
 
 .despesas__btn-acao--excluir:hover {
-  background: #fbdcdc;
+  background: var(--brand-soft-border);
 }
 
 /* ── Paginação ── */
@@ -435,7 +437,7 @@
 
 .despesas__paginacao-info {
   font-size: 13px;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
 }
 
 .despesas__paginacao-botoes {
@@ -448,9 +450,9 @@
   height: 30px;
   padding: 0 6px;
   border-radius: var(--raio-sm);
-  border: 1.5px solid var(--cor-borda);
-  background: #ffffff;
-  color: var(--cor-texto);
+  border: 1.5px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text);
   font-size: 13px;
   cursor: pointer;
 }
@@ -461,9 +463,9 @@
 }
 
 .despesas__pagina--ativa {
-  background: var(--cor-vinho) !important;
-  border-color: var(--cor-vinho) !important;
-  color: #ffffff !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+  color: var(--on-brand) !important;
   font-weight: 700;
 }
 
@@ -471,7 +473,7 @@
 .despesas__modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(17, 17, 17, 0.5);
+  background: var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -480,14 +482,14 @@
 }
 
 .despesas__modal {
-  background: #ffffff;
+  background: var(--bg-surface);
   border-radius: var(--raio);
   padding: 24px;
   width: 100%;
   max-width: 480px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25); /* sombra preta funciona nos dois temas */
 }
 
 .despesas__modal--confirmar {
@@ -497,12 +499,12 @@
 .despesas__modal--confirmar h3 {
   margin: 0 0 10px;
   font-size: 18px;
-  color: var(--cor-texto);
+  color: var(--text);
 }
 
 .despesas__modal--confirmar p {
   font-size: 14px;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
   line-height: 1.5;
   margin: 0 0 20px;
 }
@@ -517,25 +519,25 @@
 .despesas__modal-cabecalho h3 {
   margin: 0;
   font-size: 18px;
-  color: var(--cor-texto);
+  color: var(--text);
 }
 
 .despesas__modal-fechar {
   border: none;
-  background: #f3f4f6;
+  background: var(--bg-surface-alt);
   width: 30px;
   height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 15px;
 }
 
 .despesas__modal-fechar:hover {
-  background: #e5e7eb;
+  background: var(--border);
 }
 
 /* Formulário */
@@ -557,24 +559,24 @@
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
 }
 
 .despesas__form-campo input,
 .despesas__form-campo select {
-  border: 1.5px solid var(--cor-borda);
+  border: 1.5px solid var(--border);
   border-radius: var(--raio-sm);
   padding: 9px 12px;
   font-size: 14px;
   font-weight: 400;
-  color: var(--cor-texto);
+  color: var(--text);
   outline: none;
-  background: #ffffff;
+  background: var(--bg-surface-alt);
 }
 
 .despesas__form-campo input:focus,
 .despesas__form-campo select:focus {
-  border-color: var(--cor-vinho);
+  border-color: var(--accent);
 }
 
 .despesas__form-acoes {
@@ -596,30 +598,30 @@
 }
 
 .despesas__form-cancelar {
-  background: #f3f4f6;
-  color: var(--cor-texto);
+  background: var(--bg-surface-alt);
+  color: var(--text);
 }
 
 .despesas__form-cancelar:hover {
-  background: #e5e7eb;
+  background: var(--border);
 }
 
 .despesas__form-salvar {
-  background: var(--cor-vinho);
-  color: #ffffff;
+  background: var(--brand);
+  color: var(--on-brand);
 }
 
 .despesas__form-salvar:hover {
-  background: #6f1414;
+  background: var(--brand-hover);
 }
 
 .despesas__form-excluir {
-  background: var(--cor-vinho);
-  color: #ffffff;
+  background: var(--brand);
+  color: var(--on-brand);
 }
 
 .despesas__form-excluir:hover {
-  background: #6f1414;
+  background: var(--brand-hover);
 }
 
 /* ── Responsividade ── */

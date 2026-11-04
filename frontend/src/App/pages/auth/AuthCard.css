@@ -1,5 +1,7 @@
 /* ============================================================
-   AuthCard.css
+   AuthCard.css — painel da marca (padrão do cadastro de restaurante)
+   Mobile-first: cabeçalho vermelho no topo. A partir de 769px vira
+   a lateral esquerda. Valores espelham o RegisterPage.css.
    ============================================================ */
 
 @font-face {
@@ -11,140 +13,120 @@
 }
 
 /* --------------------------------------------------------------
-   GRADIENTE COMPARTILHADO
+   MOBILE — cabeçalho no topo
 -------------------------------------------------------------- */
-
-.auth-header-gradient {
-  background: linear-gradient(
-    to bottom,
-    #880003 0%,
-    #880003 45%,
-    #490e0e 100%,
-    #490e0e 100%
-  );
-
-  border-radius: 0 0 0 0;
+.auth-brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 28px 24px 24px;
+  background: linear-gradient(to bottom, #880003 0%, #880003 45%, #490e0e 100%);
+  color: #fff;
   overflow: hidden;
 }
 
-/* --------------------------------------------------------------
-   DESKTOP CARD
--------------------------------------------------------------- */
-
-.auth-card {
-  flex: 0 0 44%;
-  align-self: stretch;
-  border-radius: 20px 0 0 20px;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-}
-
-.auth-card__logo {
-  width: 600px;
-  height: 600px;
-  object-fit: contain;
-  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.3));
-}
-
-/* --------------------------------------------------------------
-   LOGO ESCRITA MENUPOINT
--------------------------------------------------------------- */
-
-.auth-card__title {
-  font-family: 'Bukhari Script', 'Dancing Script', cursive;
-  font-weight: normal;
-  font-style: normal;
-  font-size: 64px;
-
-  color: #f58400;
-
-  text-decoration: underline;
-  text-decoration-color: #f58400;
-  text-underline-offset: 8px;
-  text-decoration-thickness: 2px;
-
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
-
-  line-height: 1;
-  letter-spacing: 0.5px;
-
-  transform: translateY(-50px);
-}
-
-/* Mantém exatamente a mesma fonte do título */
-.auth-card__menu,
-.auth-card__point {
-  font-family: inherit;
-  font-weight: inherit;
-  font-style: inherit;
-  font-size: inherit;
-  line-height: inherit;
-}
-
-.auth-card__menu {
-  color: #f58400;
-}
-
-.auth-card__point {
-  color: #ffffff;
-}
-
-/* --------------------------------------------------------------
-   MOBILE HEADER (<= 768px)
--------------------------------------------------------------- */
-.auth-card-mobile {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 270px;
-  padding: 0 24px 24px;
-  box-sizing: border-box;
-  position: relative;
-}
-
-.auth-card-mobile__logo {
-  width: 180px;
-  height: 180px;
-  object-fit: contain;
+.auth-brand__logo {
+  width: 150px;
+  height: 150px;
+  object-fit: cover; /* a arte é 16:9 com o emblema centralizado: corta as laterais vazias */
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.22));
 }
 
-.auth-card-mobile__title {
-  font-family: 'Bukhari Script', 'Dancing Script', cursive;
-  font-weight: normal;
-  font-style: normal;
-  font-size: 46px;
-  color: #ffbd59;
-
-  text-decoration: underline;
-  text-decoration-color: #ffbd59;
-  text-underline-offset: 6px;
-  text-decoration-thickness: 2px;
-
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
-
+.auth-brand__wordmark {
   display: block;
-  align-self: center;
-  position: relative;
-  z-index: 1;
+  white-space: nowrap;
+  font-family: 'Bukhari Script', 'Dancing Script', cursive;
+  font-size: 42px;
   line-height: 1;
   letter-spacing: 0.5px;
+  color: #ffbd59;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+/* O index.css aplica "* { font-family: Arimo }", que vence a herança: reforçamos aqui */
+.auth-brand__wordmark span {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* Detalhes que só existem na lateral do desktop */
+.auth-brand__divider,
+.auth-brand__tagline,
+.auth-brand__hat {
+  display: none;
 }
 
 /* --------------------------------------------------------------
-   BREAKPOINTS
+   DESKTOP — lateral esquerda
 -------------------------------------------------------------- */
-@media (max-width: 768px) {
-  .auth-card-mobile { display: flex; }
-  .auth-card         { display: none; }
-}
-
 @media (min-width: 769px) {
-  .auth-card-mobile { display: none; }
-  .auth-card         { display: flex; }
+  .auth-brand {
+    flex: 0 0 38%;
+    min-width: 300px;
+    width: auto;
+    align-self: stretch;
+    justify-content: center;
+    gap: 0;
+    padding: 48px 36px 190px;
+    background: linear-gradient(180deg, #7a0509 0%, #5a070b 55%, #430a0c 100%);
+  }
+
+  .auth-brand__logo {
+    width: 100%;
+    height: auto;
+    max-width: 230px;
+    aspect-ratio: 1 / 1;
+  }
+
+  .auth-brand__wordmark {
+    margin-top: 8px;
+    font-size: 52px;
+    color: #ffa62b;
+    text-decoration: none;
+    text-shadow: none;
+  }
+
+  .auth-brand__wordmark span {
+    color: #ffffff;
+  }
+
+  .auth-brand__divider {
+    display: block;
+    width: 58%;
+    height: 1px;
+    margin: 22px 0 20px;
+    border: 0;
+    background: #f0a030;
+  }
+
+  .auth-brand__tagline {
+    display: block;
+    max-width: 240px;
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.45;
+    text-align: center;
+    color: #fff;
+  }
+
+  .auth-brand__hat {
+    display: block;
+    position: absolute;
+    left: 50%;
+    bottom: 36px;
+    width: 46%;
+    max-width: 150px;
+    transform: translateX(-50%);
+    color: #a3262b;
+    opacity: 0.7;
+    pointer-events: none;
+  }
 }

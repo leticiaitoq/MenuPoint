@@ -10,6 +10,16 @@
     <link rel="manifest" href="%PUBLIC_URL%/icons/site.webmanifest" />
     <meta name="description" content="Cardápio digital" />
     <title>MenuPoint</title>
+    <script>
+  (function () {
+    try {
+      var pref = localStorage.getItem('@menupoint:tema') || 'sistema';
+      var escuro = pref === 'escuro' ||
+        (pref === 'sistema' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = escuro ? 'dark' : 'light';
+    } catch (e) {}
+  })();
+</script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

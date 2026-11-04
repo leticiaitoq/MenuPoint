@@ -33,14 +33,11 @@ const Carrinho: React.FC<CarrinhoProps> = ({ aberto, onFechar, itens, onFinaliza
         <div className="carrinho__overlay" onClick={onFechar} />
       )}
 
-      {/* Painel lateral */}
-      <aside className={`carrinho__painel${aberto ? ' carrinho__painel--aberto' : ''}`}
-      style={{
-        backgroundImage: 'url(./images/Fundo-historico.png)',
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center',
-        backgroundSize: 'cover' 
-        }}>
+      {/* Painel lateral — a imagem de fundo é aplicada pelo CSS (var --bg-arte) */}
+      <aside
+        className={`carrinho__painel${aberto ? ' carrinho__painel--aberto' : ''}`}
+        style={{ '--bg-arte': 'url(/images/Fundo-historico.png)' } as React.CSSProperties}
+      >
 
         {/* Cabeçalho */}
         <div className="carrinho__header">

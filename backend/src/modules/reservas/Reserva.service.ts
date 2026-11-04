@@ -1,7 +1,11 @@
 import { AppError } from '@shared/errors/AppError'
 import { Prisma } from '@prisma/client'
 import { ReservaRepository } from './Reserva.repository'
-import { CriarReservaDTO, AtualizarStatusReservaDTO } from './Reserva.schema'
+import {
+  CriarReservaDTO,
+  AtualizarStatusReservaDTO,
+  MesasDisponiveisQuery,
+} from './Reserva.schema'
 import prisma from '@config/prisma'
 
 export class ReservaService {
@@ -44,6 +48,74 @@ export class ReservaService {
     }
 
     return this.repository.create({ ...data, estabelecimento_id })
+  }
+
+  // ── CLIENTE: acha o restaurante pelo slug (o token do cliente não tem estabelecimento_id)
+
+  private async buscarEstabelecimentoPorSlug(slug: string) {
+    const estabelecimento = await prisma.estabelecimento.findFirst({
+      where: { slug, ativo: true },
+      select: { id: true },
+    })
+
+    if (!estabelecimento) {
+      throw new AppError('Restaurante não encontrado', 404)
+    }
+
+    return estabelecimento
+  }
+
+  // ── CLIENTE: CRIAR RESERVA ───────────────────────────────────────────────
+  // Nasce PENDENTE: o restaurante confirma depois (PATCH /:id/status).
+
+  async criarParaCliente(slug: string, data: CriarReservaDTO) {
+    const estabelecimento = await this.buscarEstabelecimentoPorSlug(slug)
+
+    if (data.mesa_id) {
+      // Garante que a mesa é DESTE restaurante (o id vem do navegador, não dá pra confiar)
+      const mesa = await prisma.mesa.findFirst({
+        where: { id: data.mesa_id, estabelecimento_id: estabelecimento.id, ativo: true },
+      })
+
+      if (!mesa) {
+        throw new AppError('Mesa não encontrada neste restaurante', 404)
+      }
+
+      if (mesa.capacidade < data.num_pessoas) {
+        throw new AppError(`Esta mesa comporta no máximo ${mesa.capacidade} pessoas`, 400)
+      }
+    }
+
+    return this.criar(data, estabelecimento.id)
+  }
+
+  // ── CLIENTE: MESAS DISPONÍVEIS ───────────────────────────────────────────
+
+  async mesasDisponiveis(slug: string, query: MesasDisponiveisQuery) {
+    const estabelecimento = await this.buscarEstabelecimentoPorSlug(slug)
+
+    const dataBase = new Date(query.data_reserva + 'T00:00:00')
+
+    const [hIni, mIni] = query.hora_inicio.split(':').map(Number)
+    const [hFim, mFim] = query.hora_fim.split(':').map(Number)
+
+    const horaInicioDate = new Date(dataBase)
+    horaInicioDate.setHours(hIni, mIni, 0, 0)
+
+    const horaFimDate = new Date(dataBase)
+    horaFimDate.setHours(hFim, mFim, 0, 0)
+
+    if (horaFimDate <= horaInicioDate) {
+      throw new AppError('Hora fim deve ser posterior à hora início', 400)
+    }
+
+    return this.repository.mesasDisponiveis(
+      estabelecimento.id,
+      dataBase,
+      horaInicioDate,
+      horaFimDate,
+      query.pessoas
+    )
   }
 
   // ── BUSCAR POR ID ────────────────────────────────────────────────────────

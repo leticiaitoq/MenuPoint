@@ -30,6 +30,10 @@ import { assinaturaRoutes } from '@modules/assinatura/Assinatura.controller'
 // GETs públicos que o cliente logado (perfil CLIENTE) pode chamar
 const ROTAS_PUBLICAS_GET = /^\/api\/v1\/(estabelecimentos|categorias)\/publico\//
 
+// Reservas feitas pelo próprio cliente: só estas rotas (GET mesas livres e POST criar) aceitam token CLIENTE.
+// As demais rotas de /reservas continuam só do restaurante.
+const ROTAS_CLIENTE_RESERVA = /^\/api\/v1\/reservas\/publico\//
+
 export function buildApp(): FastifyInstance {
   const app = Fastify({
 
@@ -104,6 +108,12 @@ app.register(fastifySwaggerUi, {
 
       // Rotas públicas de leitura (cardápio por slug) também servem o cliente logado
       if (request.method === 'GET' && ROTAS_PUBLICAS_GET.test(request.url)) return
+
+      // Cliente reservando (a própria rota confere se o perfil é CLIENTE)
+      if (
+        (request.method === 'GET' || request.method === 'POST') &&
+        ROTAS_CLIENTE_RESERVA.test(request.url)
+      ) return
 
       const authorization = request.headers.authorization
       if (!authorization?.startsWith('Bearer ')) return

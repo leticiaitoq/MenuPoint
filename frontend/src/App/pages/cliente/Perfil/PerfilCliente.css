@@ -7,19 +7,19 @@
 
 /* Card principal */
 .perfil__card {
-  background: #fdf5f5;
+  background: var(--brand-soft);
   border-radius: 16px;
   padding: 28px 32px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  box-shadow: 0 1px 4px var(--shadow-color);
 }
 
 .perfil__nome {
   font-size: 28px;
   font-weight: 800;
-  color: #c0392b;
+  color:  var(--accent);
   margin: 0;
   text-align: center;
 }
@@ -47,14 +47,14 @@
   align-items: center;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #f0d0cc;
+  border: 3px solid var(--brand-soft-border);
 }
 
 .perfil__foto-btn {
   font-size: 11px;
   background: none;
-  border: 1px solid #c0392b;
-  color: #c0392b;
+  border: 1px solid var(--brand);
+  color: var(--brand);
   border-radius: 6px;
   padding: 3px 8px;
   cursor: pointer;
@@ -72,7 +72,7 @@
 
 .perfil__detalhe {
   font-size: 17px;
-  color: #444;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -96,7 +96,7 @@
 .perfil__toggle-slider {
   width: 42px;
   height: 24px;
-  background: #ccc;
+  background: var(--text-faint);
   border-radius: 12px;
   position: relative;
   transition: background 0.2s;
@@ -107,22 +107,22 @@
   position: absolute;
   width: 18px;
   height: 18px;
-  background: #fff;
+  background: var(--bg-surface);
   border-radius: 50%;
   top: 3px;
   left: 3px;
   transition: left 0.2s;
 }
 
-.perfil__toggle-input:checked + .perfil__toggle-slider { background: #555; }
+.perfil__toggle-input:checked + .perfil__toggle-slider { background: var(--text-muted); }
 .perfil__toggle-input:checked + .perfil__toggle-slider::after { left: 21px; }
 
 .perfil__tema-icone { font-size: 16px; }
 
 /* Botões */
 .perfil__btn-editar {
-  background: #e8a838;
-  color: #fff;
+  background: var(--warning);
+  color: var(--on-status);
   border: none;
   border-radius: 8px;
   padding: 10px 28px;
@@ -132,8 +132,6 @@
   width: fit-content;
   transition: background 0.2s;
 }
-
-.perfil__btn-editar:hover { background: #d4952e; }
 
 /* Form de edição */
 .perfil__campo {
@@ -145,11 +143,11 @@
 .perfil__label {
   font-size: 12px;
   font-weight: 600;
-  color: #555;
+  color: var(--text-muted);
 }
 
 .perfil__input {
-  border: 1px solid #ddd;
+  border: 1px solid var(--bg-card-glass);
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 14px;
@@ -164,8 +162,8 @@
 }
 
 .perfil__btn-cancelar {
-  background: #f0f0f0;
-  color: #555;
+  background: var(--bg-surface-alt);
+  color: var(--text-muted);
   border: none;
   border-radius: 8px;
   padding: 8px 16px;
@@ -174,8 +172,8 @@
 }
 
 .perfil__btn-salvar {
-  background: #c0392b;
-  color: #fff;
+  background: var(--brand);
+  color: var(--on-brand);
   border: none;
   border-radius: 8px;
   padding: 8px 16px;
@@ -186,16 +184,16 @@
 
 /* Endereços */
 .perfil__enderecos {
-  background: #fdf5f5;
+  background: var(--brand-soft);
   border-radius: 16px;
   padding: 20px 24px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  box-shadow: 0 1px 4px var(--shadow-color);
 }
 
 .perfil__enderecos-titulo {
   font-size: 13px;
   font-weight: 700;
-  color: #c0392b;
+  color: var(--accent);
   margin: 0 0 14px 0;
   letter-spacing: 0.5px;
 }
@@ -207,7 +205,7 @@
 }
 
 .perfil__endereco-card {
-  background: #e8e8e8;
+  background: var(--bg-page);
   border-radius: 12px;
   padding: 14px 18px;
   display: flex;
@@ -219,13 +217,13 @@
 .perfil__endereco-tipo {
   font-size: 15px;
   font-weight: 700;
-  color: #333;
+  color: var(--text);
   margin: 0;
 }
 
 .perfil__endereco-rua {
   font-size: 13px;
-  color: #555;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -236,8 +234,8 @@
 }
 
 .perfil__btn-excluir {
-  background: #c0392b;
-  color: #fff;
+  background: var(--brand);
+  color: var(--on-brand);
   border: none;
   border-radius: 6px;
   padding: 6px 12px;
@@ -247,11 +245,11 @@
   transition: background 0.2s;
 }
 
-.perfil__btn-excluir:hover { background: #a93226; }
+.perfil__btn-excluir:hover { background: var(--brand-hover); }
 
 .perfil__btn-editar-end {
-  background: #e8a838;
-  color: #fff;
+  background: var(--warning);
+  color: var(--on-status);
   border: none;
   border-radius: 6px;
   padding: 6px 12px;
@@ -261,7 +259,7 @@
   transition: background 0.2s;
 }
 
-.perfil__btn-editar-end:hover { background: #d4952e; }
+.perfil__btn-editar-end:hover { background: var(--warning); }
 /* ── Perfil conectado ao back-end ─────────────────────────────────────────── */
 
 /* Botões da foto (as classes base .perfil__foto* estão no topo deste arquivo) */
@@ -270,7 +268,7 @@
 
 .perfil__estado {
   text-align: center;
-  color: #555;
+  color: var(--text-muted);
   margin: 8px 0;
 }
 
@@ -278,26 +276,26 @@
   margin-left: 8px;
   font-size: 12px;
   font-weight: 700;
-  color: #2e7d32;
+  color: var(--success);
 }
 
 .perfil__hint {
   font-size: 12px;
-  color: #777;
+  color: var(--text-muted);
   margin: 0;
   text-align: center;
 }
 
 .perfil__erro {
-  color: #c0392b;
+  color: var(--brand);
   font-size: 13px;
   margin: 0;
   text-align: center;
 }
 
 .perfil__aviso {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: var(--success-soft);
+  color: var(--success);
   border-radius: 10px;
   padding: 10px 16px;
   font-size: 14px;
@@ -311,16 +309,16 @@
 
 /* Cards de segurança / endereços (mesmo visual do card de endereços) */
 .perfil__secao {
-  background: #fdf5f5;
+  background: var(--brand-soft);
   border-radius: 16px;
   padding: 20px 24px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  box-shadow: 0 1px 4pxvar(--shadow-color);
 }
 
 .perfil__secao-titulo {
   font-size: 13px;
   font-weight: 700;
-  color: #c0392b;
+  color: var(--accent);
   margin: 0 0 14px 0;
   letter-spacing: 0.5px;
 }
@@ -335,7 +333,7 @@
 
 .perfil__secao-texto {
   font-size: 14px;
-  color: #555;
+  color: var(--text-muted);
   margin: 0;
   flex: 1;
   min-width: 200px;
@@ -355,15 +353,15 @@
   padding: 0;
   font-size: 12px;
 }
-.perfil__regra--ok { color: #2e7d32; }
-.perfil__regra--erro { color: #c0392b; }
+.perfil__regra--ok { color: var(--success); }
+.perfil__regra--erro { color: var(--brand); }
 
 /* Sair */
 .perfil__btn-sair {
   align-self: center;
   background: none;
-  border: 2px solid #c0392b;
-  color: #c0392b;
+  border: 2px solid var(--brand);
+  color: var(--brand);
   border-radius: 8px;
   padding: 10px 28px;
   font-size: 14px;
@@ -371,4 +369,4 @@
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
-.perfil__btn-sair:hover { background: #c0392b; color: #fff; }
+.perfil__btn-sair:hover { background: var(--brand-hover); color:var(--on-brand) ; }

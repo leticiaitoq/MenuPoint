@@ -9,12 +9,25 @@
 }
 
 .em-breve {
+  /* Cores desta tela. No claro mantém o vinho original; no escuro trocam para tokens do tema. */
+  --em-destaque: #6e1f1f;       /* "Estamos" */
+  --em-texto: #6e1f1f;          /* descrição e agradecimento */
+  --em-botao: #6e1f1f;
+  --em-botao-hover: #5e1717;
+
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 80px); /* ajuste conforme a altura do seu header */
 
   padding: 40px 24px;
+}
+
+[data-theme="dark"] .em-breve {
+  --em-destaque: var(--text);       /* branco, para contrastar com o âmbar de "trabalhando nisso!" */
+  --em-texto: var(--text-muted);
+  --em-botao: var(--brand);
+  --em-botao-hover: var(--brand-hover);
 }
 
 .em-breve__content {
@@ -55,23 +68,23 @@
 }
 
 .em-breve__titulo .destaque {
-  color: #6E1F1F;
+  color: var(--em-destaque);
 }
 
 .em-breve__titulo .laranja {
-  color: #E8792E;
+  color: var(--warning);
 }
 
 .em-breve__divisor {
   width: 220px;
   height: 3px;
-  background-color: #E8792E;
+  background-color: var(--warning);
   border-radius: 2px;
   margin: 20px auto;
 }
 
 .em-breve__descricao {
-  color: #6E1F1F;
+  color: var(--em-texto);
   font-size: 1.15rem;
   line-height: 1.5;
   margin: 0 auto 20px;
@@ -79,7 +92,7 @@
 }
 
 .em-breve__agradecimento {
-  color: #6E1F1F;
+  color: var(--em-texto);
   font-size: 1.05rem;
   margin: 0 0 28px;
 }
@@ -88,8 +101,8 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  background-color: #6E1F1F;
-  color: #fff;
+  background-color: var(--em-botao);
+  color: var(--on-brand);
   border: none;
   border-radius: 999px;
   padding: 14px 28px;
@@ -100,7 +113,7 @@
 }
 
 .em-breve__botao:hover {
-  background-color: #5E1717;
+  background-color: var(--em-botao-hover);
 }
 
 .em-breve__botao svg,

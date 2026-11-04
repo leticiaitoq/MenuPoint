@@ -3,8 +3,6 @@
   flex-direction: column;
   gap: 20px;
   padding-bottom: 32px; 
-  background-repeat: repeat-y;
-  background-size: 100% auto;
   margin: -24px;
   padding: 24px;
   box-sizing: border-box;
@@ -15,7 +13,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background-color: #e0e0e0;
+  background-color: var(--border);
   border-radius: 30px;
   padding: 10px 20px;
   max-width: 500px;
@@ -32,12 +30,12 @@
   background: transparent;
   outline: none;
   font-size: 16px;
-  color: #333;
+  color: var(--text);
   width: 100%;
 }
 
 .menu__busca::placeholder {
-  color: #aaa;
+  color: var(--text-faint);
 }
 
 /* ── Categorias ── */
@@ -52,28 +50,28 @@
   height: 80px;
   border-radius: 20px;
   border: none;
-  background-color: #ffffff;
+  background-color:  var(--bg-surface);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px var(--shadow-color);
   transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s;
 }
 
 .menu__cat-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 12px var(--shadow-color);
 }
 
 .menu__cat-btn--ativo {
-  background-color: #fdecea;
-  box-shadow: inset 0 0 0 2px #c0392b;
+  background-color: var(--brand-soft);
+  box-shadow: inset 0 0 0 2px var(--brand);
 }
 
 /* mantém a borda mesmo com o mouse em cima */
 .menu__cat-btn--ativo:hover {
-  box-shadow: inset 0 0 0 2px #c0392b, 0 4px 12px rgba(0,0,0,0.12);
+  box-shadow: inset 0 0 0 2px var(--brand-hover), 0 4px 12px var(--shadow-color);
 }
 
 .menu__cat-icon {
@@ -93,17 +91,17 @@
 .menu__vazio {
   grid-column: 1 / -1;
   text-align: center;
-  color: #888;
+  color: var(--text-faint);
   font-size: 16px;
   padding: 32px 0;
 }
 
 /* ── Card de produto ── */
 .menu__card {
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px var(--shadow-color);
   display: flex;
   flex-direction: column;
   transition: transform 0.15s, box-shadow 0.15s;
@@ -111,7 +109,7 @@
 
 .menu__card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 6px 16px var(--shadow-color);
 }
 
 /* Imagem do produto */
@@ -133,13 +131,13 @@
 .menu__card-nome {
   font-size: 16px;
   font-weight: 700;
-  color: #222;
+  color: var(--text);
   margin: 0;
 }
 
 .menu__card-desc {
   font-size: 13px;
-  color: #666;
+  color: var(--text-muted);
   margin: 0;
   line-height: 1.4;
   flex: 1;
@@ -156,7 +154,7 @@
 .menu__card-preco {
   font-size: 22px;
   font-weight: 800;
-  color: #c0392b;
+  color: var(--accent);
 }
 
 /* Botão + vermelho */
@@ -165,8 +163,8 @@
   height: 44px;
   border-radius: 50%;
   border: none;
-  background-color: #c0392b;
-  color: #ffffff;
+  background-color:  var(--brand);
+  color:  var(--on-brand);
   font-size: 26px;
   font-weight: 700;
   cursor: pointer;
@@ -177,7 +175,7 @@
   transition: background-color 0.15s, transform 0.15s;
 }
 
-.menu__card-add:hover  { background-color: #a93226; transform: scale(1.08); }
+.menu__card-add:hover  { background-color:  var(--brand-hover); transform: scale(1.08); }
 .menu__card-add:active { transform: scale(0.95); }
 
 .menu__carrinho-fab-icon {
