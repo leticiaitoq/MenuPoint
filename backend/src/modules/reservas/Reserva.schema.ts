@@ -49,3 +49,16 @@ export const atualizarStatusReservaSchema = z.object({
 });
 
 export type AtualizarStatusReservaDTO = z.infer<typeof atualizarStatusReservaSchema>
+
+// Query de GET /reservas/publico/:slug/mesas-disponiveis (cliente escolhendo a mesa)
+export const mesasDisponiveisQuerySchema = z.object({
+  data_reserva: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve estar no formato YYYY-MM-DD'),
+  hora_inicio: z.string().regex(/^\d{2}:\d{2}$/, 'Hora deve estar no formato HH:MM'),
+  hora_fim: z.string().regex(/^\d{2}:\d{2}$/, 'Hora deve estar no formato HH:MM'),
+  // Opcional: só devolve mesas que comportam essa quantidade de pessoas
+  pessoas: z.coerce.number().int().min(1).max(50).optional(),
+})
+
+export type MesasDisponiveisQuery = z.infer<typeof mesasDisponiveisQuerySchema>
