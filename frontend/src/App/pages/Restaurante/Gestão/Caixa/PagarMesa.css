@@ -811,3 +811,10 @@
 .pagar__botoes-parciais { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .pagar__parcial-linha { align-items: center; gap: 8px; font-size: 13px; }
 .pagar__parcial-linha span:first-child { flex: 1; }
+
+/* ── Aviso: pedidos ainda na cozinha ── */
+.pagar__aviso-cozinha {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin: 8px 0; padding: 8px 12px; border-radius: 10px;
+  background: #fff7e6; color: #8a5a00; font-size: 13px; font-weight: 600;
+}

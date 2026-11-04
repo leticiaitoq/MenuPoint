@@ -801,3 +801,14 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ── Andamento da cozinha no card da mesa ── */
+.caixa__card-cozinha { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.caixa__card-chip {
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 50px;
+  background: #f2f2f2; color: #555; white-space: nowrap;
+}
+.caixa__card-chip--cozinha { background: #fff4d6; color: #8a5a00; }
+.caixa__card-chip--pronto { background: #e6f6ec; color: #1e8e4e; animation: caixa-pisca 1.6s ease-in-out infinite; }
+.caixa__card-chip--entregue { background: #e8f0fe; color: #2f5fb3; }
+@keyframes caixa-pisca { 50% { opacity: 0.55; } }

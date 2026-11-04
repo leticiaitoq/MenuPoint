@@ -54,6 +54,8 @@ interface MesaCaixa {
   pedidos?: PedidoApi[];
   /** Nomes dos clientes cadastrados na mesa (sem repetir) */
   clientes?: string[];
+  /** Andamento dos pedidos na cozinha (vem da Fila): quantos pedidos em cada etapa */
+  cozinha?: { recebido: number; preparo: number; pronto: number; entregue: number };
   status: StatusMesaCaixa;
 }
 
@@ -87,6 +89,7 @@ const rotuloClientes = (n: number) => `${n} ${n === 1 ? 'cliente' : 'clientes'}`
 
 const daApi = (m: MesaApi, pedidos: PedidoApi[] = []): MesaCaixa => {
   const clientes = clientesDaMesa(pedidos);
+  const contar = (s: PedidoApi['status']) => pedidos.filter((p) => p.status === s).length;
   const aberta = pedidos.length > 0 || m.status === 'OCUPADA';
   const maisAntigo = pedidos.length
     ? Math.min(...pedidos.map((p) => new Date(p.criado_em).getTime()))
@@ -103,6 +106,12 @@ const daApi = (m: MesaApi, pedidos: PedidoApi[] = []): MesaCaixa => {
     pessoas: clientes.length > 0 ? clientes.length : undefined,
     status: aberta ? 'aberta' : m.status === 'RESERVADA' ? 'reservada' : 'livre',
     ...(pedidos.length > 0 && {
+      cozinha: {
+        recebido: contar('RECEBIDO'),
+        preparo: contar('PREPARO'),
+        pronto: contar('PRONTO'),
+        entregue: contar('ENTREGUE'),
+      },
       itens: pedidos.reduce((acc, p) => acc + p.itens.reduce((q, i) => q + i.quantidade, 0), 0),
       total: pedidos.reduce((acc, p) => acc + p.total, 0),
       // Pagamento já confirmado: impede o cancelamento (precisaria de estorno)
@@ -189,9 +198,12 @@ const GerenPagamentos: React.FC = () => {
   }, [filtro, mesas]);
 
   // ── Lista as mesas cadastradas ───────────────────────────────────────────────
-  const carregarMesas = useCallback(async () => {
-    setCarregando(true);
-    setErroLista(null);
+  // `silencioso`: atualização automática em segundo plano (sem piscar a tela nem trocar a lista por erro)
+  const carregarMesas = useCallback(async (silencioso = false) => {
+    if (!silencioso) {
+      setCarregando(true);
+      setErroLista(null);
+    }
     try {
       const [lista, pedidosAbertos] = await Promise.all([
         MesaService.listar(),
@@ -207,15 +219,25 @@ const GerenPagamentos: React.FC = () => {
 
       setMesas(ordenar(lista.map((m) => daApi(m, porMesa.get(m.id) ?? []))));
     } catch (err: any) {
-      setErroLista(mensagemDeErro(err, 'Não foi possível carregar as mesas.'));
+      if (!silencioso) setErroLista(mensagemDeErro(err, 'Não foi possível carregar as mesas.'));
     } finally {
-      setCarregando(false);
+      if (!silencioso) setCarregando(false);
     }
   }, []);
 
   useEffect(() => {
     void carregarMesas();
   }, [carregarMesas]);
+
+  // A Fila da cozinha muda o status dos pedidos: o Caixa se atualiza sozinho (a cada 20s),
+  // exceto com algum modal aberto (para não atrapalhar quem está operando)
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.hidden || modalAberto || comandaMesa || qrMesa || cancelarMesa) return;
+      void carregarMesas(true);
+    }, 20000);
+    return () => window.clearInterval(timer);
+  }, [carregarMesas, modalAberto, comandaMesa, qrMesa, cancelarMesa]);
 
   // Fecha o modal com a tecla Esc
   useEffect(() => {
@@ -653,6 +675,14 @@ const GerenPagamentos: React.FC = () => {
                                   <HiOutlineClipboardList /> Comanda da cozinha
                                 </button>
                               )}
+                              {clicavel && (
+                                <button
+                                  className="caixa__card-menu-item"
+                                  onClick={(e) => { e.stopPropagation(); setMenuAberto(null); navigate(`/restaurante/fila?mesa=${mesa.id}`); }}
+                                >
+                                  <HiOutlineClipboardList /> Ver na fila
+                                </button>
+                              )}
                               <button className="caixa__card-menu-item" onClick={(e) => abrirQr(mesa, e)}>
                                 <MdQrCode2 /> QR Code da mesa
                               </button>
@@ -716,6 +746,27 @@ const GerenPagamentos: React.FC = () => {
                           <span className="caixa__card-itens">{mesa.itens ?? 0} itens</span>
                           <span className="caixa__card-total">{formatarMoeda(mesa.total ?? 0)}</span>
                         </div>
+
+                        {/* Andamento na cozinha (mesmo status da Fila de Pedidos) */}
+                        {mesa.cozinha && (
+                          <div className="caixa__card-cozinha">
+                            {mesa.cozinha.recebido + mesa.cozinha.preparo > 0 && (
+                              <span className="caixa__card-chip caixa__card-chip--cozinha">
+                                {mesa.cozinha.recebido + mesa.cozinha.preparo} na cozinha
+                              </span>
+                            )}
+                            {mesa.cozinha.pronto > 0 && (
+                              <span className="caixa__card-chip caixa__card-chip--pronto">
+                                {mesa.cozinha.pronto} pronto p/ servir
+                              </span>
+                            )}
+                            {mesa.cozinha.entregue > 0 && (
+                              <span className="caixa__card-chip caixa__card-chip--entregue">
+                                {mesa.cozinha.entregue} entregue{mesa.cozinha.entregue > 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+                        )}
 
                         <div className="caixa__card-linha">
                           <span className={`caixa__badge caixa__badge--${mesa.status}`}>

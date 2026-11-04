@@ -1,16 +1,25 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiClipboardList, HiExclamation,} from 'react-icons/hi';
 import { MdTableRestaurant } from 'react-icons/md';
 import { BsCashCoin } from 'react-icons/bs';
 import RestaurantLayout from '../../../shared/components/layout/Restaurantelayout';
+import PedidoService from '../../../services/pedido.service';
 import './HomeRestaurante.css';
 
 const HomeRestaurante: React.FC = () => {
   const navigate = useNavigate();
  
+  // Pedidos ainda na cozinha (mesma fila da tela Fila de Pedidos)
+  const [pedidosNaFila, setPedidosNaFila] = useState(0);
+  useEffect(() => {
+    PedidoService.listar({ status: ['RECEBIDO', 'PREPARO', 'PRONTO'] })
+      .then((lista) => setPedidosNaFila(lista.length))
+      .catch(() => undefined); // sem o número o card só fica sem o selo
+  }, []);
+
   // (substituir por chamada à API futuramente) ──
   const totalPedidos = 25;
-  const pedidosNaFila = 3;
   const faturamento = 'R$ 1.240,00';
   const mesasDisponiveis = 8;
   const pedidosAguardando = 5;

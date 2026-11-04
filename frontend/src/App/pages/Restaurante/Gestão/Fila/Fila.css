@@ -514,3 +514,27 @@
         grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ── Integração com o Caixa / dados reais ── */
+.fila__btn-atualizar {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 50px;
+  border: 1.5px solid #ddd; background: #fff; color: #555; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.fila__btn-atualizar:disabled { opacity: 0.5; cursor: not-allowed; }
+.fila__btn-caixa {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 50px;
+  border: 1.5px solid #c0392b; background: #fff; color: #c0392b; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.fila__btn-caixa:hover { background: #fdecea; }
+.fila__btn-caixa--card { margin-top: 8px; }
+.fila__badge-pagamento {
+  display: inline-block; margin-right: 6px; padding: 2px 8px; border-radius: 50px;
+  background: #fff4d6; color: #8a5a00; font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.fila__filtro-chip {
+  display: inline-flex; align-items: center; gap: 8px; margin: 0 0 12px; padding: 6px 12px;
+  border-radius: 50px; background: #fdecea; color: #c0392b; font-size: 13px;
+}
+.fila__filtro-chip button { display: flex; border: none; background: transparent; color: inherit; cursor: pointer; font-size: 16px; }
+.fila__erro { margin: 8px 0; color: #b3261e; font-size: 13px; }
+.fila__erro button { border: none; background: transparent; color: inherit; text-decoration: underline; cursor: pointer; }

@@ -331,6 +331,8 @@ const PagarMesaConteudo: React.FC<{
   const taxaServico = pedidoBase.taxaServicoApi ?? subtotal * TAXA_SERVICO_PERCENT;
   // Parciais/abatimentos já pagos saem da conta: `total` é o que ainda falta pagar
   const pagoParcial  = pedidoBase.pagoParcial ?? 0;
+  // Pedidos que a cozinha ainda não entregou na mesa (Fila de Pedidos)
+  const naCozinha    = (pedidoBase.pedidos ?? []).filter((p) => p.status !== 'ENTREGUE').length;
   const total        = Math.max(subtotal + taxaServico - descontoValor - pagoParcial, 0);
 
   // ── "+ Adicionar item" — adiciona um item mockado direto na comanda ─────────
@@ -810,6 +812,17 @@ const PagarMesaConteudo: React.FC<{
                 <span>{formatarMoeda(total)}</span>
               </div>
 
+              {naCozinha > 0 && (
+                <div className="pagar__aviso-cozinha" role="status">
+                  <span>
+                    {naCozinha === 1 ? '1 pedido ainda não foi entregue' : `${naCozinha} pedidos ainda não foram entregues`} na mesa.
+                  </span>
+                  <button className="pagar__link" onClick={() => navigate(`/restaurante/fila?mesa=${id}`)}>
+                    Ver na fila
+                  </button>
+                </div>
+              )}
+
               {/* Pagamento parcial (itens escolhidos) e Abater um valor (valor livre) só existem para mesas reais */}
               <div className="pagar__botoes-parciais">
                 <button
@@ -912,6 +925,12 @@ const PagarMesaConteudo: React.FC<{
                     <span className="pagar__dinheiro-troco">Troco: {formatarMoeda(troco)}</span>
                   )}
                 </div>
+              )}
+
+              {naCozinha > 0 && (
+                <p className="pagar__aviso-cozinha">
+                  Atenção: ao concluir, {naCozinha === 1 ? '1 pedido que ainda está na cozinha será marcado' : `${naCozinha} pedidos que ainda estão na cozinha serão marcados`} como entregue{naCozinha > 1 ? 's' : ''}.
+                </p>
               )}
 
               {erroPagamento && (

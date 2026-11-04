@@ -142,6 +142,12 @@ const PedidoService = {
     return response.data
   },
 
+  // Cozinha/Fila: avança o pedido no fluxo RECEBIDO → PREPARO → PRONTO → ENTREGUE.
+  // Pedido de mesa entregue continua na conta da mesa até ser pago no Caixa.
+  async atualizarStatus(id: string, status: StatusPedido): Promise<void> {
+    await api.patch(`pedidos/${id}/status`, { status })
+  },
+
   // Caixa: remove UM pedido da comanda (vira CANCELADO com o motivo). A mesa só é liberada
   // se não sobrar outro pedido em andamento nela. Pedido já pago não pode ser cancelado.
   async cancelarPedido(id: string, motivo: string): Promise<void> {
