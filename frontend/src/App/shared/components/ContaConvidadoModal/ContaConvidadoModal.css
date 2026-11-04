@@ -28,7 +28,7 @@
   cursor: pointer;
   color: var(--text-muted);
 }
-.conta-convidado__titulo { margin: 0 0 8px; font-size: 19px; color: var(--text)2; }
+.conta-convidado__titulo { margin: 0 0 8px; font-size: 19px; color: var(--text); }
 .conta-convidado__texto { margin: 0 0 20px; font-size: 14px; line-height: 1.4; color: var(--text-muted); }
 .conta-convidado__btn {
   width: 100%;

@@ -24,7 +24,7 @@
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  color: var(--text-muted)5;
+  color: var(--text-muted);
   font-size: 18px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;

@@ -77,7 +77,7 @@
   border: none;
 }
 .comanda__btn--sec  { background: var(--border); color: var(--text-muted); }
-.comanda__btn--sec:hover  { background: var(--border)2; }
+.comanda__btn--sec:hover  { background: var(--border); }
 .comanda__btn--prim { background: var(--brand); color: var(--on-brand); }
 .comanda__btn--prim:hover { background: var(--brand-hover); }
 

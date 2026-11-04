@@ -68,7 +68,7 @@
   align-items: center;
   padding: 10px 14px;
   margin-bottom: 14px;
-  background: var(--bg-surface-alt)6;
+  background: var(--bg-surface-alt);
   border-radius: 10px;
   font-size: 14px;
   color: var(--text-muted);
@@ -107,7 +107,7 @@
   transition: border-color 0.15s, background-color 0.15s;
 }
 .cancelar__motivo:hover { background: var(--bg-surface-alt); }
-.cancelar__motivo input { accent-color: var(--brand)b; }
+.cancelar__motivo input { accent-color: var(--brand); }
 .cancelar__motivo--ativo { border-color: var(--brand); background: var(--brand-soft); }
 
 .cancelar__outro { margin-top: 10px; }
