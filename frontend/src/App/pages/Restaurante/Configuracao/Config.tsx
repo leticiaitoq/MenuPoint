@@ -35,6 +35,7 @@ import EstabelecimentoService, {
   HorarioFuncionamento,
   TipoChavePix,
 } from '../../../services/estabelecimento.service';
+import RecortadorImagem from '../../../shared/components/RecortadorImagem/RecortadorImagem';
 import './Config.css';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -65,7 +66,7 @@ const TIPOS_PIX: { valor: TipoChavePix; rotulo: string }[] = [
 ];
 
 const LOGO_PADRAO = '/icons/restaurant-avatar.png';
-const TAMANHO_MAX_LOGO = 5 * 1024 * 1024;
+const TAMANHO_MAX_LOGO = 20 * 1024 * 1024; // original; é reduzida antes do envio
 
 type Erros = Partial<Record<string, string>>;
 
@@ -1207,6 +1208,7 @@ const Config: React.FC = () => {
   const [enviandoLogo, setEnviandoLogo] = useState(false);
   const [logoAviso, setLogoAviso] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
   const inputLogoRef = useRef<HTMLInputElement>(null);
+  const [logoParaAjustar, setLogoParaAjustar] = useState<File | null>(null);
   const [avisoGeral, setAvisoGeral] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
   const [modalSensivel, setModalSensivel] = useState(false);
   const [saidaPendente, setSaidaPendente] = useState<null | (() => void)>(null);
@@ -1329,10 +1331,18 @@ const Config: React.FC = () => {
       return;
     }
     if (arquivo.size > TAMANHO_MAX_LOGO) {
-      setLogoAviso({ tipo: 'erro', texto: 'A imagem passa de 5MB. Escolha uma menor.' });
+      setLogoAviso({ tipo: 'erro', texto: 'A imagem passa de 20MB. Escolha uma menor.' });
       return;
     }
 
+    // Abre o editor para o usuário enquadrar a logo no círculo; o envio acontece ao confirmar
+    setLogoAviso(null);
+    setLogoParaAjustar(arquivo);
+  };
+
+  const enviarLogoAjustada = async (arquivo: File) => {
+    if (!estab) return;
+    setLogoParaAjustar(null);
     setEnviandoLogo(true);
     setLogoAviso(null);
     try {
@@ -1508,6 +1518,12 @@ const Config: React.FC = () => {
                 accept="image/jpeg,image/png"
                 className="config__arquivo"
                 onChange={escolherLogo}
+              />
+              <RecortadorImagem
+                arquivo={logoParaAjustar}
+                titulo="Ajustar logo"
+                onConfirmar={enviarLogoAjustada}
+                onCancelar={() => setLogoParaAjustar(null)}
               />
               {logoAviso && (
                 <p className={logoAviso.tipo === 'erro' ? 'config__erro' : 'config__hint'} role={logoAviso.tipo === 'erro' ? 'alert' : undefined}>

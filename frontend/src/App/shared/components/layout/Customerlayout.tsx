@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Footer from './Footer/Footer';
 import CustomerSidebar, { CustomerSidebarItem } from './Sidebar/CustomerSidebar';
 import { useClienteAuth } from '../../contexts/ClienteAuthContext';
+import { FOTO_PADRAO_CLIENTE } from '../../../services/cliente.service';
 import { useConvidado } from '../../contexts/Convidadocontext';
 import ContaConvidadoModal from '../ContaConvidadoModal/ContaConvidadoModal';
 import './Customerlayout.css';
@@ -66,8 +67,11 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
   const rightIcon = (
     <button className="btn-imagem" onClick={handleClick}>
       <img
-        src="/icons/customer-avatar.png"
+        src={(isAuthenticated && cliente?.foto_url) || FOTO_PADRAO_CLIENTE}
         alt={cliente?.nome ? `Perfil de ${cliente.nome}` : 'Perfil do cliente'}
+        onError={(e) => {
+          if (!e.currentTarget.src.endsWith(FOTO_PADRAO_CLIENTE)) e.currentTarget.src = FOTO_PADRAO_CLIENTE;
+        }}
       />
     </button>
   );

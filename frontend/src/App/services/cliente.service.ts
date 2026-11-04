@@ -1,4 +1,5 @@
 import apiCliente from './apiCliente'
+import { prepararImagem } from './imagem'
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 export interface Cliente {
@@ -7,7 +8,12 @@ export interface Cliente {
   email: string
   telefone: string
   email_verificado: boolean
+  /** URL da foto salva na conta; null = ainda não enviou (usar FOTO_PADRAO_CLIENTE) */
+  foto_url: string | null
 }
+
+/** Imagem mostrada enquanto o cliente não enviou nenhuma foto */
+export const FOTO_PADRAO_CLIENTE = '/icons/customer-avatar.png'
 
 // GET /auth/cliente/me (inclui o CPF, que não fica guardado no localStorage)
 export interface ClientePerfil extends Cliente {
@@ -121,6 +127,26 @@ const ClienteService = {
   // Atualiza nome e telefone (CPF não muda; o e-mail tem fluxo próprio, logo abaixo)
   async atualizarPerfil(data: { nome: string; telefone: string }): Promise<ClientePerfil> {
     const r = await apiCliente.put<{ cliente: ClientePerfil }>('auth/cliente/me', data)
+    return r.data.cliente
+  },
+
+  // Envia a foto de perfil (JPG/PNG até 5MB). O backend grava no Storage e salva a URL
+  // na conta, então ela aparece em qualquer dispositivo em que o cliente entrar.
+  async enviarFoto(arquivo: File): Promise<ClientePerfil> {
+    // Corta o centro em quadrado e reduz para 512px: fica leve e cabe no limite do bucket
+    const pronta = await prepararImagem(arquivo, { quadrada: true, maxLado: 512 })
+    const form = new FormData()
+    form.append('arquivo', pronta)
+    const r = await apiCliente.post<{ cliente: ClientePerfil }>('auth/cliente/me/foto', form, {
+      timeout: 60000,
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return r.data.cliente
+  },
+
+  // Volta para a imagem padrão
+  async removerFoto(): Promise<ClientePerfil> {
+    const r = await apiCliente.delete<{ cliente: ClientePerfil }>('auth/cliente/me/foto')
     return r.data.cliente
   },
 

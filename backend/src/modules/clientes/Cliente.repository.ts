@@ -50,6 +50,10 @@ export class ClienteRepository {
     return prisma.cliente.update({ where: { id }, data })
   }
 
+  atualizarFoto(id: string, foto_url: string | null) {
+    return prisma.cliente.update({ where: { id }, data: { foto_url } })
+  }
+
   /** Troca a senha e derruba os refresh tokens abertos (o service abre uma sessão nova em seguida). */
   async atualizarSenha(id: string, senha_hash: string): Promise<void> {
     await prisma.$transaction([

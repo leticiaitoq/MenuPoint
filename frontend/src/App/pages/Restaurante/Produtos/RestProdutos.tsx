@@ -57,7 +57,7 @@ const LinhaProduto: React.FC<LinhaProps> = ({ produto, posicao, onEditar, onAlte
       </td>
       <td className="prod__td-produto">
         <img
-          src={produto.imagem_url || '/images/placeholder.png'}
+          src={produto.imagem_url || '/icons/restaurant-logo.png'}
           alt={produto.nome}
           className="prod__imagem"
         />

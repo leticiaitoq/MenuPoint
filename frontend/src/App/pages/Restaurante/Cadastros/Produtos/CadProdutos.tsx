@@ -9,6 +9,7 @@ import ContadorCaracteres, { DicaLimite } from '../../../../shared/components/Co
 import {
   SELECAO_VAZIA, SelecaoCategoria, resolverSelecao, validarSelecao,
 } from '../../../../shared/constants/categoriasPadrao';
+import RecortadorImagem from '../../../../shared/components/RecortadorImagem/RecortadorImagem';
 import './CadProdutos.css';
 
 // ── Tipos
@@ -44,6 +45,7 @@ const CadProdutos: React.FC = () => {
   const erroRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState<FormProduto>(FORM_INICIAL);
+  const [fotoParaAjustar, setFotoParaAjustar] = useState<File | null>(null);
 
   const [categorias, setCategorias]         = useState<Categoria[]>([]);
   const [novaCategoria, setNovaCategoria]   = useState<SelecaoCategoria>(SELECAO_VAZIA);
@@ -83,21 +85,28 @@ const CadProdutos: React.FC = () => {
   // acontece no momento de salvar, junto com a criação do produto)
   const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const arquivo = e.target.files?.[0];
+    e.target.value = ''; // permite escolher o mesmo arquivo de novo
     if (!arquivo) return;
 
     if (!['image/png', 'image/jpeg', 'image/jpg'].includes(arquivo.type)) {
       setErro('A imagem deve ser JPG ou PNG.');
       return;
     }
-    if (arquivo.size > 5 * 1024 * 1024) {
-      setErro('A imagem deve ter no máximo 5MB.');
+    if (arquivo.size > 20 * 1024 * 1024) { // original; é reduzida antes do envio
+      setErro('A imagem deve ter no máximo 20MB.');
       return;
     }
 
+    // Abre o editor para o usuário enquadrar a foto; o preview só muda ao confirmar
     setErro('');
+    setFotoParaAjustar(arquivo);
+  };
+
+  const confirmarFotoAjustada = (recortada: File) => {
+    setFotoParaAjustar(null);
     atualizarForm({
-      imagem: arquivo,
-      imagemPreview: URL.createObjectURL(arquivo),
+      imagem: recortada,
+      imagemPreview: URL.createObjectURL(recortada),
     });
   };
 
@@ -317,6 +326,14 @@ const CadProdutos: React.FC = () => {
                 accept="image/png, image/jpeg"
                 style={{ display: 'none' }}
                 onChange={handleFoto}
+              />
+              <RecortadorImagem
+                arquivo={fotoParaAjustar}
+                titulo="Ajustar foto do produto"
+                formato="retangulo"
+                proporcao={4 / 3}
+                onConfirmar={confirmarFotoAjustada}
+                onCancelar={() => setFotoParaAjustar(null)}
               />
               <button className="cadprod__btn-foto" onClick={() => inputFotoRef.current?.click()}>
                 <HiUpload /> Alterar foto

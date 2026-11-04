@@ -378,6 +378,7 @@ model Cliente {
   email            String?   @unique @db.VarChar(150)
   senha_hash       String?   @db.VarChar(255)
   cpf              String?   @unique @db.VarChar(14)
+  foto_url         String?   @db.VarChar(500)   // foto de perfil (URL pública no Supabase Storage)
   email_verificado Boolean   @default(false)
   ultimo_acesso    DateTime? @db.Timestamptz
   ativo            Boolean   @default(true)

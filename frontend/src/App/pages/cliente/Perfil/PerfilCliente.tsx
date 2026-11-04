@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
-import ClienteService, { ClientePerfil, mensagemDeErro } from '../../../services/cliente.service';
+import ClienteService, { ClientePerfil, FOTO_PADRAO_CLIENTE, mensagemDeErro } from '../../../services/cliente.service';
+import RecortadorImagem from '../../../shared/components/RecortadorImagem/RecortadorImagem';
 import './PerfilCliente.css';
 
 // ── Utilitários ──────────────────────────────────────────────────────────────
@@ -31,13 +32,7 @@ function mascararCpf(cpf: string | null): string {
   return cpf ? `•••.•••.•••-${cpf.slice(-2)}` : '—';
 }
 
-function iniciais(nome: string): string {
-  const partes = nome.trim().split(/\s+/).filter(Boolean);
-  if (partes.length === 0) return '?';
-  const primeira = partes[0][0];
-  const ultima = partes.length > 1 ? partes[partes.length - 1][0] : '';
-  return (primeira + ultima).toUpperCase();
-}
+const TAMANHO_MAX_FOTO = 20 * 1024 * 1024; // original; a imagem é reduzida no navegador antes do envio
 
 function clienteDesde(iso: string): string {
   const data = new Date(iso);
@@ -80,6 +75,12 @@ const PerfilCliente: React.FC = () => {
 
   const [aviso, setAviso] = useState<string | null>(null);
 
+  // ── Foto de perfil ──
+  const inputFotoRef = useRef<HTMLInputElement>(null);
+  const [enviandoFoto, setEnviandoFoto] = useState(false);
+  const [erroFoto, setErroFoto] = useState<string | null>(null);
+  const [fotoParaAjustar, setFotoParaAjustar] = useState<File | null>(null);
+
   // Evita setState depois de sair da tela (ex.: logout no meio de uma requisição)
   const montado = useRef(true);
   useEffect(() => {
@@ -95,6 +96,15 @@ const PerfilCliente: React.FC = () => {
     try {
       const dados = await ClienteService.me();
       if (montado.current) setPerfil(dados);
+      // Sincroniza o cache local (navbar): a foto pode ter sido trocada em outro dispositivo
+      atualizarCliente({
+        id: dados.id,
+        nome: dados.nome,
+        email: dados.email,
+        telefone: dados.telefone,
+        email_verificado: dados.email_verificado,
+        foto_url: dados.foto_url,
+      });
     } catch (err: any) {
       if (montado.current) {
         setErroCarga(mensagemDeErro(err, 'Não foi possível carregar o seu perfil.'));
@@ -102,7 +112,7 @@ const PerfilCliente: React.FC = () => {
     } finally {
       if (montado.current) setCarregando(false);
     }
-  }, []);
+  }, [atualizarCliente]);
 
   useEffect(() => {
     carregar();
@@ -150,6 +160,7 @@ const PerfilCliente: React.FC = () => {
         email: atualizado.email,
         telefone: atualizado.telefone,
         email_verificado: atualizado.email_verificado,
+        foto_url: atualizado.foto_url,
       });
       setEditando(false);
       mostrarAviso('Dados atualizados com sucesso.');
@@ -157,6 +168,67 @@ const PerfilCliente: React.FC = () => {
       setErroEdicao(mensagemDeErro(err, 'Não foi possível salvar. Tente novamente.'));
     } finally {
       if (montado.current) setSalvando(false);
+    }
+  };
+
+  // ── Foto de perfil ──
+  const sincronizarContexto = (c: ClientePerfil) =>
+    atualizarCliente({
+      id: c.id,
+      nome: c.nome,
+      email: c.email,
+      telefone: c.telefone,
+      email_verificado: c.email_verificado,
+      foto_url: c.foto_url,
+    });
+
+  const escolherFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = e.target.files?.[0];
+    e.target.value = ''; // permite escolher o mesmo arquivo de novo
+    if (!arquivo) return;
+
+    setErroFoto(null);
+    if (!['image/jpeg', 'image/png'].includes(arquivo.type)) {
+      setErroFoto('Envie uma imagem JPG ou PNG.');
+      return;
+    }
+    if (arquivo.size > TAMANHO_MAX_FOTO) {
+      setErroFoto('A imagem passa de 20MB. Escolha uma menor.');
+      return;
+    }
+
+    // Abre o editor para enquadrar a foto no círculo; o envio acontece ao confirmar
+    setFotoParaAjustar(arquivo);
+  };
+
+  const enviarFotoAjustada = async (arquivo: File) => {
+    setFotoParaAjustar(null);
+    setErroFoto(null);
+    setEnviandoFoto(true);
+    try {
+      const atualizado = await ClienteService.enviarFoto(arquivo);
+      setPerfil(atualizado);
+      sincronizarContexto(atualizado);
+      mostrarAviso('Foto atualizada.');
+    } catch (err: any) {
+      setErroFoto(mensagemDeErro(err, 'Não foi possível enviar a foto.'));
+    } finally {
+      if (montado.current) setEnviandoFoto(false);
+    }
+  };
+
+  const removerFoto = async () => {
+    setErroFoto(null);
+    setEnviandoFoto(true);
+    try {
+      const atualizado = await ClienteService.removerFoto();
+      setPerfil(atualizado);
+      sincronizarContexto(atualizado);
+      mostrarAviso('Foto removida.');
+    } catch (err: any) {
+      setErroFoto(mensagemDeErro(err, 'Não foi possível remover a foto.'));
+    } finally {
+      if (montado.current) setEnviandoFoto(false);
     }
   };
 
@@ -331,7 +403,46 @@ const PerfilCliente: React.FC = () => {
           <h1 className="perfil__nome">{perfil.nome}</h1>
 
           <div className="perfil__info">
-            <div className="perfil__avatar" aria-hidden="true">{iniciais(perfil.nome)}</div>
+            <div className="perfil__foto-wrap">
+              <img
+                className="perfil__foto"
+                src={perfil.foto_url ?? FOTO_PADRAO_CLIENTE}
+                alt={`Foto de ${perfil.nome}`}
+                onError={(e) => {
+                  // URL quebrada (ex.: arquivo apagado): cai na imagem padrão
+                  if (!e.currentTarget.src.endsWith(FOTO_PADRAO_CLIENTE)) {
+                    e.currentTarget.src = FOTO_PADRAO_CLIENTE;
+                  }
+                }}
+              />
+              <input
+                ref={inputFotoRef}
+                type="file"
+                accept="image/jpeg,image/png"
+                style={{ display: 'none' }}
+                onChange={escolherFoto}
+              />
+              <button
+                type="button"
+                className="perfil__foto-btn"
+                onClick={() => inputFotoRef.current?.click()}
+                disabled={enviandoFoto}
+              >
+                {enviandoFoto ? 'Enviando…' : 'Alterar foto'}
+              </button>
+              {perfil.foto_url && !enviandoFoto && (
+                <button type="button" className="perfil__foto-btn perfil__foto-btn--remover" onClick={removerFoto}>
+                  Remover foto
+                </button>
+              )}
+              {erroFoto && <p className="perfil__erro" role="alert">{erroFoto}</p>}
+              <RecortadorImagem
+                arquivo={fotoParaAjustar}
+                titulo="Ajustar foto"
+                onConfirmar={enviarFotoAjustada}
+                onCancelar={() => setFotoParaAjustar(null)}
+              />
+            </div>
 
             <div className="perfil__dados">
               {editando ? (

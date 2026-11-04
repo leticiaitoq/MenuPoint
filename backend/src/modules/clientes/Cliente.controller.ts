@@ -163,6 +163,39 @@ export async function clientesRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(200).send({ cliente })
     })
 
+    // POST /auth/cliente/me/foto — multipart (campo "arquivo"), JPG/PNG até 5MB.
+    // Grava no Storage e salva a URL no cadastro: a foto acompanha a conta em qualquer dispositivo.
+    priv.post(
+      '/me/foto',
+      limite(10, '1 minute', 'Muitos envios de foto. Aguarde um momento.'),
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { sub } = request.user as ClienteJWTPayload
+
+        const arquivo = await request.file()
+        if (!arquivo) throw new AppError('Envie uma imagem', 400)
+
+        let buffer: Buffer
+        try {
+          buffer = await arquivo.toBuffer()
+        } catch (err: any) {
+          if (err?.code === 'FST_REQ_FILE_TOO_LARGE') {
+            throw new AppError('Imagem muito grande (máximo 5MB)', 413)
+          }
+          throw err
+        }
+
+        const cliente = await service.atualizarFoto(sub, { buffer, mimetype: arquivo.mimetype })
+        return reply.status(200).send({ cliente })
+      }
+    )
+
+    // DELETE /auth/cliente/me/foto — volta para a imagem padrão
+    priv.delete('/me/foto', async (request: FastifyRequest, reply: FastifyReply) => {
+      const { sub } = request.user as ClienteJWTPayload
+      const cliente = await service.removerFoto(sub)
+      return reply.status(200).send({ cliente })
+    })
+
     // POST /auth/cliente/me/email/solicitar — exige a senha; manda um código para o NOVO e-mail.
     // O e-mail atual continua valendo até o código ser confirmado.
     priv.post(
