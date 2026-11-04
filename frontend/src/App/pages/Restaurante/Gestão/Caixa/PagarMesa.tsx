@@ -30,6 +30,7 @@ import EstabelecimentoService from '../../../../services/estabelecimento.service
 import { useAuth } from '../../../../shared/contexts/Authcontext';
 import JuntarPedidosModal from '../../../../shared/components/JuntarPedidos/JuntarPedidosModal';
 import ConfirmarAcaoPedido, { TipoAcaoPedido } from '../../../../shared/components/ConfirmarAcaoPedido/ConfirmarAcaoPedido';
+import ModalAlerta from '../../../../shared/components/ModalAlerta/ModalAlerta';
 import './PagarMesa.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -272,6 +273,8 @@ const PagarMesaConteudo: React.FC<{
   const [mostrarParciais, setMostrarParciais] = useState(false);
   const [desfazendoId, setDesfazendoId] = useState<string | null>(null);
   const [erroParcial, setErroParcial] = useState<string | null>(null);
+  // Pagamento aguardando confirmação no modal "Desfazer pagamento"
+  const [parcialParaDesfazer, setParcialParaDesfazer] = useState<PagamentoParcialRegistrado | null>(null);
 
   // Pagamento inteiro: chamada à API em andamento / erro devolvido (ex.: valor recebido menor)
   const [pagando, setPagando] = useState(false);
@@ -390,8 +393,8 @@ const PagarMesaConteudo: React.FC<{
   };
 
   // ── Desfazer um pagamento parcial (o valor volta para a conta) ───────────────
+  // O clique em "desfazer" só abre o modal; a chamada à API roda ao confirmar.
   const desfazerParcial = async (pagamentoId: string) => {
-    if (!window.confirm('Desfazer este pagamento? O valor volta para a conta da mesa.')) return;
     setDesfazendoId(pagamentoId);
     setErroParcial(null);
     try {
@@ -399,8 +402,9 @@ const PagarMesaConteudo: React.FC<{
       await onAtualizar();
     } catch (err: any) {
       setErroParcial(mensagemDeErro(err, 'Não foi possível desfazer o pagamento.'));
-      setDesfazendoId(null);
     }
+    setDesfazendoId(null);
+    setParcialParaDesfazer(null);
   };
 
   // ── Transferir pedidos / juntar pedidos ──────────────────────────────────────────────────────
@@ -845,7 +849,7 @@ const PagarMesaConteudo: React.FC<{
                       <button
                         className="pagar__link"
                         disabled={desfazendoId === p.id}
-                        onClick={() => void desfazerParcial(p.id)}
+                        onClick={() => setParcialParaDesfazer(p)}
                       >
                         {desfazendoId === p.id ? 'desfazendo…' : 'desfazer'}
                       </button>
@@ -1081,6 +1085,22 @@ const PagarMesaConteudo: React.FC<{
         erro={acaoErro}
         onConfirmar={(motivo) => void confirmarAcaoPedido(motivo)}
         onFechar={fecharAcaoPedido}
+      />
+
+      <ModalAlerta
+        aberto={parcialParaDesfazer !== null}
+        variante="aviso"
+        titulo="Desfazer este pagamento?"
+        mensagem={
+          parcialParaDesfazer
+            ? `O valor de ${formatarMoeda(parcialParaDesfazer.valor)} volta para a conta da mesa.`
+            : undefined
+        }
+        textoConfirmar="Desfazer pagamento"
+        textoCancelar="Cancelar"
+        carregando={desfazendoId !== null}
+        onConfirmar={() => parcialParaDesfazer && void desfazerParcial(parcialParaDesfazer.id)}
+        onFechar={() => setParcialParaDesfazer(null)}
       />
     </RestaurantLayout>
   );
