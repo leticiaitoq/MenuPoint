@@ -12,6 +12,7 @@ import {
   filtroContaAberta,
   r2,
 } from '@modules/pagamentos/conta'
+import { etapasAntesDe, proximaEtapa, statusDoPedido } from './itemStatus'
 
 export class PedidoService {
   constructor(private readonly repository: PedidoRepository) {}
@@ -230,12 +231,24 @@ export class PedidoService {
         })
       })
     } else {
-      pedidoAtualizado = await this.repository.update(id, {
-        status: data.status,
-        ...(data.cancelamento_motivo && {
-          cancelamento_motivo: data.cancelamento_motivo,
-        }),
-        ...(data.status === 'ENTREGUE' && { entregue_em: new Date() }),
+      pedidoAtualizado = await prisma.$transaction(async (tx) => {
+        // Avançar o pedido inteiro leva junto os itens que ainda estão atrás da nova etapa;
+        // os que já tinham passado dela (ex.: entregues antes, um a um) não voltam.
+        await tx.itemPedido.updateMany({
+          where: { pedido_id: id, status: { in: etapasAntesDe(data.status) as any[] } },
+          data: { status: data.status as any },
+        })
+
+        return tx.pedido.update({
+          where: { id },
+          data: {
+            status: data.status as any,
+            ...(data.cancelamento_motivo && {
+              cancelamento_motivo: data.cancelamento_motivo,
+            }),
+            ...(data.status === 'ENTREGUE' && { entregue_em: new Date() }),
+          },
+        })
       })
     }
 
@@ -250,9 +263,10 @@ export class PedidoService {
       }
     }
 
-    // Incrementa total_vendido ao entregar
+    // Incrementa total_vendido ao entregar (itens já entregues um a um já foram contados)
     if (data.status === 'ENTREGUE') {
-      for (const item of (pedido as any).itens ?? []) {
+      const aindaNaoContados = ((pedido as any).itens ?? []).filter((i: any) => i.status !== 'ENTREGUE')
+      for (const item of aindaNaoContados) {
         await prisma.produto.update({
           where: { id: item.produto_id },
           data: { total_vendido: { increment: item.quantidade } },
@@ -260,29 +274,99 @@ export class PedidoService {
       }
     }
 
-    // ── Notificação WhatsApp para o CLIENTE ───────────────────────────────
-    // Roda em background — não bloqueia a resposta
+    this.notificarCliente(pedido, data.status)
+
+    return pedidoAtualizado
+  }
+
+  // Avisa o cliente por WhatsApp quando o pedido muda de etapa.
+  // Roda em background — não bloqueia a resposta.
+  private notificarCliente(pedido: any, status: string) {
     const statusQueNotificamCliente = ['PREPARO', 'PRONTO', 'ENTREGUE', 'CANCELADO']
 
     if (
       env.ZAPI_INSTANCE_ID &&
-      (pedido as any).cliente_telefone && // pedido de mesa lançado no salão pode não ter telefone
-      statusQueNotificamCliente.includes(data.status)
+      pedido.cliente_telefone && // pedido de mesa lançado no salão pode não ter telefone
+      statusQueNotificamCliente.includes(status)
     ) {
-      const mensagemCliente = templateStatusPedido(
-        (pedido as any).cliente_nome,
-        (pedido as any).numero_pedido,
-        data.status
-      )
-
-      enviarMensagemWhatsApp(
-        (pedido as any).cliente_telefone,
-        mensagemCliente
-      ).catch(console.error)
+      const mensagemCliente = templateStatusPedido(pedido.cliente_nome, pedido.numero_pedido, status)
+      enviarMensagemWhatsApp(pedido.cliente_telefone, mensagemCliente).catch(console.error)
     }
-    // ─────────────────────────────────────────────────────────────────────
+  }
 
-    return pedidoAtualizado
+  // Cozinha/Fila — avança UM OU MAIS ITENS do pedido para a próxima etapa, sem mexer nos outros.
+  // É o que permite entregar a comida assim que ela fica pronta, sem esperar o pedido inteiro.
+  // O pedido fica na etapa do item mais atrasado (só vira ENTREGUE quando o último item sair).
+  async atualizarStatusItens(
+    id: string,
+    data: { item_ids: string[]; status: 'PREPARO' | 'PRONTO' | 'ENTREGUE' },
+    estabelecimento_id: string
+  ) {
+    const pedido: any = await this.findById(id, estabelecimento_id)
+
+    if (!['RECEBIDO', 'PREPARO', 'PRONTO'].includes(pedido.status)) {
+      throw new AppError('Só é possível avançar itens de pedidos em andamento', 400)
+    }
+
+    const ids = Array.from(new Set(data.item_ids))
+    const itens: any[] = (pedido.itens ?? []).filter((i: any) => ids.includes(i.id))
+    if (itens.length !== ids.length) {
+      throw new AppError('Algum item informado não pertence a este pedido', 400)
+    }
+
+    for (const item of itens) {
+      if (proximaEtapa(item.status) !== data.status) {
+        throw new AppError(
+          `"${item.produto?.nome ?? 'Item'}" está em "${item.status}" e não pode ir para "${data.status}"`,
+          400
+        )
+      }
+    }
+
+    // Todos os itens escolhidos estão na mesma etapa (a anterior à pedida)
+    const etapaAnterior = itens[0].status
+    const agora = new Date()
+
+    const novoStatusPedido = await prisma.$transaction(async (tx) => {
+      // Só avança quem ainda está na etapa que a tela mostrava: se outra pessoa já avançou
+      // o mesmo item, não deixamos pular uma etapa.
+      const { count } = await tx.itemPedido.updateMany({
+        where: { id: { in: ids }, pedido_id: id, status: etapaAnterior },
+        data: { status: data.status as any },
+      })
+      if (count !== ids.length) {
+        throw new AppError('Algum item já foi atualizado por outra pessoa. Atualize a fila e tente de novo.', 409)
+      }
+
+      if (data.status === 'ENTREGUE') {
+        for (const item of itens) {
+          await tx.produto.update({
+            where: { id: item.produto_id },
+            data: { total_vendido: { increment: item.quantidade } },
+          })
+        }
+      }
+
+      const todos = await tx.itemPedido.findMany({ where: { pedido_id: id }, select: { status: true } })
+      const novo = statusDoPedido(todos.map((i) => i.status as string))
+
+      if (novo && novo !== pedido.status) {
+        await tx.pedido.update({
+          where: { id },
+          data: {
+            status: novo as any,
+            ...(novo === 'ENTREGUE' && { entregue_em: agora }),
+          },
+        })
+        return novo
+      }
+      return null
+    })
+
+    // O cliente só é avisado quando o PEDIDO muda de etapa (todos os itens chegaram nela)
+    if (novoStatusPedido) this.notificarCliente(pedido, novoStatusPedido)
+
+    return this.findById(id, estabelecimento_id)
   }
 
   // Caixa — TRANSFERIR PEDIDOS: move pedidos em andamento de uma mesa para OUTRA mesa
@@ -735,6 +819,10 @@ export class PedidoService {
         })
       }
 
+      // Item novo entra na cozinha como RECEBIDO: o pedido volta à etapa do item mais atrasado
+      const statusItens = await tx.itemPedido.findMany({ where: { pedido_id: id }, select: { status: true } })
+      const statusPedido = statusDoPedido(statusItens.map((i) => i.status as string))
+
       await tx.pedido.update({
         where: { id },
         data: {
@@ -742,6 +830,7 @@ export class PedidoService {
           observacoes: data.observacoes ? data.observacoes : null,
           subtotal,
           total,
+          ...(statusPedido && { status: statusPedido as any }),
         },
       })
     })

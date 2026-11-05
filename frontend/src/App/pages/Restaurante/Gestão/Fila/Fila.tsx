@@ -1,16 +1,28 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { HiCheck, HiSearch, HiX, HiClock, HiRefresh } from 'react-icons/hi';
+import { useSearchParams } from 'react-router-dom';
+import { HiCheck, HiSearch, HiX, HiClock, HiRefresh, HiOutlineClipboardList } from 'react-icons/hi';
 import { MdTableRestaurant, MdDeliveryDining } from 'react-icons/md';
 import { FiChevronRight } from 'react-icons/fi';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
+import ModalAlerta from '../../../../shared/components/ModalAlerta/ModalAlerta';
+import ComandaCozinha from '../../../../shared/components/ComandaCozinha/ComandaCozinha';
+import { useComandaMesa } from '../../../../shared/components/ComandaCozinha/useComandaMesa';
 import PedidoService, { Pedido as PedidoApi, StatusPedido as StatusApi } from '../../../../services/pedido.service';
 import { mensagemDeErro } from '../../../../services/cliente.service';
-import { ROTAS_CAIXA } from '../../../../routes/caixaRotas';
 import './Fila.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 type StatusFila = 'recebido' | 'preparando' | 'pronto' | 'entregue';
+
+/** Cada comida do pedido anda sozinha pela cozinha: tem a sua própria etapa */
+interface ItemFila {
+  id: string;
+  nome: string;
+  quantidade: number;
+  detalhes: string[];
+  preco: number;
+  status: StatusFila;
+}
 
 interface PedidoFila {
   id: string;
@@ -18,14 +30,21 @@ interface PedidoFila {
   cliente: string;
   /** "Mesa 05", "Entrega" ou "Retirada" */
   local: string;
-  /** Pedido de mesa: liga a Fila ao Caixa */
+  /** Pedido de mesa: libera a comanda da cozinha */
   mesaId?: string;
-  itens: { nome: string; quantidade: number; detalhes: string[] }[];
-  total: number;
+  mesaNumero?: number;
+  itens: ItemFila[];
   criadoEm: string;
+  /** Etapa do pedido inteiro (= a do item mais atrasado) */
   status: StatusFila;
   /** Entregue na mesa e ainda não pago: continua na conta da mesa no Caixa */
   aguardandoPagamento: boolean;
+}
+
+/** Um pedido "fatiado": só os itens que estão numa etapa */
+interface FragmentoFila {
+  pedido: PedidoFila;
+  itens: ItemFila[];
 }
 
 interface ConfiguracaoColuna {
@@ -73,26 +92,29 @@ const daApi = (p: PedidoApi, aguardando: Set<string>): PedidoFila | null => {
     cliente: p.cliente_nome,
     local: rotuloLocal(p),
     mesaId: p.mesa?.id,
+    mesaNumero: p.mesa?.numero,
     itens: p.itens.map((i) => ({
+      id: i.id,
       nome: i.produto?.nome ?? 'Item',
       quantidade: i.quantidade,
       detalhes: [
         ...(i.observacoes?.trim() ? [i.observacoes.trim()] : []),
         ...((i.itens_adicionais ?? []).map((a) => a.nome_adicional).filter((n): n is string => !!n).map((n) => `+ ${n}`)),
       ],
+      preco: i.preco_total,
+      // Pedido antigo (sem etapa por item): o item segue a etapa do pedido
+      status: (i.status && DA_API[i.status]) || status,
     })),
-    total: p.total,
     criadoEm: p.criado_em,
     status,
     aguardandoPagamento: status === 'entregue' && aguardando.has(p.id),
   };
 };
 
-const textoItens = (p: PedidoFila) => p.itens.map((i) => (i.quantidade > 1 ? `${i.quantidade}x ${i.nome}` : i.nome)).join(', ');
+const textoItem = (i: Pick<ItemFila, 'nome' | 'quantidade'>) => `${i.quantidade}x ${i.nome}`;
 
 // ── Componente principal ───────────────────────────────────────────────────────
 const Fila: React.FC = () => {
-  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   // Vindo do Caixa ("Ver na fila"): mostra só os pedidos daquela mesa
   const mesaFiltro = params.get('mesa');
@@ -103,11 +125,16 @@ const Fila: React.FC = () => {
   const [atualizadoEm, setAtualizadoEm] = useState<Date | null>(null);
 
   const [colunaAtiva, setColunaAtiva] = useState<StatusFila>('recebido');
-  const [pedidoSelecionadoId, setPedidoSelecionadoId] = useState<string | null>(null);
+  /** Itens marcados na coluna aberta (só eles avançam) */
+  const [itensMarcados, setItensMarcados] = useState<Set<string>>(new Set());
   const [modalAberto, setModalAberto] = useState(false);
   const [colunaDoModal, setColunaDoModal] = useState<ConfiguracaoColuna | null>(null);
+  const [resumoModal, setResumoModal] = useState<string[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
+
+  // Comanda da cozinha (mostrar + imprimir) — a mesma do Caixa
+  const comanda = useComandaMesa();
 
   // ── Dados reais ──
   // Ativos (qualquer data) + entregues de hoje + entregues de mesa que ainda esperam o pagamento no Caixa
@@ -148,10 +175,13 @@ const Fila: React.FC = () => {
     void carregar();
   }, [carregar]);
 
-  // Atualização automática (sem WebSocket): a cada 20s, e quando a aba volta a ficar visível
+  const comandaAberta = comanda.mesa !== null;
+
+  // Atualização automática (sem WebSocket): a cada 20s, e quando a aba volta a ficar visível.
+  // Pausa com um modal aberto para não mexer na tela debaixo do usuário.
   useEffect(() => {
     const timer = window.setInterval(() => {
-      if (!document.hidden && !modalAberto) void carregar(true);
+      if (!document.hidden && !modalAberto && !comandaAberta) void carregar(true);
     }, INTERVALO_ATUALIZACAO_MS);
     const aoVoltar = () => { if (!document.hidden) void carregar(true); };
     document.addEventListener('visibilitychange', aoVoltar);
@@ -159,7 +189,7 @@ const Fila: React.FC = () => {
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', aoVoltar);
     };
-  }, [carregar, modalAberto]);
+  }, [carregar, modalAberto, comandaAberta]);
 
   // ── Derivados ──
   const visiveis = useMemo(
@@ -170,71 +200,120 @@ const Fila: React.FC = () => {
     () => pedidos.find((p) => p.mesaId === mesaFiltro)?.local ?? 'Mesa selecionada',
     [pedidos, mesaFiltro]
   );
-  const pedidosPorStatus = (status: StatusFila) => visiveis.filter((p) => p.status === status);
-  const pedidoSelecionado = visiveis.find((p) => p.id === pedidoSelecionadoId) ?? null;
+
+  /** Pedidos fatiados: de cada pedido, só os itens que estão nesta etapa */
+  const fragmentosDe = useCallback(
+    (status: StatusFila): FragmentoFila[] =>
+      visiveis
+        .map((pedido) => ({ pedido, itens: pedido.itens.filter((i) => i.status === status) }))
+        .filter((f) => f.itens.length > 0),
+    [visiveis]
+  );
+
+  const colunaAtual = COLUNAS.find((c) => c.status === colunaAtiva) ?? COLUNAS[0];
+  const fragmentosAtivos = useMemo(() => fragmentosDe(colunaAtiva), [fragmentosDe, colunaAtiva]);
+  const quantidadeNaColuna = (status: StatusFila) =>
+    fragmentosDe(status).reduce((soma, f) => soma + f.itens.length, 0);
+
+  /** Itens marcados que ainda estão nesta etapa (se alguém avançou um deles, ele sai da seleção) */
+  const marcados = useMemo(
+    () =>
+      fragmentosAtivos.flatMap((f) =>
+        f.itens.filter((i) => itensMarcados.has(i.id)).map((item) => ({ pedido: f.pedido, item }))
+      ),
+    [fragmentosAtivos, itensMarcados]
+  );
+
+  const totalAtivos = visiveis.filter((p) => p.status !== 'entregue').length;
 
   // ── Ações ──
   const carregarColuna = (status: StatusFila) => {
     setColunaAtiva(status);
-    setPedidoSelecionadoId(null);
+    setItensMarcados(new Set());
   };
 
-  const selecionarPedido = (pedido: PedidoFila) =>
-    setPedidoSelecionadoId((prev) => (prev === pedido.id ? null : pedido.id));
+  const alternarItem = (itemId: string) =>
+    setItensMarcados((prev) => {
+      const novo = new Set(prev);
+      if (novo.has(itemId)) novo.delete(itemId);
+      else novo.add(itemId);
+      return novo;
+    });
+
+  const alternarTodosDoPedido = (fragmento: FragmentoFila) =>
+    setItensMarcados((prev) => {
+      const novo = new Set(prev);
+      const todos = fragmento.itens.every((i) => novo.has(i.id));
+      fragmento.itens.forEach((i) => (todos ? novo.delete(i.id) : novo.add(i.id)));
+      return novo;
+    });
 
   const abrirModal = (coluna: ConfiguracaoColuna) => {
-    if (!pedidoSelecionado) return;
+    if (marcados.length === 0) return;
     setErroAcao(null);
     setColunaDoModal(coluna);
+    setResumoModal(marcados.map(({ pedido, item }) => `${pedido.numero} · ${pedido.local} — ${textoItem(item)}`));
     setModalAberto(true);
   };
 
-  const fecharModal = () => {
+  const fecharModal = useCallback(() => {
     if (salvando) return;
     setModalAberto(false);
     setColunaDoModal(null);
     setErroAcao(null);
-  };
+  }, [salvando]);
 
   const confirmarAvanco = async () => {
-    if (!pedidoSelecionado || !colunaDoModal?.proximoStatus || salvando) return;
+    if (!colunaDoModal?.proximoStatus || salvando) return;
+    if (marcados.length === 0) {
+      fecharModal();
+      return;
+    }
     const novoStatus = colunaDoModal.proximoStatus;
+
+    // Um pedido por chamada: só os itens marcados dele avançam
+    const porPedido = new Map<string, string[]>();
+    marcados.forEach(({ pedido, item }) => porPedido.set(pedido.id, [...(porPedido.get(pedido.id) ?? []), item.id]));
 
     setSalvando(true);
     setErroAcao(null);
     try {
-      await PedidoService.atualizarStatus(pedidoSelecionado.id, PARA_API[novoStatus]);
+      for (const [pedidoId, itemIds] of porPedido) {
+        await PedidoService.atualizarStatusItens(pedidoId, itemIds, PARA_API[novoStatus]);
+      }
       setModalAberto(false);
       setColunaDoModal(null);
-      setPedidoSelecionadoId(null);
+      setItensMarcados(new Set());
       setColunaAtiva(novoStatus);
       await carregar(true);
     } catch (err: any) {
-      setErroAcao(mensagemDeErro(err, 'Não foi possível atualizar o pedido.'));
+      setErroAcao(mensagemDeErro(err, 'Não foi possível atualizar os itens.'));
+      void carregar(true); // se parte já avançou, a tela passa a mostrar o que realmente mudou
     } finally {
       setSalvando(false);
     }
   };
 
-  const abrirNoCaixa = (pedido: PedidoFila, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    if (pedido.mesaId) navigate(ROTAS_CAIXA.pagarMesa(pedido.mesaId));
-  };
-
   const limparFiltroMesa = () => setParams({});
 
-  // ── Render: linha da tabela ──
-  const renderLinhaPedido = (pedido: PedidoFila) => {
-    const estaSelecionado = pedidoSelecionadoId === pedido.id;
+  // ── Render: linha da tabela (um pedido fatiado) ──
+  const renderLinhaPedido = (fragmento: FragmentoFila) => {
+    const { pedido, itens } = fragmento;
+    const podeMarcar = colunaAtual.proximoStatus !== null;
+    const algumMarcado = itens.some((i) => itensMarcados.has(i.id));
+    const todosMarcados = itens.every((i) => itensMarcados.has(i.id));
+    // Itens entregues de um pedido que ainda não foi pago continuam na conta da mesa
+    const aguardandoPagamento =
+      colunaAtiva === 'entregue' && !!pedido.mesaId && (pedido.status !== 'entregue' || pedido.aguardandoPagamento);
+
     return (
       <tr
         key={pedido.id}
-        className={`fila__linha-pedido ${estaSelecionado ? 'fila__linha-pedido--selecionado' : ''}`}
-        onClick={() => selecionarPedido(pedido)}
+        className={`fila__linha-pedido ${algumMarcado ? 'fila__linha-pedido--selecionado' : ''}`}
       >
         <td className="fila__td fila__td--numero">
           {pedido.numero}
-          {estaSelecionado && <HiCheck className="fila__icone-check" />}
+          {algumMarcado && <HiCheck className="fila__icone-check" />}
         </td>
         <td className="fila__td">{pedido.cliente}</td>
         <td className="fila__td">
@@ -242,19 +321,53 @@ const Fila: React.FC = () => {
             <MdTableRestaurant /> {pedido.local}
           </span>
         </td>
-        <td className="fila__td">{textoItens(pedido)}</td>
-        <td className="fila__td fila__td--preco">{formatarPreco(pedido.total)}</td>
+        <td className="fila__td">
+          <ul className="fila__itens-lista">
+            {itens.map((item) => (
+              <li key={item.id}>
+                {podeMarcar ? (
+                  <label className="fila__item">
+                    <input
+                      type="checkbox"
+                      checked={itensMarcados.has(item.id)}
+                      onChange={() => alternarItem(item.id)}
+                      aria-label={`Marcar ${textoItem(item)} do pedido ${pedido.numero}`}
+                    />
+                    <span>
+                      {textoItem(item)}
+                      {item.detalhes.length > 0 && <small> ({item.detalhes.join('; ')})</small>}
+                    </span>
+                  </label>
+                ) : (
+                  <span className="fila__item">
+                    <span>
+                      {textoItem(item)}
+                      {item.detalhes.length > 0 && <small> ({item.detalhes.join('; ')})</small>}
+                    </span>
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          {podeMarcar && itens.length > 1 && (
+            <button type="button" className="fila__link-todos" onClick={() => alternarTodosDoPedido(fragmento)}>
+              {todosMarcados ? 'Desmarcar todos' : 'Marcar todos'}
+            </button>
+          )}
+        </td>
+        <td className="fila__td fila__td--preco">{formatarPreco(itens.reduce((soma, i) => soma + i.preco, 0))}</td>
         <td className="fila__td fila__td--tempo">
           <HiClock className="fila__icone-tempo" /> {tempoRelativo(pedido.criadoEm)}
         </td>
         <td className="fila__td">
-          {pedido.mesaId && (
-            <>
-              {pedido.aguardandoPagamento && <span className="fila__badge-pagamento">Aguardando pagamento</span>}
-              <button className="fila__btn-caixa" onClick={(e) => abrirNoCaixa(pedido, e)}>
-                Caixa <FiChevronRight />
-              </button>
-            </>
+          {aguardandoPagamento && <span className="fila__badge-pagamento">Aguardando pagamento</span>}
+          {pedido.mesaId && pedido.mesaNumero !== undefined && (
+            <button
+              className="fila__btn-avancar fila__btn-avancar--ativo fila__btn-avancar--compacto"
+              onClick={() => comanda.abrir({ id: pedido.mesaId!, numero: pedido.mesaNumero! })}
+            >
+              <HiOutlineClipboardList /> Comanda da cozinha
+            </button>
           )}
         </td>
       </tr>
@@ -263,16 +376,15 @@ const Fila: React.FC = () => {
 
   // ── Render: coluna ──
   const renderColuna = (coluna: ConfiguracaoColuna) => {
-    const lista = pedidosPorStatus(coluna.status);
+    const quantidade = quantidadeNaColuna(coluna.status);
     const carregada = colunaAtiva === coluna.status;
-    const pedidoNoCard = carregada && pedidoSelecionado?.status === coluna.status ? pedidoSelecionado : null;
-    const podeAvancar = carregada && !!pedidoNoCard && coluna.proximoStatus !== null;
+    const podeAvancar = carregada && marcados.length > 0 && coluna.proximoStatus !== null;
 
     return (
       <div key={coluna.status} className={`fila__coluna ${coluna.corClasse}`}>
         <div className="fila__coluna-header">
           <span className="fila__coluna-rotulo">{coluna.rotulo}</span>
-          <span className="fila__coluna-contador">{lista.length}</span>
+          <span className="fila__coluna-contador">{quantidade}</span>
         </div>
 
         <div className="fila__card-pedido">
@@ -280,31 +392,27 @@ const Fila: React.FC = () => {
             <button className="fila__btn-buscar" onClick={() => carregarColuna(coluna.status)}>
               <HiSearch /> Ver pedidos
             </button>
-          ) : pedidoNoCard ? (
+          ) : marcados.length > 0 ? (
             <div className="fila__card-info">
-              <p className="fila__card-numero">{pedidoNoCard.numero}</p>
-              <p className="fila__card-cliente">
-                <MdTableRestaurant /> {pedidoNoCard.local}
+              <p className="fila__card-numero">
+                {marcados.length} {marcados.length === 1 ? 'item marcado' : 'itens marcados'}
               </p>
-              <p className="fila__card-cliente">👤 {pedidoNoCard.cliente}</p>
               <ul className="fila__card-itens">
-                {pedidoNoCard.itens.map((item, i) => (
-                  <li key={i}>
-                    {item.quantidade}x {item.nome}
-                    {item.detalhes.length > 0 && <small> ({item.detalhes.join('; ')})</small>}
+                {marcados.slice(0, 4).map(({ pedido, item }) => (
+                  <li key={item.id}>
+                    {textoItem(item)} <small>({pedido.numero})</small>
                   </li>
                 ))}
+                {marcados.length > 4 && <li>+ {marcados.length - 4} …</li>}
               </ul>
-              <p className="fila__card-total">{formatarPreco(pedidoNoCard.total)}</p>
-              {pedidoNoCard.mesaId && (
-                <button className="fila__btn-caixa fila__btn-caixa--card" onClick={() => abrirNoCaixa(pedidoNoCard)}>
-                  Abrir conta no Caixa <FiChevronRight />
-                </button>
-              )}
             </div>
           ) : (
             <p className="fila__card-instrucao">
-              {lista.length === 0 ? 'Nenhum pedido nesta etapa' : 'Selecione um pedido abaixo'}
+              {quantidade === 0
+                ? 'Nenhum item nesta etapa'
+                : coluna.proximoStatus === null
+                  ? 'Itens já entregues'
+                  : 'Marque os itens abaixo'}
             </p>
           )}
 
@@ -326,8 +434,7 @@ const Fila: React.FC = () => {
     );
   };
 
-  const pedidosVisiveis = pedidosPorStatus(colunaAtiva);
-  const totalAtivos = visiveis.filter((p) => p.status !== 'entregue').length;
+  const proximaColuna = COLUNAS.find((c) => c.status === colunaDoModal?.proximoStatus);
 
   return (
     <RestaurantLayout>
@@ -338,7 +445,7 @@ const Fila: React.FC = () => {
           <div>
             <h2 className="fila__titulo">Fila de Pedidos</h2>
             <p className="fila__subtitulo">
-              Pedidos reais, ligados ao Caixa
+              Cada comida do pedido avança sozinha, assim que sai da cozinha
               {atualizadoEm && ` · atualizado às ${atualizadoEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`}
             </p>
           </div>
@@ -348,7 +455,7 @@ const Fila: React.FC = () => {
             </span>
             {COLUNAS.filter((c) => c.status !== 'entregue').map((coluna) => (
               <span key={coluna.status} className={`fila__resumo-badge fila__resumo-badge--${coluna.status}`}>
-                {coluna.rotulo} · {pedidosPorStatus(coluna.status).length}
+                {coluna.rotulo} · {quantidadeNaColuna(coluna.status)}
               </span>
             ))}
             <button className="fila__btn-atualizar" onClick={() => void carregar()} disabled={carregando} aria-label="Atualizar fila">
@@ -377,22 +484,24 @@ const Fila: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* ── Kanban ── */}
+            {/* ── Kanban (conta itens, não pedidos) ── */}
             <div className="fila__kanban">{COLUNAS.map(renderColuna)}</div>
 
-            {/* ── Tabela de pedidos da coluna ativa ── */}
+            {/* ── Tabela: pedidos fatiados da coluna ativa ── */}
             <div className="fila__tabela-container">
               <div className="fila__tabela-header">
                 <span className="fila__tabela-titulo">
-                  <HiRefresh /> {COLUNAS.find((c) => c.status === colunaAtiva)?.rotulo}
+                  <HiRefresh /> {colunaAtual.rotulo}
                 </span>
                 <span className="fila__tabela-dica">
-                  Clique em um pedido para selecioná-lo e avançar o status
+                  {colunaAtual.proximoStatus === null
+                    ? 'Itens que já saíram da cozinha e foram entregues'
+                    : 'Marque os itens que ficaram prontos e clique em Avançar: só eles seguem para a próxima etapa'}
                 </span>
               </div>
 
-              {pedidosVisiveis.length === 0 ? (
-                <p className="fila__tabela-vazia">Nenhum pedido nesta etapa.</p>
+              {fragmentosAtivos.length === 0 ? (
+                <p className="fila__tabela-vazia">Nenhum item nesta etapa.</p>
               ) : (
                 <div className="fila__tabela-scroll">
                   <table className="fila__tabela">
@@ -402,12 +511,12 @@ const Fila: React.FC = () => {
                         <th className="fila__th">Cliente</th>
                         <th className="fila__th">Local</th>
                         <th className="fila__th">Itens</th>
-                        <th className="fila__th">Total</th>
+                        <th className="fila__th">Valor</th>
                         <th className="fila__th">Tempo</th>
-                        <th className="fila__th">Caixa</th>
+                        <th className="fila__th">Comanda</th>
                       </tr>
                     </thead>
-                    <tbody>{pedidosVisiveis.map(renderLinhaPedido)}</tbody>
+                    <tbody>{fragmentosAtivos.map(renderLinhaPedido)}</tbody>
                   </table>
                 </div>
               )}
@@ -416,42 +525,44 @@ const Fila: React.FC = () => {
         )}
       </div>
 
-      {/* ── Modal de confirmação ── */}
-      {modalAberto && pedidoSelecionado && colunaDoModal && (
-        <div className="fila__modal-overlay" onClick={fecharModal}>
-          <div className="fila__modal" onClick={(e) => e.stopPropagation()}>
-            <button className="fila__modal-fechar" onClick={fecharModal} disabled={salvando}>
-              <HiX />
-            </button>
-
-            <div className="fila__modal-icone">
-              <FiChevronRight />
-            </div>
-
-            <h3 className="fila__modal-titulo">Avançar pedido?</h3>
-            <p className="fila__modal-descricao">
-              O pedido <strong>{pedidoSelecionado.numero}</strong> de <strong>{pedidoSelecionado.cliente}</strong> será movido de{' '}
-              <strong>{colunaDoModal.rotulo}</strong> para{' '}
-              <strong>{COLUNAS.find((c) => c.status === colunaDoModal.proximoStatus)?.rotulo}</strong>.
+      {/* ── Modal de confirmação (padrão do sistema) ── */}
+      <ModalAlerta
+        aberto={modalAberto && !!colunaDoModal}
+        variante="info"
+        titulo={resumoModal.length === 1 ? 'Avançar este item?' : `Avançar ${resumoModal.length} itens?`}
+        mensagem={
+          <>
+            <p className="fila__modal-texto">
+              Será movido de <strong>{colunaDoModal?.rotulo}</strong> para <strong>{proximaColuna?.rotulo}</strong>:
             </p>
-            {colunaDoModal.proximoStatus === 'entregue' && pedidoSelecionado.mesaId && (
-              <p className="fila__modal-descricao">
-                Ele continua na conta da <strong>{pedidoSelecionado.local}</strong> até o pagamento no Caixa.
+            <ul className="fila__modal-lista">
+              {resumoModal.map((linha) => <li key={linha}>{linha}</li>)}
+            </ul>
+            {colunaDoModal?.proximoStatus === 'entregue' && (
+              <p className="fila__modal-nota">
+                Itens de mesa continuam na conta até o pagamento no Caixa.
               </p>
             )}
-            {erroAcao && <p className="fila__erro" role="alert">{erroAcao}</p>}
+            {erroAcao && <p className="fila__erro fila__erro--modal" role="alert">{erroAcao}</p>}
+          </>
+        }
+        textoConfirmar={salvando ? 'Salvando…' : 'Avançar'}
+        textoCancelar="Cancelar"
+        carregando={salvando}
+        onConfirmar={() => void confirmarAvanco()}
+        onFechar={fecharModal}
+      />
 
-            <div className="fila__modal-acoes">
-              <button className="fila__modal-btn-cancelar" onClick={fecharModal} disabled={salvando}>
-                Cancelar
-              </button>
-              <button className="fila__modal-btn-confirmar" onClick={() => void confirmarAvanco()} disabled={salvando}>
-                <HiCheck /> {salvando ? 'Salvando…' : 'Confirmar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── Comanda da cozinha: mostrar e imprimir (a mesma do Caixa) ── */}
+      <ComandaCozinha
+        aberta={comandaAberta}
+        pedido={comanda.pedido}
+        mesaNumero={comanda.mesa?.numero}
+        carregando={comanda.carregando}
+        erro={comanda.erro}
+        onTentarNovamente={comanda.tentarNovamente}
+        onFechar={comanda.fechar}
+      />
     </RestaurantLayout>
   );
 };

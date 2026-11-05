@@ -10,6 +10,8 @@ export interface ItemPedido {
   preco_unitario: number
   preco_total: number
   observacoes: string | null
+  /** Etapa deste item na cozinha. Pedidos antigos (sem o campo) seguem o status do pedido. */
+  status?: StatusPedido
   produto: { id: string; nome: string }
   itens_adicionais?: { id: string; nome_adicional?: string; preco_extra?: number }[]
 }
@@ -146,6 +148,12 @@ const PedidoService = {
   // Pedido de mesa entregue continua na conta da mesa até ser pago no Caixa.
   async atualizarStatus(id: string, status: StatusPedido): Promise<void> {
     await api.patch(`pedidos/${id}/status`, { status })
+  },
+
+  // Fila: avança só alguns itens do pedido para a próxima etapa (ex.: entregar a comida que já
+  // ficou pronta sem esperar o resto). O pedido fica na etapa do item mais atrasado.
+  async atualizarStatusItens(pedidoId: string, itemIds: string[], status: StatusPedido): Promise<void> {
+    await api.patch(`pedidos/${pedidoId}/itens/status`, { item_ids: itemIds, status })
   },
 
   // Caixa: remove UM pedido da comanda (vira CANCELADO com o motivo). A mesa só é liberada

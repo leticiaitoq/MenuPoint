@@ -305,12 +305,16 @@ model ItemPedido {
   preco_unitario  Decimal  @db.Decimal(10, 2)
   preco_total     Decimal  @db.Decimal(10, 2)
   observacoes     String?
+  // Etapa deste item na cozinha: cada comida avança sozinha (RECEBIDO → PREPARO → PRONTO → ENTREGUE).
+  // O status do pedido é calculado a partir dos itens (o mais atrasado) — ver itemStatus.ts.
+  status          StatusPedido @default(RECEBIDO)
 
   pedido           Pedido          @relation(fields: [pedido_id], references: [id])
   produto          Produto         @relation(fields: [produto_id], references: [id])
   itens_adicionais ItemAdicional[]
   pagamentos_mesa  PagamentoMesaItem[]
 
+  @@index([pedido_id, status])
   @@map("itens_pedido")
 }
 

@@ -165,7 +165,7 @@ export class PagamentoService {
       const pedidos = await tx.pedido.findMany({
         where: filtroContaAberta(mesa_id, estabelecimento_id),
         include: {
-          itens: { select: { produto_id: true, quantidade: true } },
+          itens: { select: { id: true, produto_id: true, quantidade: true, status: true } },
           pagamento: { select: { id: true, status: true } },
         },
         orderBy: { numero_pedido: 'asc' },
@@ -281,14 +281,22 @@ export class PagamentoService {
           data: { entregue_em: agora },
         })
       }
+      // Fechar a conta entrega o que ainda estava na cozinha: todos os itens ficam ENTREGUE
+      await tx.itemPedido.updateMany({
+        where: { pedido_id: { in: pedidos.map((p) => p.id) }, status: { not: 'ENTREGUE' } },
+        data: { status: 'ENTREGUE' },
+      })
 
       // Soma nas vendas do produto SÓ o que ainda não tinha sido contado: os pedidos entregues
       // antes pelo fluxo normal já foram somados na hora da entrega (evita contar duas vezes)
       const vendidos = new Map<string, number>()
+      // (itens entregues um a um na Fila também já foram somados na hora, então ficam de fora)
       aindaNaoEntregues.forEach((p) =>
-        p.itens.forEach((i) =>
-          vendidos.set(i.produto_id, (vendidos.get(i.produto_id) ?? 0) + i.quantidade)
-        )
+        p.itens
+          .filter((i) => i.status !== 'ENTREGUE')
+          .forEach((i) =>
+            vendidos.set(i.produto_id, (vendidos.get(i.produto_id) ?? 0) + i.quantidade)
+          )
       )
       for (const [produto_id, quantidade] of vendidos) {
         await tx.produto.update({

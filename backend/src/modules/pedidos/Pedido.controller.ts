@@ -136,6 +136,32 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
     }
   )
 
+  // PATCH /:id/itens/status — Fila: avança UM OU MAIS itens do pedido para a próxima etapa
+  // (a comida é entregue assim que fica pronta, sem esperar o pedido inteiro)
+  app.patch(
+    '/:id/itens/status',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = request.user as JWTPayload
+
+      if (!user.estabelecimento_id) {
+        throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+      }
+
+      const { id } = z
+        .object({ id: z.string().uuid('ID do pedido inválido') })
+        .parse(request.params)
+      const data = z
+        .object({
+          item_ids: z.array(z.string().uuid('ID de item inválido')).min(1, 'Escolha pelo menos 1 item').max(100),
+          status: z.enum(['PREPARO', 'PRONTO', 'ENTREGUE']),
+        })
+        .parse(request.body)
+
+      const pedido = await service.atualizarStatusItens(id, data, user.estabelecimento_id)
+      return reply.send(pedido)
+    }
+  )
+
   // POST /transferir — Caixa: transfere pedidos de uma mesa para outra
   app.post(
     '/transferir',
