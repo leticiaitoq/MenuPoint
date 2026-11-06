@@ -25,6 +25,7 @@ import { reservasRoutes } from '@modules/reservas/Reserva.controller'
 import { empresasRoutes } from '@modules/empresas/Empresa.controller'
 import { clientesRoutes } from '@modules/clientes/Cliente.controller'
 import { assinaturaRoutes } from '@modules/assinatura/Assinatura.controller'
+import { contatoRoutes } from '@modules/contato/Contato.controller'
 // import { uploadRoutes } from '@modules/upload/Upload.controller'
 
 // GETs públicos que o cliente logado (perfil CLIENTE) pode chamar
@@ -139,6 +140,7 @@ app.register(fastifySwaggerUi, {
     api.register(reservasRoutes,        { prefix: '/reservas' })
     api.register(empresasRoutes, { prefix: '/empresas' })
     api.register(assinaturaRoutes,      { prefix: '/assinatura' })
+    api.register(contatoRoutes, { prefix: '/contato' })
     // api.register(uploadRoutes,          { prefix: '/upload' })
   }, { prefix: '/api/v1' })
 
@@ -158,6 +160,23 @@ app.register(fastifySwaggerUi, {
       message: 'Dados inválidos',
       errors: JSON.parse(error.message),
     })
+  }
+
+  // Violação de índice único (P2002) que nenhum service tratou na mão: é conflito (409), não
+  // erro interno. Pega também duas requisições simultâneas que passam juntas pela checagem prévia.
+  if (error.name === 'PrismaClientKnownRequestError' && (error as { code?: string }).code === 'P2002') {
+    const alvo = String((error as { meta?: { target?: unknown } }).meta?.target ?? '')
+    const mensagem = alvo.includes('cpf')
+      ? 'Este CPF já está cadastrado'
+      : alvo.includes('cnpj')
+        ? 'Este CNPJ já está cadastrado'
+        : alvo.includes('email')
+          ? 'Este e-mail já está cadastrado'
+          : alvo.includes('slug')
+            ? 'Este endereço já está em uso'
+            : 'Já existe um registro com esses dados'
+    request.log.warn({ alvo }, 'Conflito de unicidade (P2002) devolvido como 409')
+    return reply.status(409).send({ status: 'error', message: mensagem })
   }
 
   if (

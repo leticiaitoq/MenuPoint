@@ -181,6 +181,8 @@ export class AssinaturaService {
           // Modo teste: MP_PAYER_EMAIL_TESTE substitui o e-mail do cadastro (pagador de teste do MP)
           payer_email:        emailPagador,
           back_url:           `${FRONTEND_PRINCIPAL}/assinatura/sucesso`,
+          // Experimento (MP_AUTO_RETURN=true): pede ao MP o retorno automático ao site
+          ...(env.MP_AUTO_RETURN === 'true' && { auto_return: 'approved' }),
           notification_url:   `${env.API_URL}/api/v1/assinatura/webhook`,
           status:             'pending',
           auto_recurring: {

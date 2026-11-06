@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Navbar from './Navbar/Navbar';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { HiArrowLeft } from 'react-icons/hi';
 import Footer from './Footer/Footer';
 import CustomerSidebar, { CustomerSidebarItem } from './Sidebar/CustomerSidebar';
 import { useClienteAuth } from '../../contexts/ClienteAuthContext';
@@ -39,6 +40,12 @@ const GUEST_ROUTE_OVERRIDES: Partial<Record<CustomerSidebarItem, string>> = {
   orders: '/historicolocal',
 };
 
+/**
+ * Telas "raiz" do cliente (cardápio e boas-vindas): não têm para onde voltar.
+ * Telas que já trazem o próprio botão de voltar no formulário também ficam de fora.
+ */
+const SEM_BOTAO_VOLTAR = ['/menulocal', '/menu', '/welcomepage', '/dwelcome', '/retirada', '/endereço'];
+
 // ── Componente ─────────────────────────────────────────
 const CustomerLayout: React.FC<CustomerLayoutProps> = ({
   children,
@@ -56,6 +63,16 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
 
   // ── navegação
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Botão "Voltar": nas telas internas volta para a anterior. Se a página foi aberta direto
+  // (sem histórico, ex.: recarregou ou abriu o link), leva para o cardápio.
+  const caminhoAtual = decodeURIComponent(location.pathname).toLowerCase();
+  const mostrarVoltar = mode !== 'welcome' && !SEM_BOTAO_VOLTAR.includes(caminhoAtual);
+  const voltar = () => {
+    if (location.key !== 'default') navigate(-1);
+    else navigate(mode === 'guest' ? '/menulocal' : '/menu', { replace: true });
+  };
   // Convidado não tem perfil: o ícone oferece entrar/criar conta. Logado vai para o perfil.
   const [mostrarConta, setMostrarConta] = useState(false);
   const handleClick = () => {
@@ -113,7 +130,14 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
             routeOverrides={routeOverrides}
           />
         )}
-        <main className="customer-layout__content">{children}</main>
+        <main className="customer-layout__content">
+          {mostrarVoltar && (
+            <button type="button" className="customer-layout__voltar" onClick={voltar}>
+              <HiArrowLeft aria-hidden="true" /> Voltar
+            </button>
+          )}
+          {children}
+        </main>
       </div>
 
       <Footer />

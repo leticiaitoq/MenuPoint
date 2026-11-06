@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
 import { HiCheckCircle } from 'react-icons/hi';
 import AuthCard from './AuthCard';
@@ -139,6 +139,11 @@ const VerifyCodePage: React.FC = () => {
       setErro('Não foi possível reenviar o código. Tente novamente.');
     }
   };
+
+  // Recarregou a página (o e-mail vinha pela navegação): recomeça o fluxo
+  if (!email) {
+    return <Navigate to={mode === 'register' ? '/cadastro' : '/recover'} replace />;
+  }
 
   const titulo = mode === 'register' ? 'Verificar email' : 'Verificar identidade';
   const descricao =

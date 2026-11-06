@@ -1,0 +1,136 @@
+.ing { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
+
+.ing__cabecalho { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; justify-content: space-between; }
+.ing__titulo { margin: 0 0 4px; font-size: 18px; color: var(--text); }
+.ing__intro { margin: 0; font-size: 14px; color: var(--text-muted); }
+.ing__mensagem { margin: 0; font-size: 13px; color: var(--text-muted); }
+
+.ing__importar {
+  padding: 9px 14px;
+  border: 1px solid var(--brand);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--brand);
+  font-weight: 700;
+  cursor: pointer;
+}
+.ing__importar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Cada lista (já vem / adicionais) vira um bloco com cabeçalho próprio */
+.ing__secao {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-surface);
+}
+.ing__secao-titulo { margin: 0 0 2px; font-size: 16px; color: var(--text); }
+.ing__secao-texto { margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.45; }
+
+.ing__vazio {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.ing__lista { display: flex; flex-direction: column; gap: 10px; }
+
+/* Cada ingrediente é um cartão com os campos rotulados (nada de coluna sem título) */
+.ing__linha {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px 16px;
+  align-items: end;
+  padding: 14px 44px 14px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-page, transparent);
+}
+
+.ing__campo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ing__campo--nome { grid-column: 1 / -1; }
+.ing__rotulo { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.ing__nota { font-size: 11px; color: var(--text-faint); }
+
+.ing__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text);
+  font-size: 14px;
+}
+.ing__input:focus { outline: 2px solid var(--brand-soft-border); border-color: var(--brand); }
+.ing__input:disabled { opacity: 0.55; }
+
+.ing__preco { display: flex; align-items: center; gap: 6px; }
+.ing__preco-prefixo { font-size: 14px; color: var(--text-muted); }
+.ing__input--preco { text-align: right; }
+
+.ing__remover {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.ing__remover:hover:not(:disabled) { background: var(--brand-soft); color: var(--brand); }
+
+/* Botão "fixo": cadeado fechado quando o cliente não pode retirar */
+.ing__fixo {
+  grid-column: 1 / -1;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ing__fixo--ativo { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
+
+.ing__adicionar {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border: 1px dashed var(--brand);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--brand);
+  font-weight: 700;
+  cursor: pointer;
+}
+.ing__adicionar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ing__erro {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 14px;
+}

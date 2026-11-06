@@ -40,13 +40,6 @@ export class UsuarioService
 
     await this.findById(id)
 
-    if (data.email) {
-      const emailExistente = await this.repository.findByEmail(data.email)
-      if (emailExistente && emailExistente.id !== id) {
-        throw new AppError('E-mail já cadastrado', 409)
-      }
-    }
-
     let dadosParaSalvar: any = { ...data }
     if (data.senha) {
       const senha_hash = await bcrypt.hash(data.senha, 10)

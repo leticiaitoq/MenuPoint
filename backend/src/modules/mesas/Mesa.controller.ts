@@ -5,6 +5,7 @@ import {
   criarMesaSchema,
   atualizarMesaSchema,
   atualizarStatusMesaSchema,
+  criarPedidoPublicoMesaSchema,
 } from './Mesa.schema'
 import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
@@ -22,6 +23,46 @@ export async function mesasRoutes(app: FastifyInstance): Promise<void> {
         const { token } = request.params as { token: string }
         const mesa = await service.findByToken(token)
         return reply.send(mesa)
+      }
+    )
+
+    // GET /mesas/qrcode/:token/pedidos — histórico da mesa para o cliente local (sem login)
+    publicRoutes.get(
+      '/qrcode/:token/pedidos',
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { token } = request.params as { token: string }
+        const historico = await service.pedidosPublicos(token)
+        return reply.send(historico)
+      }
+    )
+
+    // POST /mesas/qrcode/:token/pedidos — cliente local envia o pedido para a cozinha (sem login).
+    // Rota pública: limite por IP para ninguém lotar a cozinha com pedidos falsos.
+    publicRoutes.post(
+      '/qrcode/:token/pedidos',
+      {
+        config: {
+          rateLimit: {
+            max: 6,
+            timeWindow: '1 minute',
+            errorResponseBuilder: () => ({
+              statusCode: 429,
+              status: 'error',
+              message: 'Muitos pedidos em pouco tempo. Aguarde um momento e tente de novo.',
+            }),
+          },
+        },
+      },
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { token } = request.params as { token: string }
+
+        const parsed = criarPedidoPublicoMesaSchema.safeParse(request.body)
+        if (!parsed.success) {
+          throw new AppError(parsed.error.issues[0]?.message ?? 'Dados do pedido inválidos', 400)
+        }
+
+        const pedido = await service.criarPedidoPublico(token, parsed.data)
+        return reply.status(201).send({ pedido })
       }
     )
 

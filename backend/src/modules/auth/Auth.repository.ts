@@ -122,6 +122,11 @@ export class AuthRepository {
     return Boolean(empresa || estabelecimento)
   }
 
+  async cpfEmUso(cpf: string): Promise<boolean> {
+    const usuario = await prisma.usuario.findFirst({ where: { cpf }, select: { id: true } })
+    return Boolean(usuario)
+  }
+
   // ── Slug único para a URL do cardápio ─────────────────────────────────────
   // "sabor-da-vila", "sabor-da-vila-2", "sabor-da-vila-3"...
   private async gerarSlugUnico(
@@ -159,6 +164,7 @@ export class AuthRepository {
           const alvo = String(err.meta?.target ?? '')
           if (alvo.includes('slug')) continue
           if (alvo.includes('cnpj')) throw new AppError('Este CNPJ já está cadastrado', 409)
+          if (alvo.includes('cpf')) throw new AppError('Este CPF já está cadastrado', 409)
           if (alvo.includes('email')) throw new AppError('Este e-mail já está cadastrado', 409)
         }
         throw err
@@ -264,7 +270,6 @@ export class AuthRepository {
     empresa_id: string | null,
     d: {
       nome_responsavel?: string
-      email?: string
       razao_social?: string
       nome_empresa?: string
     }
@@ -273,11 +278,6 @@ export class AuthRepository {
       return await prisma.$transaction(async (tx) => {
         const dadosUsuario: Prisma.UsuarioUncheckedUpdateInput = {}
         if (d.nome_responsavel !== undefined) dadosUsuario.nome = d.nome_responsavel
-        if (d.email !== undefined) {
-          dadosUsuario.email = d.email
-          // e-mail novo precisa ser confirmado de novo
-          dadosUsuario.email_verificado = false
-        }
 
         const usuario = await tx.usuario.update({
           where: { id: usuario_id },
@@ -321,6 +321,82 @@ export class AuthRepository {
         return usuario
       })
     } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        throw new AppError('Este e-mail já está cadastrado', 409)
+      }
+      throw err
+    }
+  }
+
+  // ── Alteração de e-mail (logado) ───────────────────────────────────────────
+  /** Guarda o e-mail novo junto do código. O e-mail atual só muda em aplicarAlteracaoEmail. */
+  async criarTokenAlteracaoEmail(
+    usuario_id: string,
+    novo_email: string,
+    expiracaoMinutos: number = 15
+  ): Promise<string> {
+    // Um pedido por vez: o novo apaga os anteriores do usuário (e limpa vencidos/usados de todos)
+    await prisma.tokenAlteracaoEmailUsuario.deleteMany({
+      where: {
+        OR: [{ usuario_id }, { usado: true }, { expira_em: { lt: new Date() } }],
+      },
+    })
+
+    const expira_em = new Date(Date.now() + expiracaoMinutos * 60_000)
+
+    // Só 1 milhão de combinações e o token é UNIQUE: colisão tratada com retry
+    for (let tentativa = 0; tentativa < 5; tentativa++) {
+      const codigo = this.gerarCodigo6Digitos()
+      try {
+        await prisma.tokenAlteracaoEmailUsuario.create({
+          data: { usuario_id, novo_email, token: codigo, expira_em },
+        })
+        return codigo
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          continue
+        }
+        throw err
+      }
+    }
+
+    throw new AppError('Não foi possível gerar o código. Tente novamente.', 500)
+  }
+
+  findTokenAlteracaoEmail(usuario_id: string, codigo: string) {
+    return prisma.tokenAlteracaoEmailUsuario.findFirst({
+      where: {
+        usuario_id,
+        token: codigo,
+        usado: false,
+        expira_em: { gt: new Date() },
+      },
+    })
+  }
+
+  /**
+   * Troca o e-mail, consome o código e derruba as sessões abertas (refresh tokens).
+   * O e-mail novo já foi confirmado pelo código, então fica verificado.
+   */
+  async aplicarAlteracaoEmail(tokenId: string, usuario_id: string, novo_email: string) {
+    try {
+      const [usuario] = await prisma.$transaction([
+        prisma.usuario.update({
+          where: { id: usuario_id },
+          data: { email: novo_email, email_verificado: true },
+        }),
+        prisma.tokenAlteracaoEmailUsuario.update({
+          where: { id: tokenId },
+          data: { usado: true },
+        }),
+        prisma.refreshToken.updateMany({
+          where: { usuario_id, usado: false },
+          data: { usado: true },
+        }),
+      ])
+      return usuario
+    } catch (err) {
+      // Alguém cadastrou esse e-mail entre o pedido e a confirmação
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         throw new AppError('Este e-mail já está cadastrado', 409)
       }

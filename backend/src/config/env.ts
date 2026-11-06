@@ -15,6 +15,7 @@ const envSchema = z.object({
   MAIL_FROM: z.string().default('Menupoint <noreply@menupoint.com>'),
   // Opcional: para onde vão as respostas dos usuários (ex.: suporte@seudominio.com)
   MAIL_REPLY_TO: z.string().optional(),
+  CONTATO_EMAIL: z.string().email('CONTATO_EMAIL deve ser um e-mail válido').optional(),
 
   // Código de verificação de e-mail
   CODIGO_EXPIRA_MINUTOS: z.coerce.number().int().min(1).default(15),
@@ -40,6 +41,11 @@ const envSchema = z.object({
   // SÓ PARA TESTES: e-mail da conta de COMPRADOR de teste do Mercado Pago. Quando preenchido, é enviado
   // ao MP como pagador no lugar do e-mail do cadastro. Em produção, deixe vazio/apague.
   MP_PAYER_EMAIL_TESTE: z.string().optional(),
+  // EXPERIMENTO: com "true", o checkout da assinatura também envia auto_return=approved ao MP, para
+  // ele devolver o cliente ao site sozinho (sem o botão "Ir para site do vendedor"). Esse parâmetro
+  // está documentado só para o Checkout Pro, não para assinaturas: se o MP recusar ou ignorar,
+  // apague a variável.
+  MP_AUTO_RETURN: z.string().optional(),
 
   // URL pública do backend (usada no notification_url do MP)
   API_URL: z.string().url().default('http://localhost:3333')

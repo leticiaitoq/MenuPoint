@@ -42,6 +42,12 @@ export interface Adicional {
   nome: string
   preco_extra: number
   disponivel: boolean
+  /** Unidades que já vêm no produto (0 = adicional) */
+  quantidade_inclusa?: number
+  /** Máximo que o cliente pode pedir */
+  quantidade_maxima?: number
+  /** Fixo: o cliente vê, mas não pode retirar */
+  fixo?: boolean
 }
 
 const CategoriaService = {

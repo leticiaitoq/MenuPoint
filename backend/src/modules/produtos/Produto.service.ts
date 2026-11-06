@@ -94,7 +94,19 @@ export class ProdutoService {
       }
     }
 
-    return this.repository.update(id, data)
+    // "ingredientes" não é coluna do produto: é gravado à parte (grupo "Ingredientes")
+    const { ingredientes, ...dadosProduto } = data
+    const atualizado =
+      Object.keys(dadosProduto).length > 0
+        ? await this.repository.update(id, dadosProduto)
+        : null
+
+    if (ingredientes) {
+      await this.repository.sincronizarIngredientes(id, ingredientes)
+      return (await this.repository.findByIdCompleto(id)) as any
+    }
+
+    return atualizado ?? (await this.repository.findByIdCompleto(id))
   }
 
   async reordenar(
