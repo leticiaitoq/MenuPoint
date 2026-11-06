@@ -318,3 +318,52 @@ export function templateEmailAlterado(nomeUsuario: string, novoEmail: string): s
     </html>
   `
 }
+
+
+// Alerta interno: alguém pediu contato pelo "Falar com especialista" (plano Enterprise) do site.
+// Os dados vêm de um formulário público, então tudo é escapado antes de entrar no HTML.
+const escaparHtml = (texto: string): string =>
+  texto
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+export function templateContatoEspecialista(dados: {
+  nome: string
+  email: string
+  telefone?: string
+  restaurante?: string
+  mensagem?: string
+}): string {
+  const linha = (rotulo: string, valor?: string) =>
+    valor
+      ? `<tr><td style="padding:6px 12px 6px 0;color:#666666;vertical-align:top;white-space:nowrap;">${rotulo}</td><td style="padding:6px 0;color:#111111;">${escaparHtml(valor).replace(/\n/g, '<br>')}</td></tr>`
+      : ''
+
+  return `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head><meta charset="UTF-8"><title>Novo contato Enterprise</title></head>
+    <body style="font-family:Arial,sans-serif;background-color:#f4f4f4;margin:0;padding:24px;">
+      <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;">
+        <div style="background:#490e24;padding:20px 28px;">
+          <h1 style="color:#ffffff;margin:0;font-size:20px;">Novo contato: plano Enterprise</h1>
+        </div>
+        <div style="padding:24px 28px;color:#333333;line-height:1.6;">
+          <p style="margin:0 0 16px;">Alguém pediu para falar com um especialista pelo site do MenuPoint.</p>
+          <table style="border-collapse:collapse;font-size:15px;">
+            ${linha('Nome', dados.nome)}
+            ${linha('E-mail', dados.email)}
+            ${linha('Telefone', dados.telefone)}
+            ${linha('Restaurante', dados.restaurante)}
+            ${linha('Mensagem', dados.mensagem)}
+          </table>
+          <p style="margin:20px 0 0;color:#666666;font-size:13px;">Basta responder este e-mail para falar direto com a pessoa.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+}

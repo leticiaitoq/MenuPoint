@@ -53,7 +53,6 @@ export interface VerificarSenhaDTO {
 export interface AtualizarDadosSensiveisDTO {
   senha_atual: string
   nome_responsavel?: string
-  email?: string
   razao_social?: string
   nome_empresa?: string
 }
@@ -99,6 +98,12 @@ const AuthService = {
     return response.data
   },
 
+  // Etapa 1 do cadastro: o CNPJ já existe? (true = livre para usar)
+  async cnpjDisponivel(cnpj: string): Promise<boolean> {
+    const response = await api.post<{ disponivel: boolean }>('/auth/verificar-cnpj', { cnpj })
+    return response.data.disponivel
+  },
+
   // Faz login e retorna token + dados do usuário
   // Se o servidor estiver acordando (cold start) a 1ª chamada pode estourar o tempo
   // ou cair por rede, sem resposta nenhuma. Login é seguro de repetir, então tentamos
@@ -125,11 +130,25 @@ const AuthService = {
     await api.post('auth/verificar-senha', data)
   },
 
-  // Altera nome do responsável, e-mail, razão social e nome da empresa. Exige a senha atual.
+  // Altera nome do responsável, razão social e nome da empresa. Exige a senha atual.
+  // (O e-mail tem fluxo próprio, em 2 passos: solicitarAlteracaoEmail + confirmarAlteracaoEmail.)
   async atualizarDadosSensiveis(
     data: AtualizarDadosSensiveisDTO
-  ): Promise<{ token: string; email_alterado: boolean }> {
-    const response = await api.put<{ token: string; email_alterado: boolean }>('auth/me/dados', data)
+  ): Promise<{ token: string }> {
+    const response = await api.put<{ token: string }>('auth/me/dados', data)
+    return response.data
+  },
+
+  // Troca de e-mail, passo 1: confere a senha e manda um código para o e-mail NOVO.
+  // O e-mail atual continua valendo até o código ser confirmado.
+  async solicitarAlteracaoEmail(data: { novo_email: string; senha: string }): Promise<{ email: string }> {
+    const response = await api.post<{ email: string }>('auth/me/email/solicitar', data)
+    return response.data
+  },
+
+  // Troca de e-mail, passo 2: confirma o código. Devolve uma sessão nova (as outras são encerradas).
+  async confirmarAlteracaoEmail(codigo: string): Promise<LoginResponse> {
+    const response = await api.post<LoginResponse>('auth/me/email/confirmar', { codigo })
     return response.data
   },
 

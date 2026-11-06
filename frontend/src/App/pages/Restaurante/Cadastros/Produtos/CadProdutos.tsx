@@ -10,6 +10,8 @@ import {
   SELECAO_VAZIA, SelecaoCategoria, resolverSelecao, validarSelecao,
 } from '../../../../shared/constants/categoriasPadrao';
 import RecortadorImagem from '../../../../shared/components/RecortadorImagem/RecortadorImagem';
+import IngredientesEditor, { LinhaIngrediente, linhasDaCategoria, linhasParaPayload, mesclarLinhas } from '../../../../shared/components/IngredientesEditor/IngredientesEditor';
+import AdicionalCategoriaService from '../../../../services/adicionalCategoria.service';
 import './CadProdutos.css';
 
 // ── Tipos
@@ -46,6 +48,14 @@ const CadProdutos: React.FC = () => {
 
   const [form, setForm] = useState<FormProduto>(FORM_INICIAL);
   const [fotoParaAjustar, setFotoParaAjustar] = useState<File | null>(null);
+  const [ingredientes, setIngredientes] = useState<LinhaIngrediente[]>([]);
+  const [importando, setImportando]     = useState(false);
+  const [msgIngredientes, setMsgIngredientes] = useState('');
+  // true depois que o restaurante mexe nos ingredientes: aí trocar de categoria não apaga o que ele fez
+  const ingredientesEditados = useRef(false);
+  const [erroIng, setErroIng] = useState('');
+  const ingredientesRef = useRef<LinhaIngrediente[]>([]);
+  ingredientesRef.current = ingredientes;
 
   const [categorias, setCategorias]         = useState<Categoria[]>([]);
   const [novaCategoria, setNovaCategoria]   = useState<SelecaoCategoria>(SELECAO_VAZIA);
@@ -110,6 +120,53 @@ const CadProdutos: React.FC = () => {
     });
   };
 
+  // ── Ingredientes padrão da categoria: já vêm preenchidos (com as quantidades) ao escolher a categoria
+  const aoEditarIngredientes = (linhas: LinhaIngrediente[]) => {
+    ingredientesEditados.current = true;
+    setMsgIngredientes('');
+    setErroIng('');
+    setIngredientes(linhas);
+  };
+
+  const mudarCategoria = async (categoria_id: string) => {
+    atualizarForm({ categoria_id });
+    if (!categoria_id || ingredientesEditados.current) return;
+    try {
+      const padrao = linhasDaCategoria(await AdicionalCategoriaService.listar(categoria_id));
+      if (!ingredientesEditados.current) {
+        setIngredientes(padrao);
+        setMsgIngredientes(
+          padrao.length
+            ? `${padrao.length} ingrediente(s) padrão da categoria carregado(s). Tire, ajuste ou crie novos para este produto.`
+            : ''
+        );
+      }
+    } catch {
+      /* sem padrão para esta categoria: o editor segue como está */
+    }
+  };
+
+  const importarPadrao = async () => {
+    if (!form.categoria_id) { setMsgIngredientes('Escolha a categoria primeiro.'); return; }
+    setImportando(true);
+    try {
+      const padrao = linhasDaCategoria(await AdicionalCategoriaService.listar(form.categoria_id));
+      // usa o valor MAIS RECENTE da lista (o usuário pode ter editado enquanto carregava)
+      const { linhas, adicionadas } = mesclarLinhas(ingredientesRef.current, padrao);
+      ingredientesEditados.current = true;
+      setIngredientes(linhas);
+      setMsgIngredientes(
+        padrao.length === 0
+          ? 'Esta categoria ainda não tem ingredientes padrão (cadastre em Produtos → Categorias).'
+          : adicionadas > 0 ? `${adicionadas} ingrediente(s) importado(s).` : 'Todos os ingredientes da categoria já estão aqui.'
+      );
+    } catch {
+      setMsgIngredientes('Não foi possível carregar os ingredientes da categoria.');
+    } finally {
+      setImportando(false);
+    }
+  };
+
   // ── Cria uma nova categoria de verdade no backend
   const handleNovaCategoria = async () => {
     const erroNome = validarSelecao(novaCategoria, categorias.map((c) => c.nome));
@@ -139,6 +196,14 @@ const CadProdutos: React.FC = () => {
     const preco = precoParaNumero(form.preco);
     if (!form.preco || !(preco > 0)) { setErro('Informe um preço válido.'); return; }
 
+    const ing = linhasParaPayload(ingredientes);
+    if (!ing.ok) {
+      setErroIng(ing.erro);
+      document.querySelector('.ing')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    setErroIng('');
+
     setErro('');
     setSalvando(true);
 
@@ -157,6 +222,7 @@ const CadProdutos: React.FC = () => {
         disponivel: form.disponivel,
         destaque: form.destaque,
         ...(imagem_url && { imagem_url }),
+        ...(ing.lista.length ? { ingredientes: ing.lista } : {}),
       });
 
       setSucesso(true);
@@ -252,7 +318,7 @@ const CadProdutos: React.FC = () => {
                 <select
                   className="cadprod__select"
                   value={form.categoria_id}
-                  onChange={(e) => atualizarForm({ categoria_id: e.target.value })}
+                  onChange={(e) => mudarCategoria(e.target.value)}
                   disabled={carregandoCategorias}
                 >
                   <option value="">
@@ -305,6 +371,17 @@ const CadProdutos: React.FC = () => {
               </label>
             </div>
 
+            {/* Ingredientes e adicionais (estilo totem) */}
+            <IngredientesEditor
+              linhas={ingredientes}
+              onChange={aoEditarIngredientes}
+              disabled={salvando}
+              onImportar={importarPadrao}
+              importando={importando}
+              mensagem={msgIngredientes}
+              erro={erroIng}
+            />
+
 
           </div>
 
@@ -348,7 +425,7 @@ const CadProdutos: React.FC = () => {
                   <span
                     key={c.id}
                     className={`cadprod__chip${form.categoria_id === c.id ? ' cadprod__chip--ativo' : ''}`}
-                    onClick={() => atualizarForm({ categoria_id: c.id })}
+                    onClick={() => mudarCategoria(c.id)}
                   >
                     {c.nome}
                   </span>
@@ -387,7 +464,7 @@ const CadProdutos: React.FC = () => {
         </div>
       </div>
         {sucesso && (
-        <div className="cadprod__popup-overlay" onClick={() => setSucesso(false)}>
+        <div className="cadprod__popup-overlay" onClick={() => navigate('/restaurante/produtos')}>
         <div className="cadprod__popup" onClick={(e) => e.stopPropagation()}>
         <span className="cadprod__popup-icon">✅</span>
         <h3>Produto salvo com sucesso!</h3>

@@ -887,3 +887,15 @@ button.register-page__step-dot:focus-visible {
   border: 0;
   padding: 0;
 }
+
+/* Autofill do navegador: mantém a cor do campo em vez do cinza-azulado do Chrome */
+.register-page__input:-webkit-autofill,
+.register-page__input:-webkit-autofill:hover,
+.register-page__input:-webkit-autofill:focus,
+.register-page__input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--rp-field) inset;
+  box-shadow: 0 0 0 1000px var(--rp-field) inset;
+  -webkit-text-fill-color: var(--rp-ink);
+  caret-color: var(--rp-ink);
+  transition: background-color 9999s ease-in-out 0s;
+}

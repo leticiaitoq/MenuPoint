@@ -251,6 +251,8 @@ const RegisterPage: React.FC = () => {
   const [carregando, setCarregando] = useState(false);
   const [showSucesso, setShowSucesso] = useState(false);
   const [showTermosModal, setShowTermosModal] = useState(false);
+  // Campo que deve receber o foco assim que a etapa dele estiver na tela
+  const [focoPendente, setFocoPendente] = useState<string | null>(null);
 
   // CEP / cidades
   const [buscandoCep, setBuscandoCep] = useState(false);
@@ -338,6 +340,19 @@ const RegisterPage: React.FC = () => {
   const focarPrimeiroErro = (e: Erros) => {
     const primeiro = Object.keys(e)[0];
     if (primeiro) document.getElementById(`rp-${primeiro}`)?.focus();
+  };
+
+  useEffect(() => {
+    if (!focoPendente) return;
+    document.getElementById(`rp-${focoPendente}`)?.focus();
+    setFocoPendente(null);
+  }, [focoPendente, etapa]);
+
+  // Marca o campo com o motivo, leva o usuário até a etapa dele e põe o cursor lá
+  const apontarErro = (campo: string, destino: 1 | 2, mensagem: string) => {
+    setErros({ [campo]: mensagem });
+    if (destino !== etapa) irParaEtapa(destino);
+    setFocoPendente(campo);
   };
 
   const irParaEtapa = (destino: 1 | 2) => {
@@ -453,13 +468,29 @@ const RegisterPage: React.FC = () => {
   };
 
   /* ── Etapa 1 → 2 ── */
-  const handleAvancar = (e: React.FormEvent) => {
+  const handleAvancar = async (e: React.FormEvent) => {
     e.preventDefault();
     const encontrados = validarEtapa1();
     setErros(encontrados);
     if (Object.keys(encontrados).length > 0) {
       focarPrimeiroErro(encontrados);
       return;
+    }
+
+    // Confere o CNPJ já aqui: assim a pessoa não preenche a etapa 2 inteira para só então
+    // descobrir que ele já existe. Se a consulta falhar (rede, limite de requisições), segue:
+    // o envio final confere de novo.
+    setCarregando(true);
+    try {
+      const disponivel = await AuthService.cnpjDisponivel(cnpj);
+      if (!disponivel) {
+        apontarErro('cnpj', 1, 'Este CNPJ já está cadastrado.');
+        return;
+      }
+    } catch {
+      // segue para a etapa 2
+    } finally {
+      setCarregando(false);
     }
     irParaEtapa(2);
   };
@@ -514,11 +545,21 @@ const RegisterPage: React.FC = () => {
       // o sistema leva para a escolha do plano (se ainda não veio do site) e para o pagamento.
       setShowSucesso(true);
     } catch (err: any) {
-      // Se o backend já mandou um motivo específico (ex: "Este e-mail já
-      // está cadastrado"), mostramos ele. Senão, caímos numa mensagem mais
-      // empática do que um erro genérico.
-      const mensagemDoServidor = err?.response?.data?.message;
+      const dados = err?.response?.data;
+      const mensagemDoServidor: string | undefined = dados?.message;
+
+      // Conflito (409): leva para o campo certo, na etapa certa. O CNPJ fica na etapa 1.
+      if (err?.response?.status === 409 && mensagemDoServidor) {
+        const m = mensagemDoServidor.toLowerCase();
+        if (m.includes('cnpj')) return apontarErro('cnpj', 1, mensagemDoServidor);
+        if (m.includes('cpf')) return apontarErro('cpf', 2, mensagemDoServidor);
+        if (m.includes('e-mail') || m.includes('email')) return apontarErro('email', 2, mensagemDoServidor);
+      }
+
+      // Validação do servidor (422) vem com o detalhe em errors[]; senão usa o motivo geral
+      const primeiroDetalhe = Array.isArray(dados?.errors) ? dados.errors[0]?.message : undefined;
       setErro(
+        primeiroDetalhe ??
         mensagemDoServidor ??
         'Não foi possível criar sua conta. Tente novamente mais tarde. Se o problema persistir, entre em contato com nossa equipe.'
       );
@@ -698,8 +739,8 @@ const RegisterPage: React.FC = () => {
               </Field>
 
               <div className="register-page__actions">
-                <button type="submit" className="register-page__submit">
-                  Próximo <HiOutlineArrowRight />
+                <button type="submit" className="register-page__submit" disabled={carregando}>
+                  {carregando ? 'Verificando…' : <>Próximo <HiOutlineArrowRight /></>}
                 </button>
                 <p className="register-page__redirect">
                   Já possui conta?{' '}

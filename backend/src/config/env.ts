@@ -15,6 +15,9 @@ const envSchema = z.object({
   MAIL_FROM: z.string().default('Menupoint <noreply@menupoint.com>'),
   // Opcional: para onde vão as respostas dos usuários (ex.: suporte@seudominio.com)
   MAIL_REPLY_TO: z.string().optional(),
+  // Para onde vai o alerta do "Falar com especialista" (plano Enterprise) do site.
+  // Sem ele, usa o MAIL_REPLY_TO.
+  CONTATO_EMAIL: z.string().email('CONTATO_EMAIL deve ser um e-mail válido').optional(),
 
   // Código de verificação de e-mail
   CODIGO_EXPIRA_MINUTOS: z.coerce.number().int().min(1).default(15),

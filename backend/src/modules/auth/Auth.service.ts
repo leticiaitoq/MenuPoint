@@ -16,11 +16,14 @@ import {
   ReenviarCodigoDTO,
   AtualizarDadosSensiveisDTO,
   VerificarSenhaDTO,
+  SolicitarAlteracaoEmailDTO,
+  ConfirmarAlteracaoEmailDTO,
 } from './Auth.schema'
 import {
   templateRecuperacaoSenha,
   templateSenhaRedefinida,
   templateConfirmacaoEmail,
+  templateEmailAlterado,
 } from '@shared/emails/templates'
 
 // Validade do código (configurável: CODIGO_EXPIRA_MINUTOS no .env)
@@ -129,6 +132,10 @@ export class AuthService {
       throw new AppError('Este CNPJ já está cadastrado', 409)
     }
 
+    if (await this.repository.cpfEmUso(data.cpf)) {
+      throw new AppError('Este CPF já está cadastrado', 409)
+    }
+
     const senha_hash = await bcrypt.hash(data.senha, 10)
 
     // Cria Empresa + Estabelecimento + Usuário numa única transação:
@@ -204,6 +211,11 @@ export class AuthService {
     }
   }
 
+  // ── VERIFICAR CNPJ (etapa 1 do cadastro: avisa cedo que ele já existe) ──────
+  async cnpjDisponivel(cnpj: string): Promise<boolean> {
+    return !(await this.repository.cnpjEmUso(cnpj))
+  }
+
   // ── VERIFICAR SENHA (só confere; não altera nada) ───────────────────────────
   async verificarSenha(usuario_id: string, data: VerificarSenhaDTO): Promise<void> {
     const atual = await prisma.usuario.findUnique({ where: { id: usuario_id } })
@@ -222,7 +234,7 @@ export class AuthService {
     usuario_id: string,
     data: AtualizarDadosSensiveisDTO,
     jwtSign: (payload: JWTPayload) => string
-  ): Promise<{ token: string; email_alterado: boolean }> {
+  ): Promise<{ token: string }> {
     const atual = await prisma.usuario.findUnique({ where: { id: usuario_id } })
 
     if (!atual || !atual.ativo) {
@@ -240,37 +252,11 @@ export class AuthService {
       throw new AppError('Apenas o administrador pode alterar os dados da empresa', 403)
     }
 
-    const emailAlterado = data.email !== undefined && data.email !== atual.email
-    if (emailAlterado && (await this.repository.findByEmail(data.email as string))) {
-      throw new AppError('Este e-mail já está cadastrado', 409)
-    }
-
     const usuario = await this.repository.atualizarDadosSensiveis(atual.id, atual.empresa_id, {
       nome_responsavel: data.nome_responsavel,
-      email: emailAlterado ? data.email : undefined,
       razao_social: data.razao_social,
       nome_empresa: data.nome_empresa,
     })
-
-    if (emailAlterado) {
-      // Código de confirmação para o e-mail novo, em segundo plano (mesmo padrão do cadastro)
-      void (async () => {
-        try {
-          const codigo = await this.repository.criarTokenConfirmacaoEmail(
-            usuario.id,
-            EXPIRACAO_CODIGO_MINUTOS
-          )
-          await transporter.sendMail({
-            from: env.MAIL_FROM,
-            to: usuario.email,
-            subject: 'Confirme seu novo e-mail no Menupoint',
-            html: templateConfirmacaoEmail(usuario.nome, codigo, EXPIRACAO_CODIGO_MINUTOS),
-          })
-        } catch (err) {
-          console.error('Falha ao enviar e-mail de confirmação do novo e-mail:', err)
-        }
-      })()
-    }
 
     const token = jwtSign({
       sub: usuario.id,
@@ -282,7 +268,120 @@ export class AuthService {
       empresa_id: usuario.empresa_id,
     })
 
-    return { token, email_alterado: emailAlterado }
+    return { token }
+  }
+
+  // ── ALTERAR E-MAIL, passo 1: pede o código ─────────────────────────────────
+  // Exige a senha. O e-mail atual continua valendo até o código ser confirmado, então
+  // um e-mail digitado errado não trava a conta. Erros de senha são 403 (não 401) de
+  // propósito: o front trata 401 como "sessão expirada" e deslogaria o usuário.
+  async solicitarAlteracaoEmail(
+    usuario_id: string,
+    data: SolicitarAlteracaoEmailDTO
+  ): Promise<{ email: string }> {
+    const atual = await prisma.usuario.findUnique({ where: { id: usuario_id } })
+
+    if (!atual || !atual.ativo) {
+      throw new AppError('Usuário não encontrado', 404)
+    }
+
+    const senhaCorreta = await bcrypt.compare(data.senha, atual.senha_hash)
+    if (!senhaCorreta) {
+      throw new AppError('Senha incorreta', 403)
+    }
+
+    if (data.novo_email === atual.email) {
+      throw new AppError('Este já é o seu e-mail atual', 400)
+    }
+
+    if (await this.repository.findByEmail(data.novo_email)) {
+      throw new AppError('Este e-mail já está cadastrado', 409)
+    }
+
+    const codigo = await this.repository.criarTokenAlteracaoEmail(
+      usuario_id,
+      data.novo_email,
+      EXPIRACAO_CODIGO_MINUTOS
+    )
+
+    // Aguarda o envio: se falhar, o usuário precisa saber (senão espera um código que não vem)
+    try {
+      await transporter.sendMail({
+        from: env.MAIL_FROM,
+        to: data.novo_email,
+        subject: 'Confirme seu novo e-mail no Menupoint',
+        html: templateConfirmacaoEmail(atual.nome, codigo, EXPIRACAO_CODIGO_MINUTOS),
+      })
+    } catch (err) {
+      console.error('Falha ao enviar o código de troca de e-mail:', err)
+      throw new AppError('Não foi possível enviar o e-mail agora. Tente novamente em instantes.', 502)
+    }
+
+    return { email: data.novo_email }
+  }
+
+  // ── ALTERAR E-MAIL, passo 2: confirma o código ─────────────────────────────
+  // Troca o e-mail, encerra as outras sessões e devolve uma sessão nova (o JWT leva o e-mail).
+  async confirmarAlteracaoEmail(
+    usuario_id: string,
+    data: ConfirmarAlteracaoEmailDTO,
+    jwtSign: (payload: JWTPayload) => string
+  ): Promise<LoginResponseDTO> {
+    const atual = await prisma.usuario.findUnique({ where: { id: usuario_id } })
+
+    if (!atual || !atual.ativo) {
+      throw new AppError('Usuário não encontrado', 404)
+    }
+
+    const registro = await this.repository.findTokenAlteracaoEmail(usuario_id, data.codigo)
+    if (!registro) {
+      throw new AppError('Código inválido ou expirado.', 400)
+    }
+
+    const emailAntigo = atual.email
+    const usuario = await this.repository.aplicarAlteracaoEmail(
+      registro.id,
+      usuario_id,
+      registro.novo_email
+    )
+
+    // Aviso para o e-mail ANTIGO: se não foi o dono quem trocou, ele fica sabendo
+    void transporter
+      .sendMail({
+        from: env.MAIL_FROM,
+        to: emailAntigo,
+        subject: '⚠️ Seu e-mail de acesso foi alterado — Menupoint',
+        html: templateEmailAlterado(usuario.nome, registro.novo_email),
+      })
+      .catch((err: unknown) => console.error('Falha ao avisar o e-mail antigo:', err))
+
+    const payload: JWTPayload = {
+      sub: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      perfil: usuario.perfil,
+      escopo: usuario.escopo,
+      estabelecimento_id: usuario.estabelecimento_id,
+      empresa_id: usuario.empresa_id,
+    }
+
+    const token = jwtSign(payload)
+    const refresh_token = await this.gerarEPersistirRefreshToken(payload, usuario.id)
+
+    return {
+      token,
+      refresh_token,
+      usuario: {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        perfil: usuario.perfil,
+        escopo: usuario.escopo,
+        estabelecimento_id: usuario.estabelecimento_id,
+        empresa_id: usuario.empresa_id,
+        pagamento_pendente: await temPagamentoPendente(usuario.empresa_id),
+      },
+    }
   }
 
   // ── VERIFICAR CÓDIGO (cadastro ou recuperação) ─────────────────────────────

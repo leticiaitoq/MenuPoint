@@ -12,6 +12,9 @@ import {
   reenviarCodigoSchema,
   atualizarDadosSensiveisSchema,
   verificarSenhaSchema,
+  verificarCnpjSchema,
+  solicitarAlteracaoEmailSchema,
+  confirmarAlteracaoEmailSchema,
   JWTPayload,
 } from './Auth.schema'
 
@@ -72,6 +75,30 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         const data = registrarSchema.parse(request.body)
         const result = await service.registrar(data, (p) => app.jwt.sign(p))
         return reply.status(201).send(result)
+      }
+    )
+
+    // POST /auth/verificar-cnpj
+    // Chamada ao avançar da etapa 1 do cadastro: o CNPJ já existe? Responde só sim/não.
+    // Limite: 20 por minuto por IP (evita usar a rota para varrer CNPJs cadastrados).
+    pub.post(
+      '/verificar-cnpj',
+      {
+        config: {
+          rateLimit: {
+            max: 20,
+            timeWindow: '1 minute',
+            errorResponseBuilder: () => ({
+              statusCode: 429,
+              status: 'error',
+              message: 'Muitas consultas. Aguarde um instante e tente novamente.',
+            }),
+          },
+        },
+      },
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { cnpj } = verificarCnpjSchema.parse(request.body)
+        return reply.status(200).send({ disponivel: await service.cnpjDisponivel(cnpj) })
       }
     )
 
@@ -308,8 +335,63 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       }
     )
 
+    // POST /auth/me/email/solicitar
+    // Passo 1 da troca de e-mail: exige a senha e manda um código para o e-mail NOVO.
+    // O e-mail atual continua valendo até o código ser confirmado.
+    priv.post(
+      '/me/email/solicitar',
+      {
+        config: {
+          rateLimit: {
+            max: 5,
+            timeWindow: '15 minutes',
+            errorResponseBuilder: () => ({
+              statusCode: 429,
+              status: 'error',
+              message: 'Muitas tentativas de alterar o e-mail. Aguarde alguns minutos.',
+            }),
+          },
+        },
+      },
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { sub } = request.user as JWTPayload
+        const data = solicitarAlteracaoEmailSchema.parse(request.body)
+        const resultado = await service.solicitarAlteracaoEmail(sub, data)
+        return reply.status(200).send({
+          message: 'Enviamos um código de confirmação para o novo e-mail.',
+          ...resultado,
+        })
+      }
+    )
+
+    // POST /auth/me/email/confirmar
+    // Passo 2: confirma o código, troca o e-mail e devolve uma sessão nova.
+    priv.post(
+      '/me/email/confirmar',
+      {
+        config: {
+          rateLimit: {
+            max: 8,
+            timeWindow: '15 minutes',
+            errorResponseBuilder: () => ({
+              statusCode: 429,
+              status: 'error',
+              message: 'Muitas tentativas de confirmação. Aguarde alguns minutos.',
+            }),
+          },
+        },
+      },
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { sub } = request.user as JWTPayload
+        const data = confirmarAlteracaoEmailSchema.parse(request.body)
+        const sessao = await service.confirmarAlteracaoEmail(sub, data, (p) => app.jwt.sign(p))
+        return reply.status(200).send(sessao)
+      }
+    )
+
     // PUT /auth/me/dados
-    // Altera nome do responsável, e-mail de acesso, razão social e nome da empresa.
+    // Altera nome do responsável, razão social e nome da empresa (o e-mail tem fluxo próprio:
+    // /me/email/solicitar e /me/email/confirmar).
     // Exige a senha atual. Limite: 5 tentativas a cada 15 minutos (evita adivinhar a senha).
     priv.put(
       '/me/dados',

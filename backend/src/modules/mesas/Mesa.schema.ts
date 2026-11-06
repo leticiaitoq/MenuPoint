@@ -83,3 +83,46 @@ export interface MesaResponseDTO {
   ativo: boolean
   criado_em: Date
 }
+
+// ── Pedido feito pelo cliente da mesa (rota pública, sem login) ──────────────
+// Só aceita o essencial: o preço NUNCA vem do cliente (o service usa o do banco)
+// e adicionais não são aceitos aqui (o service confiaria no preço enviado).
+export const PEDIDO_PUBLICO_MAX_ITENS = 30
+export const PEDIDO_PUBLICO_MAX_QUANTIDADE = 20
+
+export const criarPedidoPublicoMesaSchema = z.object({
+  cliente_nome: z
+    .string({ error: 'Informe o nome' })
+    .trim()
+    .min(1, 'Informe o nome')
+    .max(100, 'Nome deve ter no máximo 100 caracteres'),
+  itens: z
+    .array(
+      z.object({
+        produto_id: z.string().uuid('Produto inválido'),
+        quantidade: z
+          .number()
+          .int()
+          .min(1, 'Quantidade deve ser ao menos 1')
+          .max(PEDIDO_PUBLICO_MAX_QUANTIDADE, `Quantidade máxima por item: ${PEDIDO_PUBLICO_MAX_QUANTIDADE}`),
+        observacoes: z.string().trim().max(500, 'Observação muito longa').optional(),
+        // Item para viagem (a cozinha vê "PARA LEVAR" no começo da observação)
+        para_levar: z.boolean().optional(),
+        // Quantidade escolhida de cada ingrediente/adicional do produto. Só ids e quantidades:
+        // nomes e preços são sempre lidos do banco.
+        ingredientes: z
+          .array(
+            z.object({
+              adicional_id: z.string().uuid('Ingrediente inválido'),
+              quantidade: z.number().int().min(0).max(20, 'Quantidade máxima por ingrediente: 20'),
+            })
+          )
+          .max(60, 'Ingredientes demais no mesmo item')
+          .optional(),
+      })
+    )
+    .min(1, 'O pedido deve ter ao menos 1 item')
+    .max(PEDIDO_PUBLICO_MAX_ITENS, `Máximo de ${PEDIDO_PUBLICO_MAX_ITENS} itens por pedido`),
+})
+
+export type CriarPedidoPublicoMesaDTO = z.infer<typeof criarPedidoPublicoMesaSchema>

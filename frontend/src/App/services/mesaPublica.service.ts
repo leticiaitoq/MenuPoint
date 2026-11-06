@@ -1,18 +1,11 @@
 import axios from 'axios'
 
-/**
- * Cliente HTTP SEM token, de propósito. O link/QR da mesa é público e quem abre pode ter,
- * no mesmo navegador, a sessão do restaurante OU de um cliente. O backend recusa (403)
- * token de cliente fora das rotas liberadas, então esta consulta nunca envia Authorization:
- * funciona igual para convidado, cliente logado e dono do restaurante.
- */
 const apiPublica = axios.create({
   baseURL: `${process.env.REACT_APP_API_URL}/api/v1`,
   timeout: 20000,
   headers: { 'Content-Type': 'application/json' },
 })
 
-/** Mesa + restaurante devolvidos pelo GET /mesas/qrcode/:token (rota pública, sem login) */
 export interface MesaPublica {
   id: string
   numero: number
@@ -28,10 +21,58 @@ export interface MesaPublica {
   }
 }
 
+export interface PedidoMesaPublico {
+  id: string
+  numero_pedido: number
+  status: 'RECEBIDO' | 'PREPARO' | 'PRONTO' | 'ENTREGUE'
+  criado_em: string
+  total: number | string
+  itens: {
+    id: string
+    quantidade: number
+    preco_unitario: number | string
+    preco_total: number | string
+    itens_adicionais?: { preco_extra: number | string }[]
+    produto: { nome: string; imagem_url: string | null }
+  }[]
+}
+
+export interface HistoricoMesaPublico {
+  mesa: { id: string; numero: number; status?: string }
+  pedidos: PedidoMesaPublico[]
+}
+
 const MesaPublicaService = {
-  /** Resolve o token do QR Code na mesa (e no restaurante) a que ele pertence */
+
   async buscarPorToken(token: string): Promise<MesaPublica> {
     const r = await apiPublica.get<MesaPublica>(`mesas/qrcode/${encodeURIComponent(token)}`)
+    return r.data
+  },
+
+  /** Envia o pedido da mesa para a cozinha (rota pública, sem login). O preço é calculado pelo servidor. */
+  async criarPedido(
+    token: string,
+    dados: {
+      cliente_nome: string
+      itens: {
+        produto_id: string
+        quantidade: number
+        observacoes?: string
+        para_levar?: boolean
+        ingredientes?: { adicional_id: string; quantidade: number }[]
+      }[]
+    }
+  ): Promise<{ id: string; numero_pedido: number; status: string; total: number | string }> {
+    const r = await apiPublica.post<{ pedido: { id: string; numero_pedido: number; status: string; total: number | string } }>(
+      `mesas/qrcode/${encodeURIComponent(token)}/pedidos`,
+      dados
+    )
+    return r.data.pedido
+  },
+
+  /** Pedidos recentes da mesa (tela "Meus Pedidos" do cliente local). Rota pública, sem login. */
+  async listarPedidos(token: string): Promise<HistoricoMesaPublico> {
+    const r = await apiPublica.get<HistoricoMesaPublico>(`mesas/qrcode/${encodeURIComponent(token)}/pedidos`)
     return r.data
   },
 }

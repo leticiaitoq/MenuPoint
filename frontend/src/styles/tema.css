@@ -117,3 +117,30 @@ optgroup {
 [data-theme="dark"] .bg-arte--opaco::before {
   filter: invert(1) hue-rotate(180deg) brightness(0.85);
 }
+
+.login-page__input:-webkit-autofill,
+.login-page__input:-webkit-autofill:hover,
+.login-page__input:-webkit-autofill:focus,
+.login-page__input:-webkit-autofill:active,
+.login-cliente__input:-webkit-autofill,
+.login-cliente__input:-webkit-autofill:hover,
+.login-cliente__input:-webkit-autofill:focus,
+.login-cliente__input:-webkit-autofill:active,
+.recover-pass__input:-webkit-autofill,
+.recover-pass__input:-webkit-autofill:hover,
+.recover-pass__input:-webkit-autofill:focus,
+.recover-pass__input:-webkit-autofill:active,
+.recover-pass-cliente__input:-webkit-autofill,
+.recover-pass-cliente__input:-webkit-autofill:hover,
+.recover-pass-cliente__input:-webkit-autofill:focus,
+.recover-pass-cliente__input:-webkit-autofill:active,
+.register-cliente__input:-webkit-autofill,
+.register-cliente__input:-webkit-autofill:hover,
+.register-cliente__input:-webkit-autofill:focus,
+.register-cliente__input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #fafafa inset;
+  box-shadow: 0 0 0 1000px #fafafa inset;
+  -webkit-text-fill-color: #1a1a1a;
+  caret-color: #1a1a1a;
+  transition: background-color 9999s ease-in-out 0s;
+}
