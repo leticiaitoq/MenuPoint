@@ -17,7 +17,7 @@ const CLIENTE_MOCK: Cliente = {
   nome:     '',
   telefone: '',
   email:    'email.tal@email.com',
-  foto:     '/images/avatar-cliente.png',
+  foto:     '/icons/customer-avatar.png',
 };
 
 const formatarTelefone = (valor: string): string => {

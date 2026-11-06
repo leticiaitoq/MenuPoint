@@ -16,6 +16,7 @@ import { TbArrowsLeftRight } from 'react-icons/tb';
 import { MdOutlineReceiptLong } from 'react-icons/md';
 import { BsCashStack } from 'react-icons/bs';
 import RestaurantLayout from '../../../../../shared/components/layout/Restaurantelayout';
+import ContadorCaracteres from '../../../../../shared/components/ContadorCaracteres/ContadorCaracteres';
 import './Despesas.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────
@@ -575,9 +576,11 @@ const Despesas: React.FC = () => {
                     type="text"
                     required
                     placeholder="Ex.: Compra de carnes"
+                    maxLength={30}
                     value={formulario.descricao}
                     onChange={(e) => atualizarCampoFormulario('descricao', e.target.value)}
                   />
+                  <ContadorCaracteres valor={formulario.descricao} max={30} />
                 </label>
 
                 <div className="despesas__form-linha">
@@ -611,9 +614,11 @@ const Despesas: React.FC = () => {
                   <input
                     type="text"
                     placeholder="Ex.: Frigorífico Bom Corte"
+                    maxLength={30}
                     value={formulario.fornecedor}
                     onChange={(e) => atualizarCampoFormulario('fornecedor', e.target.value)}
                   />
+                  <ContadorCaracteres valor={formulario.fornecedor} max={30} />
                 </label>
 
                 <div className="despesas__form-linha">

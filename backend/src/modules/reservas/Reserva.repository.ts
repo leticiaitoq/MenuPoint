@@ -106,6 +106,35 @@ export class ReservaRepository {
     })
   }
 
+  // ── MESAS LIVRES NUM HORÁRIO (usado pelo cliente ao reservar)
+  // Mesa livre = ativa, não inativa e SEM reserva PENDENTE/CONFIRMADA que se sobreponha ao intervalo.
+  async mesasDisponiveis(
+    estabelecimento_id: string,
+    data_reserva: Date,
+    hora_inicio: Date,
+    hora_fim: Date,
+    pessoas?: number
+  ) {
+    return prisma.mesa.findMany({
+      where: {
+        estabelecimento_id,
+        ativo: true,
+        status: { not: 'INATIVA' },
+        ...(pessoas && { capacidade: { gte: pessoas } }),
+        reservas: {
+          none: {
+            data_reserva,
+            status: { in: ['PENDENTE', 'CONFIRMADA'] },
+            hora_inicio: { lt: hora_fim },
+            hora_fim: { gt: hora_inicio },
+          },
+        },
+      },
+      select: { id: true, numero: true, capacidade: true, localizacao: true },
+      orderBy: { numero: 'asc' },
+    })
+  }
+
   // ── ATUALIZAR
 
   async update(

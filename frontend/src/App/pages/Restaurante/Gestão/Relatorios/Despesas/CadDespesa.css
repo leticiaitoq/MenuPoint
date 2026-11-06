@@ -1,22 +1,12 @@
 /* ══════════════════════════════════════════════════════
    Cadastro de Despesa (wizard 2 passos) — BEM CSS
-   Paleta consistente: vinho (#8B1A1A), âmbar, verde, azul
+   As cores vêm do tema global (tema.css). Aqui ficam só a borda do
+   card "Pronto!" (sem token) e o que não é cor.
    ══════════════════════════════════════════════════════ */
 
 .cadd {
-  --cor-vinho:      #8B1A1A;
-  --cor-vinho-soft: #fff0f0;
-  --cor-amber:      #d97706;
-  --cor-amber-soft: #fef3c7;
-  --cor-verde:      #16a34a;
-  --cor-verde-soft: #dcfce7;
-  --cor-azul:       #2563eb;
-  --cor-azul-soft:  #dbeafe;
-  --cor-texto:      #1f2937;
-  --cor-texto-fraco:#6b7280;
-  --cor-borda:      #e5e7eb;
-  --cor-fundo-card: #ffffff;
-  --sombra:         0 1px 4px rgba(0,0,0,0.08);
+  --cadd-pronto-borda: #bbf0cf;
+  --sombra:         0 1px 4px var(--shadow-color);
   --raio:           14px;
   --raio-sm:        8px;
 
@@ -25,17 +15,21 @@
   gap: 18px;
 }
 
+[data-theme="dark"] .cadd {
+  --cadd-pronto-borda: #2f5a40;
+}
+
 /* ── Cabeçalho ── */
 .cadd__titulo {
   font-size: 26px;
   font-weight: 700;
-  color: var(--cor-texto);
+  color: var(--text);
   margin: 0 0 4px;
 }
 
 .cadd__subtitulo {
   font-size: 14px;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -43,7 +37,7 @@
 .cadd__stepper {
   display: flex;
   align-items: center;
-  background: var(--cor-fundo-card);
+  background: var(--bg-surface);
   border-radius: var(--raio);
   box-shadow: var(--sombra);
   padding: 18px 24px;
@@ -60,8 +54,8 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #d1d5db;
-  color: #ffffff;
+  background: var(--border-strong);
+  color: var(--on-brand);
   font-size: 13px;
   font-weight: 700;
   display: flex;
@@ -73,26 +67,26 @@
 .cadd__step-label {
   font-size: 14px;
   font-weight: 600;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
 .cadd__step--ativo .cadd__step-numero {
-  background: var(--cor-vinho);
+  background: var(--brand);
 }
 
 .cadd__step--ativo .cadd__step-label {
-  color: var(--cor-texto);
+  color: var(--text);
 }
 
 .cadd__step--concluido .cadd__step-numero {
-  background: #9ca3af;
+  background: var(--text-faint);
 }
 
 .cadd__step-linha {
   flex: 1;
   height: 3px;
-  background: var(--cor-borda);
+  background: var(--border);
   margin: 0 16px;
   border-radius: 2px;
   overflow: hidden;
@@ -101,7 +95,7 @@
 .cadd__step-linha-preenchida {
   display: block;
   height: 100%;
-  background: var(--cor-vinho);
+  background: var(--brand);
   transition: width 0.3s ease;
 }
 
@@ -114,7 +108,7 @@
 }
 
 .cadd__card {
-  background: var(--cor-fundo-card);
+  background: var(--bg-surface);
   border-radius: var(--raio);
   box-shadow: var(--sombra);
   padding: 22px 24px;
@@ -130,7 +124,7 @@
 .cadd__card-titulo h3 {
   font-size: 15px;
   font-weight: 700;
-  color: var(--cor-vinho);
+  color: var(--accent);
   margin: 0;
 }
 
@@ -138,8 +132,8 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: var(--cor-vinho-soft);
-  color: var(--cor-vinho);
+  background: var(--brand-soft);
+  color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -165,7 +159,7 @@
   flex-direction: column;
   gap: 6px;
   font-size: 13px;
-  color: var(--cor-texto);
+  color: var(--text);
 }
 
 .cadd__campo-label {
@@ -173,21 +167,21 @@
 }
 
 .cadd__obrigatorio {
-  color: var(--cor-vinho);
+  color: var(--danger);
 }
 
 .cadd__campo-input-wrap {
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1.5px solid var(--cor-borda);
+  border: 1.5px solid var(--border);
   border-radius: var(--raio-sm);
   padding: 9px 12px;
   transition: border-color 0.2s;
 }
 
 .cadd__campo-input-wrap:focus-within {
-  border-color: var(--cor-vinho);
+  border-color: var(--accent);
 }
 
 .cadd__campo-input-wrap--textarea {
@@ -196,7 +190,7 @@
 
 .cadd__campo-icone {
   font-size: 17px;
-  color: #9ca3af;
+  color: var(--text-faint);
   flex-shrink: 0;
 }
 
@@ -211,13 +205,18 @@
   outline: none;
   background: transparent;
   font-size: 14px;
-  color: var(--cor-texto);
+  color: var(--text);
   width: 100%;
   font-family: inherit;
 }
 
 .cadd__campo-input-wrap select {
   cursor: pointer;
+}
+
+.cadd__campo-input-wrap input::placeholder,
+.cadd__campo-input-wrap textarea::placeholder {
+  color: var(--text-faint);
 }
 
 .cadd__campo-input-wrap textarea {
@@ -232,11 +231,11 @@
 .cadd__contador {
   align-self: flex-end;
   font-size: 11px;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
 }
 
 .cadd__erro {
-  color: var(--cor-vinho);
+  color: var(--danger);
   font-size: 13px;
   font-weight: 600;
   margin: 0;
@@ -264,15 +263,15 @@
   gap: 10px;
   font-size: 13px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border);
 }
 
 .cadd__resumo-lista li span {
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
 }
 
 .cadd__resumo-lista li strong {
-  color: var(--cor-texto);
+  color: var(--text);
   font-weight: 600;
   text-align: right;
   max-width: 60%;
@@ -284,11 +283,11 @@
 .cadd__aviso {
   display: flex;
   gap: 10px;
-  background: var(--cor-vinho-soft);
+  background: var(--brand-soft);
   border-radius: var(--raio-sm);
   padding: 12px 14px;
   font-size: 12.5px;
-  color: var(--cor-vinho);
+  color: var(--accent);
 }
 
 .cadd__aviso svg {
@@ -321,7 +320,7 @@
   align-items: center;
   gap: 10px;
   font-size: 13px;
-  color: var(--cor-texto);
+  color: var(--text);
   font-weight: 500;
 }
 
@@ -342,10 +341,10 @@
   gap: 6px;
   width: 100%;
   padding: 8px 0;
-  border: 1.5px dashed var(--cor-borda);
+  border: 1.5px dashed var(--border);
   border-radius: var(--raio-sm);
   background: transparent;
-  color: var(--cor-vinho);
+  color: var(--accent);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -353,7 +352,7 @@
 }
 
 .cadd__btn-nova-categoria:hover {
-  background: var(--cor-vinho-soft);
+  background: var(--brand-soft);
 }
 
 .cadd__nova-categoria {
@@ -363,23 +362,25 @@
 
 .cadd__nova-categoria input {
   flex: 1;
-  border: 1.5px solid var(--cor-borda);
+  border: 1.5px solid var(--border);
   border-radius: var(--raio-sm);
   padding: 7px 10px;
   font-size: 13px;
   outline: none;
+  background: var(--bg-surface-alt);
+  color: var(--text);
 }
 
 .cadd__nova-categoria input:focus {
-  border-color: var(--cor-vinho);
+  border-color: var(--accent);
 }
 
 .cadd__nova-categoria button {
   width: 32px;
   border: none;
   border-radius: var(--raio-sm);
-  background: var(--cor-verde);
-  color: #fff;
+  background: var(--success);
+  color: var(--on-status);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -402,8 +403,8 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: #f9fafb;
-  color: var(--cor-texto-fraco);
+  background: var(--bg-surface-alt);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -414,7 +415,7 @@
 .cadd__revisao-label {
   display: block;
   font-size: 12px;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
   margin-bottom: 2px;
 }
 
@@ -422,7 +423,7 @@
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: var(--cor-texto);
+  color: var(--text);
   word-break: break-word;
 }
 
@@ -434,13 +435,13 @@
 .cadd__total-valor {
   font-size: 30px;
   font-weight: 800;
-  color: var(--cor-vinho);
+  color: var(--accent);
   margin: 0;
 }
 
 .cadd__total-label {
   font-size: 13px;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
   margin: 4px 0 0;
 }
 
@@ -455,7 +456,7 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 6px solid var(--cor-vinho);
+  border: 6px solid var(--accent);
   flex-shrink: 0;
 }
 
@@ -463,13 +464,13 @@
   display: block;
   font-size: 14px;
   font-weight: 700;
-  color: var(--cor-texto);
+  color: var(--text);
 }
 
 .cadd__categoria-resumo-qtd {
   display: block;
   font-size: 12px;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
   margin: 2px 0;
 }
 
@@ -477,7 +478,7 @@
   display: block;
   font-size: 14px;
   font-weight: 700;
-  color: var(--cor-vinho);
+  color: var(--accent);
 }
 
 /* Pronto! */
@@ -485,26 +486,26 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background: var(--cor-verde-soft);
-  border: 1.5px solid #bbf0cf;
+  background: var(--success-soft);
+  border: 1.5px solid var(--cadd-pronto-borda);
 }
 
 .cadd__pronto-icone {
   font-size: 26px;
-  color: var(--cor-verde);
+  color: var(--success);
   flex-shrink: 0;
 }
 
 .cadd__pronto-titulo {
   font-size: 14px;
   font-weight: 700;
-  color: #166534;
+  color: var(--success-text);
   margin: 0 0 2px;
 }
 
 .cadd__pronto-texto {
   font-size: 13px;
-  color: #166534;
+  color: var(--success-text);
   margin: 0;
   line-height: 1.4;
 }
@@ -530,28 +531,28 @@
 }
 
 .cadd__btn-secundario {
-  background: #f3f4f6;
-  color: var(--cor-texto);
+  background: var(--bg-surface-alt);
+  color: var(--text);
 }
 
 .cadd__btn-secundario:hover {
-  background: #e5e7eb;
+  background: var(--border);
 }
 
 .cadd__btn-primario {
-  background: var(--cor-vinho);
-  color: #ffffff;
+  background: var(--brand);
+  color: var(--on-brand);
 }
 
 .cadd__btn-primario:hover {
-  background: #6f1414;
+  background: var(--brand-hover);
 }
 
 /* ── Popup de sucesso ── */
 .cadd__popup-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(17, 17, 17, 0.5);
+  background: var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -560,7 +561,7 @@
 }
 
 .cadd__popup {
-  background: #ffffff;
+  background: var(--bg-surface);
   border-radius: var(--raio);
   padding: 32px 36px;
   display: flex;
@@ -569,24 +570,24 @@
   gap: 10px;
   text-align: center;
   max-width: 380px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25); /* sombra preta funciona nos dois temas */
 }
 
 .cadd__popup-icone {
   font-size: 46px;
-  color: var(--cor-verde);
+  color: var(--success);
 }
 
 .cadd__popup h3 {
   font-size: 18px;
   font-weight: 700;
-  color: var(--cor-texto);
+  color: var(--text);
   margin: 0;
 }
 
 .cadd__popup p {
   font-size: 14px;
-  color: var(--cor-texto-fraco);
+  color: var(--text-muted);
   margin: 0 0 10px;
   line-height: 1.5;
 }

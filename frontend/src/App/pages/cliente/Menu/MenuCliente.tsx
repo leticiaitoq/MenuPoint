@@ -4,6 +4,7 @@ import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import Carrinho from '../../../shared/components/Carrinho/Carrinho';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
 import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
+import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/ingredientes';
 import RestaurantePublicoService from '../../../services/restaurantePublico.service';
 import './MenuCliente.css';
 
@@ -22,6 +23,7 @@ interface Produto {
   preco: number;
   imagem: string;
   destaque: boolean;
+  ingredientes: IngredienteProduto[];
   ordem: number;
 }
 
@@ -89,6 +91,7 @@ const MenuCliente: React.FC = () => {
                 .filter((p) => p.disponivel)
                 .map((p) => ({
                   destaque: !!p.destaque,
+                  ingredientes: extrairIngredientes(p.grupos_adicionais),
                   ordem: p.ordem ?? 0,
                   id: p.id,
                   categoriaId: c.id,
@@ -155,7 +158,10 @@ const MenuCliente: React.FC = () => {
       cartCount={totalCarrinho}
       onCartClick={() => setCarrinhoAberto(true)}
     >
-      <div className="menu" style={{ backgroundImage: 'url(/images/Fundo-menu.png)' }}>
+      <div
+  className="menu bg-arte bg-arte--opaco"
+  style={{ '--bg-arte': 'url(/images/Fundo-menu.png)' } as React.CSSProperties}
+>
 
         {/* Busca */}
         <div className="menu__busca-wrap">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
 import AuthCard from './AuthCard';
 import AuthService from '../../services/auth.service';
+import { mensagemDeErro } from '../../services/cliente.service';
 import './RecoverPass.css';
 
 const RecoverPass: React.FC = () => {
@@ -18,10 +19,11 @@ const RecoverPass: React.FC = () => {
     setCarregando(true);
 
     try {
-      await AuthService.esqueciSenha(email);
-      navigate('/verify-code', { state: { email, mode: 'recover' } });
+      const emailLimpo = email.trim().toLowerCase();
+      await AuthService.esqueciSenha(emailLimpo);
+      navigate('/verify-code', { state: { email: emailLimpo, mode: 'recover' } });
     } catch (err: any) {
-      setErro(err?.response?.data?.message ?? 'Erro ao enviar o e-mail. Tente novamente.');
+      setErro(mensagemDeErro(err, 'Erro ao enviar o e-mail. Tente novamente.'));
     } finally {
       setCarregando(false);
     }
@@ -65,6 +67,8 @@ const RecoverPass: React.FC = () => {
                   className="recover-pass__input recover-pass__input--with-icon"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
                 />
               </div>
             </div>

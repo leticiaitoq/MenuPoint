@@ -2,7 +2,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #ececec;
+  background-color: var(--bg-page);
 }
 
 .customer-layout__body {
@@ -23,7 +23,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: var(--on-brand);
 }
 
 .cart-icon__svg {
@@ -34,8 +34,8 @@
   position: absolute;
   top: 0;
   right: 0;
-  background-color: #c0392b;
-  color: #ffffff;
+  background-color: var(--accent);
+  color: var(--on-brand);
   font-size: 11px;
   font-weight: 700;
   width: 18px;
@@ -75,3 +75,23 @@
     padding-bottom: 60px;
   }
 }
+
+/* ── Botão "Voltar" no topo das telas internas ── */
+.customer-layout__voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 8px 16px 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--bg-surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.customer-layout__voltar:hover { border-color: var(--brand); color: var(--brand); }
+.customer-layout__voltar:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+

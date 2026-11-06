@@ -105,6 +105,7 @@ model Usuario {
   pagamentos_mesa_registrados PagamentoMesa[] @relation("RegistradoPor")
   tokens_recuperacao TokenRecuperacaoSenha[]
   tokens_confirmacao_email TokenConfirmacaoEmail[]
+  tokens_alteracao_email TokenAlteracaoEmailUsuario[]
   refresh_tokens     RefreshToken[]
 
   @@map("usuarios")
@@ -120,6 +121,21 @@ model TokenConfirmacaoEmail {
   criado_em   DateTime @default(now()) @db.Timestamptz(0)
 
   @@map("tokens_confirmacao_email")
+}
+
+// Troca de e-mail do usuário logado: o e-mail novo fica guardado junto do código de
+// 6 dígitos até ser confirmado. O e-mail atual só muda quando o código é confirmado.
+model TokenAlteracaoEmailUsuario {
+  id         String   @id @default(uuid()) @db.Uuid
+  usuario_id String   @db.Uuid
+  usuario    Usuario  @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  novo_email String   @db.VarChar(150)
+  token      String   @unique @db.VarChar(64)
+  expira_em  DateTime @db.Timestamptz
+  usado      Boolean  @default(false)
+  criado_em  DateTime @default(now()) @db.Timestamptz
+
+  @@map("tokens_alteracao_email_usuario")
 }
 
 // ============================================================
@@ -139,10 +155,30 @@ model Categoria {
 
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   produtos        Produto[]
+  ingredientes_padrao IngredienteCategoria[]
 
   @@map("categorias")
 }
 
+// Ingredientes/adicionais padrão da categoria: modelo que o restaurante importa ao cadastrar um produto
+model IngredienteCategoria {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoria_id       String   @db.Uuid
+  nome               String   @db.VarChar(100)
+  descricao          String?  @db.VarChar(255)
+  preco_extra        Decimal  @default(0) @db.Decimal(8, 2)
+  quantidade_inclusa Int      @default(0)
+  quantidade_maxima  Int      @default(1)
+  fixo               Boolean  @default(false)
+  ativo              Boolean  @default(true)
+  ordem              Int      @default(0)
+  criado_em          DateTime @default(now()) @db.Timestamptz
+
+  categoria Categoria @relation(fields: [categoria_id], references: [id], onDelete: Cascade)
+
+  @@index([categoria_id])
+  @@map("ingredientes_categoria")
+}
 model Produto {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   estabelecimento_id String   @db.Uuid
@@ -184,7 +220,6 @@ model GrupoAdicional {
 
   @@map("grupos_adicionais")
 }
-
 model Adicional {
   id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   grupo_id    String  @db.Uuid
@@ -192,12 +227,16 @@ model Adicional {
   preco_extra Decimal @default(0) @db.Decimal(8, 2)
   disponivel  Boolean @default(true)
   ordem       Int     @default(0)
+  quantidade_inclusa Int @default(0)
+  quantidade_maxima  Int @default(1)
+  fixo               Boolean @default(false)
 
   grupo            GrupoAdicional   @relation(fields: [grupo_id], references: [id])
   itens_adicionais ItemAdicional[]
 
   @@map("adicionais")
 }
+
 
 // ============================================================
 // GRUPO 4 — MESAS
@@ -432,6 +471,7 @@ model Cliente {
   email            String?   @unique @db.VarChar(150)
   senha_hash       String?   @db.VarChar(255)
   cpf              String?   @unique @db.VarChar(14)
+  foto_url         String?   @db.VarChar(500)   // foto de perfil (URL pública no Supabase Storage)
   email_verificado Boolean   @default(false)
   ultimo_acesso    DateTime? @db.Timestamptz
   ativo            Boolean   @default(true)

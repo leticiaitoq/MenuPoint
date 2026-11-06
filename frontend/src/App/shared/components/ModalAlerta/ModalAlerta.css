@@ -7,26 +7,44 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay);
 }
 
 .alerta__modal {
-  --alerta-cor: #c0392b;
-  --alerta-fundo: #fdecea;
+  /* Cores da variante "erro" (padrão). As outras variantes só trocam estas 4 variáveis. */
+  --alerta-cor: var(--danger); /* ícone */
+  --alerta-fundo: var(--danger-soft); /* círculo atrás do ícone */
+  --alerta-btn: var(--brand); /* botão principal */
+  --alerta-btn-texto: var(--on-brand); /* texto do botão principal */
   width: 100%;
   max-width: 440px;
   max-height: calc(100vh - 32px);
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--bg-surface);
   border-radius: 16px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25); /* sombra preta funciona nos dois temas */
   overflow: hidden;
 }
 
-.alerta__modal--aviso   { --alerta-cor: #d68910; --alerta-fundo: #fff4e5; }
-.alerta__modal--info    { --alerta-cor: #2e86c1; --alerta-fundo: #eaf4fb; }
-.alerta__modal--sucesso { --alerta-cor: #27ae60; --alerta-fundo: #eafaf1; }
+.alerta__modal--aviso {
+  --alerta-cor: var(--warning);
+  --alerta-fundo: var(--warning-soft);
+  --alerta-btn: var(--warning);
+  --alerta-btn-texto: var(--on-status);
+}
+.alerta__modal--info {
+  --alerta-cor: var(--info);
+  --alerta-fundo: var(--info-soft);
+  --alerta-btn: var(--info);
+  --alerta-btn-texto: var(--on-status);
+}
+.alerta__modal--sucesso {
+  --alerta-cor: var(--success);
+  --alerta-fundo: var(--success-soft);
+  --alerta-btn: var(--success);
+  --alerta-btn-texto: var(--on-status);
+}
 
 .alerta__header {
   display: flex;
@@ -48,14 +66,22 @@
   font-size: 22px;
 }
 
-.alerta__header-texto { flex: 1; min-width: 0; }
-.alerta__titulo { margin: 0; font-size: 17px; font-weight: 700; color: #222; }
+.alerta__header-texto {
+  flex: 1;
+  min-width: 0;
+}
+.alerta__titulo {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
 
 .alerta__mensagem {
   margin-top: 4px;
   font-size: 14px;
   line-height: 1.45;
-  color: #666;
+  color: var(--text-muted);
   overflow-wrap: anywhere;
 }
 
@@ -64,12 +90,14 @@
   background: none;
   border: none;
   font-size: 22px;
-  color: #666;
+  color: var(--text-muted);
   cursor: pointer;
   border-radius: 8px;
   padding: 4px;
 }
-.alerta__fechar:hover { background: #f0f0f0; }
+.alerta__fechar:hover {
+  background: var(--bg-surface-alt);
+}
 
 .alerta__acoes {
   display: flex;
@@ -85,13 +113,28 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s, opacity 0.2s;
+  transition:
+    background-color 0.2s,
+    opacity 0.2s;
 }
 
-.alerta__btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.alerta__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
-.alerta__btn--sec { background: none; color: #555; }
-.alerta__btn--sec:hover:not(:disabled) { background: #f0f0f0; }
+.alerta__btn--sec {
+  background: none;
+  color: var(--text-muted);
+}
+.alerta__btn--sec:hover:not(:disabled) {
+  background: var(--bg-surface-alt);
+}
 
-.alerta__btn--principal { background: var(--alerta-cor); color: #fff; }
-.alerta__btn--principal:hover:not(:disabled) { filter: brightness(0.92); }
+.alerta__btn--principal {
+  background: var(--alerta-btn);
+  color: var(--alerta-btn-texto);
+}
+.alerta__btn--principal:hover:not(:disabled) {
+  filter: brightness(0.92);
+}

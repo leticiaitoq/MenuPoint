@@ -1,4 +1,5 @@
 import React from 'react';
+import ThemeToggle from '../ThemeToggle/ThemeToggle';
 import './Navbar.css';
 
 interface NavbarProps {
@@ -17,6 +18,12 @@ interface NavbarProps {
    * Ícone exibido no lado esquerdo — normalmente o logo do restaurante.
    */
   leftIcon?: React.ReactNode;
+
+  /**
+   * Mostra o botão de alternar tema claro/escuro.
+   * Desligado por padrão: ative por layout, conforme as telas forem migradas.
+   */
+  mostrarTema?: boolean;
 }
 
 /**
@@ -24,7 +31,7 @@ interface NavbarProps {
  * A diferença entre cliente e restaurante é resolvida via props,
  * evitando lógica condicional dentro do componente.
  */
-const Navbar: React.FC<NavbarProps> = ({ subtitle, rightIcon, leftIcon }) => {
+const Navbar: React.FC<NavbarProps> = ({ subtitle, rightIcon, leftIcon, mostrarTema = false }) => {
   return (
     <header className="navbar">
 
@@ -45,6 +52,7 @@ const Navbar: React.FC<NavbarProps> = ({ subtitle, rightIcon, leftIcon }) => {
   </div>
 
   <div className="navbar__right">
+    {mostrarTema && <ThemeToggle />}
     <div className="navbar__icon">
       {rightIcon}
     </div>

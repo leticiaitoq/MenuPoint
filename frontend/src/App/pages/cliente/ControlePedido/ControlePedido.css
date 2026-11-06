@@ -1,4 +1,5 @@
-/* ── Container principal*/
+
+/* ── Container principal */
 .pedidos {
   display: flex;
   flex-direction: column;
@@ -10,7 +11,7 @@
 .pedidos__titulo {
   font-size: 24px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text);
   margin: 0;
 }
 
@@ -27,34 +28,34 @@
   gap: 8px;
   padding: 8px 20px;
   border-radius: 50px;
-  border: 1.5px solid #dddddd;
-  background-color: #ffffff;
+  border: 1.5px solid var(--border);
+  background-color: var(--bg-surface);
   font-size: 14px;
   font-weight: 500;
-  color: #555555;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .pedidos__filtro-btn:hover {
-  border-color: #c0392b;
-  color: #c0392b;
+  border-color: var(--brand);
+  color: var(--text-muted);
 }
 
-/* Aba ativa — fundo vermelho */
+/* Aba ativa */
 .pedidos__filtro-btn--ativo {
-  background-color: #c0392b;
-  border-color: #c0392b;
-  color: #ffffff;
+  background-color: var(--accent);
+  border-color: var(--brand);
+  color: var(--on-brand);
 }
 
 .pedidos__filtro-btn--ativo:hover {
-  background-color: #a93226;
-  border-color: #a93226;
-  color: #ffffff;
+  background-color: var(--accent);
+  border-color: var(--brand);
+  color: var(--on-brand);
 }
 
-/* Badge numérico dentro do botão */
+/* Badge numérico */
 .pedidos__filtro-badge {
   display: inline-flex;
   align-items: center;
@@ -65,13 +66,8 @@
   border-radius: 50px;
   font-size: 12px;
   font-weight: 700;
-  background-color: rgba(255, 255, 255, 0.25);
+  background-color: var(--bg-card-glass);
   color: inherit;
-}
-
-.pedidos__filtro-btn:not(.pedidos__filtro-btn--ativo) .pedidos__filtro-badge {
-  background-color: #f0f0f0;
-  color: #555555;
 }
 
 /* ── Lista de cards */
@@ -82,7 +78,7 @@
 }
 
 .pedidos__vazio {
-  color: #aaaaaa;
+  color: var(--text-faint);
   font-size: 15px;
   text-align: center;
   margin-top: 32px;
@@ -90,10 +86,10 @@
 
 /* ── Card de pedido */
 .pedidos__card {
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
   border-radius: 16px;
   padding: 20px 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--shadow-color);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -115,7 +111,7 @@
 .pedidos__card-numero {
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text);
   margin: 0;
 }
 
@@ -131,18 +127,18 @@
 }
 
 .pedidos__status--pendente {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: var(--info-soft);
+  color: var(--info-text);
 }
 
 .pedidos__status--pronto {
-  background-color: #fef3cd;
-  color: #856404;
+  background-color: var(--warning-soft);
+  color: var(--warning-text);
 }
 
 .pedidos__status--finalizado {
-  background-color: #d4edda;
-  color: #155724;
+  background-color: var(--success-soft);
+  color: var(--success-text);
 }
 
 .pedidos__status-icon {
@@ -151,11 +147,11 @@
 
 .pedidos__card-meta {
   font-size: 13px;
-  color: #888888;
+  color: var(--text-faint);
   margin: 0;
 }
 
-/* ── Corpo do card: itens + rodapé*/
+/* ── Corpo do card */
 .pedidos__card-body {
   display: flex;
   gap: 16px;
@@ -168,7 +164,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background-color: #f9f9f9;
+  background-color: var(--bg-surface-alt);
   border-radius: 10px;
   padding: 14px 16px;
 }
@@ -198,17 +194,17 @@
 .pedidos__item-nome {
   font-size: 14px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 .pedidos__item-preco {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
   white-space: nowrap;
 }
 
-/* ── Rodapé do card: totais + botão*/
+/* ── Rodapé do card */
 .pedidos__card-rodape {
   display: flex;
   flex-direction: column;
@@ -227,13 +223,13 @@
 
 .pedidos__total-label {
   font-size: 13px;
-  color: #888888;
+  color: var(--text-faint);
 }
 
 .pedidos__total-destaque {
   font-size: 14px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 /* ── Botões de ação */
@@ -259,10 +255,10 @@
   font-size: 16px;
 }
 
-/* Aguardando — pedido pendente, só informativo */
+/* Aguardando */
 .pedidos__btn--aguardando {
-  background-color: #eff6ff;
-  color: #1e40af;
+  background-color: var(--info-soft);
+  color: var(--info-text);
   cursor: default;
   pointer-events: none;
   font-size: 14px;
@@ -271,22 +267,36 @@
   border-radius: 10px;
 }
 
-/* Finalizar — fundo dourado */
+/* Finalizar */
 .pedidos__btn--finalizar {
-  background-color: #f0c040;
-  color: #5a3e00;
+  background-color: var(--warning);
+  color: var(--on-brand);
 }
 
 .pedidos__btn--finalizar:hover {
-  background-color: #e0b030;
+  background-color: var(--warning);
 }
 
-/* Ver Conta — fundo cinza claro */
+/* Ver Conta */
 .pedidos__btn--conta {
-  background-color: #f0f0f0;
-  color: #333333;
+  background-color: var(--bg-surface-alt);
+  color: var(--text);
 }
 
 .pedidos__btn--conta:hover {
-  background-color: #e2e2e2;
+  background-color: var(--border);
+}
+
+/* ── Responsividade */
+@media (max-width: 460px) {
+  .pedidos__card-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pedidos__card-rodape {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
 }

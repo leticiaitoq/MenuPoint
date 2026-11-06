@@ -1,0 +1,90 @@
+.recortador {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 16px;
+}
+
+.recortador__caixa {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px 24px;
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.recortador__titulo { margin: 0; font-size: 18px; color: #222; }
+.recortador__dica { margin: 0; font-size: 13px; color: #666; text-align: center; }
+
+/* Área de enquadramento: a imagem se move por baixo da máscara circular */
+.recortador__area {
+  position: relative;
+  overflow: hidden;
+  background: #ddd;
+  border-radius: 8px;
+  cursor: grab;
+  touch-action: none;   /* deixa o dedo arrastar a imagem em vez de rolar a página */
+  user-select: none;
+  flex-shrink: 0;
+}
+.recortador__area:active { cursor: grabbing; }
+
+.recortador__img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: none;
+  pointer-events: none;
+}
+
+/* Escurece tudo fora do círculo: o que fica dentro é o que será salvo */
+.recortador__mascara {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.55);
+  border: 2px solid #fff;
+  pointer-events: none;
+}
+
+/* Produto: sem círculo, só a moldura do retângulo */
+.recortador__mascara--retangulo {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.recortador__zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  font-size: 20px;
+  color: #555;
+}
+.recortador__zoom input { flex: 1; accent-color: #c0392b; }
+
+.recortador__erro { margin: 0; color: #c0392b; font-size: 13px; }
+
+.recortador__acoes { display: flex; gap: 10px; width: 100%; margin-top: 4px; }
+
+.recortador__btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #c0392b;
+  background: #fff;
+  color: #c0392b;
+  font-weight: 700;
+  cursor: pointer;
+}
+.recortador__btn--primario { background: #c0392b; color: #fff; }
+.recortador__btn:disabled { opacity: 0.6; cursor: not-allowed; }

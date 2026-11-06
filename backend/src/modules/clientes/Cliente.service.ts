@@ -5,6 +5,7 @@ import { ClienteRepository } from './Cliente.repository'
 import { AppError } from '@shared/errors/AppError'
 import { transporter } from '@config/mailer'
 import { env } from '@config/env'
+import { enviarImagemPublica, extensaoDeImagem, removerImagemPublica } from '@shared/storage/supabase'
 import {
   ClienteJWTPayload,
   ClienteResumoDTO,
@@ -51,6 +52,7 @@ export class ClienteService {
       email: c.email as string,
       telefone: c.telefone,
       email_verificado: c.email_verificado,
+      foto_url: c.foto_url,
     }
   }
 
@@ -289,6 +291,32 @@ export class ClienteService {
   async atualizarPerfil(id: string, data: AtualizarPerfilClienteDTO): Promise<ClientePerfilDTO> {
     await this.buscarAtivo(id)
     return this.perfil(await this.repository.atualizarPerfil(id, data))
+  }
+
+  // Envia a foto para o Storage e grava a URL no cadastro do cliente.
+  // Como a URL fica no banco, a foto aparece em qualquer dispositivo em que a conta entrar.
+  async atualizarFoto(id: string, arquivo: { buffer: Buffer; mimetype: string }): Promise<ClientePerfilDTO> {
+    const atual = await this.buscarAtivo(id)
+
+    const ext = extensaoDeImagem(arquivo.buffer, arquivo.mimetype)
+    if (!ext) throw new AppError('Envie uma imagem JPG ou PNG', 422)
+
+    // Nome novo a cada envio evita cache do navegador com a foto antiga
+    const url = await enviarImagemPublica(`clientes/${id}/foto-${Date.now()}.${ext}`, arquivo.buffer, arquivo.mimetype)
+    const atualizado = await this.repository.atualizarFoto(id, url)
+
+    // Apaga a foto anterior do Storage (se falhar, só deixa um arquivo órfão)
+    if (atual.foto_url) await removerImagemPublica(atual.foto_url)
+
+    return this.perfil(atualizado)
+  }
+
+  // Volta para a imagem padrão (foto_url = null)
+  async removerFoto(id: string): Promise<ClientePerfilDTO> {
+    const atual = await this.buscarAtivo(id)
+    const atualizado = await this.repository.atualizarFoto(id, null)
+    if (atual.foto_url) await removerImagemPublica(atual.foto_url)
+    return this.perfil(atualizado)
   }
 
   // ── ALTERAR E-MAIL (logado) ────────────────────────────────────────────────

@@ -12,10 +12,10 @@
 .reserva__card {
   flex: 1;
   min-width: 0;
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
   border-radius: 20px;
   padding: 32px 36px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px var(--shadow-color);
 }
 
 /* ── Cabeçalho do card: título à esquerda, imagem à direita ── */
@@ -41,7 +41,7 @@
 .reserva__titulo {
   font-size: 22px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text);
   margin: 0;
   letter-spacing: 0.5px;
 }
@@ -57,7 +57,7 @@
 .reserva__label {
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
   letter-spacing: 0.3px;
 }
 
@@ -70,12 +70,12 @@
 
 .reserva__date-input {
   padding: 12px 20px;
-  border: 1.5px solid #cccccc;
+  border: 1.5px solid var(--border-strong);
   border-radius: 8px;
   font-size: 15px;
   font-weight: 500;
-  color: #1a1a1a;
-  background-color: #ffffff;
+  color: var(--text);
+  background-color: var(--bg-surface);
   outline: none;
   cursor: pointer;
   width: 320px;
@@ -84,11 +84,11 @@
 }
 
 .reserva__date-input:focus {
-  border-color: #c0392b;
+  border-color: var(--brand);
 }
 
 .reserva__date-input[data-empty='true'] {
-  color: #aaaaaa;
+  color: var(--text-faint);
 }
 
 .reserva__date-overlay {
@@ -97,10 +97,10 @@
   right: 36px;
   font-size: 15px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--text);
   pointer-events: none;
   user-select: none;
-  background-color: #ffffff;
+  background-color: var(--bg-surface); /* mesmo fundo do input: cobre o texto nativo da data */
   white-space: nowrap;
   overflow: hidden;
 }
@@ -108,18 +108,18 @@
 /* ── Input de horário ── */
 .reserva__input {
   padding: 12px 20px;
-  border: 1.5px solid #cccccc;
+  border: 1.5px solid var(--border-strong);
   border-radius: 8px;
   font-size: 15px;
-  color: #1a1a1a;
-  background-color: #ffffff;
+  color: var(--text);
+  background-color:  var(--bg-surface);
   outline: none;
   transition: border-color 0.2s;
   box-sizing: border-box;
 }
 
 .reserva__input:focus {
-  border-color: #c0392b;
+  border-color: var(--brand);
 }
 
 .reserva__input--time {
@@ -150,8 +150,8 @@
 }
 
 .reserva__pessoas-btn--add {
-  color: #2ecc71;
-  border-color: #2ecc71;
+  color: var(--success);
+  border-color: var(--success);
 }
 
 .reserva__pessoas-btn--add:hover {
@@ -159,12 +159,12 @@
 }
 
 .reserva__pessoas-btn--remove {
-  color: #c0392b;
-  border-color: #c0392b;
+  color: var(--danger);
+  border-color: var(--danger);
 }
 
 .reserva__pessoas-btn--remove:hover {
-  background-color: rgba(192, 57, 43, 0.1);
+  background-color:var(--brand-tint);
 }
 
 .reserva__pessoas-count {
@@ -172,17 +172,17 @@
   text-align: center;
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 /* ── Textarea de observação ── */
 .reserva__textarea {
   padding: 12px 20px;
-  border: 1.5px solid #cccccc;
+  border: 1.5px solid var(--border-strong);
   border-radius: 8px;
   font-size: 14px;
-  color: #1a1a1a;
-  background-color: #ffffff;
+  color: var(--text);
+  background-color: var(--bg-surface);
   outline: none;
   resize: none;
   font-family: inherit;
@@ -193,17 +193,17 @@
 }
 
 .reserva__textarea:focus {
-  border-color: #c0392b;
+  border-color: var(--brand);
 }
 
 .reserva__textarea::placeholder {
-  color: #aaaaaa;
+  color: var(--text-faint);
 }
 
 /* ── Mensagem de erro ── */
 .reserva__erro {
   font-size: 13px;
-  color: #c0392b;
+  color: var(--danger);
   margin: 0;
 }
 
@@ -219,7 +219,7 @@
 .reserva__painel-titulo {
   font-size: 16px;
   font-weight: 800;
-  color: #555555;
+  color: var(--text-muted);
   text-align: right;
   margin: 0 0 2px 0;
 }
@@ -239,7 +239,7 @@
   padding: 14px 20px;
   border-radius: 14px;
   border: none;
-  background-color: #f0f0f0;
+  background-color: var(--bg-surface-alt);
   cursor: pointer;
   width: 100%;
   text-align: left;
@@ -247,43 +247,39 @@
 }
 
 .reserva__mesa:hover {
-  background-color: #e5e5e5;
+  background-color: var(--border);
   transform: translateX(-2px);
 }
 
 .reserva__mesa--ativa {
-  background-color: #f0a500;
-}
-
-.reserva__mesa--ativa:hover {
-  background-color: #e09800;
+  background-color: var(--brand);
 }
 
 .reserva__mesa-icon {
   font-size: 22px;
-  color: #555555;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
 .reserva__mesa--ativa .reserva__mesa-icon {
-  color: #ffffff;
+  color: var(--on-brand);
 }
 
 .reserva__mesa-label {
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
   letter-spacing: 0.3px;
 }
 
 .reserva__mesa--ativa .reserva__mesa-label {
-  color: #ffffff;
+  color: var(--on-brand);
 }
 
 /* ── Botão reservar ── */
 .reserva__btn-reservar {
-  background-color: #c0392b;
-  color: #ffffff;
+  background-color: var(--brand);
+  color: var(--on-brand);
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -298,14 +294,14 @@
 }
 
 .reserva__btn-reservar:hover {
-  background-color: #a93226;
+  background-color: var(--brand-hover);
 }
 
 /* ── Modal de confirmação ── */
 .reserva__overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.35);
+  background-color:var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -315,7 +311,7 @@
 }
 
 .reserva__modal {
-  background: linear-gradient(135deg, #f1c40f, #c0392b, #6b0f1a);
+  background: linear-gradient(135deg, var(--warning),  var(--brand), #6b0f1a);
   padding: 4px;
   border-radius: 24px;
   width: 100%;
@@ -323,7 +319,7 @@
 }
 
 .reserva__modal-inner {
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
   border-radius: 21px;
   padding: 36px 44px;
   display: flex;
@@ -335,7 +331,7 @@
 .reserva__modal-subtitulo {
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text);
   margin: 0;
 }
 
@@ -347,12 +343,12 @@
 }
 
 .reserva__modal-pill {
-  background-color: #f0f0f0;
+  background-color: var(--bg-surface-alt);
   padding: 12px 24px;
   border-radius: 50px;
   font-size: 15px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--text);
   text-align: center;
   width: 100%;
   box-sizing: border-box;
@@ -360,7 +356,7 @@
 
 .reserva__modal-obs {
   font-size: 13px;
-  color: #888888;
+  color: var(--text-faint);
   text-align: center;
   font-style: italic;
   padding: 0 8px;
@@ -368,15 +364,15 @@
 
 .reserva__modal-texto {
   font-size: 14px;
-  color: #888888;
+  color: var(--text-faint);
   text-align: center;
   line-height: 1.6;
   margin: 0;
 }
 
 .reserva__modal-btn {
-  background-color: #c0392b;
-  color: #ffffff;
+  background-color: var(--brand);
+  color: var(--on-brand);
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -389,7 +385,7 @@
 }
 
 .reserva__modal-btn:hover {
-  background-color: #a93226;
+  background-color: var(--brand-hover);
 }
 
 /* ── Responsividade ── */

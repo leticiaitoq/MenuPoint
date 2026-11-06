@@ -985,6 +985,7 @@ const PagarMesaConteudo: React.FC<{
                       type="text"
                       className="desconto__cupom-input"
                       placeholder="Digite o código"
+                      maxLength={30}
                       value={codigoCupom}
                       onChange={(e) => setCodigoCupom(e.target.value)}
                       disabled={cupomAplicado !== null}

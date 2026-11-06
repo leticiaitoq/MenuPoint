@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import Carrinho from '../../../shared/components/Carrinho/Carrinho';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
+import { useConvidado } from '../../../shared/contexts/Convidadocontext';
+import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/ingredientes';
+import RestaurantePublicoService from '../../../services/restaurantePublico.service';
+import MesaPublicaService from '../../../services/mesaPublica.service';
 import './MenuLocal.css';
 
 // ── Tipos 
@@ -19,43 +23,113 @@ interface Produto {
   descricao: string;
   preco: number;
   imagem: string;
+  destaque: boolean;
+  ordem: number;
+  ingredientes: IngredienteProduto[];
 }
 
-// ── Dados mockados
-const CATEGORIAS: Categoria[] = [
-  { id: 'todos',      label: 'Todos',      icon: '/icons/icons-categorias/icons-categorias/todos.png' },
-  { id: 'lanches',    label: 'Lanches',    icon: '/icons/icons-categorias/icons-categorias/lanches.png' },
-  { id: 'bebidas',    label: 'Bebidas',    icon: '/icons/icons-categorias/icons-categorias/bebidas.png' },
-  { id: 'massas',     label: 'Massas',     icon: '/icons/icons-categorias/icons-categorias/massas.png' },
-  { id: 'sobremesas', label: 'Sobremesas', icon: '/icons/icons-categorias/icons-categorias/sobremesas.png' },
-  { id: 'pizzas',     label: 'Pizzas',     icon: '/icons/icons-categorias/icons-categorias/pizzas.png' },
-  { id: 'porcoes',    label: 'Porções',    icon: '/icons/icons-categorias/icons-categorias/porcoes.png' },
-  { id: 'saladas',    label: 'Saladas',    icon: '/icons/icons-categorias/icons-categorias/saladas.png' },
-];
+// "Todos" usa o PNG; as demais categorias vêm da API (ícone = emoji ou imagem)
+const CATEGORIA_TODOS: Categoria = {
+  id: 'todos',
+  label: 'Todos',
+  icon: '/icons/icons-categorias/icons-categorias/todos.png',
+};
 
-const PRODUTOS: Produto[] = [
-  { id: '1', categoriaId: 'lanches',    nome: 'Hamburguer Celestino',   descricao: 'Pão, gergilim, hamburguer, bacon, cheddar, alface, cebola, tomate',  preco: 39.90, imagem: '/images/menu/lanche.jpg' },
-  { id: '2', categoriaId: 'massas',     nome: 'Macarrão ao molho ito',  descricao: 'Massa, molho vermelho, almondegas e queijo parmesão',                preco: 24.99, imagem: '/images/menu/macarrão.jpg' },
-  { id: '3', categoriaId: 'porcoes',    nome: 'Porção Batatas Brisola', descricao: 'Batatas fritas, cheddar e bacon (400g)',                              preco: 50.00, imagem: '/images/menu/batata.jpg' },
-  { id: '4', categoriaId: 'porcoes',    nome: 'Porção de Frango',       descricao: 'Frango crocante temperado com molho especial (300g)',                 preco: 38.00, imagem: '/images/menu/pf.jpg' },
-  { id: '5', categoriaId: 'bebidas',    nome: 'Caipirinha',             descricao: 'Limão, açúcar e cachaça artesanal',                                   preco: 18.00, imagem: '/images/menu/caipira.jpg' },
-  { id: '6', categoriaId: 'saladas',    nome: 'Salada Caesar',          descricao: 'Alface romana, croutons, parmesão e molho caesar',                    preco: 22.00, imagem: '/images/menu/ceaser.jpg' },
-  { id: '7', categoriaId: 'sobremesas', nome: 'Sorvete Cremoso',        descricao: 'Sorvete de chocolate com calda de morango',                           preco: 22.00, imagem: '/images/menu/sor.jpg' },
-  { id: '8', categoriaId: 'pizzas',     nome: 'Pizza Portuguesa',       descricao: 'Molho, mussarela, presunto, bacon, milho, ervilha, tomate e orégano', preco: 50.00, imagem: '/images/menu/pp.jpg' },
-  { id: '9', categoriaId: 'bebidas',    nome: 'Coca-Cola',              descricao: 'Coca-Cola Lata (350ml)',                                              preco: 6.00, imagem: '/images/menu/coca.jpg' },
-];
+const ehImagem = (icon: string) => icon.startsWith('/') || icon.startsWith('http');
+
+// Mesma ordem do painel do restaurante: destaques, depois a ordem definida por ele
+const compararProdutos = (idsCategorias: string[]) => (a: Produto, b: Produto) =>
+  Number(b.destaque) - Number(a.destaque)
+  || a.ordem - b.ordem
+  || idsCategorias.indexOf(a.categoriaId) - idsCategorias.indexOf(b.categoriaId);
 
 // ── Componente
 const MenuLocal: React.FC = () => {
   // ── Estados
   const navigate = useNavigate();
   const { itens: itensCarrinho, removerItem, limparCarrinho } = useCarrinho();
+  const { nome: nomeConvidado, mesaToken, estabelecimentoId } = useConvidado();
   const [busca, setBusca]                     = useState('');
   const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
   const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
 
+  const [categorias, setCategorias] = useState<Categoria[]>([CATEGORIA_TODOS]);
+  const [produtos, setProdutos]     = useState<Produto[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erroMenu, setErroMenu]     = useState('');
+  const [enviando, setEnviando]     = useState(false);
+  const [erroEnvio, setErroEnvio]   = useState('');
+
+  // Cardápio real do restaurante da mesa (o id vem do QR Code escaneado).
+  // Recarrega sozinho a cada 15s e ao voltar para a aba, sem piscar a tela.
+  useEffect(() => {
+    if (!estabelecimentoId) { setCarregando(false); return; }
+    let cancelado = false;
+    let ultimaAssinatura = '';
+
+    const carregar = (silencioso: boolean) => {
+      if (!silencioso) { setCarregando(true); setErroMenu(''); }
+
+      return RestaurantePublicoService.cardapio(estabelecimentoId)
+        .then((lista) => {
+          if (cancelado) return;
+          const assinatura = JSON.stringify(lista);
+          if (silencioso && assinatura === ultimaAssinatura) return; // nada mudou
+          ultimaAssinatura = assinatura;
+
+          const ativas = lista.filter((c) => c.ativo !== false);
+          const novasCategorias: Categoria[] = [
+            CATEGORIA_TODOS,
+            ...ativas.map((c) => ({ id: c.id, label: c.nome, icon: c.icone ?? '🍽️' })),
+          ];
+          setCategorias(novasCategorias);
+          setCategoriaAtiva((atual) =>
+            novasCategorias.some((c) => c.id === atual) ? atual : 'todos'
+          );
+          setProdutos(
+            ativas.flatMap((c) =>
+              (c.produtos ?? [])
+                .filter((p) => p.disponivel)
+                .map((p) => ({
+                  destaque: !!p.destaque,
+                  ingredientes: extrairIngredientes(p.grupos_adicionais),
+                  ordem: p.ordem ?? 0,
+                  id: p.id,
+                  categoriaId: c.id,
+                  nome: p.nome,
+                  descricao: p.descricao ?? '',
+                  preco: Number(p.preco_promocional ?? p.preco),
+                  imagem: p.imagem_url ?? '/icons/restaurant-logo.png',
+                }))
+            ).sort(compararProdutos(ativas.map((c) => c.id)))
+          );
+          setErroMenu('');
+        })
+        .catch(() => {
+          if (!cancelado && !silencioso) setErroMenu('Não foi possível carregar o cardápio.');
+        })
+        .finally(() => { if (!cancelado && !silencioso) setCarregando(false); });
+    };
+
+    carregar(false);
+
+    const recarregar = () => { if (document.visibilityState === 'visible') carregar(true); };
+    const intervalo = window.setInterval(recarregar, 15000);
+    document.addEventListener('visibilitychange', recarregar);
+    window.addEventListener('focus', recarregar);
+    window.addEventListener('online', recarregar);
+
+    return () => {
+      cancelado = true;
+      window.clearInterval(intervalo);
+      document.removeEventListener('visibilitychange', recarregar);
+      window.removeEventListener('focus', recarregar);
+      window.removeEventListener('online', recarregar);
+    };
+  }, [estabelecimentoId]);
+
   // ── Filtro
-  const produtosFiltrados = PRODUTOS.filter((p) => {
+  const produtosFiltrados = produtos.filter((p) => {
     const naCategoria = categoriaAtiva === 'todos' || p.categoriaId === categoriaAtiva;
     const naBusca = p.nome.toLowerCase().includes(busca.toLowerCase());
     return naCategoria && naBusca;
@@ -68,9 +142,46 @@ const MenuLocal: React.FC = () => {
     navigate('/personaliza', { state: { produto, modoCliente: 'guest' } });
   };
 
-  const finalizarPedido = () => {
-    limparCarrinho();
-    setCarrinhoAberto(false);
+  // Envia o carrinho para a cozinha. O preço é recalculado pelo servidor.
+  const finalizarPedido = async () => {
+    if (enviando || itensCarrinho.length === 0) return;
+
+    if (!mesaToken) {
+      setCarrinhoAberto(false);
+      setErroEnvio('Escaneie o QR Code da sua mesa para fazer o pedido.');
+      return;
+    }
+
+    // Itens sem id de produto (carrinho antigo, de antes da integração) não dá para enviar
+    if (itensCarrinho.some((i) => !i.produtoId)) {
+      limparCarrinho();
+      setCarrinhoAberto(false);
+      setErroEnvio('Seu carrinho estava desatualizado. Adicione os itens novamente.');
+      return;
+    }
+
+    setEnviando(true);
+    setErroEnvio('');
+    try {
+      await MesaPublicaService.criarPedido(mesaToken, {
+        cliente_nome: nomeConvidado?.trim() || 'Cliente da mesa',
+        itens: itensCarrinho.map((i) => ({
+          produto_id: i.produtoId as string,
+          quantidade: i.quantidade,
+          ...(i.observacao ? { observacoes: i.observacao } : {}),
+          ...(i.ingredientes?.length ? { ingredientes: i.ingredientes } : {}),
+          ...(i.paraLevar ? { para_levar: true } : {}),
+        })),
+      });
+      limparCarrinho();
+      setCarrinhoAberto(false);
+      navigate('/historicolocal'); // o cliente já vê o pedido recém-enviado
+    } catch (err: any) {
+      setCarrinhoAberto(false);
+      setErroEnvio(err?.response?.data?.message ?? 'Não foi possível enviar o pedido. Tente novamente.');
+    } finally {
+      setEnviando(false);
+    }
   };
 
   // ── Render
@@ -80,7 +191,10 @@ const MenuLocal: React.FC = () => {
       cartCount={totalCarrinho}
       onCartClick={() => setCarrinhoAberto(true)}
     >
-      <div className="menu" style={{ backgroundImage: 'url(/images/Fundo-menu.png)' }}>
+      <div
+  className="menu bg-arte bg-arte--opaco"
+  style={{ '--bg-arte': 'url(/images/Fundo-menu.png)' } as React.CSSProperties}
+>
 
         {/* Botão flutuante do carrinho — igual ao MenuCliente */}
        <button
@@ -93,6 +207,12 @@ const MenuLocal: React.FC = () => {
           <span className="menu__carrinho-fab-badge">{totalCarrinho}</span>
         )}
       </button>
+
+        {erroEnvio && (
+          <p className="menu__erro-envio" role="alert" onClick={() => setErroEnvio('')}>
+            {erroEnvio}
+          </p>
+        )}
 
         {/* Busca */}
         <div className="menu__busca-wrap">
@@ -108,7 +228,7 @@ const MenuLocal: React.FC = () => {
 
         {/* Categorias */}
         <div className="menu__categorias">
-          {CATEGORIAS.map((cat) => (
+          {categorias.map((cat) => (
             <button
               key={cat.id}
               className={`menu__cat-btn${categoriaAtiva === cat.id ? ' menu__cat-btn--ativo' : ''}`}
@@ -116,15 +236,23 @@ const MenuLocal: React.FC = () => {
               aria-label={cat.label}
               title={cat.label}
             >
-              <img src={cat.icon} alt="" className="menu__cat-icon" />
+              {ehImagem(cat.icon) ? (
+                <img src={cat.icon} alt="" className="menu__cat-icon" />
+              ) : (
+                <span className="menu__cat-icon" aria-hidden="true">{cat.icon}</span>
+              )}
             </button>
           ))}
         </div>
 
         {/* Grid de produtos */}
         <div className="menu__grid">
-          {produtosFiltrados.length === 0 ? (
-            <p className="menu__vazio">Nenhum produto encontrado.</p>
+          {carregando || erroMenu || produtosFiltrados.length === 0 ? (
+            <p className="menu__vazio">
+              {carregando
+                ? 'Carregando cardápio...'
+                : erroMenu || (estabelecimentoId ? 'Nenhum produto encontrado.' : 'Escaneie o QR Code da sua mesa para ver o cardápio.')}
+            </p>
           ) : (
             produtosFiltrados.map((p) => (
               <div key={p.id} className="menu__card">

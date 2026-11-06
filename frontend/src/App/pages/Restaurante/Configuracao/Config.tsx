@@ -12,6 +12,7 @@ import {
   HiLocationMarker,
   HiLockClosed,
   HiLogout,
+  HiMail,
   HiOfficeBuilding,
   HiPencil,
   HiPhone,
@@ -26,7 +27,7 @@ import {
 import RestaurantLayout from '../../../shared/components/layout/Restaurantelayout';
 import { useEstabelecimento } from '../../../shared/contexts/Estabelecimentocontext';
 import { useAuth } from '../../../shared/contexts/Authcontext';
-import AuthService from '../../../services/auth.service';
+import AuthService, { LoginResponse } from '../../../services/auth.service';
 import EstabelecimentoService, {
   AtualizarEstabelecimentoDTO,
   AtualizarPixDTO,
@@ -35,6 +36,7 @@ import EstabelecimentoService, {
   HorarioFuncionamento,
   TipoChavePix,
 } from '../../../services/estabelecimento.service';
+import RecortadorImagem from '../../../shared/components/RecortadorImagem/RecortadorImagem';
 import './Config.css';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -65,7 +67,7 @@ const TIPOS_PIX: { valor: TipoChavePix; rotulo: string }[] = [
 ];
 
 const LOGO_PADRAO = '/icons/restaurant-avatar.png';
-const TAMANHO_MAX_LOGO = 5 * 1024 * 1024;
+const TAMANHO_MAX_LOGO = 20 * 1024 * 1024; // original; é reduzida antes do envio
 
 type Erros = Partial<Record<string, string>>;
 
@@ -787,7 +789,7 @@ interface DadosSensiveis {
   email: string;
 }
 
-type PassoDadosSensiveis = 'senha' | 'editar';
+type PassoDadosSensiveis = 'senha' | 'editar' | 'codigo';
 
 const PassoSenha: React.FC<{
   onConfirmar: (senha: string) => Promise<string | null>;
@@ -851,6 +853,7 @@ const PassoSenha: React.FC<{
           <input
             id="m-senha"
             ref={campoRef}
+            maxLength={60}
             className="config__input"
             type={mostrarSenha ? 'text' : 'password'}
             autoComplete="current-password"
@@ -892,7 +895,9 @@ const PassoEditar: React.FC<{
   senha: string;
   onVoltar: () => void;
   onFechar: () => void;
-  onSucesso: (novos: DadosSensiveis, emailAlterado: boolean, token: string) => void;
+  // token = sessão nova se algum dado (além do e-mail) foi salvo; emailPendente = e-mail novo
+  // que está aguardando o código de confirmação (o e-mail atual continua valendo até lá)
+  onSucesso: (novos: DadosSensiveis, token: string | null, emailPendente: string | null) => void;
 }> = ({ atuais, podeEmpresa, senha, onVoltar, onFechar, onSucesso }) => {
   const [campos, setCampos] = useState<DadosSensiveis>(atuais);
   const [erros, setErros] = useState<Erros>({});
@@ -944,15 +949,31 @@ const PassoEditar: React.FC<{
       return;
     }
 
+    // O e-mail NÃO é gravado aqui: pede-se um código para o endereço novo (passo seguinte).
+    // Ele vem primeiro de propósito: se falhar (e-mail já em uso, por ex.), nada foi salvo.
+    const { email: emailNovo, ...outros } = mudou;
+    const temOutros = Object.keys(outros).length > 0;
+
     setEnviando(true);
     setErroGeral(null);
+    let fase: 'email' | 'dados' = 'email';
     try {
-      const resultado = await AuthService.atualizarDadosSensiveis({ senha_atual: senha, ...mudou });
-      onSucesso({ ...atuais, ...mudou }, resultado.email_alterado, resultado.token);
+      if (emailNovo !== undefined) {
+        await AuthService.solicitarAlteracaoEmail({ novo_email: emailNovo, senha });
+      }
+      fase = 'dados';
+      let token: string | null = null;
+      if (temOutros) {
+        const resultado = await AuthService.atualizarDadosSensiveis({ senha_atual: senha, ...outros });
+        token = resultado.token;
+      }
+      onSucesso({ ...atuais, ...outros }, token, emailNovo ?? null);
     } catch (err: any) {
       const status = err?.response?.status;
       if (status === 403 && /senha/i.test(err?.response?.data?.message ?? '')) {
         setErroGeral('Sua senha não pôde ser confirmada. Volte e digite a senha de novo.');
+      } else if (fase === 'email' && (status === 400 || status === 409)) {
+        setErros({ email: mensagemDeErro(err, 'Não foi possível usar este e-mail.') });
       } else {
         setErroGeral(mensagemDeErro(err, 'Não foi possível alterar os dados.'));
       }
@@ -960,6 +981,8 @@ const PassoEditar: React.FC<{
       setEnviando(false);
     }
   };
+
+  const emailMudou = campos.email.trim().toLowerCase() !== atuais.email.trim().toLowerCase();
 
   return (
     <form className="config__dialogo-form" onSubmit={confirmar} noValidate>
@@ -1030,10 +1053,11 @@ const PassoEditar: React.FC<{
         id="m-email"
         rotulo="E-mail de acesso"
         erro={erros.email}
-        dica="Se mudar o e-mail, enviaremos um código para confirmar o novo endereço."
+        dica="Se mudar o e-mail, enviaremos um código para o novo endereço. O atual continua valendo até você confirmar."
       >
         <input
           id="m-email"
+          maxLength={150}
           className="config__input"
           type="email"
           value={campos.email}
@@ -1049,8 +1073,216 @@ const PassoEditar: React.FC<{
           Cancelar
         </button>
         <button className="config__btn config__btn--primario" type="submit" disabled={enviando}>
-          {enviando ? 'Salvando…' : 'Salvar alterações'}
+          {enviando ? 'Salvando…' : emailMudou ? 'Salvar e confirmar e-mail' : 'Salvar alterações'}
         </button>
+      </div>
+    </form>
+  );
+};
+
+// ── Passo 3: confirmar o e-mail novo com o código ───────────────────────────
+const ESPERA_REENVIO_SEGUNDOS = 30;
+const TAMANHO_CODIGO = 6;
+
+const PassoCodigo: React.FC<{
+  email: string;
+  senha: string;
+  onConfirmado: (sessao: LoginResponse) => void;
+  onFechar: () => void;
+}> = ({ email, senha, onConfirmado, onFechar }) => {
+  const [digitos, setDigitos] = useState<string[]>(() => Array(TAMANHO_CODIGO).fill(''));
+  const [erro, setErro] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const [chacoalhar, setChacoalhar] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
+  const [espera, setEspera] = useState(ESPERA_REENVIO_SEGUNDOS);
+  const caixas = useRef<Array<HTMLInputElement | null>>([]);
+
+  const codigo = digitos.join('');
+  const completo = codigo.length === TAMANHO_CODIGO;
+  const ocupado = confirmando || reenviando;
+
+  useEffect(() => {
+    caixas.current[0]?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (espera <= 0) return;
+    const id = window.setTimeout(() => setEspera((e) => e - 1), 1000);
+    return () => window.clearTimeout(id);
+  }, [espera]);
+
+  const limpar = () => {
+    setDigitos(Array(TAMANHO_CODIGO).fill(''));
+    caixas.current[0]?.focus();
+  };
+
+  const mostrarErro = (mensagem: string) => {
+    setErro(mensagem);
+    setChacoalhar(true);
+    window.setTimeout(() => setChacoalhar(false), 400);
+  };
+
+  // Preenche a partir da caixa `inicio` (serve para digitar, colar e o autofill do celular)
+  const preencher = (texto: string, inicio: number) => {
+    const novos = texto.replace(/\D/g, '').slice(0, TAMANHO_CODIGO - inicio).split('');
+    if (novos.length === 0) return;
+    setDigitos((atual) => {
+      const copia = [...atual];
+      novos.forEach((d, i) => {
+        copia[inicio + i] = d;
+      });
+      return copia;
+    });
+    caixas.current[Math.min(inicio + novos.length, TAMANHO_CODIGO - 1)]?.focus();
+    setErro(null);
+    setAviso(null);
+  };
+
+  const aoDigitar = (valor: string, i: number) => {
+    const so = valor.replace(/\D/g, '');
+    if (so === '') {
+      // apagou o conteúdo da caixa
+      setDigitos((atual) => atual.map((d, k) => (k === i ? '' : d)));
+      return;
+    }
+    // código inteiro de uma vez (autofill do celular) ou um dígito novo por cima de outro
+    if (so.length >= TAMANHO_CODIGO) preencher(so, 0);
+    else preencher(so.slice(-1), i);
+  };
+
+  const aoTeclar = (e: React.KeyboardEvent<HTMLInputElement>, i: number) => {
+    if (e.key === 'Backspace' && digitos[i] === '' && i > 0) {
+      e.preventDefault();
+      setDigitos((atual) => atual.map((d, k) => (k === i - 1 ? '' : d)));
+      caixas.current[i - 1]?.focus();
+    } else if (e.key === 'ArrowLeft' && i > 0) {
+      e.preventDefault();
+      caixas.current[i - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && i < TAMANHO_CODIGO - 1) {
+      e.preventDefault();
+      caixas.current[i + 1]?.focus();
+    }
+  };
+
+  const aoColar = (e: React.ClipboardEvent<HTMLInputElement>, i: number) => {
+    e.preventDefault();
+    const texto = e.clipboardData.getData('text');
+    preencher(texto, texto.replace(/\D/g, '').length >= TAMANHO_CODIGO ? 0 : i);
+  };
+
+  const confirmar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!completo) {
+      mostrarErro('Digite os 6 dígitos do código.');
+      return;
+    }
+    setConfirmando(true);
+    setErro(null);
+    setAviso(null);
+    try {
+      const sessao = await AuthService.confirmarAlteracaoEmail(codigo);
+      onConfirmado(sessao);
+    } catch (err: any) {
+      mostrarErro(mensagemDeErro(err, 'Não foi possível confirmar o código.'));
+      limpar();
+    } finally {
+      setConfirmando(false);
+    }
+  };
+
+  const reenviar = async () => {
+    setReenviando(true);
+    setErro(null);
+    setAviso(null);
+    try {
+      await AuthService.solicitarAlteracaoEmail({ novo_email: email, senha });
+      limpar();
+      setEspera(ESPERA_REENVIO_SEGUNDOS);
+      setAviso('Enviamos um novo código. O anterior deixou de valer.');
+    } catch (err: any) {
+      mostrarErro(mensagemDeErro(err, 'Não foi possível reenviar o código.'));
+    } finally {
+      setReenviando(false);
+    }
+  };
+
+  return (
+    <form className="config__dialogo-form" onSubmit={confirmar} noValidate>
+      <div className="config__dialogo-topo">
+        <div className="config__dialogo-icone">
+          <HiMail />
+        </div>
+        <button className="config__dialogo-x" type="button" onClick={onFechar} aria-label="Fechar" disabled={ocupado}>
+          <HiX />
+        </button>
+      </div>
+
+      <div className="config__dialogo-cabeca">
+        <h3 className="config__card-titulo">Confirme o novo e-mail</h3>
+        <p className="config__dialogo-texto">
+          Enviamos um código de 6 dígitos para <strong className="config__email-chip">{email}</strong>.
+          Seu e-mail atual continua valendo até você confirmar.
+        </p>
+      </div>
+
+      <div className="config__campo">
+        <span className="config__label" id="m-codigo-rotulo">Código de confirmação</span>
+        <div
+          className={`config__otp ${erro ? 'config__otp--erro' : ''} ${chacoalhar ? 'config__otp--chacoalha' : ''}`}
+          role="group"
+          aria-labelledby="m-codigo-rotulo"
+        >
+          {digitos.map((d, i) => (
+            <input
+              key={i}
+              ref={(el) => {
+                caixas.current[i] = el;
+              }}
+              className={`config__otp-campo ${d ? 'config__otp-campo--cheio' : ''}`}
+              type="text"
+              inputMode="numeric"
+              autoComplete={i === 0 ? 'one-time-code' : 'off'}
+              aria-label={`Dígito ${i + 1} de ${TAMANHO_CODIGO}`}
+              value={d}
+              disabled={confirmando}
+              onChange={(e) => aoDigitar(e.target.value, i)}
+              onKeyDown={(e) => aoTeclar(e, i)}
+              onPaste={(e) => aoColar(e, i)}
+              onFocus={(e) => e.target.select()}
+            />
+          ))}
+        </div>
+        {erro && <p className="config__erro" role="alert">{erro}</p>}
+        {aviso && !erro && (
+          <p className="config__hint config__hint--ok" role="status">
+            <HiCheckCircle /> {aviso}
+          </p>
+        )}
+      </div>
+
+      <div className="config__acoes config__acoes--modal">
+        <button
+          className="config__btn config__btn--primario config__btn--bloco"
+          type="submit"
+          disabled={ocupado || !completo}
+        >
+          {confirmando ? 'Confirmando…' : 'Confirmar novo e-mail'}
+        </button>
+        <div className="config__acoes-sec">
+          <button
+            className="config__link-btn"
+            type="button"
+            onClick={reenviar}
+            disabled={ocupado || espera > 0}
+          >
+            {reenviando ? 'Reenviando…' : espera > 0 ? `Reenviar código em ${espera}s` : 'Reenviar código'}
+          </button>
+          <button className="config__link-btn config__link-btn--neutro" type="button" onClick={onFechar} disabled={ocupado}>
+            Cancelar troca
+          </button>
+        </div>
       </div>
     </form>
   );
@@ -1060,10 +1292,22 @@ const ModalDadosSensiveis: React.FC<{
   atuais: DadosSensiveis;
   podeEmpresa: boolean;
   onFechar: () => void;
-  onSucesso: (novos: DadosSensiveis, emailAlterado: boolean, token: string) => void;
-}> = ({ atuais, podeEmpresa, onFechar, onSucesso }) => {
+  // Dados salvos (sem e-mail). fechar=false quando ainda falta confirmar o e-mail novo.
+  onSucesso: (novos: DadosSensiveis, token: string, fechar: boolean) => void;
+  // E-mail trocado depois de confirmar o código: chega uma sessão nova
+  onEmailConfirmado: (sessao: LoginResponse) => void;
+}> = ({ atuais, podeEmpresa, onFechar, onSucesso, onEmailConfirmado }) => {
   const [passo, setPasso] = useState<PassoDadosSensiveis>('senha');
   const [senhaConfirmada, setSenhaConfirmada] = useState('');
+  const [emailPendente, setEmailPendente] = useState('');
+
+  const aoSalvarDados = (novos: DadosSensiveis, token: string | null, email: string | null) => {
+    if (token) onSucesso(novos, token, email === null);
+    if (email !== null) {
+      setEmailPendente(email);
+      setPasso('codigo');
+    }
+  };
 
   const verificarSenha = async (senha: string): Promise<string | null> => {
     try {
@@ -1080,27 +1324,42 @@ const ModalDadosSensiveis: React.FC<{
   return (
     <Dialogo titulo="Alterar dados da empresa e do responsável" onFechar={onFechar}>
       <div className="config__dialogo-passos" aria-hidden="true">
-        <div className="config__dialogo-passo-item">
-          <span className={`config__dialogo-passo ${passo === 'senha' ? 'config__dialogo-passo--ativo' : 'config__dialogo-passo--feito'}`} />
-          <small>Senha</small>
-        </div>
-        <div className="config__dialogo-passo-item">
-          <span className={`config__dialogo-passo ${passo === 'editar' ? 'config__dialogo-passo--ativo' : ''}`} />
-          <small>Dados</small>
-        </div>
+        {(['senha', 'editar', ...(passo === 'codigo' ? ['codigo'] : [])] as PassoDadosSensiveis[]).map(
+          (id, i, lista) => {
+            const atual = lista.indexOf(passo);
+            const rotulo = id === 'senha' ? 'Senha' : id === 'editar' ? 'Dados' : 'Código';
+            return (
+              <div className="config__dialogo-passo-item" key={id}>
+                <span
+                  className={`config__dialogo-passo ${
+                    i === atual ? 'config__dialogo-passo--ativo' : i < atual ? 'config__dialogo-passo--feito' : ''
+                  }`}
+                />
+                <small>{rotulo}</small>
+              </div>
+            );
+          }
+        )}
       </div>
 
       <div key={passo} className={`config__dialogo-tela config__dialogo-tela--${passo === 'senha' ? 'entra-dir' : 'entra-esq'}`}>
         {passo === 'senha' ? (
           <PassoSenha onConfirmar={verificarSenha} onFechar={onFechar} />
-        ) : (
+        ) : passo === 'editar' ? (
           <PassoEditar
             atuais={atuais}
             podeEmpresa={podeEmpresa}
             senha={senhaConfirmada}
             onVoltar={() => setPasso('senha')}
             onFechar={onFechar}
-            onSucesso={onSucesso}
+            onSucesso={aoSalvarDados}
+          />
+        ) : (
+          <PassoCodigo
+            email={emailPendente}
+            senha={senhaConfirmada}
+            onConfirmado={onEmailConfirmado}
+            onFechar={onFechar}
           />
         )}
       </div>
@@ -1163,6 +1422,7 @@ const ModalSenhaPix: React.FC<{
           <input
             id="pix-senha"
             ref={campoRef}
+            maxLength={60}
             className="config__input"
             type="password"
             autoComplete="current-password"
@@ -1207,6 +1467,7 @@ const Config: React.FC = () => {
   const [enviandoLogo, setEnviandoLogo] = useState(false);
   const [logoAviso, setLogoAviso] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
   const inputLogoRef = useRef<HTMLInputElement>(null);
+  const [logoParaAjustar, setLogoParaAjustar] = useState<File | null>(null);
   const [avisoGeral, setAvisoGeral] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
   const [modalSensivel, setModalSensivel] = useState(false);
   const [saidaPendente, setSaidaPendente] = useState<null | (() => void)>(null);
@@ -1329,10 +1590,18 @@ const Config: React.FC = () => {
       return;
     }
     if (arquivo.size > TAMANHO_MAX_LOGO) {
-      setLogoAviso({ tipo: 'erro', texto: 'A imagem passa de 5MB. Escolha uma menor.' });
+      setLogoAviso({ tipo: 'erro', texto: 'A imagem passa de 20MB. Escolha uma menor.' });
       return;
     }
 
+    // Abre o editor para o usuário enquadrar a logo no círculo; o envio acontece ao confirmar
+    setLogoAviso(null);
+    setLogoParaAjustar(arquivo);
+  };
+
+  const enviarLogoAjustada = async (arquivo: File) => {
+    if (!estab) return;
+    setLogoParaAjustar(null);
     setEnviandoLogo(true);
     setLogoAviso(null);
     try {
@@ -1406,15 +1675,17 @@ const Config: React.FC = () => {
     setModalSensivel(true);
   };
 
-  const aoAlterarDadosSensiveis = (novos: DadosSensiveis, emailAlterado: boolean, token: string) => {
-    setModalSensivel(false);
+  // Dados salvos (nome, razão social...). O e-mail NÃO passa por aqui: ele só muda depois
+  // de confirmar o código (aoConfirmarEmail). fechar=false = o modal segue aberto no passo do código.
+  const aoAlterarDadosSensiveis = (novos: DadosSensiveis, token: string, fechar: boolean) => {
+    if (fechar) setModalSensivel(false);
     if (usuario) {
       entrar({
         token,
         usuario: {
           id: usuario.id,
           nome: novos.nome_responsavel,
-          email: novos.email,
+          email: usuario.email,
           perfil: usuario.perfil,
           escopo: usuario.escopo,
           estabelecimento_id: usuario.estabelecimento_id,
@@ -1423,11 +1694,19 @@ const Config: React.FC = () => {
       });
     }
     void recarregar();
-    if (emailAlterado) {
-      navigate('/verify-code', { state: { email: novos.email, mode: 'register' } });
-      return;
-    }
-    setAvisoGeral({ tipo: 'ok', texto: 'Dados alterados com sucesso.' });
+    if (fechar) setAvisoGeral({ tipo: 'ok', texto: 'Dados alterados com sucesso.' });
+  };
+
+  // Código confirmado: o e-mail já foi trocado e as outras sessões foram encerradas.
+  // A resposta traz a sessão nova (token + refresh token) — é ela que passa a valer.
+  const aoConfirmarEmail = (sessao: LoginResponse) => {
+    setModalSensivel(false);
+    entrar(sessao);
+    void recarregar();
+    setAvisoGeral({
+      tipo: 'ok',
+      texto: 'E-mail alterado com sucesso. Avisamos o endereço antigo sobre a mudança.',
+    });
   };
 
   // ── Estados de carregamento / erro ────────────────────────────────────────
@@ -1508,6 +1787,12 @@ const Config: React.FC = () => {
                 accept="image/jpeg,image/png"
                 className="config__arquivo"
                 onChange={escolherLogo}
+              />
+              <RecortadorImagem
+                arquivo={logoParaAjustar}
+                titulo="Ajustar logo"
+                onConfirmar={enviarLogoAjustada}
+                onCancelar={() => setLogoParaAjustar(null)}
               />
               {logoAviso && (
                 <p className={logoAviso.tipo === 'erro' ? 'config__erro' : 'config__hint'} role={logoAviso.tipo === 'erro' ? 'alert' : undefined}>
@@ -1748,6 +2033,7 @@ const Config: React.FC = () => {
                   >
                     <input
                       id="email-contato"
+                      maxLength={150}
                       className="config__input"
                       type="email"
                       placeholder="contato@seurestaurante.com.br"
@@ -2077,6 +2363,7 @@ const Config: React.FC = () => {
           podeEmpresa={podeEditar && Boolean(empresa)}
           onFechar={() => setModalSensivel(false)}
           onSucesso={aoAlterarDadosSensiveis}
+          onEmailConfirmado={aoConfirmarEmail}
         />
       )}
 

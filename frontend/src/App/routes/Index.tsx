@@ -131,6 +131,10 @@ const AppRoutes: React.FC = () => {
           <Route path="/restaurante/despesas" element={<Despesas />} />
           <Route path="/restaurante/despesas/cadastrodespe" element={<CadDespesa />} />
           <Route path="/restaurante/embreve" element={<EmBreve />} />
+          <Route
+            path="/restaurante/whatsapp"
+            element={<EmBreve descricao="A integração com o WhatsApp está em desenvolvimento e estará disponível em breve." />}
+          />
         </Route>
       </Routes>
     </BrowserRouter>

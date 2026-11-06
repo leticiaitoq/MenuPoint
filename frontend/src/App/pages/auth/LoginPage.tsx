@@ -4,6 +4,7 @@ import { MdEmail } from 'react-icons/md';
 import { HiEye, HiEyeOff, HiCheckCircle } from 'react-icons/hi';
 import AuthCard from './AuthCard';
 import AuthService from '../../services/auth.service';
+import AssinaturaService from '../../services/assinatura.service';
 import { useAuth, ROTA_APOS_LOGIN } from '../../shared/contexts/Authcontext';
 import './LoginPage.css';
 
@@ -49,13 +50,30 @@ const LoginPage: React.FC = () => {
         usuario: resultado.usuario,
       });
 
-      setCarregando(false);
-
-      // Cadastro feito, mas o pagamento não foi concluído: avisa e oferece o botão para pagar
+      // Cadastro feito, mas o pagamento ainda consta como pendente. Antes de barrar, confere
+      // no Mercado Pago: a pessoa pode ter pago e fechado a aba sem voltar para o site.
       if (resultado.usuario.pagamento_pendente) {
+        try {
+          const { status } = await AssinaturaService.sincronizar();
+          if (status === 'ATIVA') {
+            entrar({
+              token: resultado.token,
+              refresh_token: resultado.refresh_token,
+              usuario: { ...resultado.usuario, pagamento_pendente: false },
+            });
+            setCarregando(false);
+            setShowSucesso(true);
+            return;
+          }
+        } catch {
+          // não conseguiu conferir: segue com o aviso de pagamento pendente
+        }
+        setCarregando(false);
         setPagamentoPendente(true);
         return;
       }
+
+      setCarregando(false);
       setShowSucesso(true);
     } catch (err: any) {
       if (err?.response?.data?.code === 'EMAIL_NAO_VERIFICADO') {

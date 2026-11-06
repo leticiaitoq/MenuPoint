@@ -487,8 +487,6 @@
   flex-direction: column;
   gap: 18px;
   padding-bottom: 80px; /* espaço para FAB */
-  background-repeat: repeat-y;
-  background-size: 100% auto;
   margin: -20px -16px;
   padding: 20px 16px;
   box-sizing: border-box;

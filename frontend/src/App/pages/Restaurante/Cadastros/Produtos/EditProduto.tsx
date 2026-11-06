@@ -5,6 +5,9 @@ import RestaurantLayout from '../../../../shared/components/layout/Restaurantela
 import CategoriaService, { Categoria } from '../../../../services/categoria.service';
 import ProdutoService from '../../../../services/produto.service';
 import ContadorCaracteres, { DicaLimite } from '../../../../shared/components/ContadorCaracteres/ContadorCaracteres';
+import RecortadorImagem from '../../../../shared/components/RecortadorImagem/RecortadorImagem';
+import IngredientesEditor, { LinhaIngrediente, linhasDaCategoria, linhasDoProduto, linhasParaPayload, mesclarLinhas } from '../../../../shared/components/IngredientesEditor/IngredientesEditor';
+import AdicionalCategoriaService from '../../../../services/adicionalCategoria.service';
 import './EditProduto.css';
 
 // ── Tipos
@@ -42,12 +45,40 @@ const EditProduto: React.FC = () => {
   const fotoRef   = useRef<HTMLInputElement>(null);
 
   const [form, setForm]     = useState<FormEdicao>(FORM_VAZIO);
+  const [fotoParaAjustar, setFotoParaAjustar] = useState<File | null>(null);
+  const [ingredientes, setIngredientes] = useState<LinhaIngrediente[]>([]);
+  const [importando, setImportando]     = useState(false);
+  const [msgIngredientes, setMsgIngredientes] = useState('');
+  const [erroIng, setErroIng] = useState('');
+  const ingredientesRef = useRef<LinhaIngrediente[]>([]);
+  ingredientesRef.current = ingredientes;
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [erro, setErro]       = useState('');
   const [sucesso, setSucesso] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [falhaCarregar, setFalhaCarregar] = useState(false);
   const [salvando, setSalvando]     = useState(false);
+
+  // Traz os ingredientes padrão da categoria do produto (sem repetir os que ele já tem)
+  const importarPadrao = async () => {
+    if (!form.categoria_id) { setMsgIngredientes('Escolha a categoria primeiro.'); return; }
+    setImportando(true);
+    try {
+      const padrao = linhasDaCategoria(await AdicionalCategoriaService.listar(form.categoria_id));
+      // usa o valor MAIS RECENTE da lista (o usuário pode ter editado enquanto carregava)
+      const { linhas, adicionadas } = mesclarLinhas(ingredientesRef.current, padrao);
+      setIngredientes(linhas);
+      setMsgIngredientes(
+        padrao.length === 0
+          ? 'Esta categoria ainda não tem ingredientes padrão (cadastre em Produtos → Categorias).'
+          : adicionadas > 0 ? `${adicionadas} ingrediente(s) importado(s).` : 'Todos os ingredientes da categoria já estão aqui.'
+      );
+    } catch {
+      setMsgIngredientes('Não foi possível carregar os ingredientes da categoria.');
+    } finally {
+      setImportando(false);
+    }
+  };
 
   // ── Carrega o produto real e as categorias do estabelecimento
   useEffect(() => {
@@ -76,6 +107,7 @@ const EditProduto: React.FC = () => {
           imagemPreview: produto.imagem_url ?? '',
           imagem:        null,
         });
+        setIngredientes(linhasDoProduto(produto));
       } catch (err: any) {
         setErro(err?.response?.data?.message ?? 'Não foi possível carregar o produto.');
         setFalhaCarregar(true);
@@ -90,21 +122,28 @@ const EditProduto: React.FC = () => {
 
   const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const arquivo = e.target.files?.[0];
+    e.target.value = ''; // permite escolher o mesmo arquivo de novo
     if (!arquivo) return;
 
     if (!['image/png', 'image/jpeg', 'image/jpg'].includes(arquivo.type)) {
       setErro('A imagem deve ser JPG ou PNG.');
       return;
     }
-    if (arquivo.size > 5 * 1024 * 1024) {
-      setErro('A imagem deve ter no máximo 5MB.');
+    if (arquivo.size > 20 * 1024 * 1024) { // original; é reduzida antes do envio
+      setErro('A imagem deve ter no máximo 20MB.');
       return;
     }
 
+    // Abre o editor para o usuário enquadrar a foto; o preview só muda ao confirmar
     setErro('');
+    setFotoParaAjustar(arquivo);
+  };
+
+  const confirmarFotoAjustada = (recortada: File) => {
+    setFotoParaAjustar(null);
     atualizarForm({
-      imagem: arquivo,
-      imagemPreview: URL.createObjectURL(arquivo),
+      imagem: recortada,
+      imagemPreview: URL.createObjectURL(recortada),
     });
   };
 
@@ -125,6 +164,14 @@ const EditProduto: React.FC = () => {
     const preco = precoParaNumero(form.preco);
     if (!form.preco || !(preco > 0)) { setErro('Informe um preço válido.'); return; }
 
+    const ing = linhasParaPayload(ingredientes);
+    if (!ing.ok) {
+      setErroIng(ing.erro);
+      document.querySelector('.ing')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    setErroIng('');
+
     setErro('');
     setSalvando(true);
 
@@ -135,7 +182,7 @@ const EditProduto: React.FC = () => {
         imagem_url = await ProdutoService.uploadImagem(form.imagem);
       }
 
-      await ProdutoService.atualizar(id, {
+      const salvo = await ProdutoService.atualizar(id, {
         nome: form.nome.trim(),
         descricao: form.descricao.trim() || null, // null limpa a descrição no banco
         categoria_id: form.categoria_id,
@@ -143,8 +190,11 @@ const EditProduto: React.FC = () => {
         disponivel: form.disponivel,
         destaque: form.destaque,
         ...(imagem_url && { imagem_url }),
+        ingredientes: ing.lista, // lista completa: o que saiu dela é removido
       });
 
+      // Recarrega a lista com o que o servidor gravou (ids reais): o que está na tela é o que foi salvo
+      setIngredientes(linhasDoProduto(salvo));
       setSucesso(true);
     } catch (err: any) {
       setErro(err?.response?.data?.message ?? 'Não foi possível salvar as alterações.');
@@ -228,6 +278,14 @@ const EditProduto: React.FC = () => {
                 style={{ display: 'none' }}
                 onChange={handleFoto}
               />
+              <RecortadorImagem
+                arquivo={fotoParaAjustar}
+                titulo="Ajustar foto do produto"
+                formato="retangulo"
+                proporcao={4 / 3}
+                onConfirmar={confirmarFotoAjustada}
+                onCancelar={() => setFotoParaAjustar(null)}
+              />
               <button className="editprod__btn-foto" onClick={() => fotoRef.current?.click()}>
                 <HiUpload /> Alterar Imagem
               </button>
@@ -306,6 +364,19 @@ const EditProduto: React.FC = () => {
             </label>
           </div>
 
+          {/* Ingredientes e adicionais (estilo totem) */}
+          <div className="editprod__campo">
+            <IngredientesEditor
+              linhas={ingredientes}
+              onChange={(l) => { setMsgIngredientes(''); setErroIng(''); setIngredientes(l); }}
+              disabled={salvando}
+              onImportar={importarPadrao}
+              importando={importando}
+              mensagem={msgIngredientes}
+              erro={erroIng}
+            />
+          </div>
+
           {/* Erro */}
           {erro && <p className="editprod__erro">{erro}</p>}
 
@@ -324,7 +395,7 @@ const EditProduto: React.FC = () => {
 
       {/* ── Popup de sucesso ── */}
       {sucesso && (
-        <div className="editprod__popup-overlay" onClick={() => setSucesso(false)}>
+        <div className="editprod__popup-overlay" onClick={() => navigate('/restaurante/produtos')}>
           <div className="editprod__popup" onClick={(e) => e.stopPropagation()}>
             <span className="editprod__popup-icon">✅</span>
             <h3>Produto atualizado com sucesso!</h3>

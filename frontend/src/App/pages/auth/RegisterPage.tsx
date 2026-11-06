@@ -119,6 +119,18 @@ const dataParaISO = (valor: string) => {
   return `${ano}-${mes}-${dia}`;
 };
 
+// "AAAA-MM-DD" (calendário nativo) → "DD/MM/AAAA" (campo com máscara)
+const isoParaData = (iso: string) => {
+  const [ano, mes, dia] = iso.split('-');
+  return ano && mes && dia ? `${dia}/${mes}/${ano}` : '';
+};
+
+// Hoje no formato do calendário nativo (usa a data local, não UTC)
+const hojeISO = () => {
+  const h = new Date();
+  return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
+};
+
 type Erros = Record<string, string>;
 
 /**
@@ -144,15 +156,25 @@ interface FieldProps {
   error?: string;
   layout: React.CSSProperties;
   children: React.ReactNode;
+  /** Se informado, o ícone vira um botão clicável (ex.: abrir o calendário) */
+  onIconClick?: () => void;
+  iconLabel?: string;
 }
 
-const Field: React.FC<FieldProps> = ({ name, label, icon, error, layout, children }) => (
+const Field: React.FC<FieldProps> = ({ name, label, icon, error, layout, children, onIconClick, iconLabel }) => (
   <div className="register-page__field" style={layout}>
     <label className="register-page__label" htmlFor={`rp-${name}`}>
       {label} <span className="register-page__req" aria-hidden="true">*</span>
     </label>
     <div className={`register-page__control${error ? ' register-page__control--error' : ''}`}>
-      <span className="register-page__icon" aria-hidden="true">{icon}</span>
+      {onIconClick ? (
+        <button type="button" className="register-page__icon register-page__icon--btn"
+          onClick={onIconClick} aria-label={iconLabel}>
+          {icon}
+        </button>
+      ) : (
+        <span className="register-page__icon" aria-hidden="true">{icon}</span>
+      )}
       {children}
     </div>
     {error && (
@@ -229,6 +251,8 @@ const RegisterPage: React.FC = () => {
   const [carregando, setCarregando] = useState(false);
   const [showSucesso, setShowSucesso] = useState(false);
   const [showTermosModal, setShowTermosModal] = useState(false);
+  // Campo que deve receber o foco assim que a etapa dele estiver na tela
+  const [focoPendente, setFocoPendente] = useState<string | null>(null);
 
   // CEP / cidades
   const [buscandoCep, setBuscandoCep] = useState(false);
@@ -298,9 +322,37 @@ const RegisterPage: React.FC = () => {
       return novo;
     });
 
+  // Compara as senhas enquanto o usuário digita (sem esperar o clique em "Finalizar").
+  // Só avisa depois que o campo "Confirmar senha" tiver algo digitado.
+  useEffect(() => {
+    if (!confirmarSenha) return;
+    if (senha !== confirmarSenha) {
+      setErros((prev) =>
+        prev.confirmarSenha === 'As senhas não coincidem.'
+          ? prev
+          : { ...prev, confirmarSenha: 'As senhas não coincidem.' });
+    } else {
+      limparErro('confirmarSenha');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [senha, confirmarSenha]);
+
   const focarPrimeiroErro = (e: Erros) => {
     const primeiro = Object.keys(e)[0];
     if (primeiro) document.getElementById(`rp-${primeiro}`)?.focus();
+  };
+
+  useEffect(() => {
+    if (!focoPendente) return;
+    document.getElementById(`rp-${focoPendente}`)?.focus();
+    setFocoPendente(null);
+  }, [focoPendente, etapa]);
+
+  // Marca o campo com o motivo, leva o usuário até a etapa dele e põe o cursor lá
+  const apontarErro = (campo: string, destino: 1 | 2, mensagem: string) => {
+    setErros({ [campo]: mensagem });
+    if (destino !== etapa) irParaEtapa(destino);
+    setFocoPendente(campo);
   };
 
   const irParaEtapa = (destino: 1 | 2) => {
@@ -322,6 +374,19 @@ const RegisterPage: React.FC = () => {
 
   const handleDataNascimentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDataNascimento(mascarar(e.target.value, '00/00/0000'));
+    limparErro('dataNascimento');
+  };
+
+  // Calendário nativo aberto pelo ícone do campo
+  const calendarioRef = useRef<HTMLInputElement>(null);
+  const abrirCalendario = () => {
+    const el = calendarioRef.current;
+    if (!el) return;
+    try { el.showPicker(); } catch { el.focus(); el.click(); }
+  };
+  const handleCalendarioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.value) return;
+    setDataNascimento(isoParaData(e.target.value));
     limparErro('dataNascimento');
   };
 
@@ -403,13 +468,29 @@ const RegisterPage: React.FC = () => {
   };
 
   /* ── Etapa 1 → 2 ── */
-  const handleAvancar = (e: React.FormEvent) => {
+  const handleAvancar = async (e: React.FormEvent) => {
     e.preventDefault();
     const encontrados = validarEtapa1();
     setErros(encontrados);
     if (Object.keys(encontrados).length > 0) {
       focarPrimeiroErro(encontrados);
       return;
+    }
+
+    // Confere o CNPJ já aqui: assim a pessoa não preenche a etapa 2 inteira para só então
+    // descobrir que ele já existe. Se a consulta falhar (rede, limite de requisições), segue:
+    // o envio final confere de novo.
+    setCarregando(true);
+    try {
+      const disponivel = await AuthService.cnpjDisponivel(cnpj);
+      if (!disponivel) {
+        apontarErro('cnpj', 1, 'Este CNPJ já está cadastrado.');
+        return;
+      }
+    } catch {
+      // segue para a etapa 2
+    } finally {
+      setCarregando(false);
     }
     irParaEtapa(2);
   };
@@ -464,11 +545,21 @@ const RegisterPage: React.FC = () => {
       // o sistema leva para a escolha do plano (se ainda não veio do site) e para o pagamento.
       setShowSucesso(true);
     } catch (err: any) {
-      // Se o backend já mandou um motivo específico (ex: "Este e-mail já
-      // está cadastrado"), mostramos ele. Senão, caímos numa mensagem mais
-      // empática do que um erro genérico.
-      const mensagemDoServidor = err?.response?.data?.message;
+      const dados = err?.response?.data;
+      const mensagemDoServidor: string | undefined = dados?.message;
+
+      // Conflito (409): leva para o campo certo, na etapa certa. O CNPJ fica na etapa 1.
+      if (err?.response?.status === 409 && mensagemDoServidor) {
+        const m = mensagemDoServidor.toLowerCase();
+        if (m.includes('cnpj')) return apontarErro('cnpj', 1, mensagemDoServidor);
+        if (m.includes('cpf')) return apontarErro('cpf', 2, mensagemDoServidor);
+        if (m.includes('e-mail') || m.includes('email')) return apontarErro('email', 2, mensagemDoServidor);
+      }
+
+      // Validação do servidor (422) vem com o detalhe em errors[]; senão usa o motivo geral
+      const primeiroDetalhe = Array.isArray(dados?.errors) ? dados.errors[0]?.message : undefined;
       setErro(
+        primeiroDetalhe ??
         mensagemDoServidor ??
         'Não foi possível criar sua conta. Tente novamente mais tarde. Se o problema persistir, entre em contato com nossa equipe.'
       );
@@ -648,8 +739,8 @@ const RegisterPage: React.FC = () => {
               </Field>
 
               <div className="register-page__actions">
-                <button type="submit" className="register-page__submit">
-                  Próximo <HiOutlineArrowRight />
+                <button type="submit" className="register-page__submit" disabled={carregando}>
+                  {carregando ? 'Verificando…' : <>Próximo <HiOutlineArrowRight /></>}
                 </button>
                 <p className="register-page__redirect">
                   Já possui conta?{' '}
@@ -689,10 +780,15 @@ const RegisterPage: React.FC = () => {
               </Field>
 
               <Field name="dataNascimento" label="Data de nascimento" icon={<HiOutlineCalendarDays />}
-                error={erros.dataNascimento} layout={span(5)}>
+                error={erros.dataNascimento} layout={span(5)}
+                onIconClick={abrirCalendario} iconLabel="Abrir calendário">
                 <input id="rp-dataNascimento" type="text" inputMode="numeric" className="register-page__input"
                   placeholder="DD/MM/AAAA" value={dataNascimento} onChange={handleDataNascimentoChange}
                   autoComplete="bday" aria-invalid={!!erros.dataNascimento} />
+                <input ref={calendarioRef} type="date" className="register-page__date-native"
+                  tabIndex={-1} aria-hidden="true" min="1900-01-01" max={hojeISO()}
+                  value={dataNascimentoValida(dataNascimento) ? dataParaISO(dataNascimento) : ''}
+                  onChange={handleCalendarioChange} />
               </Field>
 
               <Field name="senha" label="Senha" icon={<HiOutlineLockClosed />}

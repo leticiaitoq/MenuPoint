@@ -5,18 +5,18 @@
 
 .relatorios {
   --cor-vinho:      #8B1A1A;
-  --cor-vinho-soft: #fff0f0;
+  --cor-vinho-soft: var(--brand-soft);
   --cor-amber:      #d97706;
-  --cor-amber-soft: #fef3c7;
+  --cor-amber-soft: var(--warning-soft);
   --cor-verde:      #16a34a;
-  --cor-verde-soft: #dcfce7;
+  --cor-verde-soft: var(--success-soft);
   --cor-azul:       #2563eb;
-  --cor-azul-soft:  #dbeafe;
-  --cor-texto:      #1f2937;
-  --cor-texto-fraco:#6b7280;
-  --cor-borda:      #e5e7eb;
-  --cor-fundo-card: #ffffff;
-  --sombra:         0 1px 4px rgba(0,0,0,0.08);
+  --cor-azul-soft:  var(--info-soft);
+  --cor-texto:      var(--text);
+  --cor-texto-fraco:var(--text-muted);
+  --cor-borda:      var(--border);
+  --cor-fundo-card: var(--bg-card-glass);
+  --sombra:         0 1px 4pxvar(--shadow-color);
   --raio:           14px;
   --raio-sm:        8px;
 
@@ -91,7 +91,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f9fafb;
+  background: var(--bg-surface-alt);
   border: 1.5px solid var(--cor-borda);
   border-radius: var(--raio-sm);
   padding: 7px 12px;
@@ -120,7 +120,7 @@
   border-radius: var(--raio-sm);
   border: none;
   background: var(--cor-verde);
-  color: #ffffff;
+  color: var(--on-status);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -128,7 +128,7 @@
 }
 
 .relatorios__btn-aplicar:hover {
-  background: #15803d;
+  background: var(--success);
 }
 
 /* ── Cards de resumo ── */
@@ -241,7 +241,7 @@
   grid-column: 1 / 4;
   grid-row: 2;
   height: 4px;
-  background: #f0f0f0;
+  background: var(--bg-surface-alt);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -484,7 +484,7 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: #f0fdf4;
+  background: var(--success-soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -598,8 +598,8 @@
   padding: 10px;
   border: none;
   border-radius: 8px;
-  background: #8B1A1A;
-  color: white;
+  background: var(--brand-hover);
+  color: var(--on-brand);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;

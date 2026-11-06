@@ -1,4 +1,5 @@
 import api from './api'
+import { prepararImagem } from './imagem'
 
 export interface Adicional {
   id?: string
@@ -6,6 +7,24 @@ export interface Adicional {
   preco_extra: number
   disponivel: boolean
   ordem: number
+  /** Unidades que já vêm no produto (0 = adicional) e máximo que o cliente pode pedir */
+  quantidade_inclusa?: number
+  quantidade_maxima?: number
+  /** Fixo: o cliente vê, mas não pode retirar */
+  fixo?: boolean
+}
+
+/** Ingrediente enviado pelo cadastro do restaurante (lista completa do produto) */
+export interface IngredienteCadastro {
+  id?: string
+  nome: string
+  preco_extra: number
+  quantidade_inclusa: number
+  quantidade_maxima: number
+  /** Fixo: o cliente vê, mas não pode retirar (precisa vir incluso) */
+  fixo?: boolean
+  disponivel?: boolean
+  ordem?: number
 }
 
 export interface GrupoAdicional {
@@ -51,6 +70,7 @@ export interface CriarProdutoDTO {
   destaque?: boolean
   ordem?: number
   grupos_adicionais?: Omit<GrupoAdicional, 'id'>[]
+  ingredientes?: IngredienteCadastro[]
 }
 
 export interface AtualizarProdutoDTO {
@@ -66,6 +86,8 @@ export interface AtualizarProdutoDTO {
   ativo?: boolean
   destaque?: boolean
   ordem?: number
+  /** Lista COMPLETA de ingredientes: o que não estiver nela é removido */
+  ingredientes?: IngredienteCadastro[]
 }
 
 export interface FiltrosProduto {
@@ -137,8 +159,9 @@ const ProdutoService = {
   // Envia a foto para o Storage e devolve a URL pública, para ser usada
   // no campo imagem_url do criar()/atualizar()
   async uploadImagem(arquivo: File): Promise<string> {
+    const pronta = await prepararImagem(arquivo, { maxLado: 1200 })
     const formData = new FormData()
-    formData.append('arquivo', arquivo)
+    formData.append('arquivo', pronta)
 
     const response = await api.post<{ imagem_url: string }>(
       'produtos/upload-imagem',

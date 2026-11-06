@@ -181,6 +181,8 @@ export class AssinaturaService {
           // Modo teste: MP_PAYER_EMAIL_TESTE substitui o e-mail do cadastro (pagador de teste do MP)
           payer_email:        emailPagador,
           back_url:           `${FRONTEND_PRINCIPAL}/assinatura/sucesso`,
+          // Experimento (MP_AUTO_RETURN=true): pede ao MP o retorno automático ao site
+          ...(env.MP_AUTO_RETURN === 'true' && { auto_return: 'approved' }),
           notification_url:   `${env.API_URL}/api/v1/assinatura/webhook`,
           status:             'pending',
           auto_recurring: {
@@ -208,6 +210,7 @@ export class AssinaturaService {
       return { init_point: mpAssinatura.init_point }
     } catch (err: any) {
       if (err instanceof AppError) throw err
+      console.error('[checkout] erro do Mercado Pago:', JSON.stringify(err?.cause ?? err?.message ?? err))
       const msg = err?.cause?.[0]?.description ?? err?.message ?? 'Erro ao criar assinatura'
       throw new AppError(`Mercado Pago: ${msg}`, 502)
     }
@@ -237,7 +240,42 @@ export class AssinaturaService {
         // Falha ao consultar o MP: devolve o status que já temos e a tela tenta de novo
         console.error(`[sincronizar] falha ao consultar o MP: ${err?.message ?? err}`)
       }
-      const atual = await prisma.assinatura.findUnique({ where: { id: ultima.id } })
+      let atual = await prisma.assinatura.findUnique({ where: { id: ultima.id } })
+
+      // Ainda pendente: a pessoa pode ter pago por um link gerado antes (outra assinatura do MP
+      // da mesma empresa). Procura uma assinatura autorizada com o mesmo external_reference.
+      if (atual?.status === 'PENDENTE') {
+        try {
+          const busca: any = await (preApprovalClient as any).search({
+            options: { external_reference: empresa_id, status: 'authorized' },
+          })
+          // Só vale uma assinatura autorizada que seja MESMO desta empresa (external_reference) e
+          // que ainda não esteja ligada a outra assinatura do banco. Sem essa conferência, uma
+          // assinatura paga de outra conta de teste poderia liberar esta empresa por engano.
+          const candidatas: any[] = Array.isArray(busca?.results) ? busca.results : []
+          const autorizada = candidatas.find(
+            (r) => r?.status === 'authorized' && String(r?.external_reference ?? '') === empresa_id
+          )
+          const emUso = autorizada?.id
+            ? await prisma.assinatura.findFirst({
+                where: { gateway_id: String(autorizada.id), id: { not: ultima.id } },
+                select: { id: true },
+              })
+            : null
+          if (autorizada?.id && !emUso) {
+            await prisma.assinatura.update({
+              where: { id: ultima.id },
+              data: { gateway: 'mercadopago', gateway_id: String(autorizada.id) },
+            })
+            const r2: any = await this.processarWebhook(String(autorizada.id), 'subscription_preapproval')
+            statusMP = r2?.status_mp ?? statusMP
+            atual = await prisma.assinatura.findUnique({ where: { id: ultima.id } })
+          }
+        } catch (err: any) {
+          console.error(`[sincronizar] busca por assinatura autorizada falhou: ${err?.message ?? err}`)
+        }
+      }
+
       return { status: atual?.status ?? ultima.status, status_mp: statusMP }
     }
 
@@ -264,9 +302,13 @@ export class AssinaturaService {
       }
       const novoStatus: StatusAssinatura = statusMap[statusMP] ?? 'FALHOU'
 
+      // O Mercado Pago devolve em external_reference a empresa dona desta assinatura. Só
+      // atualiza o registro dessa empresa, para nunca ativar uma empresa com o pagamento de outra.
+      const empresaDona = String(raw.external_reference ?? '')
+
       // Atualiza a assinatura no banco pelo gateway_id
       const assinaturaAtualizada = await prisma.assinatura.updateMany({
-        where: { gateway_id: id, gateway: 'mercadopago' },
+        where: { gateway_id: id, gateway: 'mercadopago', ...(empresaDona && { empresa_id: empresaDona }) },
         data: {
           status:        novoStatus,
           ...(novoStatus === 'ATIVA' && {
@@ -282,7 +324,7 @@ export class AssinaturaService {
       // Se ficou ATIVA, libera a empresa com o plano da própria assinatura salva no cadastro
       if (novoStatus === 'ATIVA') {
         const assinatura = await prisma.assinatura.findFirst({
-          where: { gateway_id: id, gateway: 'mercadopago' },
+          where: { gateway_id: id, gateway: 'mercadopago', ...(empresaDona && { empresa_id: empresaDona }) },
         })
 
         if (assinatura) {

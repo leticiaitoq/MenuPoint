@@ -6,12 +6,20 @@ import './Carrinho.css';
 // ── Tipos 
 export interface ItemCarrinho {
   id: string;
+  /** Id real do produto na API (necessário para enviar o pedido) */
+  produtoId?: string;
   nome: string;
   preco: number;
   quantidade: number;
   imagem: string;
   /** Observação escrita pelo cliente na tela de personalização (opcional) */
   observacao?: string;
+  /** Só os ingredientes cuja quantidade difere da que já vem no produto (ids reais da API) */
+  ingredientes?: { adicional_id: string; quantidade: number }[];
+  /** Item para viagem */
+  paraLevar?: boolean;
+  /** Resumo legível do que foi tirado/acrescentado, para o cliente conferir (ex.: "Sem: cebola | Extra: bacon x1") */
+  detalhes?: string;
 }
 
 interface CarrinhoProps {
@@ -33,14 +41,11 @@ const Carrinho: React.FC<CarrinhoProps> = ({ aberto, onFechar, itens, onFinaliza
         <div className="carrinho__overlay" onClick={onFechar} />
       )}
 
-      {/* Painel lateral */}
-      <aside className={`carrinho__painel${aberto ? ' carrinho__painel--aberto' : ''}`}
-      style={{
-        backgroundImage: 'url(./images/Fundo-historico.png)',
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center',
-        backgroundSize: 'cover' 
-        }}>
+      {/* Painel lateral — a imagem de fundo é aplicada pelo CSS (var --bg-arte) */}
+      <aside
+        className={`carrinho__painel${aberto ? ' carrinho__painel--aberto' : ''}`}
+        style={{ '--bg-arte': 'url(/images/Fundo-historico.png)' } as React.CSSProperties}
+      >
 
         {/* Cabeçalho */}
         <div className="carrinho__header">
@@ -70,10 +75,12 @@ const Carrinho: React.FC<CarrinhoProps> = ({ aberto, onFechar, itens, onFinaliza
                   <span className="carrinho__item-nome">{item.nome}</span>
                   <div className="carrinho__item-meta">
                   <span className="carrinho__item-qtd">{item.quantidade}x</span>
-                  {item.observacao && (
+                  {(item.detalhes || item.observacao) && (
                     <span className="carrinho__item-obs" tabIndex={0}>
-                      Observação 
-                      <span className="carrinho__item-obs-tooltip">{': '+item.observacao}</span>
+                      {item.detalhes ? 'Detalhes' : 'Observação'}
+                      <span className="carrinho__item-obs-tooltip">
+                        {': ' + [item.detalhes, item.observacao].filter(Boolean).join(' | ')}
+                      </span>
                     </span>
                   )}
                 </div>
