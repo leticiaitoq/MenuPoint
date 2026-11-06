@@ -1,3 +1,4 @@
+import { invalidarUsuario } from '@shared/middlewares/usuarioAtivo'
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { UsuarioService } from './Usuario.service'
 import { UsuarioRepository } from './Usuario.repository'
@@ -95,6 +96,7 @@ export async function usuariosRoutes(app: FastifyInstance): Promise<void> {
       }
 
       await service.update(id, { ativo: false })
+      invalidarUsuario(id)
       return reply.status(204).send()
     })
 

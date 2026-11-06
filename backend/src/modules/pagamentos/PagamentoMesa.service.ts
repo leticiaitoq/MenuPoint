@@ -1,5 +1,7 @@
 import { AppError } from '@shared/errors/AppError'
+import { randomUUID } from 'crypto'
 import prisma from '@config/prisma'
+import { registrarAuditoria } from './auditoria'
 import { AbatimentoDTO, PagamentoParcialDTO } from './Pagamento.schema'
 import {
   TAXA_SERVICO_PERCENTUAL,
@@ -136,6 +138,7 @@ export class PagamentoMesaService {
       restante: conta.restante,
       pagamentos: conta.abertos.map((p) => ({
         id: p.id,
+        grupo_id: p.grupo_id,
         tipo: p.tipo,
         metodo: p.metodo,
         valor: Number(p.valor),
@@ -297,6 +300,8 @@ export class PagamentoMesaService {
         throw new AppError('O valor é maior que o saldo restante da conta', 400)
       }
 
+      // Todas as formas de UM pagamento dividido compartilham o grupo (desfazer remove o grupo todo)
+      const grupo_id = randomUUID()
       const ids: string[] = []
       for (let i = 0; i < linhas.length; i++) {
         const l = linhas[i]
@@ -305,6 +310,7 @@ export class PagamentoMesaService {
             estabelecimento_id,
             mesa_id,
             registrado_por_id,
+            grupo_id,
             tipo,
             metodo: METODO_DO_BANCO[l.forma],
             valor: l.valor,
@@ -336,18 +342,59 @@ export class PagamentoMesaService {
     })
   }
 
-  // Desfaz um pagamento parcial que ainda não foi liquidado (ex.: registrado por engano)
-  async desfazer(mesa_id: string, id: string, estabelecimento_id: string) {
+  // Desfaz um pagamento parcial que ainda não foi liquidado (ex.: registrado por engano).
+  // Exige motivo e grava quem desfez. Se o pagamento foi dividido em várias formas, desfaz o
+  // GRUPO inteiro: assim nenhum item fica "pago" sem dinheiro (nem dinheiro sem item).
+  async desfazer(
+    mesa_id: string,
+    id: string,
+    motivo: string,
+    usuario_id: string,
+    estabelecimento_id: string
+  ) {
     await exigirMesa(mesa_id, estabelecimento_id)
     return prisma.$transaction(async (tx) => {
       await travarMesa(tx, mesa_id)
-      const existe = await tx.pagamentoMesa.findFirst({
+      const alvo = await tx.pagamentoMesa.findFirst({
         where: { id, mesa_id, estabelecimento_id, liquidado_em: null },
-        select: { id: true },
+        select: { id: true, grupo_id: true },
       })
-      if (!existe) throw new AppError('Pagamento parcial não encontrado ou já liquidado', 404)
-      await tx.pagamentoMesa.delete({ where: { id } })
-      return { removido: true }
+      if (!alvo) throw new AppError('Pagamento parcial não encontrado ou já liquidado', 404)
+
+      const grupo = await tx.pagamentoMesa.findMany({
+        where: alvo.grupo_id
+          ? { grupo_id: alvo.grupo_id, mesa_id, estabelecimento_id, liquidado_em: null }
+          : { id: alvo.id },
+        include: { itens: true },
+      })
+
+      await registrarAuditoria(tx, {
+        estabelecimento_id,
+        usuario_id,
+        acao: 'PAGAMENTO_MESA_DESFEITO',
+        entidade: 'PagamentoMesa',
+        entidade_id: alvo.id,
+        motivo,
+        dados: {
+          mesa_id,
+          pagamentos: grupo.map((p) => ({
+            id: p.id,
+            tipo: p.tipo,
+            metodo: p.metodo,
+            valor: Number(p.valor),
+            registrado_por_id: p.registrado_por_id,
+            criado_em: p.criado_em.toISOString(),
+            itens: p.itens.map((i) => ({
+              item_pedido_id: i.item_pedido_id,
+              quantidade: i.quantidade,
+              valor: Number(i.valor),
+            })),
+          })),
+        },
+      })
+
+      await tx.pagamentoMesa.deleteMany({ where: { id: { in: grupo.map((p) => p.id) } } })
+      return { removido: true, pagamentos_removidos: grupo.length }
     })
   }
 }

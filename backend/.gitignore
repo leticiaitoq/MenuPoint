@@ -6,3 +6,5 @@ prisma/migrations/dev.db
 /src/generated/prisma
 logs.txt
 .log
+logs.tx
+*.log

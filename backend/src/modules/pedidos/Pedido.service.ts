@@ -26,11 +26,13 @@ export class PedidoService {
 
     // O preço vem SEMPRE do banco: o valor enviado pelo front é ignorado
     // (senão qualquer um poderia lançar um pedido com preço adulterado).
+    // Isso vale também para os adicionais: nome e preço_extra são relidos do banco.
     const itensComPreco: typeof data.itens = []
 
     for (const item of data.itens) {
       const produto = await prisma.produto.findFirst({
         where: { id: item.produto_id, estabelecimento_id },
+        include: { grupos_adicionais: { select: { id: true, nome: true, obrigatorio: true, min_selecoes: true, max_selecoes: true } } },
       })
 
       if (!produto) {
@@ -43,13 +45,51 @@ export class PedidoService {
 
       const precoUnitario = Number(produto.preco_promocional ?? produto.preco)
 
-      const totalAdicionais = item.itens_adicionais.reduce(
-        (acc, ad) => acc + ad.preco_extra,
-        0
-      )
+      // Adicionais: precisam existir, estar disponíveis e ser DESTE produto
+      const idsAdicionais = item.itens_adicionais.map((a) => a.adicional_id)
+      if (new Set(idsAdicionais).size !== idsAdicionais.length) {
+        throw new AppError(`Adicional repetido em "${produto.nome}"`, 400)
+      }
+      const adicionaisBanco = idsAdicionais.length
+        ? await prisma.adicional.findMany({
+            where: { id: { in: idsAdicionais }, disponivel: true, grupo: { produto_id: produto.id } },
+            select: { id: true, nome: true, preco_extra: true, grupo_id: true },
+          })
+        : []
+      if (adicionaisBanco.length !== idsAdicionais.length) {
+        throw new AppError(`Adicional inválido ou indisponível em "${produto.nome}"`, 400)
+      }
+
+      // Regras de seleção de cada grupo (obrigatório / mínimo / máximo)
+      for (const g of produto.grupos_adicionais) {
+        const qtd = adicionaisBanco.filter((a) => a.grupo_id === g.id).length
+        const minimo = g.obrigatorio ? Math.max(g.min_selecoes, 1) : g.min_selecoes
+        if (qtd < minimo) {
+          throw new AppError(`Escolha ao menos ${minimo} em "${g.nome}" (${produto.nome})`, 400)
+        }
+        if (g.max_selecoes > 0 && qtd > g.max_selecoes) {
+          throw new AppError(`Escolha no máximo ${g.max_selecoes} em "${g.nome}" (${produto.nome})`, 400)
+        }
+      }
+
+      const porId = new Map(adicionaisBanco.map((a) => [a.id, a]))
+      const adicionaisConfiaveis = item.itens_adicionais.map((ad) => {
+        const real = porId.get(ad.adicional_id)!
+        return {
+          adicional_id: real.id,
+          nome_adicional: real.nome,
+          preco_extra: Number(real.preco_extra),
+        }
+      })
+
+      const totalAdicionais = adicionaisConfiaveis.reduce((acc, ad) => acc + ad.preco_extra, 0)
 
       subtotal += (precoUnitario + totalAdicionais) * item.quantidade
-      itensComPreco.push({ ...item, preco_unitario: precoUnitario })
+      itensComPreco.push({
+        ...item,
+        preco_unitario: precoUnitario,
+        itens_adicionais: adicionaisConfiaveis,
+      })
     }
 
     // Valida a mesa (ela só passa a OCUPADA depois que o pedido for gravado)

@@ -30,7 +30,6 @@ import EstabelecimentoService from '../../../../services/estabelecimento.service
 import { useAuth } from '../../../../shared/contexts/Authcontext';
 import JuntarPedidosModal from '../../../../shared/components/JuntarPedidos/JuntarPedidosModal';
 import ConfirmarAcaoPedido, { TipoAcaoPedido } from '../../../../shared/components/ConfirmarAcaoPedido/ConfirmarAcaoPedido';
-import ModalAlerta from '../../../../shared/components/ModalAlerta/ModalAlerta';
 import './PagarMesa.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -275,6 +274,7 @@ const PagarMesaConteudo: React.FC<{
   const [erroParcial, setErroParcial] = useState<string | null>(null);
   // Pagamento aguardando confirmação no modal "Desfazer pagamento"
   const [parcialParaDesfazer, setParcialParaDesfazer] = useState<PagamentoParcialRegistrado | null>(null);
+  const [motivoDesfazer, setMotivoDesfazer] = useState('');
 
   // Pagamento inteiro: chamada à API em andamento / erro devolvido (ex.: valor recebido menor)
   const [pagando, setPagando] = useState(false);
@@ -291,6 +291,9 @@ const PagarMesaConteudo: React.FC<{
   // Desconto agora vive no state (antes vinha fixo do mock) pra poder ser
   // atualizado pelo modal de Descontos.
   const [descontoValor, setDescontoValor] = useState(pedidoBase.descontoValor);
+  // O que foi aplicado: cupom (o servidor recalcula) ou manual (exige motivo)
+  const [descontoAplicado, setDescontoAplicado] = useState<{ cupom?: string; motivo?: string } | null>(null);
+  const [descontoMotivo, setDescontoMotivo] = useState('');
 
   // ── Modal "Forma de pagamento" ──────────────────────────────────────────────
   const [modalPagamentoAberto, setModalPagamentoAberto] = useState(false);
@@ -400,13 +403,14 @@ const PagarMesaConteudo: React.FC<{
     setDesfazendoId(pagamentoId);
     setErroParcial(null);
     try {
-      await PagamentoService.desfazerParcial(id, pagamentoId);
+      await PagamentoService.desfazerParcial(id, pagamentoId, motivoDesfazer.trim());
       await onAtualizar();
     } catch (err: any) {
       setErroParcial(mensagemDeErro(err, 'Não foi possível desfazer o pagamento.'));
     }
     setDesfazendoId(null);
     setParcialParaDesfazer(null);
+    setMotivoDesfazer('');
   };
 
   // ── Transferir pedidos / juntar pedidos ──────────────────────────────────────────────────────
@@ -509,7 +513,11 @@ const PagarMesaConteudo: React.FC<{
       const r = await PagamentoService.finalizarMesa(id, {
         forma,
         valor_recebido: forma === 'DINHEIRO' && total > 0.004 ? valorRecebidoNumero : undefined,
-        desconto_valor: descontoValor,
+        ...(descontoValor > 0 && descontoAplicado?.cupom
+          ? { cupom: descontoAplicado.cupom }
+          : descontoValor > 0
+            ? { desconto_valor: descontoValor, desconto_motivo: descontoAplicado?.motivo }
+            : {}),
       });
       setModalPagamentoAberto(false);
 
@@ -537,6 +545,7 @@ const PagarMesaConteudo: React.FC<{
     setCodigoCupom('');
     setErroCupom('');
     setDescontoManualCentavos(0);
+    setDescontoMotivo('');
     setModalDescontoAberto(true);
   };
 
@@ -582,11 +591,16 @@ const PagarMesaConteudo: React.FC<{
   const podeAplicarDesconto =
     !descontoExcedeLimite &&
     ((abaDesconto === 'cupom' && cupomAplicado !== null) ||
-      (abaDesconto === 'manual' && descontoManualCentavos > 0));
+      (abaDesconto === 'manual' && descontoManualCentavos > 0 && descontoMotivo.trim().length >= 3));
 
   const handleAplicarDesconto = () => {
     if (!podeAplicarDesconto) return;
-    // TODO: chamar desconto.service.ts — { mesaId: id, tipo: abaDesconto, valor: descontoPreview }
+    // O valor mostrado é só uma prévia: o servidor revalida o cupom, o teto do perfil e o motivo
+    setDescontoAplicado(
+      abaDesconto === 'cupom' && cupomAplicado
+        ? { cupom: cupomAplicado.codigo }
+        : { motivo: descontoMotivo.trim() }
+    );
     setDescontoValor(descontoPreview);
     setModalDescontoAberto(false);
   };
@@ -1031,6 +1045,15 @@ const PagarMesaConteudo: React.FC<{
                     }
                     onChange={handleDescontoManualChange}
                   />
+                  <label className="desconto__label">Motivo (obrigatório)</label>
+                  <input
+                    type="text"
+                    className="desconto__manual-input"
+                    placeholder="Ex.: cortesia da casa, erro no preparo"
+                    maxLength={300}
+                    value={descontoMotivo}
+                    onChange={(e) => setDescontoMotivo(e.target.value)}
+                  />
                 </div>
               )}
 
@@ -1106,21 +1129,39 @@ const PagarMesaConteudo: React.FC<{
         onFechar={fecharAcaoPedido}
       />
 
-      <ModalAlerta
-        aberto={parcialParaDesfazer !== null}
-        variante="aviso"
-        titulo="Desfazer este pagamento?"
-        mensagem={
-          parcialParaDesfazer
-            ? `O valor de ${formatarMoeda(parcialParaDesfazer.valor)} volta para a conta da mesa.`
-            : undefined
-        }
-        textoConfirmar="Desfazer pagamento"
-        textoCancelar="Cancelar"
-        carregando={desfazendoId !== null}
-        onConfirmar={() => parcialParaDesfazer && void desfazerParcial(parcialParaDesfazer.id)}
-        onFechar={() => setParcialParaDesfazer(null)}
-      />
+      {parcialParaDesfazer && (
+        <div className="pagar__overlay" onClick={() => desfazendoId === null && setParcialParaDesfazer(null)}>
+          <div className="desconto__modal" role="alertdialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <h3>Desfazer este pagamento?</h3>
+            <p>O valor de {formatarMoeda(parcialParaDesfazer.valor)} volta para a conta da mesa.</p>
+            <label className="desconto__label">Motivo (obrigatório)</label>
+            <input
+              type="text"
+              className="desconto__manual-input"
+              placeholder="Ex.: registrado por engano"
+              maxLength={300}
+              value={motivoDesfazer}
+              onChange={(e) => setMotivoDesfazer(e.target.value)}
+            />
+            <div className="desconto__resumo">
+              <button
+                className="desconto__btn-aplicar-cupom"
+                disabled={desfazendoId !== null}
+                onClick={() => { setParcialParaDesfazer(null); setMotivoDesfazer(''); }}
+              >
+                Cancelar
+              </button>
+              <button
+                className="desconto__btn-aplicar-cupom"
+                disabled={desfazendoId !== null || motivoDesfazer.trim().length < 3}
+                onClick={() => void desfazerParcial(parcialParaDesfazer.id)}
+              >
+                Desfazer pagamento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </RestaurantLayout>
   );
 };

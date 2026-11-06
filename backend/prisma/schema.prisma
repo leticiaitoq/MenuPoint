@@ -73,6 +73,7 @@ model Estabelecimento {
   pedidos    Pedido[]
   pagamentos Pagamento[]
   pagamentos_mesa PagamentoMesa[]
+  auditorias_financeiras AuditoriaFinanceira[]
 
   @@map("estabelecimentos")
 }
@@ -103,6 +104,8 @@ model Usuario {
   reservas_confirmadas Reserva[]   @relation("ConfirmadaPor")
   pagamentos_confirmados Pagamento[] @relation("ConfirmadoPor")
   pagamentos_mesa_registrados PagamentoMesa[] @relation("RegistradoPor")
+  pagamentos_estornados Pagamento[] @relation("EstornadoPor")
+  auditorias_financeiras AuditoriaFinanceira[]
   tokens_recuperacao TokenRecuperacaoSenha[]
   tokens_confirmacao_email TokenConfirmacaoEmail[]
   refresh_tokens     RefreshToken[]
@@ -351,10 +354,16 @@ model Pagamento {
   observacoes        String?
   confirmado_em      DateTime?      @db.Timestamptz
   criado_em          DateTime       @default(now()) @db.Timestamptz
+  // Estorno e desconto com rastro (quem, quando, por quê)
+  estornado_em       DateTime?      @db.Timestamptz
+  estornado_por_id   String?        @db.Uuid
+  estorno_motivo     String?
+  desconto_motivo    String?
 
   pedido          Pedido          @relation(fields: [pedido_id], references: [id])
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   confirmado_por  Usuario?        @relation("ConfirmadoPor", fields: [confirmado_por_id], references: [id])
+  estornado_por   Usuario?        @relation("EstornadoPor", fields: [estornado_por_id], references: [id])
 
   @@map("pagamentos")
 }
@@ -376,6 +385,8 @@ model PagamentoMesa {
   troco              Decimal?          @db.Decimal(10, 2)
   observacoes        String?
   liquidado_em       DateTime?         @db.Timestamptz
+  // Pagamento dividido em várias formas: as linhas compartilham o mesmo grupo
+  grupo_id           String?           @db.Uuid
   criado_em          DateTime          @default(now()) @db.Timestamptz
 
   estabelecimento Estabelecimento     @relation(fields: [estabelecimento_id], references: [id])
@@ -384,7 +395,27 @@ model PagamentoMesa {
   itens           PagamentoMesaItem[]
 
   @@index([mesa_id, liquidado_em])
+  @@index([grupo_id])
   @@map("pagamentos_mesa")
+}
+
+// Trilha de auditoria das ações financeiras (estorno, desfazer parcial, desconto...)
+model AuditoriaFinanceira {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String   @db.Uuid
+  usuario_id         String?  @db.Uuid
+  acao               String   @db.VarChar(50)
+  entidade           String   @db.VarChar(50)
+  entidade_id        String?  @db.Uuid
+  motivo             String?
+  dados              Json?
+  criado_em          DateTime @default(now()) @db.Timestamptz
+
+  estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
+  usuario         Usuario?        @relation(fields: [usuario_id], references: [id])
+
+  @@index([estabelecimento_id, criado_em])
+  @@map("auditoria_financeira")
 }
 
 // Itens (e quantidades) que um pagamento parcial quitou

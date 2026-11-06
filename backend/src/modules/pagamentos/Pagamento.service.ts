@@ -7,7 +7,14 @@ import {
   FinalizarMesaDTO,
 } from './Pagamento.schema'
 import prisma from '@config/prisma'
-import { TAXA_SERVICO_PERCENTUAL, filtroContaAberta, travarMesa } from './conta'
+import {
+  TAXA_SERVICO_PERCENTUAL,
+  CUPONS,
+  TETO_DESCONTO_MANUAL_PERCENTUAL,
+  filtroContaAberta,
+  travarMesa,
+} from './conta'
+import { registrarAuditoria } from './auditoria'
 
 // O enum do banco não separa débito/crédito: os dois viram CARTAO (o detalhe vai em `observacoes`)
 const METODO_DO_BANCO = {
@@ -43,14 +50,30 @@ export class PagamentoService {
       throw new AppError('Não é possível registrar pagamento de pedido cancelado', 400)
     }
 
+    // Pedido de mesa é pago pelo fechamento da conta (o pagamento "por pedido" deixaria os
+    // pagamentos parciais da mesa sobrando e o fechamento passaria a dar 409)
+    if (pedido.mesa_id && !pedido.liquidado_em) {
+      throw new AppError(
+        'Este pedido faz parte da conta de uma mesa. Receba pelo Caixa (fechar conta ou pagamento parcial).',
+        409
+      )
+    }
+
     // Verifica se já existe pagamento para este pedido
     const pagamentoExistente = await this.repository.findByPedido(data.pedido_id)
     if (pagamentoExistente) {
       throw new AppError('Já existe um pagamento registrado para este pedido', 409)
     }
 
+    // O valor é SEMPRE o total do pedido no banco; desconto não é aceito neste fluxo
+    // (descontos passam pelo fechamento da mesa, com motivo e auditoria)
+    const total = Number(pedido.total)
     return this.repository.create({
       ...data,
+      valor: total,
+      valor_original: total,
+      desconto_percentual: 0,
+      desconto_valor: 0,
       estabelecimento_id,
     } as any)
   }
@@ -126,6 +149,7 @@ export class PagamentoService {
   async estornar(
     id: string,
     data: EstornarPagamentoDTO,
+    estornado_por_id: string,
     estabelecimento_id: string
   ) {
     const pagamento = await this.findById(id, estabelecimento_id)
@@ -137,9 +161,34 @@ export class PagamentoService {
       )
     }
 
-    return this.repository.update(id, {
-      status: 'ESTORNADO',
-      observacoes: data.observacoes,
+    return prisma.$transaction(async (tx) => {
+      // Condição de status no update: dois estornos simultâneos não passam os dois
+      const r = await tx.pagamento.updateMany({
+        where: { id, estabelecimento_id, status: 'CONFIRMADO' },
+        data: {
+          status: 'ESTORNADO',
+          estornado_em: new Date(),
+          estornado_por_id,
+          estorno_motivo: data.observacoes,
+        },
+      })
+      if (r.count === 0) {
+        throw new AppError('Este pagamento já foi estornado', 409)
+      }
+      await registrarAuditoria(tx, {
+        estabelecimento_id,
+        usuario_id: estornado_por_id,
+        acao: 'PAGAMENTO_ESTORNADO',
+        entidade: 'Pagamento',
+        entidade_id: id,
+        motivo: data.observacoes,
+        dados: {
+          valor: Number((pagamento as any).valor),
+          metodo: (pagamento as any).metodo,
+          pedido_id: (pagamento as any).pedido_id,
+        },
+      })
+      return tx.pagamento.findUnique({ where: { id } })
     })
   }
 
@@ -150,6 +199,7 @@ export class PagamentoService {
     mesa_id: string,
     data: FinalizarMesaDTO,
     confirmado_por_id: string,
+    perfil: string,
     estabelecimento_id: string
   ) {
     const mesa = await prisma.mesa.findFirst({
@@ -184,10 +234,35 @@ export class PagamentoService {
       const pct = TAXA_SERVICO_PERCENTUAL
       const subtotal = arredondar(aPagar.reduce((s, p) => s + Number(p.total), 0))
       const taxaTotal = arredondar((subtotal * pct) / 100)
-      if (data.desconto_valor > subtotal + taxaTotal) {
+      const totalBruto = arredondar(subtotal + taxaTotal)
+
+      // Desconto: o servidor decide o valor. Cupom = código validado aqui; manual = com teto por
+      // perfil e motivo obrigatório. Os dois juntos não são aceitos (evita acumular descontos).
+      if (data.cupom && data.desconto_valor > 0) {
+        throw new AppError('Use cupom OU desconto manual, não os dois', 400)
+      }
+      let desconto = 0
+      let descontoMotivo: string | null = null
+      if (data.cupom) {
+        const cupom = CUPONS[data.cupom]
+        if (!cupom) throw new AppError('Cupom inválido', 400)
+        desconto = arredondar((subtotal * cupom.percentual) / 100)
+        descontoMotivo = `Cupom ${data.cupom} (${cupom.percentual}%)`
+      } else if (data.desconto_valor > 0) {
+        const teto = TETO_DESCONTO_MANUAL_PERCENTUAL[perfil] ?? 0
+        if (data.desconto_valor > arredondar((totalBruto * teto) / 100) + 0.005) {
+          throw new AppError(
+            `Desconto acima do limite do seu perfil (${teto}% da conta). Peça a um administrador.`,
+            403
+          )
+        }
+        desconto = arredondar(data.desconto_valor)
+        descontoMotivo = data.desconto_motivo ?? null
+      }
+      if (desconto > totalBruto) {
         throw new AppError('O desconto não pode ser maior que o total da conta', 400)
       }
-      const totalAPagar = arredondar(subtotal + taxaTotal - data.desconto_valor)
+      const totalAPagar = arredondar(totalBruto - desconto)
 
       // Pagamentos parciais / abatimentos já feitos: o cliente só paga o que falta
       const parciais = await tx.pagamentoMesa.findMany({
@@ -237,15 +312,15 @@ export class PagamentoService {
         const taxa = arredondar((base * pct) / 100)
         const ultimo = i === aPagar.length - 1
 
-        const desconto = ultimo
-          ? arredondar(data.desconto_valor - descontoJaRateado)
-          : subtotal > 0 ? arredondar((data.desconto_valor * base) / subtotal) : 0
+        const desconto_pedido = ultimo
+          ? arredondar(desconto - descontoJaRateado)
+          : subtotal > 0 ? arredondar((desconto * base) / subtotal) : 0
         const valor = ultimo
           ? arredondar(totalAPagar - valorJaRateado)
-          : arredondar(base + taxa - desconto)
+          : arredondar(base + taxa - desconto_pedido)
 
         valorJaRateado = arredondar(valorJaRateado + valor)
-        descontoJaRateado = arredondar(descontoJaRateado + desconto)
+        descontoJaRateado = arredondar(descontoJaRateado + desconto_pedido)
 
         const dados = {
           valor,
@@ -254,7 +329,8 @@ export class PagamentoService {
           confirmado_por_id,
           confirmado_em: agora,
           valor_original: arredondar(base + taxa),
-          desconto_valor: desconto,
+          desconto_valor: desconto_pedido,
+          desconto_motivo: descontoMotivo,
           observacoes: detalhe,
         }
 
@@ -265,6 +341,18 @@ export class PagamentoService {
             data: { pedido_id: p.id, estabelecimento_id, ...dados },
           })
         }
+      }
+
+      if (desconto > 0) {
+        await registrarAuditoria(tx, {
+          estabelecimento_id,
+          usuario_id: confirmado_por_id,
+          acao: 'DESCONTO_APLICADO',
+          entidade: 'Mesa',
+          entidade_id: mesa_id,
+          motivo: descontoMotivo,
+          dados: { desconto, subtotal, taxa_servico: taxaTotal, cupom: data.cupom ?? null, perfil },
+        })
       }
 
       // Encerra todos os pedidos da conta. Os que já tinham sido entregues na mesa só saem da conta
@@ -316,7 +404,7 @@ export class PagamentoService {
       return {
         subtotal,
         taxa_servico: taxaTotal,
-        desconto: data.desconto_valor,
+        desconto,
         total: totalAPagar,
         ja_pago_parcial: jaPago,
         restante,

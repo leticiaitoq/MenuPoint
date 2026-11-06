@@ -1,5 +1,5 @@
 # Substitua pelo seu token (sem espaços)
-@token=TEST-2641258245009571-051808-801b1ddb694653d05c76460c769f1569-3411018746
+@token=<MP_ACCESS_TOKEN>
 @plan_id_basico = 68070d05852a4886834463e8ca318441
 
 
@@ -38,7 +38,7 @@ Content-Type: application/json
 
 ### 4 — Cria plano de teste Básico
 POST https://api.mercadopago.com/preapproval_plan
-Authorization: Bearer TEST-2641258245009571-051808-801b1ddb694653d05c76460c769f1569-3411018746
+Authorization: Bearer <MP_ACCESS_TOKEN>
 Content-Type: application/json
 
 {
@@ -61,7 +61,7 @@ Content-Type: application/json
 
 ### 5 — Cria plano de teste Pro
 POST https://api.mercadopago.com/preapproval_plan
-Authorization: Bearer TEST-2641258245009571-051808-801b1ddb694653d05c76460c769f1569-3411018746
+Authorization: Bearer <MP_ACCESS_TOKEN>
 Content-Type: application/json
 
 {
@@ -80,7 +80,7 @@ Content-Type: application/json
 
 ### 6 — Criar usuário de teste comprador
 POST https://api.mercadopago.com/users/test_user
-Authorization: Bearer TEST-2641258245009571-051808-801b1ddb694653d05c76460c769f1569-3411018746
+Authorization: Bearer <MP_ACCESS_TOKEN>
 Content-Type: application/json
 
 {

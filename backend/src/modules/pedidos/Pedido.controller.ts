@@ -107,6 +107,11 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
         throw new AppError('Usuário não vinculado a um estabelecimento', 400)
       }
 
+      // Editar itens pode remover/reduzir itens (é um cancelamento parcial): mesma regra do cancelamento
+      if (!['ADMIN', 'CAIXA'].includes(user.perfil)) {
+        throw new AppError('Apenas ADMIN ou CAIXA podem editar pedidos', 403)
+      }
+
       const data = atualizarPedidoSchema.parse(request.body)
       const pedido = await service.atualizar(id, data, user.estabelecimento_id)
 
@@ -126,6 +131,12 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
       }
 
       const data = atualizarStatusPedidoSchema.parse(request.body)
+
+      // Cancelar exige o mesmo perfil que cancelar a mesa inteira
+      if (data.status === 'CANCELADO' && !['ADMIN', 'CAIXA'].includes(user.perfil)) {
+        throw new AppError('Apenas ADMIN ou CAIXA podem cancelar pedidos', 403)
+      }
+
       const pedido = await service.atualizarStatus(
         id,
         data,

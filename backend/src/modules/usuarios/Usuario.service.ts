@@ -1,3 +1,4 @@
+import { invalidarUsuario } from '@shared/middlewares/usuarioAtivo'
 import bcrypt from 'bcryptjs'
 import { Usuario } from '@prisma/client'
 import { BaseService } from '@shared/abstracts/BaseService'
@@ -65,6 +66,7 @@ export class UsuarioService
     }
 
     await this.repository.update(id, { ativo: false } as any)
+    invalidarUsuario(id)
   }
 
   async reativar(id: string): Promise<Usuario> {

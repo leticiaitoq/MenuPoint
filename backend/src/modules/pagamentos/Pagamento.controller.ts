@@ -6,6 +6,7 @@ import {
   confirmarPagamentoSchema,
   estornarPagamentoSchema,
   finalizarMesaSchema,
+  desfazerParcialSchema,
   pagamentoParcialSchema,
   abatimentoSchema,
 } from './Pagamento.schema'
@@ -33,6 +34,10 @@ export async function pagamentosRoutes(app: FastifyInstance): Promise<void> {
 
       if (!user.estabelecimento_id) {
         throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+      }
+
+      if (user.perfil !== 'ADMIN' && user.perfil !== 'CAIXA') {
+        throw new AppError('Apenas ADMIN ou CAIXA podem registrar pagamentos', 403)
       }
 
       const data = criarPagamentoSchema.parse(request.body)
@@ -81,13 +86,15 @@ export async function pagamentosRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(201).send(r)
   })
 
-  // DELETE /mesa/:mesa_id/parcial/:id — desfaz um pagamento parcial ainda não liquidado
-  app.delete('/mesa/:mesa_id/parcial/:id', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { estabelecimento_id } = caixa(request)
+  // POST /mesa/:mesa_id/parcial/:id/desfazer — desfaz um pagamento parcial ainda não liquidado.
+  // Motivo obrigatório; quem desfez fica na auditoria (antes era um DELETE sem rastro).
+  app.post('/mesa/:mesa_id/parcial/:id/desfazer', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { user, estabelecimento_id } = caixa(request)
     const { mesa_id, id } = z
       .object({ mesa_id: z.string().uuid(), id: z.string().uuid() })
       .parse(request.params)
-    return reply.send(await mesaService.desfazer(mesa_id, id, estabelecimento_id))
+    const { motivo } = desfazerParcialSchema.parse(request.body)
+    return reply.send(await mesaService.desfazer(mesa_id, id, motivo, user.sub, estabelecimento_id))
   })
 
   // POST /mesa/:mesa_id/finalizar — Caixa: paga a conta INTEIRA da mesa (CAIXA ou ADMIN)
@@ -112,6 +119,7 @@ export async function pagamentosRoutes(app: FastifyInstance): Promise<void> {
         mesa_id,
         data,
         user.sub,
+        user.perfil,
         user.estabelecimento_id
       )
       return reply.send(resultado)
@@ -226,6 +234,7 @@ export async function pagamentosRoutes(app: FastifyInstance): Promise<void> {
       const pagamento = await service.estornar(
         id,
         data,
+        user.sub,
         user.estabelecimento_id
       )
 

@@ -9,6 +9,7 @@ import {
 } from './Mesa.schema'
 import { env } from '@config/env'
 import crypto from 'crypto'
+import { filtroContaAberta } from '@modules/pagamentos/conta'
 
 export class MesaService {
 
@@ -159,28 +160,29 @@ export class MesaService {
     throw new AppError('Não é possível alterar o status de uma mesa inativa', 400)
   }
 
-  // Mesa com pedido em andamento não pode ser liberada nem reservada
+  // Mesa com CONTA ABERTA não pode ser liberada nem reservada: pedido em andamento, pedido já
+  // entregue mas ainda não pago, ou pagamento parcial em aberto (senão o próximo cliente herda a conta)
   if (data.status !== 'OCUPADA') {
-    const emAndamento = await prisma.pedido.count({
-      where: {
-        mesa_id: id,
-        estabelecimento_id,
-        status: { in: ['RECEBIDO', 'PREPARO', 'PRONTO'] },
-      },
-    })
-
-    if (emAndamento > 0) {
-      throw new AppError(
-        `A Mesa ${mesa.numero} tem pedido em andamento. Finalize ou cancele o pedido antes.`,
-        400
-      )
-    }
+    await this.exigirSemContaAberta(id, estabelecimento_id, mesa.numero)
   }
 
   return this.repository.update(id, {
     status: data.status as StatusMesa
   })
 }
+
+  private async exigirSemContaAberta(id: string, estabelecimento_id: string, numero: number) {
+    const [pedidosAbertos, parciaisAbertos] = await Promise.all([
+      prisma.pedido.count({ where: filtroContaAberta(id, estabelecimento_id) }),
+      prisma.pagamentoMesa.count({ where: { mesa_id: id, estabelecimento_id, liquidado_em: null } }),
+    ])
+    if (pedidosAbertos > 0 || parciaisAbertos > 0) {
+      throw new AppError(
+        `A Mesa ${numero} tem conta aberta. Feche a conta no Caixa ou cancele os pedidos antes.`,
+        400
+      )
+    }
+  }
 
   async resumoOcupacao(estabelecimento_id: string) {
     return this.repository.resumoOcupacao(estabelecimento_id)
@@ -196,6 +198,7 @@ export class MesaService {
         400
       )
     }
+    await this.exigirSemContaAberta(id, estabelecimento_id, mesa.numero)
 
     await this.repository.update(id, { ativo: false })
   }

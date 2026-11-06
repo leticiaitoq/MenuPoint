@@ -7,7 +7,11 @@ export interface FinalizarMesaDTO {
   forma?: FormaPagamentoApi
   /** Só para DINHEIRO: quanto o cliente entregou (o servidor calcula o troco) */
   valor_recebido?: number
+  /** Desconto MANUAL: exige `desconto_motivo` e respeita o teto do perfil (definido no servidor) */
   desconto_valor?: number
+  desconto_motivo?: string
+  /** Código do cupom: o servidor valida e calcula o valor (não envie junto com desconto_valor) */
+  cupom?: string
   /** Percentual da taxa de serviço (padrão 10) */
   taxa_servico_percentual?: number
   observacoes?: string
@@ -124,8 +128,9 @@ const PagamentoService = {
   },
 
   // Desfaz um pagamento parcial/abatimento que ainda não foi liquidado
-  async desfazerParcial(mesaId: string, pagamentoId: string): Promise<void> {
-    await api.delete(`pagamentos/mesa/${mesaId}/parcial/${pagamentoId}`)
+  // (o motivo é obrigatório e fica na auditoria junto com quem desfez)
+  async desfazerParcial(mesaId: string, pagamentoId: string, motivo: string): Promise<void> {
+    await api.post(`pagamentos/mesa/${mesaId}/parcial/${pagamentoId}/desfazer`, { motivo })
   },
 }
 

@@ -10,7 +10,7 @@ Token de **CLIENTE** é recusado pelo hook global em qualquer rota que não este
 | `GET /mesa/:mesa_id/resumo` | ADMIN, CAIXA | conta aberta da mesa, o que já foi pago e o saldo |
 | `POST /mesa/:mesa_id/parcial` | ADMIN, CAIXA | pagamento parcial por itens |
 | `POST /mesa/:mesa_id/abater` | ADMIN, CAIXA | abatimento de valor (itens opcionais) |
-| `DELETE /mesa/:mesa_id/parcial/:id` | ADMIN, CAIXA | desfaz parcial ainda não liquidado |
+| `POST /mesa/:mesa_id/parcial/:id/desfazer` | ADMIN, CAIXA | desfaz parcial ainda não liquidado (motivo obrigatório, vai para auditoria) |
 | `POST /mesa/:mesa_id/finalizar` | ADMIN, CAIXA | paga o que falta e encerra a conta da mesa |
 | `POST /` (criar por pedido) | ADMIN, CAIXA | fluxo antigo, um pagamento por pedido |
 | `PATCH /:id/confirmar` | ADMIN, CAIXA | fluxo antigo |

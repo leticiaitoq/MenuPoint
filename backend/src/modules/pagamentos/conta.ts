@@ -10,6 +10,24 @@ import { AppError } from '@shared/errors/AppError'
  */
 export const TAXA_SERVICO_PERCENTUAL = 10
 
+/**
+ * Cupons válidos (percentual sobre subtotal + taxa). Ficam no servidor: o front só envia o CÓDIGO.
+ * TODO: mover para uma tabela `cupons` por estabelecimento (validade, limite de uso).
+ */
+export const CUPONS: Record<string, { percentual: number }> = {
+  BEMVINDO10: { percentual: 10 },
+  FIDELIDADE5: { percentual: 5 },
+}
+
+/**
+ * Teto do desconto MANUAL (% do total da conta com taxa) por perfil.
+ * ADMIN pode até 100%; CAIXA só até 10% (acima disso, chame um administrador).
+ */
+export const TETO_DESCONTO_MANUAL_PERCENTUAL: Record<string, number> = {
+  ADMIN: 100,
+  CAIXA: 10,
+}
+
 export const STATUS_EM_ANDAMENTO: ('RECEBIDO' | 'PREPARO' | 'PRONTO')[] = ['RECEBIDO', 'PREPARO', 'PRONTO']
 
 /**

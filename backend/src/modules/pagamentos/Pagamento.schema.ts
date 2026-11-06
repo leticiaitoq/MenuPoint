@@ -10,7 +10,8 @@ export const criarPagamentoSchema = z.object({
   }
 ),
 
-  valor: z.number().positive('Valor deve ser positivo'),
+  // Ignorado: o valor é sempre o total do pedido no banco
+  valor: z.number().positive('Valor deve ser positivo').optional(),
 
   chave_pix_usada: z.string().max(150).optional(),
   comprovante_url: z.string().url().optional(),
@@ -35,6 +36,11 @@ export const estornarPagamentoSchema = z.object({
   observacoes: z.string().min(1, 'Motivo do estorno é obrigatório').max(500),
 })
 
+// Desfazer pagamento parcial: motivo obrigatório (vai para a auditoria)
+export const desfazerParcialSchema = z.object({
+  motivo: z.string().trim().min(3, 'Informe o motivo').max(300),
+})
+
 export type EstornarPagamentoDTO = z.infer<typeof estornarPagamentoSchema>
 
 // Caixa: fechar a conta INTEIRA da mesa (todos os pedidos em andamento de uma vez).
@@ -48,10 +54,17 @@ export const finalizarMesaSchema = z.object({
   forma: formaMesaSchema.optional(),
   // Só para DINHEIRO: quanto o cliente entregou (para calcular o troco)
   valor_recebido: z.number().positive().optional(),
+  // Desconto MANUAL (exige motivo; limitado por perfil — ver conta.ts)
   desconto_valor: z.number().min(0).default(0),
+  desconto_motivo: z.string().trim().min(3, 'Informe o motivo do desconto').max(300).optional(),
+  // Cupom: o servidor valida o código e calcula o valor (o valor enviado pelo front não vale)
+  cupom: z.string().trim().toUpperCase().max(40).optional(),
   // Ignorado: a taxa de serviço é definida pelo servidor (conta.ts)
   taxa_servico_percentual: z.number().min(0).max(30).optional(),
   observacoes: z.string().max(300).optional(),
+}).refine((d) => d.desconto_valor === 0 || !!d.desconto_motivo, {
+  message: 'Informe o motivo do desconto',
+  path: ['desconto_motivo'],
 })
 
 export type FinalizarMesaDTO = z.infer<typeof finalizarMesaSchema>

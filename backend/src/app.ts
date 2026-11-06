@@ -9,6 +9,7 @@ import { AppError } from '@shared/errors/AppError'
 import { FastifyError } from 'fastify'
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { ZodError } from 'zod'
+import { situacaoDoUsuario } from '@shared/middlewares/usuarioAtivo'
 
 import fastifySwagger from '@fastify/swagger'
 import fastifySwaggerUi from '@fastify/swagger-ui'
@@ -32,6 +33,11 @@ const ROTAS_PUBLICAS_GET = /^\/api\/v1\/(estabelecimentos|categorias)\/publico\/
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({
+    // Atrás do proxy do Azure o request.ip seria o IP interno do proxy (todos os
+    // usuários no mesmo balde do rate limit). Com trustProxy o Fastify usa o
+    // X-Forwarded-For. Ajuste para um número de hops (ex.: 1) se o app ficar
+    // exposto diretamente à internet em algum ambiente.
+    trustProxy: true,
 
     logger: env.NODE_ENV === 'development'
       ? { transport: { target: 'pino-pretty' } }
@@ -54,8 +60,29 @@ app.register(cors, {
 // Rate limiting global — proteção contra brute-force
   app.register(rateLimit, {
     global: true,
-    max: 100,
+    max: 300,
     timeWindow: '1 minute',
+    // Chave do balde: usuário autenticado (token VÁLIDO) > IP.
+    // Token inválido/forjado cai no balde do IP, então não dá para escapar do
+    // limite trocando o token. Várias telas do mesmo restaurante, atrás do
+    // mesmo IP, não derrubam umas às outras.
+    keyGenerator: (request) => {
+      const authorization = request.headers.authorization
+      if (authorization?.startsWith('Bearer ')) {
+        try {
+          const payload = request.server.jwt.verify(authorization.slice(7)) as {
+            id?: string
+            sub?: string
+          }
+          const id = payload?.id ?? payload?.sub
+          if (id) return `user:${id}`
+        } catch {
+          // token inválido: usa o IP
+        }
+      }
+      // Alguns proxies (Azure App Service) mandam "ip:porta" no X-Forwarded-For
+      return `ip:${request.ip.replace(/:\d+$/, '')}`
+    },
     errorResponseBuilder: () => ({
       statusCode: 429,
       status: 'error',
@@ -68,18 +95,21 @@ app.register(cors, {
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   })
 
-app.register(fastifySwagger, {
-  openapi: {
-    info: {
-      title: 'Menupoint API',
-      version: '1.0.0',
+// Swagger só fora de produção (swagger-ui é devDependency e expõe toda a API)
+if (env.NODE_ENV !== 'production') {
+  app.register(fastifySwagger, {
+    openapi: {
+      info: {
+        title: 'Menupoint API',
+        version: '1.0.0',
+      },
     },
-  },
-})
+  })
 
-app.register(fastifySwaggerUi, {
-  routePrefix: '/docs',
-})
+  app.register(fastifySwaggerUi, {
+    routePrefix: '/docs',
+  })
+}
 
   // Registra o JWT com as configurações centralizadas
   app.register(jwt, jwtConfig)
@@ -114,6 +144,31 @@ app.register(fastifySwaggerUi, {
 
       if (payload?.perfil === 'CLIENTE') {
         throw new AppError('Acesso não permitido para este tipo de conta', 403)
+      }
+    })
+
+    // Funcionário desligado/desativado perde o acesso mesmo com token ainda válido, e o perfil
+    // vale o do BANCO (não o do token): rebaixar alguém tem efeito em até 30s.
+    // Só age com token válido; sem token ou token inválido, quem responde é o jwtVerify da rota.
+    api.addHook('onRequest', async (request) => {
+      if (request.url.startsWith('/api/v1/auth/')) return
+      const authorization = request.headers.authorization
+      if (!authorization?.startsWith('Bearer ')) return
+
+      let payload: { sub?: string; perfil?: string } | null = null
+      try {
+        payload = (api.jwt as any).verify(authorization.slice(7))
+      } catch {
+        return
+      }
+      if (!payload?.sub || payload.perfil === 'CLIENTE') return
+
+      const situacao = await situacaoDoUsuario(payload.sub)
+      if (!situacao.ativo) {
+        throw new AppError('Usuário desativado', 401)
+      }
+      if (situacao.perfil !== payload.perfil) {
+        throw new AppError('Seu perfil foi alterado. Entre novamente.', 401)
       }
     })
 

@@ -99,7 +99,15 @@ export class PedidoRepository extends BaseRepository<
             produto_id: item.produto_id,
             quantidade: item.quantidade,
             preco_unitario: item.preco_unitario,
-            preco_total: item.preco_unitario * item.quantidade,
+            // preco_total INCLUI os adicionais (é o que entra na conta: pagamento por item
+            // e total do pedido passam a bater)
+            preco_total:
+              Math.round(
+                (item.preco_unitario +
+                  item.itens_adicionais.reduce((acc, ad) => acc + ad.preco_extra, 0)) *
+                  item.quantidade *
+                  100
+              ) / 100,
             observacoes: item.observacoes,
             itens_adicionais: {
               create: item.itens_adicionais.map((ad) => ({
