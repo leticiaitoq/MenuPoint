@@ -488,3 +488,92 @@
     width: 110px;
   }
 }
+
+/* ── Integração com a API (cliente logado) ── */
+.reserva__cliente {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.reserva__aviso {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background-color: var(--bg-surface-alt);
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.reserva__aviso--erro {
+  color: var(--danger);
+}
+
+.reserva__mesa-local {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+  letter-spacing: 0;
+}
+
+.reserva__mesa--ativa .reserva__mesa-local {
+  color: var(--on-brand);
+}
+
+.reserva__link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.reserva__link--perigo {
+  color: var(--danger);
+}
+
+.reserva__link:disabled,
+.reserva__modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reserva__minhas {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reserva__minha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background-color: var(--bg-surface-alt);
+}
+
+.reserva__minha-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--text);
+  min-width: 0;
+}
+
+.reserva__status {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.reserva__status--pendente { color: var(--warning); }
+.reserva__status--confirmada { color: var(--success); }

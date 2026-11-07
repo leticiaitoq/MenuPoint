@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+const HORA = /^([01]\d|2[0-3]):[0-5]\d$/
+
 export const criarReservaSchema = z.object({
   mesa_id: z.string().uuid('ID de mesa inválido').optional(),
 
@@ -22,13 +24,9 @@ export const criarReservaSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve estar no formato YYYY-MM-DD'),
 
-  hora_inicio: z
-    .string()
-    .regex(/^\d{2}:\d{2}$/, 'Hora deve estar no formato HH:MM'),
+  hora_inicio: z.string().regex(HORA, 'Hora deve estar no formato HH:MM'),
 
-  hora_fim: z
-    .string()
-    .regex(/^\d{2}:\d{2}$/, 'Hora deve estar no formato HH:MM'),
+  hora_fim: z.string().regex(HORA, 'Hora deve estar no formato HH:MM'),
 
   num_pessoas: z
     .number()
@@ -40,6 +38,14 @@ export const criarReservaSchema = z.object({
 })
 
 export type CriarReservaDTO = z.infer<typeof criarReservaSchema>
+
+// Reserva feita pelo CLIENTE logado: nome/telefone/e-mail vêm da conta dele (servidor), não do corpo,
+// e a mesa é obrigatória (é ela que sai da lista de disponíveis do restaurante).
+export const criarReservaClienteSchema = criarReservaSchema
+  .omit({ cliente_nome: true, cliente_telefone: true, cliente_email: true })
+  .extend({ mesa_id: z.string().uuid('ID de mesa inválido') })
+
+export type CriarReservaClienteDTO = z.infer<typeof criarReservaClienteSchema>
 
 export const atualizarStatusReservaSchema = z.object({
   status: z.enum(['CONFIRMADA', 'CONCLUIDA', 'CANCELADA'], {
@@ -55,8 +61,8 @@ export const mesasDisponiveisQuerySchema = z.object({
   data_reserva: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve estar no formato YYYY-MM-DD'),
-  hora_inicio: z.string().regex(/^\d{2}:\d{2}$/, 'Hora deve estar no formato HH:MM'),
-  hora_fim: z.string().regex(/^\d{2}:\d{2}$/, 'Hora deve estar no formato HH:MM'),
+  hora_inicio: z.string().regex(HORA, 'Hora deve estar no formato HH:MM'),
+  hora_fim: z.string().regex(HORA, 'Hora deve estar no formato HH:MM'),
   // Opcional: só devolve mesas que comportam essa quantidade de pessoas
   pessoas: z.coerce.number().int().min(1).max(50).optional(),
 })

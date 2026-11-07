@@ -10,6 +10,11 @@ jest.mock('../App/shared/components/layout/Restaurantelayout', () => ({ __esModu
 jest.mock('../App/shared/contexts/Authcontext', () => ({ useAuth: () => ({ usuario: { perfil: 'ADMIN', nome: 'Admin' } }) }));
 jest.mock('../App/services/pedido.service');
 jest.mock('../App/services/mesa.service');
+// O Caixa também busca as reservas do dia: aqui nenhuma (o foco deste teste é a cozinha)
+jest.mock('../App/services/reserva.service', () => ({
+  ...jest.requireActual('../App/services/reserva.service'),
+  ReservaRestauranteService: { listarDoDia: jest.fn().mockResolvedValue([]), atualizarStatus: jest.fn() },
+}));
 
 const agora = new Date().toISOString();
 const ped = (id: string, numero: number, status: string) => ({

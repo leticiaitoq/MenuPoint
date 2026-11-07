@@ -272,6 +272,7 @@ model Reserva {
   estabelecimento_id String        @db.Uuid
   mesa_id            String?       @db.Uuid
   confirmada_por_id  String?       @db.Uuid
+  cliente_id         String?       @db.Uuid   // cliente cadastrado que reservou pelo app (null = reserva feita pelo restaurante)
   cliente_nome       String        @db.VarChar(100)
   cliente_telefone   String        @db.VarChar(20)
   cliente_email      String?       @db.VarChar(150)
@@ -287,8 +288,11 @@ model Reserva {
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   mesa            Mesa?           @relation(fields: [mesa_id], references: [id])
   confirmada_por  Usuario?        @relation("ConfirmadaPor", fields: [confirmada_por_id], references: [id])
+  cliente         Cliente?        @relation(fields: [cliente_id], references: [id])
   pedidos         Pedido[]
 
+  @@index([estabelecimento_id, data_reserva])
+  @@index([cliente_id])
   @@map("reservas")
 }
 
@@ -478,6 +482,7 @@ model Cliente {
   criado_em        DateTime  @default(now()) @db.Timestamptz
 
   pedidos            Pedido[]
+  reservas           Reserva[]
   refresh_tokens     RefreshToken[]
   tokens_recuperacao TokenRecuperacaoSenhaCliente[]
   tokens_confirmacao TokenConfirmacaoEmailCliente[]
