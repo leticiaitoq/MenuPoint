@@ -1,3 +1,6 @@
+/* Cadastro de endereço — cores vêm dos tokens de tema (styles/tema.css).
+   Para mudar uma cor, mude o token, não este arquivo. */
+
 .cad-end {
   display: flex;
   gap: 20px;
@@ -9,26 +12,26 @@
 .cad-end__card {
   flex: 1;
   min-width: 0;
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
   border-radius: 20px;
-  border: 3px solid #c0392b;
+  border: 3px solid var(--brand);
   padding: 28px 32px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px var(--shadow-color);
 }
 
 .cad-end__titulo {
   font-size: 22px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text);
   margin: 0;
 }
 
 .cad-end__subtitulo {
   font-size: 14px;
-  color: #888888;
+  color: var(--text-faint);
   margin: -8px 0 4px 0;
 }
 
@@ -42,7 +45,7 @@
 .cad-end__label {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 .cad-end__linha {
@@ -54,11 +57,11 @@
 /* ── Inputs */
 .cad-end__input {
   padding: 10px 14px;
-  border: 1.5px solid #dddddd;
+  border: 1.5px solid var(--border-strong);
   border-radius: 8px;
   font-size: 14px;
-  color: #1a1a1a;
-  background-color: #ffffff;
+  color: var(--text);
+  background-color: var(--bg-surface-alt);
   outline: none;
   width: 100%;
   box-sizing: border-box;
@@ -66,8 +69,8 @@
   font-family: inherit;
 }
 
-.cad-end__input:focus    { border-color: #c0392b; }
-.cad-end__input::placeholder { color: #bbbbbb; }
+.cad-end__input:focus    { border-color: var(--accent); }
+.cad-end__input::placeholder { color: var(--text-faint); }
 .cad-end__input--full    { width: 100%; }
 .cad-end__input--estado  { text-align: center; font-weight: 600; letter-spacing: 1px; }
 .cad-end__select         { cursor: pointer; appearance: auto; }
@@ -84,8 +87,9 @@
   gap: 14px;
   padding: 16px 18px;
   border-radius: 12px;
-  border: 2px solid #e0e0e0;
-  background-color: #fafafa;
+  border: 2px solid var(--border);
+  background-color: var(--bg-surface-alt);
+  color: var(--text);
   cursor: pointer;
   text-align: left;
   width: 100%;
@@ -93,18 +97,18 @@
 }
 
 .cad-end__item-selecao:hover {
-  border-color: #c0392b;
-  background-color: #fff5f5;
+  border-color: var(--accent);
+  background-color: var(--brand-tint);
 }
 
 .cad-end__item-selecao--ativo {
-  border-color: #c0392b;
-  background-color: #fdecea;
+  border-color: var(--accent);
+  background-color: var(--brand-soft);
 }
 
 .cad-end__item-icone {
   font-size: 22px;
-  color: #c0392b;
+  color: var(--accent);
   flex-shrink: 0;
 }
 
@@ -118,12 +122,12 @@
 .cad-end__item-tipo {
   font-size: 15px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 .cad-end__item-rua {
   font-size: 13px;
-  color: #666666;
+  color: var(--text-muted);
   line-height: 1.4;
 }
 
@@ -132,7 +136,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid #c0392b;
+  border: 2px solid var(--accent);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -143,7 +147,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background-color: #c0392b;
+  background-color: var(--accent);
 }
 
 /* ── Botão novo endereço */
@@ -154,18 +158,18 @@
   gap: 6px;
   padding: 12px;
   border-radius: 12px;
-  border: 1.5px dashed #bbbbbb;
+  border: 1.5px dashed var(--border-strong);
   background: transparent;
   font-size: 14px;
-  color: #888888;
+  color: var(--text-faint);
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
   width: 100%;
 }
 
 .cad-end__novo-btn:hover {
-  border-color: #c0392b;
-  color: #c0392b;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ── Ações */
@@ -184,7 +188,7 @@
   border: none;
   font-size: 15px;
   font-weight: 500;
-  color: #555555;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 10px 16px;
   border-radius: 8px;
@@ -192,24 +196,25 @@
 }
 
 .cad-end__btn-cancelar:hover {
-  color: #c0392b;
-  background-color: #fdecea;
+  color: var(--accent);
+  background-color: var(--brand-soft);
 }
 
+/* Botão principal: âmbar do tema (--warning). No escuro o texto vira grafite (--on-status). */
 .cad-end__btn-salvar {
-  background-color: #f0a500;
-  color: #ffffff;
+  background-color: var(--warning);
+  color: var(--on-status);
   border: none;
   border-radius: 10px;
   padding: 12px 24px;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.2s, opacity 0.2s;
+  transition: filter 0.2s, opacity 0.2s;
   white-space: nowrap;
 }
 
-.cad-end__btn-salvar:hover    { background-color: #e09800; }
+.cad-end__btn-salvar:hover:not(:disabled) { filter: brightness(0.92); }
 .cad-end__btn-salvar:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /*
@@ -229,18 +234,18 @@
   gap: 6px;
   padding: 8px 16px;
   border-radius: 8px;
-  border: 1.5px solid #dddddd;
-  background-color: #ffffff;
+  border: 1.5px solid var(--border-strong);
+  background-color: var(--bg-surface);
   font-size: 14px;
   font-weight: 500;
-  color: #444444;
+  color: var(--text);
   cursor: pointer;
   transition: all 0.15s;
 }
 
-.cad-end__tipo-btn:hover         { border-color: #c0392b; color: #c0392b; }
-.cad-end__tipo-btn--ativo        { background-color: #f0a500; border-color: #f0a500; color: #ffffff; font-weight: 600; }
-.cad-end__tipo-btn--ativo:hover  { background-color: #e09800; border-color: #e09800; color: #ffffff; }
+.cad-end__tipo-btn:hover         { border-color: var(--accent); color: var(--accent); }
+.cad-end__tipo-btn--ativo        { background-color: var(--warning); border-color: var(--warning); color: var(--on-status); font-weight: 600; }
+.cad-end__tipo-btn--ativo:hover  { background-color: var(--warning); border-color: var(--warning); color: var(--on-status); filter: brightness(0.92); }
 .cad-end__tipo-icon              { font-size: 16px; display: flex; align-items: center; }
 
 .cad-end__add-tipo-btn {
@@ -249,15 +254,15 @@
   gap: 4px;
   padding: 8px 14px;
   border-radius: 8px;
-  border: 1.5px dashed #bbbbbb;
+  border: 1.5px dashed var(--border-strong);
   background: transparent;
   font-size: 13px;
-  color: #888888;
+  color: var(--text-faint);
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
 
-.cad-end__add-tipo-btn:hover { border-color: #c0392b; color: #c0392b; }
+.cad-end__add-tipo-btn:hover { border-color: var(--accent); color: var(--accent); }
 
 .cad-end__novo-tipo {
   display: flex;
@@ -267,19 +272,21 @@
 
 .cad-end__novo-tipo-input {
   padding: 7px 12px;
-  border: 1.5px solid #c0392b;
+  border: 1.5px solid var(--accent);
   border-radius: 8px;
   font-size: 13px;
   outline: none;
   width: 120px;
+  background-color: var(--bg-surface-alt);
+  color: var(--text);
 }
 
 .cad-end__novo-tipo-ok {
   padding: 7px 12px;
   border-radius: 8px;
   border: none;
-  background-color: #c0392b;
-  color: #ffffff;
+  background-color: var(--brand);
+  color: var(--on-brand);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -289,8 +296,8 @@
   padding: 7px 10px;
   border-radius: 8px;
   border: none;
-  background-color: #f0f0f0;
-  color: #555555;
+  background-color: var(--bg-surface-alt);
+  color: var(--text-muted);
   font-size: 13px;
   cursor: pointer;
 }
@@ -310,8 +317,8 @@
   flex-shrink: 0;
   border-radius: 8px;
   border: none;
-  background-color: #c0392b;
-  color: #ffffff;
+  background-color: var(--brand);
+  color: var(--on-brand);
   font-size: 18px;
   display: flex;
   align-items: center;
@@ -320,7 +327,7 @@
   transition: background-color 0.15s, transform 0.1s;
 }
 
-.cad-end__tel-btn:hover  { background-color: #a93226; }
+.cad-end__tel-btn:hover  { background-color: var(--brand-hover); }
 .cad-end__tel-btn:active { transform: scale(0.95); }
 
 /* Rodapé do formulário */
@@ -341,7 +348,7 @@
   align-items: center;
   gap: 10px;
   font-size: 13px;
-  color: #444444;
+  color: var(--text);
   cursor: pointer;
   user-select: none;
 }
@@ -352,7 +359,7 @@
   position: relative;
   width: 40px;
   height: 22px;
-  background-color: #cccccc;
+  background-color: var(--border-strong);
   border-radius: 50px;
   flex-shrink: 0;
   transition: background-color 0.2s;
@@ -365,12 +372,12 @@
   left: 3px;
   width: 16px;
   height: 16px;
-  background-color: #ffffff;
+  background-color: var(--on-brand);
   border-radius: 50%;
   transition: transform 0.2s;
 }
 
-.cad-end__toggle-input:checked + .cad-end__toggle-slider            { background-color: #c0392b; }
+.cad-end__toggle-input:checked + .cad-end__toggle-slider            { background-color: var(--brand); }
 .cad-end__toggle-input:checked + .cad-end__toggle-slider::after     { transform: translateX(18px); }
 
 /*
@@ -386,22 +393,22 @@
 }
 
 .cad-end__secao        { display: flex; flex-direction: column; gap: 10px; }
-.cad-end__secao-titulo { font-size: 16px; font-weight: 700; color: #1a1a1a; margin: 0; }
+.cad-end__secao-titulo { font-size: 16px; font-weight: 700; color: var(--text); margin: 0; }
 .cad-end__lista        { display: flex; flex-direction: column; gap: 8px; }
 
 .cad-end__salvo {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
   border-radius: 12px;
   padding: 14px 16px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 1px 4px var(--shadow-color);
 }
 
-.cad-end__salvo-icone  { font-size: 20px; color: #c0392b; flex-shrink: 0; margin-top: 2px; }
-.cad-end__salvo-tipo  { font-size: 15px; font-weight: 700; color: #1a1a1a; margin: 0; }
-.cad-end__salvo-rua   { font-size: 13px; color: #666666; margin: 2px 0 0 0; line-height: 1.4; }
+.cad-end__salvo-icone  { font-size: 20px; color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+.cad-end__salvo-tipo  { font-size: 15px; font-weight: 700; color: var(--text); margin: 0; }
+.cad-end__salvo-rua   { font-size: 13px; color: var(--text-muted); margin: 2px 0 0 0; line-height: 1.4; }
 
 /*
    Modal de sucesso
@@ -410,7 +417,7 @@
 .cad-end__overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -418,7 +425,7 @@
 }
 
 .cad-end__modal-sucesso {
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
   border-radius: 24px;
   padding: 40px 48px;
   max-width: 440px;
@@ -427,30 +434,16 @@
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 8px 40px var(--shadow-color);
   text-align: center;
 }
 
-.cad-end__sucesso-icone {
-  font-size: 64px;
-  color: #2ecc71;
-}
-
-.cad-end__sucesso-titulo {
-  font-size: 22px;
-  font-weight: 800;
-  color: #1a1a1a;
-  margin: 0;
-}
-
-.cad-end__sucesso-texto {
-  font-size: 14px;
-  color: #888888;
-  margin: 0;
-}
+.cad-end__sucesso-icone  { font-size: 64px; color: var(--success); }
+.cad-end__sucesso-titulo { font-size: 22px; font-weight: 800; color: var(--text); margin: 0; }
+.cad-end__sucesso-texto  { font-size: 14px; color: var(--text-faint); margin: 0; }
 
 .cad-end__sucesso-endereco {
-  background-color: #f5f5f5;
+  background-color: var(--bg-surface-alt);
   border-radius: 12px;
   padding: 14px 20px;
   width: 100%;
@@ -466,68 +459,10 @@
   gap: 6px;
   font-size: 15px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
-.cad-end__sucesso-rua {
-  font-size: 13px;
-  color: #555555;
-  line-height: 1.5;
-}
-
-/* 
-   Modal de sucesso
-    */
-
-.cad-end__overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.cad-end__modal-sucesso {
-  background-color: #ffffff;
-  border-radius: 24px;
-  padding: 40px 48px;
-  max-width: 440px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
-  text-align: center;
-}
-
-.cad-end__sucesso-icone  { font-size: 64px; color: #2ecc71; }
-.cad-end__sucesso-titulo { font-size: 22px; font-weight: 800; color: #1a1a1a; margin: 0; }
-.cad-end__sucesso-texto  { font-size: 14px; color: #888888; margin: 0; }
-
-.cad-end__sucesso-endereco {
-  background-color: #f5f5f5;
-  border-radius: 12px;
-  padding: 14px 20px;
-  width: 100%;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.cad-end__sucesso-tipo {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 15px;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-
-.cad-end__sucesso-rua { font-size: 13px; color: #555555; line-height: 1.5; }
+.cad-end__sucesso-rua { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
 
 @media (max-width: 768px) {
   .cad-end {
@@ -536,5 +471,62 @@
     align-items: flex-start;
     box-sizing: border-box;
     flex-direction: column-reverse;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVO (celular) — fica no FINAL do arquivo para vencer as regras base
+   Não precisa mexer no TSX: usa só as classes que já existem.
+═══════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  /* column-reverse + align-items: flex-start deixava o card/painel com largura do conteúdo */
+  .cad-end { align-items: stretch; }
+  .cad-end__painel { width: 100%; }
+
+  /* Card vira uma grade de 6 colunas: o que é curto divide a linha, o resto ocupa a linha toda */
+  .cad-end__card {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 14px 12px;
+    padding: 20px 16px;
+    border-width: 2px;
+  }
+  .cad-end__card > * { grid-column: 1 / -1; }
+
+  /* as linhas deixam de existir: cada campo vira item direto da grade */
+  .cad-end__linha { display: contents; }
+  .cad-end__linha > .cad-end__campo { grid-column: 1 / -1; width: auto; }
+
+  /* Número | Complemento */
+  .cad-end__linha > .cad-end__campo--fixo { grid-column: span 2; }
+  .cad-end__card > .cad-end__linha + .cad-end__campo { grid-column: span 4; }
+
+  /* Cidade | Estado */
+  .cad-end__linha > .cad-end__campo--flex:has(+ .cad-end__campo--estado) { grid-column: span 4; }
+  .cad-end__linha > .cad-end__campo--estado { grid-column: span 2; }
+
+  /* campos: 16px evita o zoom automático do iOS; altura boa para o toque */
+  .cad-end__input { font-size: 16px; min-height: 44px; }
+  .cad-end__novo-tipo-input { font-size: 16px; min-height: 40px; }
+  .cad-end__tipo-btn,
+  .cad-end__add-tipo-btn { min-height: 40px; }
+  .cad-end__tel-btn { width: 44px; height: 44px; }
+
+  /* rodapé: toggle em cima, botões embaixo ocupando a largura */
+  .cad-end__rodape { flex-direction: column; align-items: stretch; gap: 14px; }
+  .cad-end__acoes { width: 100%; }
+  .cad-end__btn-cancelar { min-height: 48px; }
+  .cad-end__btn-salvar { flex: 1; min-height: 48px; }
+
+  /* lista de endereços salvos */
+  .cad-end__item-info { min-width: 0; overflow-wrap: anywhere; }
+
+  /* modal de sucesso não encosta nas bordas */
+  .cad-end__overlay { padding: 16px; }
+  .cad-end__modal-sucesso {
+    padding: 28px 20px;
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
   }
 }

@@ -9,10 +9,12 @@ import {
   HiCog,
   HiChevronUp,
   HiX,
+  HiMenu,
   HiOfficeBuilding,
 } from 'react-icons/hi';
-import { MdPointOfSale } from 'react-icons/md';
+import { MdPointOfSale, MdDarkMode, MdLightMode } from 'react-icons/md';
 import { FaWhatsapp } from 'react-icons/fa';
+import { useTema } from '../../../contexts/TemaContext';
 import './RestaurantSidebar.css';
 
 interface NavItem {
@@ -21,6 +23,8 @@ interface NavItem {
   label: string;
   subitems?: { to: string; label: string }[];
   bottom?: boolean;
+  /** Rótulo curto para a barra inferior do celular (telas muito estreitas) */
+  shortLabel?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -35,18 +39,32 @@ const NAV_ITEMS: NavItem[] = [
   {
     icon: <HiViewList />,
     label: 'Categorias',
+    shortLabel: 'Categ.',
     to: '/restaurante/categories',
     subitems: [{ to: '/restaurante/produtos', label: 'Produtos' }],
   },
   { to: '/restaurante/fila', icon: <HiUserGroup />, label: 'Fila' },
-  { to: '/restaurante/relatorios', icon: <HiChartBar />, label: 'Relatórios' },
+  { to: '/restaurante/relatorios', icon: <HiChartBar />, label: 'Relatórios', shortLabel: 'Relat.' },
   { to: '/restaurante/embreve', icon: <HiOfficeBuilding />, label: 'Filiais' },
   { to: '/restaurante/whatsapp', icon: <FaWhatsapp />, label: 'WhatsApp' },
   { to: '/restaurante/config', icon: <HiCog />, label: 'Configurações', bottom: true },
 ];
 
+/**
+ * No celular a barra inferior mostra só os itens do dia a dia (MOBILE_PRINCIPAIS)
+ * e um botão ☰ que abre a lista com os demais (MOBILE_MAIS) + o botão de tema.
+ * No desktop a sidebar lateral continua mostrando todos os NAV_ITEMS.
+ */
+const MOBILE_PRINCIPAIS = NAV_ITEMS.filter(
+  (i) => !['Filiais', 'WhatsApp', 'Configurações', 'Relatórios'].includes(i.label)
+);
+const ORDEM_MAIS = ['Relatórios', 'Configurações', 'Filiais', 'WhatsApp'];
+const MOBILE_MAIS = ORDEM_MAIS.map((label) => NAV_ITEMS.find((i) => i.label === label)!);
+
 const RestaurantSidebar: React.FC = () => {
   const location = useLocation();
+  const { escuro, alternar } = useTema();
+  const [maisAberto, setMaisAberto] = useState(false);
   // Controla qual item com submenu está aberto no drawer mobile
   const [drawerItem, setDrawerItem] = useState<NavItem | null>(null);
 
@@ -55,7 +73,10 @@ const RestaurantSidebar: React.FC = () => {
     item.subitems?.some((s) => location.pathname.startsWith(s.to)) ||
     false;
 
+  const maisAtivo = MOBILE_MAIS.some((i) => i.to && location.pathname.startsWith(i.to));
+
   const handleMobileItemClick = (item: NavItem) => {
+    setMaisAberto(false);
     if (item.subitems && item.subitems.length > 0) {
       setDrawerItem(item);
     } else {
@@ -63,7 +84,15 @@ const RestaurantSidebar: React.FC = () => {
     }
   };
 
-  const closeDrawer = () => setDrawerItem(null);
+  const toggleMais = () => {
+    setDrawerItem(null);
+    setMaisAberto((v) => !v);
+  };
+
+  const closeDrawer = () => {
+    setDrawerItem(null);
+    setMaisAberto(false);
+  };
 
   return (
     <>
@@ -113,7 +142,7 @@ const RestaurantSidebar: React.FC = () => {
 
       {/* ── MOBILE: bottom navigation bar ── */}
       <nav className="mobile-nav">
-        {NAV_ITEMS.map((item) => {
+        {MOBILE_PRINCIPAIS.map((item) => {
           const active = isGroupActive(item) || location.pathname === item.to;
           return (
             <button
@@ -125,7 +154,7 @@ const RestaurantSidebar: React.FC = () => {
               {item.subitems ? (
                 <>
                   <span className="mobile-nav__icon">{item.icon}</span>
-                  <span className="mobile-nav__label">{item.label}</span>
+                  <span className="mobile-nav__label">{item.shortLabel ?? item.label}</span>
                   {active && <HiChevronUp className="mobile-nav__chevron" />}
                 </>
               ) : (
@@ -135,13 +164,68 @@ const RestaurantSidebar: React.FC = () => {
                   onClick={closeDrawer}
                 >
                   <span className="mobile-nav__icon">{item.icon}</span>
-                  <span className="mobile-nav__label">{item.label}</span>
+                  <span className="mobile-nav__label">{item.shortLabel ?? item.label}</span>
                 </NavLink>
               )}
             </button>
           );
         })}
+
+        {/* Botão ☰ — abre Configurações, Filiais, WhatsApp e tema */}
+        <button
+          type="button"
+          className={`mobile-nav__item${maisAberto || maisAtivo ? ' active' : ''}`}
+          onClick={toggleMais}
+          aria-label="Abrir menu"
+          aria-expanded={maisAberto}
+        >
+          <span className="mobile-nav__icon"><HiMenu /></span>
+          <span className="mobile-nav__label">Outros</span>
+        </button>
       </nav>
+
+      {/* ── MOBILE: lista do botão ☰ ── */}
+      {maisAberto && (
+        <>
+          <div className="mobile-drawer__overlay" onClick={closeDrawer} />
+          <div className="mobile-drawer" role="menu">
+            <div className="mobile-drawer__header">
+              <span className="mobile-drawer__title">
+                <span className="mobile-drawer__title-icon"><HiMenu /></span>
+                Menu
+              </span>
+              <button className="mobile-drawer__close" onClick={closeDrawer} aria-label="Fechar">
+                <HiX />
+              </button>
+            </div>
+
+            <div className="mobile-drawer__subitems">
+              {MOBILE_MAIS.map((item) => (
+                <NavLink
+                  key={item.label}
+                  to={item.to!}
+                  className="mobile-drawer__subitem mobile-drawer__link"
+                  onClick={closeDrawer}
+                >
+                  <span className="mobile-drawer__link-icon">{item.icon}</span>
+                  {item.label}
+                </NavLink>
+              ))}
+
+              <button
+                type="button"
+                className="mobile-drawer__subitem mobile-drawer__link mobile-drawer__tema"
+                onClick={alternar}
+              >
+                <span className="mobile-drawer__link-icon">
+                  {escuro ? <MdLightMode /> : <MdDarkMode />}
+                </span>
+                {escuro ? 'Modo claro' : 'Modo escuro'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ── MOBILE: drawer de subitens ── */}
       {drawerItem && (

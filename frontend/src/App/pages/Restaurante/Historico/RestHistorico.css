@@ -526,3 +526,199 @@
   cursor: pointer;
 }
 .hist__btn-exportar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVIDADE
+═══════════════════════════════════════════════ */
+
+/* Tablet e celular: cabeçalho e filtros mais compactos */
+@media (max-width: 768px) {
+  .hist__titulo { font-size: 22px; }
+
+  .hist__btn-limpar { min-height: 40px; }
+}
+
+/* ═══════════════════════════════════════════════
+   CELULAR (≤ 600px): cada linha vira um CARD
+   (acima disso continua a tabela com rolagem lateral)
+
+   PEDIDOS                              MESAS
+   ┌─────────────────────────┐          ┌─────────────────────────┐
+   │ #1042          [Situação]│          │ Mesa 03        [Situação]│
+   │ Mesa 03 · Salão  12/05   │          │ 12/05              R$ 80 │
+   │ Cliente          Garçom  │          │ 2 pedidos       5 itens  │
+   │ 3 itens        💳 Pix    │          │ Clientes…         [Abrir]│
+   │ R$ 120,00        [Abrir] │          └─────────────────────────┘
+   └─────────────────────────┘
+═══════════════════════════════════════════════ */
+@media (max-width: 600px) {
+
+  /* ── Cabeçalho ── */
+  .hist__header { gap: 12px; }
+
+  .hist__header-acoes { width: 100%; gap: 10px; }
+
+  .hist__periodo { flex: 1; }
+
+  /* lado a lado quando cabe; em telas muito estreitas o Exportar desce para a linha de baixo */
+  .hist__header-acoes { flex-wrap: wrap; }
+
+  .hist__periodo { flex: 1 1 150px; }
+
+  .hist__periodo-btn,
+  .hist__btn-exportar {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .hist__btn-exportar { flex: 1 1 150px; }
+
+  /* painel do período abre alinhado à esquerda do botão (não sai da tela) */
+  .hist__periodo-painel { left: 0; right: auto; max-width: calc(100vw - 32px); }
+
+  /* ── Abas: dividem a linha ── */
+  .hist__aba { flex: 1; justify-content: center; text-align: center; }
+
+  /* ── Filtros: busca em cima, selects em 2 colunas ── */
+  .hist__filtros {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .hist__busca { grid-column: 1 / -1; order: -1; min-width: 0; }
+
+  .hist__select { min-width: 0; }
+
+  .hist__select select { width: 100%; min-height: 40px; }
+
+  .hist__select:nth-child(3),
+  .hist__btn-limpar { grid-column: 1 / -1; }
+
+  .hist__btn-limpar { justify-content: center; }
+
+  /* ── Tabela → cards ── */
+  .hist__tabela-scroll { overflow: visible; }
+
+  .hist__tabela,
+  .hist__tabela tbody {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* cabeçalho some da tela, mas continua para leitores de tela */
+  .hist__tabela thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .hist__tabela tbody tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 12px;
+    row-gap: 6px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .hist__tabela td {
+    display: block;
+    padding: 0;
+    border: none;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .hist__tabela td:nth-child(n) { text-align: left; }
+
+  .hist__btn-abrir { min-height: 40px; }
+
+  /* ───────── PEDIDOS (10 colunas) ───────── */
+  .hist__tabela--pedidos td:nth-child(2) { grid-column: 1; grid-row: 1; font-size: 17px; color: var(--text); }       /* nº do pedido */
+  .hist__tabela--pedidos td:nth-child(9) { grid-column: 2; grid-row: 1; text-align: right; }                         /* situação */
+  .hist__tabela--pedidos td:nth-child(3) { grid-column: 1; grid-row: 2; font-size: 14px; }                           /* local */
+  .hist__tabela--pedidos td:nth-child(1) { grid-column: 2; grid-row: 2; text-align: right; }                         /* data/hora */
+  .hist__tabela--pedidos td:nth-child(5) { grid-column: 1; grid-row: 3; }                                            /* cliente */
+  .hist__tabela--pedidos td:nth-child(6) { grid-column: 2; grid-row: 3; text-align: right; }                         /* garçom */
+  .hist__tabela--pedidos td:nth-child(4) { grid-column: 1; grid-row: 4; }                                            /* itens */
+  .hist__tabela--pedidos td:nth-child(8) { grid-column: 2; grid-row: 4; text-align: right; }                         /* pagamento */
+  .hist__tabela--pedidos td:nth-child(7) { grid-column: 1; grid-row: 5; font-size: 18px; font-weight: 700; color: var(--accent); } /* total */
+  .hist__tabela--pedidos td:nth-child(10){ grid-column: 2; grid-row: 5; text-align: right; }                         /* abrir */
+
+  .hist__tabela--pedidos td:nth-child(5)::before { content: "Cliente: "; color: var(--text-faint); }
+  .hist__tabela--pedidos td:nth-child(6)::before { content: "Garçom: ";  color: var(--text-faint); }
+
+  /* ───────── MESAS (8 colunas) ───────── */
+  .hist__tabela--mesas td:nth-child(2) { grid-column: 1; grid-row: 1; font-size: 17px; color: var(--text); }          /* mesa */
+  .hist__tabela--mesas td:nth-child(7) { grid-column: 2; grid-row: 1; text-align: right; }                            /* situação */
+  .hist__tabela--mesas td:nth-child(1) { grid-column: 1; grid-row: 2; }                                               /* data */
+  .hist__tabela--mesas td:nth-child(6) { grid-column: 2; grid-row: 2; text-align: right; font-size: 18px; font-weight: 700; color: var(--accent); } /* total */
+  .hist__tabela--mesas td:nth-child(3) { grid-column: 1; grid-row: 3; }                                               /* pedidos */
+  .hist__tabela--mesas td:nth-child(4) { grid-column: 2; grid-row: 3; text-align: right; }                            /* itens */
+  .hist__tabela--mesas td:nth-child(5) { grid-column: 1; grid-row: 4; }                                               /* clientes */
+  .hist__tabela--mesas td:nth-child(8) { grid-column: 2; grid-row: 4; text-align: right; }                            /* abrir */
+
+  .hist__tabela--mesas td:nth-child(5)::before { content: "Clientes: "; color: var(--text-faint); }
+
+  /* linhas de "carregando" / "nenhum resultado" ocupam o card todo */
+  .hist__tabela--pedidos td.hist__vazio,
+  .hist__tabela--mesas td.hist__vazio {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-muted);
+    padding: 12px 0;
+  }
+
+  .hist__tabela--pedidos td.hist__vazio::before,
+  .hist__tabela--mesas td.hist__vazio::before { content: none; }
+
+  /* ── Paginação centralizada e com botões fáceis de tocar ── */
+  .hist__paginacao { justify-content: center; gap: 10px; text-align: center; }
+
+  .hist__paginacao-botoes button { min-width: 40px; min-height: 40px; }
+
+  /* ── Painel de detalhes: tela cheia, respeitando a área segura do iPhone ── */
+  .hist__painel {
+    max-width: 100%;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Celular pequeno: filtros em UMA coluna, para o texto dos selects
+   ("Todas as mesas", "Todas as situações") aparecer inteiro */
+@media (max-width: 480px) {
+  .hist__filtros {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .hist__select select {
+    text-overflow: ellipsis;
+    min-height: 44px;
+    font-size: 14px;
+  }
+}
+
+/* Telas muito estreitas: abas compactas, sem quebrar o texto */
+@media (max-width: 360px) {
+  .hist__aba {
+    white-space: nowrap;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 13px;
+  }
+}

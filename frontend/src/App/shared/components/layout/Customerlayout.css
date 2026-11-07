@@ -61,17 +61,20 @@
   border-radius: 50%;
   object-fit: cover;
 }
+/* Páginas com fundo em arte: o .menu preenche toda a altura disponível */
+.customer-layout__content:has(> .menu) {
+  display: flex;
+  flex-direction: column;
+}
 
-/* ── Mobile ── */
+.customer-layout__content > .menu {
+  flex: 1 0 auto;
+}
+
 @media (max-width: 600px) {
-  /* No mobile a sidebar some do lado e vai pro bottom */
-  .customer-layout__body {
-    flex-direction: column;
-  }
-
-  .customer-layout__content {
-    padding: 16px 12px;
-    /* Espaço extra embaixo para a bottom nav não sobrepor o conteúdo */
-    padding-bottom: 60px;
+  /* cancela exatamente o padding do main no celular */
+  .customer-layout__content > .menu {
+    margin: -16px -12px -60px;
+    padding: 16px 12px 60px; /* os 60px de baixo são o espaço da bottom nav */
   }
 }

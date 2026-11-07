@@ -407,7 +407,7 @@ const RestHistorico: React.FC = () => {
 
             <div className="hist__tabela-scroll">
               {aba === 'pedidos' ? (
-                <table className="hist__tabela">
+                <table className="hist__tabela hist__tabela--pedidos">
                   <thead>
                     <tr>
                       <th>Data/Hora</th>
@@ -473,7 +473,7 @@ const RestHistorico: React.FC = () => {
                   </tbody>
                 </table>
               ) : (
-                <table className="hist__tabela">
+                <table className="hist__tabela hist__tabela--mesas">
                   <thead>
                     <tr>
                       <th>Data</th>

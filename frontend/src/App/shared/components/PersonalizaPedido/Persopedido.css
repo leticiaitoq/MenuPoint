@@ -194,3 +194,82 @@
 .perso-pedido__botao-confirmar:hover {
   background-color: var(--brand-hover);
 }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVIDADE
+═══════════════════════════════════════════════ */
+
+/* Tablet: Personalização e Adicionais empilham */
+@media (max-width: 768px) {
+  .perso-pedido__grupos {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .perso-pedido__nome {
+    font-size: 22px;
+  }
+
+  .perso-pedido__preco {
+    font-size: 28px;
+  }
+}
+
+/* Celular: cabeçalho vira imagem + texto, preço embaixo */
+@media (max-width: 600px) {
+  .perso-pedido {
+    gap: 20px;
+  }
+
+  .perso-pedido__topo {
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .perso-pedido__imagem {
+    width: 96px;
+    height: 96px;
+  }
+
+  .perso-pedido__info {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .perso-pedido__nome {
+    font-size: 20px;
+    overflow-wrap: anywhere;
+  }
+
+  .perso-pedido__descricao {
+    font-size: 14px;
+  }
+
+  /* preço ocupa a linha inteira embaixo */
+  .perso-pedido__preco {
+    flex-basis: 100%;
+    text-align: right;
+    font-size: 26px;
+  }
+
+  .perso-pedido__opcoes {
+    padding: 14px;
+    gap: 16px 10px;
+  }
+
+  .perso-pedido__grupo-titulo,
+  .perso-pedido__observacao-titulo {
+    font-size: 20px;
+  }
+
+  .perso-pedido__observacao-campo {
+    padding: 14px 16px;
+  }
+
+  /* botão de confirmar ocupa a largura toda */
+  .perso-pedido__botao-confirmar {
+    align-self: stretch;
+    padding: 16px 24px;
+  }
+}

@@ -620,6 +620,8 @@ const PagarMesaConteudo: React.FC<{
                 registrar desconto
               </button>
 
+              {/* No celular este bloco vira uma barra fixa no rodapé (ver PagarMesa.css) */}
+              <div className="pagar__acoes-fixas">
               <div className="pagar__resumo-total">
                 <span>Total</span>
                 <span>{formatarMoeda(total)}</span>
@@ -641,6 +643,7 @@ const PagarMesaConteudo: React.FC<{
               <button className="pagar__btn-finalizar" onClick={abrirModalPagamento} disabled={itens.length === 0}>
                 Finalizar pagamento
               </button>
+              </div>
 
               {pedidoBase.pagamentosRealizados > 0 && (
                 <div className="pagar__pagamentos-realizados">

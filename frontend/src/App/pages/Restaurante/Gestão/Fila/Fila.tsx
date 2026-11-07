@@ -90,7 +90,9 @@ const COLUNAS: ConfiguracaoColuna[] = [
 // ── Componente principal
 const Fila: React.FC = () => {
   const [pedidos, setPedidos]                   = useState<Pedido[]>(PEDIDOS_MOCK);
-  const [colunaAtiva, setColunaAtiva]             = useState<StatusPedido | null>(null);
+  const [colunaAtiva, setColunaAtiva]             = useState<StatusPedido | null>(
+    () => (window.matchMedia('(max-width: 600px)').matches ? 'recebido' : null),
+  );
   const [pedidoSelecionado, setPedidoSelecionado] = useState<Pedido | null>(null);
   const [modalAberto, setModalAberto]             = useState(false);
   const [colunaDoModal, setColunaDoModal]         = useState<ConfiguracaoColuna | null>(null);
@@ -115,8 +117,9 @@ const Fila: React.FC = () => {
     setPedidoSelecionado((prev) => prev?.id === pedido.id ? null : pedido);
   };
 
-  const abrirModal = (coluna: ConfiguracaoColuna) => {
-    if (!pedidoSelecionado) return;
+  const abrirModal = (coluna: ConfiguracaoColuna, pedido: Pedido | null = pedidoSelecionado) => {
+    if (!pedido) return;
+    setPedidoSelecionado(pedido);
     setColunaDoModal(coluna);
     setModalAberto(true);
   };
@@ -146,6 +149,7 @@ const Fila: React.FC = () => {
   // ── Render do card de pedido na lista inferior
   const renderLinhaPedido = (pedido: Pedido) => {
     const estaSelecionado = pedidoSelecionado?.id === pedido.id;
+    const colunaDoPedido  = COLUNAS.find((c) => c.status === pedido.status);
 
     return (
       <tr
@@ -157,18 +161,28 @@ const Fila: React.FC = () => {
           {pedido.numero}
           {estaSelecionado && <HiCheck className="fila__icone-check" />}
         </td>
-        <td className="fila__td">{pedido.cliente}</td>
-        <td className="fila__td">
+        <td className="fila__td fila__td--cliente">{pedido.cliente}</td>
+        <td className="fila__td fila__td--mesa">
           <span className="fila__mesa">
             <MdTableRestaurant /> {pedido.mesa}
           </span>
         </td>
-        <td className="fila__td">
+        <td className="fila__td fila__td--itens">
           {pedido.itens.map((item) => item.nome).join(', ')}
         </td>
         <td className="fila__td fila__td--preco">{formatarPreco(pedido.total)}</td>
         <td className="fila__td fila__td--tempo">
           <HiClock className="fila__icone-tempo" /> {pedido.tempoCriado}
+        </td>
+        <td className="fila__td fila__td--acao">
+          {colunaDoPedido?.proximoStatus && (
+            <button
+              className="fila__btn-avancar fila__btn-avancar--ativo"
+              onClick={(e) => { e.stopPropagation(); abrirModal(colunaDoPedido, pedido); }}
+            >
+              Avançar <FiChevronRight />
+            </button>
+          )}
         </td>
       </tr>
     );
@@ -266,6 +280,22 @@ const Fila: React.FC = () => {
               </span>
             ))}
           </div>
+        </div>
+
+        {/* ── Abas das etapas (só no celular; no desktop vale o kanban) ── */}
+        <div className="fila__abas" role="tablist" aria-label="Etapas do pedido">
+          {COLUNAS.map((coluna) => (
+            <button
+              key={coluna.status}
+              role="tab"
+              aria-selected={colunaAtiva === coluna.status}
+              className={`fila__aba fila__aba--${coluna.status} ${colunaAtiva === coluna.status ? 'fila__aba--ativa' : ''}`}
+              onClick={() => carregarColuna(coluna.status)}
+            >
+              {coluna.rotulo}
+              <span className="fila__aba-contador">{pedidosPorStatus(coluna.status).length}</span>
+            </button>
+          ))}
         </div>
 
         {/* ── Kanban ── */}

@@ -609,3 +609,134 @@
   border-radius: 8px;
   padding: 8px 12px;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVO — fica no FINAL do arquivo para vencer as regras base
+═══════════════════════════════════════════════════════════ */
+.cate__so-mobile { display: none; }
+.cate__tela-fechar { display: none; } /* só aparece no celular */
+
+@media (max-width: 600px) {
+  .cate__so-mobile  { display: inline; }
+  .cate__so-desktop { display: none; }
+
+  /* trava a rolagem da página enquanto a tela de adicionais está aberta */
+  body:has(.cate__tela) { overflow: hidden; }
+
+  /* alça de arrastar: o dedo arrasta a linha em vez de rolar a página */
+  .cate__drag-icon { touch-action: none; }
+
+  /* ── Categorias viram cards ── */
+  .cate__tabela-scroll { overflow: visible; }
+
+  .cate__tabela,
+  .cate__tabela tbody { display: block; width: 100%; min-width: 0; }
+
+  /* cabeçalho some da tela, mas continua para leitores de tela */
+  .cate__tabela thead {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip: rect(0 0 0 0);
+  }
+
+  .cate__tabela tbody tr.cate__linha {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto auto;
+    column-gap: 10px;
+    row-gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .cate__linha--selecionada { box-shadow: none; border-color: var(--brand); }
+  .cate__linha--arrastando  { box-shadow: 0 6px 18px var(--shadow-color); }
+
+  .cate__tabela td { display: block; padding: 0; white-space: normal; }
+
+  /* ordem + alça: coluna da esquerda, ocupa as 3 linhas */
+  .cate__tabela td.cate__td-ordem {
+    grid-column: 1; grid-row: 1 / span 3;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; font-size: 13px;
+  }
+  .cate__drag-icon { margin: 0; font-size: 24px; padding: 6px 2px; }
+
+  .cate__tabela td.cate__td-nome     { grid-column: 2; grid-row: 1; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+  .cate__tabela td.cate__td-status   { grid-column: 3; grid-row: 1; }
+  .cate__tabela td.cate__td-produtos { grid-column: 2 / span 2; grid-row: 2; font-size: 13px; color: var(--text-muted); }
+
+  .cate__tabela td.cate__td-acoes {
+    grid-column: 2 / span 2; grid-row: 3;
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+
+  /* a tela de adicionais já tem "Novo adicional": o atalho sai do card */
+  .cate__btn-adicional { display: none; }
+
+  .cate__btn-acao,
+  .cate__btn-expandir {
+    min-width: 40px; height: 40px;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0 10px; gap: 6px;
+    background: var(--bg-surface-alt); border-radius: 10px;
+  }
+  .cate__btn-expandir { font-size: 14px; color: var(--text-muted); margin-right: auto; }
+
+  /* ── Adicionais em tela cheia ── */
+  .cate__tela {
+    position: fixed; inset: 0; z-index: 900; /* abaixo do .cate__overlay (999): o modal de adicional abre por cima */
+    height: 100vh; height: 100dvh;
+    overflow-y: auto;
+    background: var(--bg-surface);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    animation: cate-tela-entra 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes cate-tela-entra { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+  /* quem prefere menos movimento no sistema não vê o deslize */
+  @media (prefers-reduced-motion: reduce) {
+    .cate__tela { animation: none; }
+  }
+
+  .cate__tela-fechar {
+    display: flex;
+    position: absolute; top: calc(10px + env(safe-area-inset-top, 0)); right: 12px; z-index: 2;
+    width: 40px; height: 40px;
+    align-items: center; justify-content: center;
+    background: none; border: none; font-size: 22px;
+    color: var(--on-status); cursor: pointer;
+  }
+
+  .cate__tela .cate__adic { animation: none; min-height: 100%; }
+  .cate__tela .cate__adic-aba {
+    align-self: stretch; border-radius: 0;
+    padding: calc(14px + env(safe-area-inset-top, 0)) 56px 14px 16px;
+  }
+  .cate__tela .cate__adic-corpo { border-radius: 0; box-shadow: none; flex: 1; }
+
+  /* ── Adicionais viram mini cards ── */
+  .cate__tabela--adic { min-width: 0; }
+
+  .cate__tabela tbody tr.cate__adic-linha {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 10px; row-gap: 6px;
+    align-items: center;
+    margin-bottom: 10px; padding: 12px;
+    background: var(--bg-surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .cate__adic-linha td:nth-child(1)    { grid-column: 1; grid-row: 1; }
+  .cate__adic-linha td.cate__td-preco  { grid-column: 1; grid-row: 2; font-weight: 700; color: var(--accent); }
+  .cate__adic-linha td.cate__td-status { grid-column: 2; grid-row: 2; }
+  .cate__adic-linha td:last-child      { grid-column: 2; grid-row: 1; }
+  .cate__adic-linha .cate__badge       { white-space: normal; display: inline-block; }
+
+  /* ── Modais ── */
+  .cate__modal { max-height: 90vh; max-height: 90dvh; }
+  .cate__input { font-size: 16px; } /* evita o zoom automático do iOS ao focar */
+}

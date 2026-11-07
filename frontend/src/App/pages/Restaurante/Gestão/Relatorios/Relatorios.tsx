@@ -141,7 +141,7 @@ const Relatorios: React.FC = () => {
         {/* ── Cards de resumo ── */}
         <div className="relatorios__cards">
 
-          <div className="relatorios__card relatorios__card--vermelho">
+          <div className="relatorios__card relatorios__card--vermelho relatorios__card--largo">
             <div className="relatorios__card-topo">
               <HiTrendingUp className="relatorios__card-icone" />
               <span>Faturamento</span>
@@ -166,7 +166,7 @@ const Relatorios: React.FC = () => {
             <p className="relatorios__card-valor">R$ 59,84</p>
           </div>
 
-          <div className="relatorios__card relatorios__card--amarelo">
+          <div className="relatorios__card relatorios__card--amarelo relatorios__card--largo">
             <div className="relatorios__card-topo">
               <BsTrophy className="relatorios__card-icone" />
               <span>Produtos Mais Vendidos</span>
@@ -204,6 +204,7 @@ const Relatorios: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                 <XAxis
                   dataKey="dia"
+                  minTickGap={8}
                   tick={{ fontSize: 11, fill: '#9ca3af' }}
                   axisLine={false}
                   tickLine={false}

@@ -1044,3 +1044,83 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   .config__secao-controles { width: 100%; justify-content: space-between; }
   .config__secao-acoes .config__btn { flex: 1; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVO — complementa os @media acima; fica no FINAL do arquivo
+═══════════════════════════════════════════════════════════ */
+
+/* Link do cardápio (input + Copiar + Abrir) */
+.config__linha-link { display: flex; gap: 8px; }
+
+@media (max-width: 768px) {
+  .config__cabecalho { padding: 20px 16px 18px; }
+  .config__cabecalho-acoes { width: 100%; justify-content: space-between; }
+  .config__avatar { width: 80px; height: 80px; }
+
+  .config__painel { padding: 12px 10px 18px; gap: 14px; }
+
+  /* abas: uma linha só, com rolagem lateral (em vez de quebrar em várias linhas) */
+  .config__abas {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 1px; /* deixa o sublinhado da aba ativa aparecer dentro da área rolável */
+  }
+  .config__abas::-webkit-scrollbar { display: none; }
+  .config__aba { flex: 0 0 auto; white-space: nowrap; min-height: 44px; }
+}
+
+@media (max-width: 600px) {
+  .config { gap: 14px; }
+  .config__titulo { font-size: 20px; }
+  .config__subcard { padding: 16px 14px; }
+
+  /* campos: 16px evita o zoom automático do iOS; altura boa para o toque */
+  .config__input { font-size: 16px; min-height: 44px; }
+  .config__input--hora { width: auto; flex: 1 1 110px; }
+  .config__dia-horas .config__link { flex-basis: 100%; text-align: left; }
+
+  .config__btn { min-height: 44px; }
+  .config__btn--pequeno { min-height: 40px; }
+
+  /* link do cardápio: o campo ocupa a linha toda e os botões ficam embaixo */
+  .config__linha-link { flex-wrap: wrap; }
+  .config__linha-link .config__input { flex: 1 1 100%; }
+  .config__linha-link .config__btn { flex: 1; }
+
+  /* Entrega / Retirada / Pedido na mesa: cartões compactos em linha */
+  .config__cartao-opcao { flex-direction: row; align-items: center; gap: 12px; padding: 14px; }
+  .config__cartao-opcao-rotulo { flex: 1; }
+  .config__cartao-opcao:hover:not(:disabled) { transform: none; }
+
+  /* diálogos */
+  .config__dialogo { max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); }
+  .config__acoes--fim { flex-direction: column-reverse; }
+  .config__acoes--fim .config__btn { width: 100%; }
+
+  /* abas: grade 2×2, as quatro seções ficam visíveis sem rolar */
+  .config__abas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  .config__aba {
+    justify-content: flex-start;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.25;
+    padding: 10px 12px;
+    font-size: 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .config__aba--ativa { border-color: var(--accent); }
+  .config__aba--ativa::after { display: none; }
+  .config__aba-ponto { margin-left: auto; flex-shrink: 0; }
+}

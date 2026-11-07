@@ -509,8 +509,124 @@
   background: var(--success);
   color: var(--on-status);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVO — fica no FINAL do arquivo para vencer as regras base
+═══════════════════════════════════════════════════════════ */
+.fila__abas        { display: none; }  /* só aparece no celular */
+.fila__td--acao    { display: none; }  /* botão Avançar do card: só no celular */
+.fila__modal-overlay { padding: 16px; }
+
+/* Tablet: 4 colunas espremidas viram grade 2×2 */
+@media (max-width: 900px) {
+  .fila__kanban { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Celular */
 @media (max-width: 600px) {
-  .fila__kanban {
-        grid-template-columns: repeat(2, 1fr);
+  .fila__titulo { font-size: 22px; }
+  .fila__resumo-badge { display: none; }  /* as abas já mostram as contagens */
+
+  /* ── Kanban sai, abas entram ── */
+  .fila__kanban { display: none; }
+
+  .fila__abas {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 2px 2px 6px;
+    scrollbar-width: none;
   }
+  .fila__abas::-webkit-scrollbar { display: none; }
+
+  .fila__aba {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    border-bottom: 3px solid var(--aba-cor);
+    background: var(--bg-surface);
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .fila__aba--recebido   { --aba-cor: var(--fila-recebido); }
+  .fila__aba--preparando { --aba-cor: var(--fila-preparando); }
+  .fila__aba--pronto     { --aba-cor: var(--fila-pronto); }
+  .fila__aba--entregue   { --aba-cor: var(--fila-entregue); }
+
+  .fila__aba--ativa {
+    background: var(--bg-surface-alt);
+    color: var(--text);
+    border-color: var(--aba-cor);
+    box-shadow: var(--sombra-card);
+  }
+
+  .fila__aba-contador {
+    min-width: 22px; height: 22px; line-height: 22px;
+    padding: 0 6px;
+    border-radius: 11px;
+    text-align: center;
+    font-size: 12px;
+    background: var(--bg-surface-alt);
+    color: var(--text);
+  }
+  .fila__aba--ativa .fila__aba-contador { background: var(--aba-cor); color: var(--on-status); }
+
+  /* ── Lista de pedidos vira cards ── */
+  .fila__tabela-container { padding: 14px; }
+  .fila__tabela-dica { display: none; }  /* o botão Avançar já está no card */
+
+  .fila__tabela,
+  .fila__tabela tbody { display: block; width: 100%; }
+
+  /* cabeçalho some da tela, mas continua para leitores de tela */
+  .fila__tabela thead {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip: rect(0 0 0 0);
+  }
+
+  .fila__tabela tbody tr.fila__linha-pedido {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 10px;
+    row-gap: 6px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 12px;
+    background: var(--bg-surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  /* aqui não há "seleção": o botão Avançar age direto no card */
+  .fila__tabela tbody tr.fila__linha-pedido:hover,
+  .fila__tabela tbody tr.fila__linha-pedido--selecionado {
+    background: var(--bg-surface-alt);
+    border: 1px solid var(--border);
+  }
+  .fila__icone-check { display: none; }
+
+  .fila__tabela td.fila__td { display: block; padding: 0; }
+
+  .fila__tabela td.fila__td--numero  { grid-column: 1; grid-row: 1; display: flex; font-size: 16px; }
+  .fila__tabela td.fila__td--tempo   { grid-column: 2; grid-row: 1; display: flex; justify-content: flex-end; }
+  .fila__tabela td.fila__td--cliente { grid-column: 1; grid-row: 2; color: var(--text-muted); }
+  .fila__tabela td.fila__td--mesa    { grid-column: 2; grid-row: 2; display: flex; justify-content: flex-end; }
+  .fila__tabela td.fila__td--itens   { grid-column: 1 / -1; grid-row: 3; font-size: 13px; }
+  .fila__tabela td.fila__td--preco   { grid-column: 1 / -1; grid-row: 4; font-size: 16px; }
+
+  .fila__tabela td.fila__td--acao    { grid-column: 1 / -1; grid-row: 5; display: block; }
+  .fila__tabela td.fila__td--acao:empty { display: none; }  /* aba Entregue: sem botão */
+  .fila__td--acao .fila__btn-avancar { min-height: 44px; }
+
+  /* ── Modal ── */
+  .fila__modal { padding: 28px 20px 20px; }
+  .fila__modal-btn-cancelar,
+  .fila__modal-btn-confirmar { min-height: 44px; }
 }

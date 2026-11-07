@@ -24,6 +24,12 @@ interface NavbarProps {
    * Desligado por padrão: ative por layout, conforme as telas forem migradas.
    */
   mostrarTema?: boolean;
+
+  /**
+   * Esconde o botão de tema na navbar no celular/tablet (≤ 768px).
+   * Usado quando o tema fica dentro do menu ☰ da barra inferior.
+   */
+  temaSoNoDesktop?: boolean;
 }
 
 /**
@@ -31,7 +37,7 @@ interface NavbarProps {
  * A diferença entre cliente e restaurante é resolvida via props,
  * evitando lógica condicional dentro do componente.
  */
-const Navbar: React.FC<NavbarProps> = ({ subtitle, rightIcon, leftIcon, mostrarTema = false }) => {
+const Navbar: React.FC<NavbarProps> = ({ subtitle, rightIcon, leftIcon, mostrarTema = false, temaSoNoDesktop = false }) => {
   return (
     <header className="navbar">
 
@@ -52,7 +58,11 @@ const Navbar: React.FC<NavbarProps> = ({ subtitle, rightIcon, leftIcon, mostrarT
   </div>
 
   <div className="navbar__right">
-    {mostrarTema && <ThemeToggle />}
+    {mostrarTema && (
+      <div className={temaSoNoDesktop ? 'navbar__tema navbar__tema--so-desktop' : 'navbar__tema'}>
+        <ThemeToggle />
+      </div>
+    )}
     <div className="navbar__icon">
       {rightIcon}
     </div>

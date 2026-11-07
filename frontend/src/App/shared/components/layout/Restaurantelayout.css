@@ -48,6 +48,15 @@
   height: 65px;
   border-radius: 50%;
   object-fit: cover;          /* preenche o círculo sem distorcer */
-  border: 3px solid rgba(255, 255, 255, 0.85);
-  background: #f3f3f3;
+  border: 3px solid var(--bg-card-glass);
+  background: var(--bg-surface-alt);
+}
+
+/* Celular: avatar menor para caber na navbar de 60px */
+@media (max-width: 600px) {
+  .restaurant-layout__avatar-btn img {
+    width: 40px;
+    height: 40px;
+    border-width: 2px;
+  }
 }

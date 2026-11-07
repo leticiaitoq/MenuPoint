@@ -16,7 +16,7 @@
   --cor-texto-fraco:var(--text-muted);
   --cor-borda:      var(--border);
   --cor-fundo-card: var(--bg-card-glass);
-  --sombra:         0 1px 4pxvar(--shadow-color);
+  --sombra:         0 1px 4px var(--shadow-color);
   --raio:           14px;
   --raio-sm:        8px;
 
@@ -31,104 +31,6 @@
   font-weight: 700;
   color: var(--cor-texto);
   margin: 0;
-}
-
-/* ── Filtros ── */
-.relatorios__filtros {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  background: var(--cor-fundo-card);
-  border: 1.5px solid var(--cor-borda);
-  border-radius: var(--raio);
-  padding: 12px 18px;
-  flex-wrap: wrap;
-}
-
-.relatorios__periodo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.relatorios__periodo-icone {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: var(--cor-amber-soft);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  color: var(--cor-amber);
-  flex-shrink: 0;
-}
-
-.relatorios__periodo-label {
-  font-size: 11px;
-  color: var(--cor-texto-fraco);
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.relatorios__periodo-valor {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--cor-texto);
-  margin: 0;
-}
-
-.relatorios__filtros-direita {
-  display: flex;
-  gap: 10px;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.relatorios__select-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--bg-surface-alt);
-  border: 1.5px solid var(--cor-borda);
-  border-radius: var(--raio-sm);
-  padding: 7px 12px;
-}
-
-.relatorios__select-icone {
-  font-size: 17px;
-  color: var(--cor-texto-fraco);
-  flex-shrink: 0;
-}
-
-.relatorios__select {
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 14px;
-  color: var(--cor-texto);
-  cursor: pointer;
-}
-
-.relatorios__btn-aplicar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 18px;
-  border-radius: var(--raio-sm);
-  border: none;
-  background: var(--cor-verde);
-  color: var(--on-status);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.relatorios__btn-aplicar:hover {
-  background: var(--success);
 }
 
 /* ── Cards de resumo ── */
@@ -271,13 +173,6 @@
   font-weight: 700;
   color: var(--cor-texto);
   margin: 0 0 12px;
-}
-
-/* SVG barras */
-.relatorios__svg {
-  width: 100%;
-  height: auto;
-  display: block;
 }
 
 /* Legenda manual do gráfico pizza */
@@ -519,6 +414,25 @@
   margin: 0;
 }
 
+/* Botão "Ver mais" das despesas */
+.relatorios__despesas-ver-mais {
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--brand-hover);
+  color: var(--on-brand);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.relatorios__despesas-ver-mais:hover {
+  opacity: 0.9;
+}
+
 /* ── Responsividade ── */
 
 /* Tablet largo */
@@ -540,26 +454,6 @@
 @media (max-width: 768px) {
   .relatorios__titulo {
     font-size: 22px;
-  }
-
-  /* Filtros empilham */
-  .relatorios__filtros {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 14px;
-  }
-
-  .relatorios__filtros-direita {
-    flex-direction: row;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    width: 100%;
-  }
-
-  .relatorios__select-wrap {
-    flex: 1;
-    min-width: 180px;
   }
 
   /* Gráficos: coluna única */
@@ -592,67 +486,89 @@
   }
 }
 
-.relatorios__despesas-ver-mais {
-  width: 100%;
-  margin-top: 16px;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  background: var(--brand-hover);
-  color: var(--on-brand);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.relatorios__despesas-ver-mais:hover {
-  opacity: 0.9;
-}
-
-/* Mobile */
+/* Celular */
 @media (max-width: 480px) {
+  .relatorios {
+    gap: 12px;
+  }
+
   .relatorios__titulo {
     font-size: 20px;
   }
 
-  /* Cards: coluna única */
+  /* Cards: 2 colunas; Faturamento e Produtos Mais Vendidos ocupam a linha toda */
   .relatorios__cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .relatorios__card {
+    padding: 14px;
+  }
+
+  .relatorios__card--largo {
+    grid-column: 1 / -1;
+  }
+
+  .relatorios__card-topo {
+    font-size: 11px;
+  }
+
+  .relatorios__card-valor {
+    font-size: 20px;
   }
 
   .relatorios__card-valor--grande {
     font-size: 28px;
   }
 
-  /* Filtros */
-  .relatorios__filtros-direita {
+  .relatorios__painel {
+    padding: 14px;
+  }
+
+  /* Legenda da pizza: lista em coluna, porcentagem alinhada à direita */
+  .relatorios__legenda-pizza {
     flex-direction: column;
-    align-items: stretch;
-    width: 100%;
+    flex-wrap: nowrap;
+    gap: 8px;
   }
 
-  .relatorios__select-wrap {
+  .relatorios__legenda-pizza-item {
     width: 100%;
+    font-size: 13px;
   }
 
-  .relatorios__btn-aplicar {
-    width: 100%;
-    justify-content: center;
+  .relatorios__legenda-pizza-pct {
+    margin-left: auto;
   }
 
-  /* Rodapé */
-  .relatorios__rodape-numero {
-    font-size: 28px;
+  .relatorios__despesas-ver-mais {
+    min-height: 44px;
+  }
+
+  /* Rodapé: o total de pedidos já aparece no card "Pedidos Finalizados" */
+  .relatorios__rodape-total {
+    display: none;
+  }
+
+  .relatorios__rodape-destaque {
+    padding: 16px;
+  }
+
+  .relatorios__destaque-corpo {
+    gap: 12px;
+  }
+
+  .relatorios__destaque-icone-wrap {
+    width: 44px;
+    height: 44px;
+  }
+
+  .relatorios__destaque-icone {
+    font-size: 22px;
   }
 
   .relatorios__destaque-valor {
     font-size: 22px;
-  }
-
-  .relatorios__destaque-corpo {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
   }
 }
