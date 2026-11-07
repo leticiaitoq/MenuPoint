@@ -9,7 +9,6 @@ import {
   HiX,
   HiCreditCard,
   HiCash,
-  HiDotsHorizontal,
   HiOutlineSwitchHorizontal,
   HiOutlineDocumentDuplicate,
   HiOutlineTrash,
