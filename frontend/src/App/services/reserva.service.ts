@@ -64,12 +64,27 @@ export const horaParaMinutos = (hhmm: string): number => {
   return h * 60 + m
 }
 
-/** Hoje (data local do navegador) no formato YYYY-MM-DD */
-export const hojeLocal = (): string => {
-  const d = new Date()
+/** Data local (do navegador) no formato YYYY-MM-DD. Sem argumento, é hoje. */
+export const hojeLocal = (ms: number = Date.now()): string => {
+  const d = new Date(ms)
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const dd = String(d.getDate()).padStart(2, '0')
   return `${d.getFullYear()}-${mm}-${dd}`
+}
+
+/** "2026-11-07" + 3 → "2026-11-10" */
+export const somarDias = (dia: string, dias: number): string => {
+  const [a, m, d] = dia.split('-').map(Number)
+  return hojeLocal(new Date(a, m - 1, d + dias).getTime())
+}
+
+/** "Hoje", "Amanhã" ou "sáb, 14/11" — para mostrar a data da reserva */
+export const rotuloDia = (dia: string, hoje: string = hojeLocal()): string => {
+  if (dia === hoje) return 'Hoje'
+  if (dia === somarDias(hoje, 1)) return 'Amanhã'
+  const [a, m, d] = dia.split('-').map(Number)
+  const semana = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][new Date(a, m - 1, d).getDay()]
+  return `${semana}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`
 }
 
 // ── Cliente logado (delivery): /reservas/publico/:slug/* ─────────────────────
@@ -107,10 +122,10 @@ export default ReservaClienteService
 
 // ── Restaurante (Caixa): /reservas ───────────────────────────────────────────
 export const ReservaRestauranteService = {
-  /** Reservas de um dia (YYYY-MM-DD), em ordem de horário */
-  async listarDoDia(dia: string): Promise<Reserva[]> {
+  /** Reservas de um período (YYYY-MM-DD a YYYY-MM-DD), em ordem de data e horário */
+  async listarPeriodo(inicio: string, fim: string): Promise<Reserva[]> {
     const r = await api.get<Reserva[]>('reservas', {
-      params: { data_inicio: dia, data_fim: dia },
+      params: { data_inicio: inicio, data_fim: fim },
     })
     return r.data
   },

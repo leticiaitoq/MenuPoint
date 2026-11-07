@@ -30,6 +30,9 @@ import {
   horaDaIso,
   horaParaMinutos,
   hojeLocal,
+  somarDias,
+  rotuloDia,
+  dataDaReserva,
 } from '../../../../services/reserva.service';
 import { ROTAS_CAIXA } from '../../../../routes/caixaRotas';
 import { useAuth } from '../../../../shared/contexts/Authcontext';
@@ -156,7 +159,9 @@ const minutosAgora = (agora: number): number => {
  */
 const aplicarReservas = (mesa: MesaCaixa, reservas: ReservaApi[], agora: number): MesaCaixa => {
   const min = minutosAgora(agora);
+  const hoje = hojeLocal(agora);
   const daMesa = reservas
+    .filter((r) => dataDaReserva(r) === hoje)
     .filter((r) => r.mesa_id === mesa.id && STATUS_RESERVA_ATIVA.includes(r.status))
     .filter((r) => horaParaMinutos(horaDaIso(r.hora_fim)) > min)
     .sort((a, b) => horaDaIso(a.hora_inicio).localeCompare(horaDaIso(b.hora_inicio)));
@@ -177,6 +182,9 @@ const aplicarReservas = (mesa: MesaCaixa, reservas: ReservaApi[], agora: number)
 
 const faixaReserva = (r: ReservaApi) => `${horaDaIso(r.hora_inicio)}–${horaDaIso(r.hora_fim)}`;
 
+// Dias à frente que o Caixa mostra na lista de reservas
+const DIAS_RESERVAS_A_FRENTE = 7;
+
 const ordenar = (lista: MesaCaixa[]) => [...lista].sort((a, b) => a.numero - b.numero);
 
 const formatarMoeda = (valor: number) =>
@@ -195,8 +203,8 @@ const GerenPagamentos: React.FC = () => {
   const [carregando, setCarregando] = useState(true);
   const [erroLista, setErroLista]   = useState<string | null>(null);
 
-  // Reservas de hoje (feitas pelos clientes no app) e "agora" para decidir quais mesas estão seguras
-  const [reservasHoje, setReservasHoje]     = useState<ReservaApi[]>([]);
+  // Reservas dos próximos dias (feitas pelos clientes no app) e "agora" para decidir quais mesas estão seguras
+  const [reservas, setReservas]     = useState<ReservaApi[]>([]);
   const [erroReservas, setErroReservas]     = useState<string | null>(null);
   const [agora, setAgora]                   = useState(() => Date.now());
   const [reservaAgindoId, setReservaAgindoId] = useState<string | null>(null);
@@ -245,18 +253,27 @@ const GerenPagamentos: React.FC = () => {
 
   // Mesas já cruzadas com as reservas de hoje (é isto que a tela mostra e conta)
   const mesasView = useMemo(
-    () => mesas.map((m) => aplicarReservas(m, reservasHoje, agora)),
-    [mesas, reservasHoje, agora]
+    () => mesas.map((m) => aplicarReservas(m, reservas, agora)),
+    [mesas, reservas, agora]
   );
 
-  // Reservas de hoje que ainda seguram mesa, na ordem do horário
-  const reservasAtivasHoje = useMemo(
-    () =>
-      reservasHoje
-        .filter((r) => STATUS_RESERVA_ATIVA.includes(r.status))
-        .filter((r) => horaParaMinutos(horaDaIso(r.hora_fim)) > minutosAgora(agora))
-        .sort((a, b) => horaDaIso(a.hora_inicio).localeCompare(horaDaIso(b.hora_inicio))),
-    [reservasHoje, agora]
+  // Reservas que ainda seguram mesa (hoje ainda não encerradas + próximos dias), por data e horário
+  const reservasAtivasHoje = useMemo(() => {
+    const hoje = hojeLocal(agora);
+    return reservas
+      .filter((r) => STATUS_RESERVA_ATIVA.includes(r.status))
+      .filter((r) => {
+        const dia = dataDaReserva(r);
+        return dia > hoje || (dia === hoje && horaParaMinutos(horaDaIso(r.hora_fim)) > minutosAgora(agora));
+      })
+      .sort((a, b) =>
+        (dataDaReserva(a) + horaDaIso(a.hora_inicio)).localeCompare(dataDaReserva(b) + horaDaIso(b.hora_inicio))
+      );
+  }, [reservas, agora]);
+
+  const totalReservasHoje = useMemo(
+    () => reservasAtivasHoje.filter((r) => dataDaReserva(r) === hojeLocal(agora)).length,
+    [reservasAtivasHoje, agora]
   );
 
   // ── Contagens usadas nos filtros, no resumo de disponibilidade e no chip "Pedidos em aberto" ──
@@ -284,14 +301,14 @@ const GerenPagamentos: React.FC = () => {
         MesaService.listar(),
         PedidoService.listar({ status: STATUS_NA_CONTA, modalidade: 'MESA', conta_aberta: true }),
         // Reservas não derrubam o Caixa: se falharem, as mesas continuam funcionando e avisamos na tela
-        ReservaRestauranteService.listarDoDia(hojeLocal()).then(
+        ReservaRestauranteService.listarPeriodo(hojeLocal(), somarDias(hojeLocal(), DIAS_RESERVAS_A_FRENTE)).then(
           (r) => ({ ok: true as const, r }),
           (err) => ({ ok: false as const, err })
         ),
       ]);
 
       if (reservas.ok) {
-        setReservasHoje(reservas.r);
+        setReservas(reservas.r);
         setErroReservas(null);
       } else {
         setErroReservas(mensagemDeErro(reservas.err, 'Não foi possível carregar as reservas de hoje.'));
@@ -482,7 +499,7 @@ const GerenPagamentos: React.FC = () => {
     setErroAcao(null);
     try {
       const atualizada = await ReservaRestauranteService.atualizarStatus(reserva.id, status);
-      setReservasHoje((prev) => prev.map((r) => (r.id === reserva.id ? { ...r, ...atualizada } : r)));
+      setReservas((prev) => prev.map((r) => (r.id === reserva.id ? { ...r, ...atualizada } : r)));
       return true;
     } catch (err: any) {
       setErroAcao(mensagemDeErro(err, 'Não foi possível atualizar a reserva.'));
@@ -674,7 +691,7 @@ const GerenPagamentos: React.FC = () => {
               <span className="caixa__resumo-rotulo">reservadas</span>
             </div>
             <div className="caixa__resumo-item">
-              <span className="caixa__resumo-numero">{reservasAtivasHoje.length}</span>
+              <span className="caixa__resumo-numero">{totalReservasHoje}</span>
               <span className="caixa__resumo-rotulo">reservas hoje</span>
             </div>
           </div>
@@ -684,18 +701,20 @@ const GerenPagamentos: React.FC = () => {
           <div className="caixa__vazio" role="alert">{erroReservas}</div>
         )}
 
-        {/* ── Reservas de hoje (feitas pelos clientes no app) ── */}
+        {/* ── Reservas (hoje e próximos dias) feitas pelos clientes no app ── */}
         {reservasAtivasHoje.length > 0 && (
           <div className="caixa__painel caixa__reservas">
             <h3 className="caixa__reservas-titulo">
-              <HiOutlineCalendar /> Reservas de hoje
+              <HiOutlineCalendar /> Reservas
             </h3>
 
             <div className="caixa__reservas-lista">
               {reservasAtivasHoje.map((r) => (
                 <div key={r.id} className="caixa__reserva">
                   <div className="caixa__reserva-info">
-                    <strong className="caixa__reserva-hora">{faixaReserva(r)}</strong>
+                    <strong className="caixa__reserva-hora">
+                      {rotuloDia(dataDaReserva(r), hojeLocal(agora))} · {faixaReserva(r)}
+                    </strong>
                     <span className="caixa__reserva-nome">{r.cliente_nome}</span>
                     <span className="caixa__reserva-detalhe">
                       {r.mesa ? `Mesa ${String(r.mesa.numero).padStart(2, '0')}` : 'Sem mesa'} · {r.num_pessoas}{' '}
@@ -915,12 +934,12 @@ const GerenPagamentos: React.FC = () => {
                         {/* Reserva do cliente: quem vem, que horas e quantas pessoas */}
                         {mesa.reservaAtual && (
                           <span className="caixa__card-reserva" title={mesa.reservaAtual.cliente_nome}>
-                            {faixaReserva(mesa.reservaAtual)} · {mesa.reservaAtual.cliente_nome} ({mesa.reservaAtual.num_pessoas})
+                            Hoje {faixaReserva(mesa.reservaAtual)} · {mesa.reservaAtual.cliente_nome} ({mesa.reservaAtual.num_pessoas})
                           </span>
                         )}
                         {!mesa.reservaAtual && mesa.proximaReserva && (
                           <span className="caixa__card-reserva caixa__card-reserva--proxima" title={mesa.proximaReserva.cliente_nome}>
-                            Reserva às {horaDaIso(mesa.proximaReserva.hora_inicio)} · {mesa.proximaReserva.cliente_nome}
+                            Reserva hoje às {horaDaIso(mesa.proximaReserva.hora_inicio)} · {mesa.proximaReserva.cliente_nome}
                           </span>
                         )}
 

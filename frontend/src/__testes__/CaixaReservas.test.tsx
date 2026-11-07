@@ -13,7 +13,7 @@ jest.mock('../App/services/pedido.service');
 jest.mock('../App/services/mesa.service');
 jest.mock('../App/services/reserva.service', () => ({
   ...jest.requireActual('../App/services/reserva.service'),
-  ReservaRestauranteService: { listarDoDia: jest.fn(), atualizarStatus: jest.fn() },
+  ReservaRestauranteService: { listarPeriodo: jest.fn(), atualizarStatus: jest.fn() },
 }));
 
 // A API devolve as horas como TIME em UTC: "1970-01-01T12:30:00.000Z"
@@ -46,7 +46,7 @@ beforeEach(() => {
     { id: 'm3', numero: 3, capacidade: 4, status: 'LIVRE', ativo: true, qr_code_token: 't3', localizacao: null },
   ]);
   (PedidoService.listar as jest.Mock).mockResolvedValue([]);
-  (ReservaRestauranteService.listarDoDia as jest.Mock).mockResolvedValue([
+  (ReservaRestauranteService.listarPeriodo as jest.Mock).mockResolvedValue([
     reserva('r1', 'm1', 1, '12:30', '14:30'), // começa em 30 min → a mesa já aparece reservada
     reserva('r2', 'm2', 2, '19:00', '21:00', { status: 'CONFIRMADA' }), // só à noite → mesa ainda livre
   ]);
@@ -65,10 +65,13 @@ test('o resumo desconta as mesas reservadas pelos clientes das disponíveis', as
   expect(within(resumo).getByText('reservas hoje').previousSibling?.textContent).toBe('2');
 
   // m2 está livre, mas o caixa avisa do horário marcado
-  expect(screen.getByText(/Reserva às 19:00 · Ana/)).toBeTruthy();
+  expect(screen.getByText(/Reserva hoje às 19:00 · Ana/)).toBeTruthy();
 
-  const chamada = (ReservaRestauranteService.listarDoDia as jest.Mock).mock.calls[0][0];
-  expect(chamada).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  // a lista mostra a data de cada reserva (hoje) junto com o horário
+  expect(screen.getAllByText(/Hoje · 12:30–14:30/).length).toBe(1);
+  const [inicio, fim] = (ReservaRestauranteService.listarPeriodo as jest.Mock).mock.calls[0];
+  expect(inicio).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(fim > inicio).toBe(true);
 });
 
 test('confirmar uma reserva pendente chama a API; "cliente chegou" conclui e abre a mesa', async () => {

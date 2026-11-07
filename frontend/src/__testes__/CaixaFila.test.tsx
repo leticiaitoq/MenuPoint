@@ -13,7 +13,7 @@ jest.mock('../App/services/mesa.service');
 // O Caixa também busca as reservas do dia: aqui nenhuma (o foco deste teste é a cozinha)
 jest.mock('../App/services/reserva.service', () => ({
   ...jest.requireActual('../App/services/reserva.service'),
-  ReservaRestauranteService: { listarDoDia: jest.fn().mockResolvedValue([]), atualizarStatus: jest.fn() },
+  ReservaRestauranteService: { listarPeriodo: jest.fn().mockResolvedValue([]), atualizarStatus: jest.fn() },
 }));
 
 const agora = new Date().toISOString();
