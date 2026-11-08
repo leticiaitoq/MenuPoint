@@ -285,9 +285,11 @@ model Reserva {
   status             StatusReserva @default(PENDENTE)
   criado_em          DateTime      @default(now()) @db.Timestamptz
   atualizado_em      DateTime      @default(now()) @updatedAt @db.Timestamptz
+  cliente_id String?
 
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   mesa            Mesa?           @relation(fields: [mesa_id], references: [id])
+  cliente    Cliente? @relation(fields: [cliente_id], references: [id])
   confirmada_por  Usuario?        @relation("ConfirmadaPor", fields: [confirmada_por_id], references: [id])
   pedidos         Pedido[]
 
@@ -465,7 +467,6 @@ model RefreshToken {
 // ============================================================
 // GRUPO - 10 - CLIENTES (endusers do cardápio)
 // ============================================================
-
 model Cliente {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nome             String    @db.VarChar(100)
@@ -473,7 +474,7 @@ model Cliente {
   email            String?   @unique @db.VarChar(150)
   senha_hash       String?   @db.VarChar(255)
   cpf              String?   @unique @db.VarChar(14)
-  foto_url         String?   @db.VarChar(500)   // foto de perfil (URL pública no Supabase Storage)
+  foto_url         String?   @db.VarChar(500)
   email_verificado Boolean   @default(false)
   ultimo_acesso    DateTime? @db.Timestamptz
   ativo            Boolean   @default(true)
@@ -481,6 +482,7 @@ model Cliente {
 
   pedidos            Pedido[]
   refresh_tokens     RefreshToken[]
+  reservas           Reserva[]
   tokens_recuperacao TokenRecuperacaoSenhaCliente[]
   tokens_confirmacao TokenConfirmacaoEmailCliente[]
   tokens_alteracao_email TokenAlteracaoEmailCliente[]
