@@ -7,6 +7,7 @@ import FecharConta from '../../../shared/components/FecharConta/FecharConta';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
 import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
+import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/ingredientes';
 import RestaurantePublicoService from '../../../services/restaurantePublico.service';
 import MesaPublicaService from '../../../services/mesaPublica.service';
 import './MenuCliente.css';
@@ -26,6 +27,7 @@ interface Produto {
   preco: number;
   imagem: string;
   destaque: boolean;
+  ingredientes: IngredienteProduto[];
   ordem: number;
 }
 
@@ -94,6 +96,7 @@ const MenuCliente: React.FC = () => {
                 .filter((p) => p.disponivel)
                 .map((p) => ({
                   destaque: !!p.destaque,
+                  ingredientes: extrairIngredientes(p.grupos_adicionais),
                   ordem: p.ordem ?? 0,
                   id: p.id,
                   categoriaId: c.id,

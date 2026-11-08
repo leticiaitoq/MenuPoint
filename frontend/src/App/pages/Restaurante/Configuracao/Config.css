@@ -1045,6 +1045,130 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   .config__secao-acoes .config__btn { flex: 1; }
 }
 
+/* ── Troca de e-mail: passo do código ── */
+.config__dialogo-cabeca {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.config__dialogo-cabeca .config__card-titulo { margin: 0; }
+
+/* .config__hint é flex (cada pedaço da frase viraria uma coluna): aqui o texto é em bloco */
+.config__dialogo-texto {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--cfg-suave);
+}
+
+.config__email-chip {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  word-break: break-all;
+  vertical-align: baseline;
+}
+
+/* 6 caixinhas do código */
+.config__otp {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.config__otp-campo {
+  width: 100%;
+  height: 58px;
+  padding: 0;
+  box-sizing: border-box;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--cfg-texto);
+  caret-color: var(--accent);
+  background: var(--cfg-campo);
+  border: 1.5px solid var(--cfg-borda);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+
+.config__otp-campo:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--brand-tint);
+}
+
+.config__otp-campo--cheio {
+  background: var(--brand-soft);
+  border-color: var(--brand-soft-border);
+}
+
+.config__otp-campo:disabled { opacity: 0.6; }
+
+.config__otp--erro .config__otp-campo { border-color: var(--accent); }
+
+.config__otp--chacoalha { animation: config-otp-chacoalha 0.4s; }
+
+@keyframes config-otp-chacoalha {
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.config__hint--ok { color: var(--success); }
+
+/* Ações secundárias numa linha só, mais discretas que o botão principal */
+.config__acoes-sec {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.config__link-btn {
+  padding: 6px 2px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.config__link-btn:hover:not(:disabled) { text-decoration: underline; }
+
+.config__link-btn:disabled {
+  color: var(--cfg-suave);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.config__link-btn--neutro { color: var(--cfg-suave); }
+
+.config__link-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (max-width: 420px) {
+  .config__otp { gap: 6px; }
+  .config__otp-campo { height: 50px; font-size: 20px; border-radius: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .config__otp--chacoalha { animation: none; }
+}
 
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVO — complementa os @media acima; fica no FINAL do arquivo

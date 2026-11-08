@@ -84,11 +84,7 @@ export const atualizarUsuarioSchema = z.object({
     .max(100, 'Nome deve ter no máximo 100 caracteres')
     .optional(),
 
-  email: z
-    .string()
-    .email('Formato de e-mail inválido')
-    .toLowerCase()
-    .optional(),
+  // E-mail NÃO entra aqui: a troca exige senha + código no e-mail novo (POST /auth/me/email/*)
 
   senha: z
     .string()

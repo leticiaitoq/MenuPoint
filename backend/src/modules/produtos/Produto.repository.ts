@@ -1,7 +1,7 @@
 import { Produto } from '@prisma/client'
 import { BaseRepository } from '@shared/abstracts/BaseRepository'
 import prisma from '@config/prisma'
-import { CriarProdutoDTO, AtualizarProdutoDTO } from './Produto.schema'
+import { CriarProdutoDTO, AtualizarProdutoDTO, IngredienteDTO, NOME_GRUPO_INGREDIENTES } from './Produto.schema'
 
 export class ProdutoRepository extends BaseRepository <
   Produto,
@@ -66,9 +66,9 @@ export class ProdutoRepository extends BaseRepository <
   async createComAdicionais(data: CriarProdutoDTO & {
     estabelecimento_id: string
   }) {
-    const { grupos_adicionais, ...produtoData } = data
+    const { grupos_adicionais, ingredientes, ...produtoData } = data
 
-    return prisma.produto.create({
+    const criado = await prisma.produto.create({
       data: {
         ...produtoData,
         ...(grupos_adicionais && {
@@ -97,6 +97,71 @@ export class ProdutoRepository extends BaseRepository <
           include: { adicionais: true },
         },
       },
+    })
+
+    if (ingredientes?.length) {
+      await this.sincronizarIngredientes(criado.id, ingredientes)
+      return (await this.findByIdCompleto(criado.id)) as any
+    }
+    return criado
+  }
+
+  /**
+   * Grava a lista de ingredientes do produto (grupo "Ingredientes"), sem apagar histórico:
+   *  - com id existente  → atualiza
+   *  - sem id            → cria
+   *  - saiu da lista     → apaga; se já foi usado em algum pedido, só marca como indisponível
+   * Grupos antigos (de antes dos ingredientes) não são tocados.
+   */
+  async sincronizarIngredientes(produto_id: string, lista: IngredienteDTO[]): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      let grupo = await tx.grupoAdicional.findFirst({
+        where: { produto_id, nome: NOME_GRUPO_INGREDIENTES },
+      })
+      if (!grupo) {
+        grupo = await tx.grupoAdicional.create({
+          data: {
+            produto_id,
+            nome: NOME_GRUPO_INGREDIENTES,
+            obrigatorio: false,
+            selecao_multipla: true,
+            min_selecoes: 0,
+            max_selecoes: 50,
+            ordem: 0,
+          },
+        })
+      }
+
+      const existentes = await tx.adicional.findMany({ where: { grupo_id: grupo.id } })
+      const idsExistentes = new Set(existentes.map((e) => e.id))
+      const idsRecebidos = new Set(lista.map((i) => i.id).filter(Boolean) as string[])
+
+      for (const ex of existentes) {
+        if (idsRecebidos.has(ex.id)) continue
+        const usado = await tx.itemAdicional.count({ where: { adicional_id: ex.id } })
+        if (usado > 0) {
+          await tx.adicional.update({ where: { id: ex.id }, data: { disponivel: false } })
+        } else {
+          await tx.adicional.delete({ where: { id: ex.id } })
+        }
+      }
+
+      for (const [idx, ing] of lista.entries()) {
+        const dados = {
+          nome: ing.nome,
+          preco_extra: ing.preco_extra,
+          quantidade_inclusa: ing.quantidade_inclusa,
+          quantidade_maxima: ing.quantidade_maxima,
+          fixo: ing.fixo,
+          disponivel: ing.disponivel,
+          ordem: ing.ordem ?? idx,
+        }
+        if (ing.id && idsExistentes.has(ing.id)) {
+          await tx.adicional.update({ where: { id: ing.id }, data: dados })
+        } else {
+          await tx.adicional.create({ data: { ...dados, grupo_id: grupo.id } })
+        }
+      }
     })
   }
 

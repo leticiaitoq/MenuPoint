@@ -23,7 +23,8 @@ interface Props {
   onConcluido: (resultado: { origemLiberada: boolean; destinoNumero: number }) => void;
 }
 
-const STATUS_EM_ANDAMENTO: PedidoApi['status'][] = ['RECEBIDO', 'PREPARO', 'PRONTO'];
+// Conta aberta: em andamento OU já entregue, ainda não pago
+const STATUS_NA_CONTA: PedidoApi['status'][] = ['RECEBIDO', 'PREPARO', 'PRONTO', 'ENTREGUE'];
 
 const moeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const rotuloMesa = (n: number) => `Mesa ${String(n).padStart(2, '0')}`;
@@ -67,7 +68,7 @@ const TransferirMesaModal: React.FC<Props> = ({ mesa, pedidos, onFechar, onConcl
       try {
         const [mesas, abertos] = await Promise.all([
           MesaService.listar(),
-          PedidoService.listar({ status: STATUS_EM_ANDAMENTO, modalidade: 'MESA' }),
+          PedidoService.listar({ status: STATUS_NA_CONTA, modalidade: 'MESA', conta_aberta: true }),
         ]);
         if (cancelado) return;
 

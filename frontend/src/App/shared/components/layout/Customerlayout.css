@@ -78,3 +78,22 @@
     padding: 16px 12px 60px; /* os 60px de baixo são o espaço da bottom nav */
   }
 }
+/* ── Botão "Voltar" no topo das telas internas ── */
+.customer-layout__voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 8px 16px 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--bg-surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.customer-layout__voltar:hover { border-color: var(--brand); color: var(--brand); }
+.customer-layout__voltar:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+

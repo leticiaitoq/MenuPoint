@@ -90,6 +90,11 @@ export interface AtualizarPixDTO {
 }
 
 const EstabelecimentoService = {
+  async buscar(id: string): Promise<Estabelecimento> {
+    const response = await api.get<Estabelecimento>(`/estabelecimentos/${id}`)
+    return response.data
+  },
+
   async atualizar(id: string, data: AtualizarEstabelecimentoDTO): Promise<Estabelecimento> {
     const response = await api.put<Estabelecimento>(`/estabelecimentos/${id}`, data)
     return response.data

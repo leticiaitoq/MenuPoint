@@ -290,4 +290,19 @@
     justify-content: space-between;
     align-items: center;
   }
-} 
+}
+
+/* ── Resumo da mesa (mesa, quantidade de pedidos e total) ── */
+.pedidos-local__resumo {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background-color: var(--bg-surface);
+  box-shadow: 0 1px 4px var(--shadow-color);
+}
+.pedidos-local__resumo-item { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pedidos-local__resumo-item span { font-size: 12px; color: var(--text-faint); }
+.pedidos-local__resumo-item strong { font-size: 18px; color: var(--text); }
+

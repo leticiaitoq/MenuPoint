@@ -10,6 +10,8 @@ export interface ItemPedido {
   preco_unitario: number
   preco_total: number
   observacoes: string | null
+  /** Etapa deste item na cozinha. Pedidos antigos (sem o campo) seguem o status do pedido. */
+  status?: StatusPedido
   produto: { id: string; nome: string }
   itens_adicionais?: { id: string; nome_adicional?: string; preco_extra?: number }[]
 }
@@ -94,6 +96,8 @@ export interface FiltrosPedido {
   /** ISO 8601 — filtra por criado_em */
   data_inicio?: string
   data_fim?: string
+  /** Só pedidos da CONTA ABERTA da mesa (em andamento ou entregues, ainda não pagos) — usado pelo Caixa */
+  conta_aberta?: boolean
 }
 
 // O Prisma serializa Decimal como string ("49.90"): converte para number aqui
@@ -128,6 +132,7 @@ const PedidoService = {
         mesa_id: filtros?.mesa_id,
         data_inicio: filtros?.data_inicio,
         data_fim: filtros?.data_fim,
+        conta_aberta: filtros?.conta_aberta ? 'true' : undefined,
       },
     })
     return response.data.map(normalizar)
@@ -137,6 +142,18 @@ const PedidoService = {
   async cancelarMesa(mesaId: string, motivo: string): Promise<{ cancelados: number }> {
     const response = await api.post<{ cancelados: number }>(`pedidos/mesa/${mesaId}/cancelar`, { motivo })
     return response.data
+  },
+
+  // Cozinha/Fila: avança o pedido no fluxo RECEBIDO → PREPARO → PRONTO → ENTREGUE.
+  // Pedido de mesa entregue continua na conta da mesa até ser pago no Caixa.
+  async atualizarStatus(id: string, status: StatusPedido): Promise<void> {
+    await api.patch(`pedidos/${id}/status`, { status })
+  },
+
+  // Fila: avança só alguns itens do pedido para a próxima etapa (ex.: entregar a comida que já
+  // ficou pronta sem esperar o resto). O pedido fica na etapa do item mais atrasado.
+  async atualizarStatusItens(pedidoId: string, itemIds: string[], status: StatusPedido): Promise<void> {
+    await api.patch(`pedidos/${pedidoId}/itens/status`, { item_ids: itemIds, status })
   },
 
   // Caixa: remove UM pedido da comanda (vira CANCELADO com o motivo). A mesa só é liberada

@@ -17,6 +17,33 @@ const adicionalSchema = z.object({
 })
 
 
+// Ingrediente/adicional estilo "totem". O cliente paga preco_extra só pelas unidades ACIMA de
+// quantidade_inclusa; retirar não desconta. quantidade_inclusa = 0 significa "adicional" (não vem no produto).
+export const NOME_GRUPO_INGREDIENTES = 'Ingredientes'
+
+const ingredienteSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    nome: z.string().trim().min(1, 'Nome do ingrediente é obrigatório').max(100, 'Nome deve ter no máximo 100 caracteres'),
+    preco_extra: z.number().min(0, 'Preço extra não pode ser negativo').max(999999.99, 'Preço extra máximo é R$ 999.999,99').default(0),
+    quantidade_inclusa: z.number().int().min(0).max(20, 'Máximo de 20 unidades').default(0),
+    quantidade_maxima: z.number().int().min(1, 'A quantidade máxima deve ser ao menos 1').max(20, 'Máximo de 20 unidades').default(1),
+    // Fixo: o cliente vê, mas não pode retirar (precisa vir incluso)
+    fixo: z.boolean().default(false),
+    disponivel: z.boolean().default(true),
+    ordem: z.number().int().min(0).optional(),
+  })
+  .refine((d) => d.quantidade_inclusa <= d.quantidade_maxima, {
+    message: 'A quantidade inclusa não pode ser maior que a máxima',
+    path: ['quantidade_inclusa'],
+  })
+  .refine((d) => !d.fixo || d.quantidade_inclusa >= 1, {
+    message: 'Um ingrediente fixo precisa vir incluso (pelo menos 1 unidade)',
+    path: ['fixo'],
+  })
+
+export type IngredienteDTO = z.infer<typeof ingredienteSchema>
+
 const grupoAdicionalSchema = z.object({
   nome: z
     .string()
@@ -105,6 +132,8 @@ export const criarProdutoSchema = z.object({
   grupos_adicionais: z
     .array(grupoAdicionalSchema)
     .optional(),
+
+  ingredientes: z.array(ingredienteSchema).max(50, 'Máximo de 50 ingredientes').optional(),
 })
 
 .refine(
@@ -137,6 +166,8 @@ export const atualizarProdutoSchema = z.object({
   ativo: z.boolean().optional(),
   destaque: z.boolean().optional(),
   ordem: z.number().int().min(0).optional(),
+  // Lista COMPLETA de ingredientes do produto (o que não estiver na lista é removido)
+  ingredientes: z.array(ingredienteSchema).max(50, 'Máximo de 50 ingredientes').optional(),
 })
 
 export type AtualizarProdutoDTO = z.infer<typeof atualizarProdutoSchema>

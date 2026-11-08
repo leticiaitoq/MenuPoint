@@ -14,6 +14,8 @@ interface EnvioEmail {
   subject: string
   html: string
   text?: string
+  // Sobrescreve o MAIL_REPLY_TO neste envio (ex.: responder direto ao contato que preencheu o site)
+  replyTo?: string
 }
 
 // Versão em texto puro do e-mail. Mensagens só com HTML pontuam pior nos filtros de spam;
@@ -35,7 +37,7 @@ function htmlParaTexto(html: string): string {
     .trim()
 }
 
-export async function enviarEmail({ from, to, subject, html, text }: EnvioEmail): Promise<void> {
+export async function enviarEmail({ from, to, subject, html, text, replyTo }: EnvioEmail): Promise<void> {
   const resposta = await fetch(RESEND_URL, {
     method: 'POST',
     headers: {
@@ -48,7 +50,7 @@ export async function enviarEmail({ from, to, subject, html, text }: EnvioEmail)
       subject,
       html,
       text: text ?? htmlParaTexto(html),
-      ...(env.MAIL_REPLY_TO ? { reply_to: env.MAIL_REPLY_TO } : {}),
+      ...((replyTo ?? env.MAIL_REPLY_TO) ? { reply_to: replyTo ?? env.MAIL_REPLY_TO } : {}),
     }),
     // Sem isso uma falha de rede deixaria a requisição pendurada
     signal: AbortSignal.timeout(10_000),

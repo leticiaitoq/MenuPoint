@@ -90,7 +90,12 @@ export const redefinirSenhaSchema = z.object({
     .string()
     .length(6, 'Código deve ter 6 dígitos')
     .regex(/^\d{6}$/, 'Código deve conter apenas números'),
-  nova_senha: z.string().min(6, 'Nova senha deve ter no mínimo 6 caracteres'),
+  nova_senha: z
+    .string()
+    .min(8, 'Senha deve ter no mínimo 8 caracteres')
+    .regex(/[A-Z]/, 'Senha deve ter ao menos uma letra maiúscula')
+    .regex(/[a-z]/, 'Senha deve ter ao menos uma letra minúscula')
+    .regex(/[0-9]/, 'Senha deve ter ao menos um número'),
   confirmar_senha: z.string().min(1, 'Confirmação de senha é obrigatória'),
 }).refine((data) => data.nova_senha === data.confirmar_senha, {
   message: 'As senhas não coincidem',
@@ -218,12 +223,6 @@ export const atualizarDadosSensiveisSchema = z
       .min(3, 'Nome completo é obrigatório')
       .max(100, 'Nome deve ter no máximo 100 caracteres')
       .optional(),
-    email: z
-      .string()
-      .trim()
-      .toLowerCase()
-      .email('Formato de e-mail inválido')
-      .optional(),
     razao_social: z
       .string()
       .trim()
@@ -240,7 +239,6 @@ export const atualizarDadosSensiveisSchema = z
   .refine(
     (d) =>
       d.nome_responsavel !== undefined ||
-      d.email !== undefined ||
       d.razao_social !== undefined ||
       d.nome_empresa !== undefined,
     { message: 'Nenhuma alteração informada', path: ['senha_atual'] }
@@ -248,9 +246,43 @@ export const atualizarDadosSensiveisSchema = z
 
 export type AtualizarDadosSensiveisDTO = z.infer<typeof atualizarDadosSensiveisSchema>
 
+// ── ALTERAR E-MAIL (logado, em 2 passos) ──────────────────────────────────────
+// O e-mail NÃO entra em atualizarDadosSensiveisSchema de propósito: ele só muda
+// depois que o código enviado ao endereço novo é confirmado.
+export const solicitarAlteracaoEmailSchema = z.object({
+  novo_email: z
+    .string()
+    .trim()
+    .min(1, 'E-mail é obrigatório')
+    .email('Formato de e-mail inválido')
+    .toLowerCase(),
+  senha: z.string().min(1, 'Informe sua senha para confirmar'),
+})
+
+export type SolicitarAlteracaoEmailDTO = z.infer<typeof solicitarAlteracaoEmailSchema>
+
+export const confirmarAlteracaoEmailSchema = z.object({
+  codigo: z
+    .string()
+    .length(6, 'Código deve ter 6 dígitos')
+    .regex(/^\d{6}$/, 'Código deve conter apenas números'),
+})
+
+export type ConfirmarAlteracaoEmailDTO = z.infer<typeof confirmarAlteracaoEmailSchema>
+
 // ── REFRESH TOKEN ─────────────────────────────────────────────────────────────
 export const refreshTokenSchema = z.object({
   refresh_token: z.string().min(1, 'Refresh token é obrigatório'),
 })
 
 export type RefreshTokenDTO = z.infer<typeof refreshTokenSchema>
+
+// ── VERIFICAR CNPJ (etapa 1 do cadastro do restaurante) ───────────────────────
+export const verificarCnpjSchema = z.object({
+  cnpj: z
+    .string()
+    .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, 'CNPJ inválido')
+    .refine(cnpjValido, 'CNPJ inválido'),
+})
+
+export type VerificarCnpjDTO = z.infer<typeof verificarCnpjSchema>

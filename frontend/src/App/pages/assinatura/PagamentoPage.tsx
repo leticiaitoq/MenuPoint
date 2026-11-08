@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AuthCard from '../auth/AuthCard';
 import AuthService from '../../services/auth.service';
@@ -8,7 +8,12 @@ import '../auth/LoginPage.css';
 import './PagamentoPage.css';
 
 // Pagamento real pelo Mercado Pago: o botão pede o link ao backend (/assinatura/checkout)
-// e leva o usuário para lá. A liberação do acesso vem do webhook do MP.
+// e abre o checkout em OUTRA ABA. Esta aba fica esperando e confere o pagamento sozinha; quando
+// o Mercado Pago aprova, fecha a aba dele (se o navegador deixar) e leva direto para o login com
+// a mensagem de sucesso. Assim a pessoa não precisa clicar em "Ir para o site do vendedor".
+// Se o navegador bloquear a nova aba, cai no fluxo antigo (mesma aba + /assinatura/sucesso).
+// Com REACT_APP_PAGAMENTO_MESMA_ABA=true o checkout abre sempre na mesma aba (útil quando o próprio
+// Mercado Pago devolve o cliente sozinho, ver MP_AUTO_RETURN no backend).
 
 interface LocationState {
   email?: string;
@@ -21,13 +26,16 @@ const PagamentoPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state as LocationState) || {};
-  const { token, usuario, entrar } = useAuth();
+  const { token, usuario, entrar, sair } = useAuth();
 
   const [plano, setPlano] = useState<{ plano: string; valor: number } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [verificando, setVerificando] = useState(false);
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'info' | 'erro'; texto: string } | null>(null);
+  const [aguardando, setAguardando] = useState(false);
+  const janelaRef = useRef<Window | null>(null);
+  const urlCheckoutRef = useRef('');
 
   // Pagamento aprovado: libera o sistema e segue para a confirmação do e-mail, se ainda faltar.
   const liberarAcesso = () => {
@@ -36,9 +44,73 @@ const PagamentoPage: React.FC = () => {
     try { pos = JSON.parse(localStorage.getItem('@menupoint:pos_pagamento') || '{}'); } catch { /* ignora */ }
     localStorage.removeItem('@menupoint:pos_pagamento');
     if (pos.verificarEmail && pos.email) AuthService.resendCode(pos.email, 'registro').catch(() => undefined);
-    if (pos.verificarEmail) navigate('/verify-code', { state: { email: pos.email, mode: 'register' }, replace: true });
-    else navigate(ROTA_APOS_LOGIN, { replace: true });
+    if (pos.verificarEmail) {
+      navigate('/verify-code', { state: { email: pos.email, mode: 'register' }, replace: true });
+    } else {
+      // Pagou: vai para o login com a mensagem de sucesso (navega primeiro, depois encerra a sessão)
+      navigate('/login', { replace: true, state: { pagamentoConfirmado: true, email: usuario?.email } });
+      sair();
+    }
   };
+
+  // Fecha a aba do Mercado Pago que nós abrimos (o navegador pode não deixar; sem problema)
+  const fecharJanelaDoCheckout = () => {
+    try { janelaRef.current?.close(); } catch { /* ignora */ }
+    janelaRef.current = null;
+  };
+
+  // Enquanto o checkout está aberto em outra aba: confere o pagamento a cada 3 s e também
+  // na hora em que a pessoa volta para esta aba.
+  useEffect(() => {
+    if (!aguardando) return;
+    let cancelado = false;
+    let timer: number | undefined;
+    const inicio = Date.now();
+
+    const checar = async () => {
+      if (cancelado) return;
+      try {
+        const { status } = await AssinaturaService.sincronizar();
+        if (cancelado) return;
+        if (status === 'ATIVA') {
+          fecharJanelaDoCheckout();
+          setAguardando(false);
+          setAviso({ tipo: 'ok', texto: 'Pagamento confirmado! Levando você para o login...' });
+          setTimeout(liberarAcesso, 800);
+          return;
+        }
+        if (status === 'CANCELADA' || status === 'FALHOU') {
+          fecharJanelaDoCheckout();
+          setAguardando(false);
+          setAviso({ tipo: 'erro', texto: 'O pagamento foi cancelado ou recusado pelo Mercado Pago. Você pode tentar novamente.' });
+          return;
+        }
+      } catch {
+        // sem resposta agora: tenta de novo
+      }
+      if (Date.now() - inicio > 10 * 60 * 1000) {
+        setAguardando(false);
+        setAviso({ tipo: 'info', texto: 'Não recebemos a confirmação ainda. Se você já pagou, clique em "Já paguei, verificar agora".' });
+        return;
+      }
+      timer = window.setTimeout(checar, 3000);
+    };
+
+    const aoVoltarParaAba = () => {
+      if (document.visibilityState !== 'visible' || cancelado) return;
+      window.clearTimeout(timer);
+      checar();
+    };
+    document.addEventListener('visibilitychange', aoVoltarParaAba);
+    timer = window.setTimeout(checar, 3000);
+
+    return () => {
+      cancelado = true;
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', aoVoltarParaAba);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aguardando]);
 
   // Consulta o Mercado Pago agora e conta ao usuário o que aconteceu com o pagamento dele.
   // Resolve o caso "paguei, mas fechei a aba antes de voltar": o banco é atualizado aqui.
@@ -88,10 +160,26 @@ const PagamentoPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Vai para o checkout do Mercado Pago. Ao voltar, /assinatura/sucesso confere o pagamento.
+  // Abre o checkout do Mercado Pago em outra aba e espera aqui. A aba é aberta ANTES da chamada
+  // assíncrona (senão o navegador a bloqueia como pop-up) e depois recebe o endereço do checkout.
   const handlePagar = async () => {
     setErro(null);
+    setAviso(null);
     setCarregando(true);
+
+    const mesmaAba = process.env.REACT_APP_PAGAMENTO_MESMA_ABA === 'true';
+    const janela = mesmaAba ? null : window.open('', '_blank');
+    if (janela) {
+      // Corta o vínculo da aba do MP com esta (ela não precisa controlar o nosso site).
+      // Continuamos com o controle dela daqui: ver o estado e fechá-la.
+      try {
+        janela.opener = null;
+        janela.document.title = 'Mercado Pago';
+        janela.document.body.style.cssText = 'font-family:sans-serif;text-align:center;margin-top:20vh;color:#444';
+        janela.document.body.textContent = 'Abrindo o Mercado Pago...';
+      } catch { /* ignora */ }
+    }
+
     try {
       // Lembra o que fazer depois do pagamento (confirmar o e-mail do cadastro)
       localStorage.setItem('@menupoint:pos_pagamento', JSON.stringify({
@@ -99,10 +187,34 @@ const PagamentoPage: React.FC = () => {
         verificarEmail: Boolean(state.verificarEmail),
       }));
       const { init_point } = await AssinaturaService.checkout();
-      window.location.href = init_point;
+      urlCheckoutRef.current = init_point;
+
+      if (janela) {
+        janela.location.href = init_point;
+        janelaRef.current = janela;
+        setAguardando(true);
+        setCarregando(false);
+      } else {
+        // Nova aba bloqueada pelo navegador: fluxo antigo, na mesma aba
+        window.location.href = init_point;
+      }
     } catch (err: any) {
+      try { janela?.close(); } catch { /* ignora */ }
       setErro(err?.response?.data?.message ?? 'Não foi possível abrir o pagamento. Tente novamente.');
       setCarregando(false);
+    }
+  };
+
+  // Aba do Mercado Pago fechada por engano: abre de novo o mesmo checkout
+  const reabrirCheckout = () => {
+    const url = urlCheckoutRef.current;
+    if (!url) return;
+    const janela = window.open(url, '_blank');
+    if (janela) {
+      try { janela.opener = null; } catch { /* ignora */ }
+      janelaRef.current = janela;
+    } else {
+      window.location.href = url;
     }
   };
 
@@ -154,14 +266,34 @@ const PagamentoPage: React.FC = () => {
 
             {erro && <p className="pagamento__erro">{erro}</p>}
 
-            <button
-              type="button"
-              className="pagamento__botao"
-              onClick={handlePagar}
-              disabled={carregando || !plano}
-            >
-              {carregando ? 'Abrindo pagamento...' : 'Pagar com Mercado Pago'}
-            </button>
+            {aguardando ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center', marginBottom: 12 }}>
+                <div className="pagamento__spinner" aria-hidden="true" />
+                <p className="pagamento__seguro" style={{ margin: 0 }}>
+                  <strong>Aguardando o pagamento...</strong><br />
+                  Conclua na aba do Mercado Pago. Assim que for aprovado, levamos você para o login automaticamente.
+                </p>
+                <button type="button" className="pagamento__botao pagamento__botao--secundario" onClick={reabrirCheckout}>
+                  Reabrir o Mercado Pago
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { fecharJanelaDoCheckout(); setAguardando(false); }}
+                  style={{ background: 'none', border: 0, color: '#a91e22', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  Cancelar e voltar
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="pagamento__botao"
+                onClick={handlePagar}
+                disabled={carregando || !plano}
+              >
+                {carregando ? 'Abrindo pagamento...' : 'Pagar com Mercado Pago'}
+              </button>
+            )}
 
             <button
               type="button"

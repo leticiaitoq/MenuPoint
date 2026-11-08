@@ -1,32 +1,44 @@
 import prisma from '@config/prisma'
+import { Prisma } from '@prisma/client'
 import { CriarReservaDTO } from './Reserva.schema'
+import { montarJanela } from './Reserva.horario'
+
+// Cliente do Prisma OU a transação em andamento (para checar conflito e gravar sem brecha no meio)
+type Db = Prisma.TransactionClient | typeof prisma
 
 export class ReservaRepository {
 
-  async create(data: CriarReservaDTO & { estabelecimento_id: string }) {
+  async create(
+    data: CriarReservaDTO & { estabelecimento_id: string; cliente_id?: string },
+    db: Db = prisma
+  ) {
     const { data_reserva, hora_inicio, hora_fim, ...rest } = data
+    const janela = montarJanela(data_reserva, hora_inicio, hora_fim)
 
-    const dataBase = new Date(data_reserva + 'T00:00:00')
-
-    const [hIni, mIni] = hora_inicio.split(':').map(Number)
-    const [hFim, mFim] = hora_fim.split(':').map(Number)
-
-    const horaInicioDate = new Date(dataBase)
-    horaInicioDate.setHours(hIni, mIni, 0, 0)
-
-    const horaFimDate = new Date(dataBase)
-    horaFimDate.setHours(hFim, mFim, 0, 0)
-
-    return prisma.reserva.create({
+    return db.reserva.create({
       data: {
         ...rest,
-        data_reserva: dataBase,
-        hora_inicio: horaInicioDate,
-        hora_fim: horaFimDate,
+        data_reserva: janela.data,
+        hora_inicio: janela.inicio,
+        hora_fim: janela.fim,
       },
       include: {
         mesa: { select: { id: true, numero: true, capacidade: true } },
       },
+    })
+  }
+
+  // ── DO CLIENTE: reservas dele neste restaurante (mais próximas primeiro)
+
+  async findByCliente(estabelecimento_id: string, cliente_id: string, desde: Date) {
+    return prisma.reserva.findMany({
+      where: {
+        estabelecimento_id,
+        cliente_id,
+        data_reserva: { gte: desde },
+      },
+      include: { mesa: { select: { id: true, numero: true, capacidade: true } } },
+      orderBy: [{ data_reserva: 'asc' }, { hora_inicio: 'asc' }],
     })
   }
 
@@ -89,9 +101,10 @@ export class ReservaRepository {
     data_reserva: Date,
     hora_inicio: Date,
     hora_fim: Date,
-    ignorar_id?: string
+    ignorar_id?: string,
+    db: Db = prisma
   ) {
-    return prisma.reserva.findFirst({
+    return db.reserva.findFirst({
       where: {
         estabelecimento_id,
         mesa_id,

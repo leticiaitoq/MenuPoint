@@ -5,6 +5,14 @@ import prisma from '@config/prisma'
 import { enviarMensagemWhatsApp } from '@config/whatsapp'
 import { templateNovoPedido, templateStatusPedido } from '@shared/whatsapp/template'
 import { env } from '@config/env'
+import {
+  travarMesa,
+  subtotalDaConta,
+  garantirContaCobrePagos,
+  filtroContaAberta,
+  r2,
+} from '@modules/pagamentos/conta'
+import { etapasAntesDe, proximaEtapa, statusDoPedido } from './itemStatus'
 
 export class PedidoService {
   constructor(private readonly repository: PedidoRepository) {}
@@ -142,6 +150,7 @@ export class PedidoService {
       mesa_id?: string
       data_inicio?: Date
       data_fim?: Date
+      conta_aberta?: boolean
     }
   ) {
     return this.repository.findByEstabelecimento(estabelecimento_id, filtros)
@@ -176,49 +185,88 @@ export class PedidoService {
       throw new AppError('Motivo de cancelamento é obrigatório', 400)
     }
 
-    // Pedido já pago não se cancela: o valor precisa ser estornado antes
+    const mesaId: string | null = (pedido as any).mesa_id ?? null
+    let pedidoAtualizado: any
+
     if (data.status === 'CANCELADO') {
-      const pago = await prisma.pagamento.findFirst({
-        where: { pedido_id: id, status: 'CONFIRMADO' },
-        select: { id: true },
-      })
-      if (pago) {
-        throw new AppError(
-          'Este pedido já tem pagamento confirmado. Estorne o valor antes de cancelar.',
-          409
-        )
-      }
-    }
+      // Cancelar mexe no dinheiro da mesa: valida e grava na MESMA transação, com a mesa travada
+      pedidoAtualizado = await prisma.$transaction(async (tx) => {
+        if (mesaId) await travarMesa(tx, mesaId)
 
-    const pedidoAtualizado = await this.repository.update(id, {
-      status: data.status,
-      ...(data.cancelamento_motivo && {
-        cancelamento_motivo: data.cancelamento_motivo,
-      }),
-      ...(data.status === 'ENTREGUE' && { entregue_em: new Date() }),
-    })
-
-    // Libera a mesa quando o pedido finaliza — mas só se não sobrou outro pedido em andamento
-    // nela (mesa com vários pedidos não pode ficar "livre" por causa de um só)
-    if (['ENTREGUE', 'CANCELADO'].includes(data.status) && (pedido as any).mesa_id) {
-      const aindaEmAndamento = await prisma.pedido.count({
-        where: {
-          mesa_id: (pedido as any).mesa_id,
-          id: { not: id },
-          status: { in: ['RECEBIDO', 'PREPARO', 'PRONTO'] },
-        },
-      })
-      if (aindaEmAndamento === 0) {
-        await prisma.mesa.update({
-          where: { id: (pedido as any).mesa_id },
-          data: { status: 'LIVRE' },
+        // Item já pago em pagamento parcial: desfaça o parcial antes de cancelar o pedido
+        const itemPago = await tx.pagamentoMesaItem.findFirst({
+          where: { item_pedido: { pedido_id: id }, pagamento_mesa: { liquidado_em: null } },
+          select: { id: true },
         })
+        if (itemPago) {
+          throw new AppError(
+            'Este pedido tem itens já pagos em pagamento parcial. Desfaça o pagamento parcial antes de cancelar.',
+            409
+          )
+        }
+
+        // Pedido já pago não se cancela: o valor precisa ser estornado antes
+        const pago = await tx.pagamento.findFirst({
+          where: { pedido_id: id, status: 'CONFIRMADO' },
+          select: { id: true },
+        })
+        if (pago) {
+          throw new AppError(
+            'Este pedido já tem pagamento confirmado. Estorne o valor antes de cancelar.',
+            409
+          )
+        }
+
+        // A conta não pode ficar menor que o que já foi pago em parcial/abatimento
+        if (mesaId) {
+          const subtotalSemEste = await subtotalDaConta(tx, mesaId, estabelecimento_id, {
+            ignorarPedidoId: id,
+          })
+          await garantirContaCobrePagos(tx, mesaId, estabelecimento_id, subtotalSemEste, 'Cancelar este pedido')
+        }
+
+        return tx.pedido.update({
+          where: { id },
+          data: { status: 'CANCELADO', cancelamento_motivo: data.cancelamento_motivo },
+        })
+      })
+    } else {
+      pedidoAtualizado = await prisma.$transaction(async (tx) => {
+        // Avançar o pedido inteiro leva junto os itens que ainda estão atrás da nova etapa;
+        // os que já tinham passado dela (ex.: entregues antes, um a um) não voltam.
+        await tx.itemPedido.updateMany({
+          where: { pedido_id: id, status: { in: etapasAntesDe(data.status) as any[] } },
+          data: { status: data.status as any },
+        })
+
+        return tx.pedido.update({
+          where: { id },
+          data: {
+            status: data.status as any,
+            ...(data.cancelamento_motivo && {
+              cancelamento_motivo: data.cancelamento_motivo,
+            }),
+            ...(data.status === 'ENTREGUE' && { entregue_em: new Date() }),
+          },
+        })
+      })
+    }
+
+    // Mesa: ENTREGAR não libera a mesa — o pedido continua na conta até ser pago (ou cancelado).
+    // Só cancelar pode liberar, e só se não sobrar nenhum pedido na conta aberta da mesa.
+    if (data.status === 'CANCELADO' && mesaId) {
+      const aindaNaConta = await prisma.pedido.count({
+        where: { ...filtroContaAberta(mesaId, estabelecimento_id), id: { not: id } },
+      })
+      if (aindaNaConta === 0) {
+        await prisma.mesa.update({ where: { id: mesaId }, data: { status: 'LIVRE' } })
       }
     }
 
-    // Incrementa total_vendido ao entregar
+    // Incrementa total_vendido ao entregar (itens já entregues um a um já foram contados)
     if (data.status === 'ENTREGUE') {
-      for (const item of (pedido as any).itens ?? []) {
+      const aindaNaoContados = ((pedido as any).itens ?? []).filter((i: any) => i.status !== 'ENTREGUE')
+      for (const item of aindaNaoContados) {
         await prisma.produto.update({
           where: { id: item.produto_id },
           data: { total_vendido: { increment: item.quantidade } },
@@ -226,29 +274,99 @@ export class PedidoService {
       }
     }
 
-    // ── Notificação WhatsApp para o CLIENTE ───────────────────────────────
-    // Roda em background — não bloqueia a resposta
+    this.notificarCliente(pedido, data.status)
+
+    return pedidoAtualizado
+  }
+
+  // Avisa o cliente por WhatsApp quando o pedido muda de etapa.
+  // Roda em background — não bloqueia a resposta.
+  private notificarCliente(pedido: any, status: string) {
     const statusQueNotificamCliente = ['PREPARO', 'PRONTO', 'ENTREGUE', 'CANCELADO']
 
     if (
       env.ZAPI_INSTANCE_ID &&
-      (pedido as any).cliente_telefone && // pedido de mesa lançado no salão pode não ter telefone
-      statusQueNotificamCliente.includes(data.status)
+      pedido.cliente_telefone && // pedido de mesa lançado no salão pode não ter telefone
+      statusQueNotificamCliente.includes(status)
     ) {
-      const mensagemCliente = templateStatusPedido(
-        (pedido as any).cliente_nome,
-        (pedido as any).numero_pedido,
-        data.status
-      )
-
-      enviarMensagemWhatsApp(
-        (pedido as any).cliente_telefone,
-        mensagemCliente
-      ).catch(console.error)
+      const mensagemCliente = templateStatusPedido(pedido.cliente_nome, pedido.numero_pedido, status)
+      enviarMensagemWhatsApp(pedido.cliente_telefone, mensagemCliente).catch(console.error)
     }
-    // ─────────────────────────────────────────────────────────────────────
+  }
 
-    return pedidoAtualizado
+  // Cozinha/Fila — avança UM OU MAIS ITENS do pedido para a próxima etapa, sem mexer nos outros.
+  // É o que permite entregar a comida assim que ela fica pronta, sem esperar o pedido inteiro.
+  // O pedido fica na etapa do item mais atrasado (só vira ENTREGUE quando o último item sair).
+  async atualizarStatusItens(
+    id: string,
+    data: { item_ids: string[]; status: 'PREPARO' | 'PRONTO' | 'ENTREGUE' },
+    estabelecimento_id: string
+  ) {
+    const pedido: any = await this.findById(id, estabelecimento_id)
+
+    if (!['RECEBIDO', 'PREPARO', 'PRONTO'].includes(pedido.status)) {
+      throw new AppError('Só é possível avançar itens de pedidos em andamento', 400)
+    }
+
+    const ids = Array.from(new Set(data.item_ids))
+    const itens: any[] = (pedido.itens ?? []).filter((i: any) => ids.includes(i.id))
+    if (itens.length !== ids.length) {
+      throw new AppError('Algum item informado não pertence a este pedido', 400)
+    }
+
+    for (const item of itens) {
+      if (proximaEtapa(item.status) !== data.status) {
+        throw new AppError(
+          `"${item.produto?.nome ?? 'Item'}" está em "${item.status}" e não pode ir para "${data.status}"`,
+          400
+        )
+      }
+    }
+
+    // Todos os itens escolhidos estão na mesma etapa (a anterior à pedida)
+    const etapaAnterior = itens[0].status
+    const agora = new Date()
+
+    const novoStatusPedido = await prisma.$transaction(async (tx) => {
+      // Só avança quem ainda está na etapa que a tela mostrava: se outra pessoa já avançou
+      // o mesmo item, não deixamos pular uma etapa.
+      const { count } = await tx.itemPedido.updateMany({
+        where: { id: { in: ids }, pedido_id: id, status: etapaAnterior },
+        data: { status: data.status as any },
+      })
+      if (count !== ids.length) {
+        throw new AppError('Algum item já foi atualizado por outra pessoa. Atualize a fila e tente de novo.', 409)
+      }
+
+      if (data.status === 'ENTREGUE') {
+        for (const item of itens) {
+          await tx.produto.update({
+            where: { id: item.produto_id },
+            data: { total_vendido: { increment: item.quantidade } },
+          })
+        }
+      }
+
+      const todos = await tx.itemPedido.findMany({ where: { pedido_id: id }, select: { status: true } })
+      const novo = statusDoPedido(todos.map((i) => i.status as string))
+
+      if (novo && novo !== pedido.status) {
+        await tx.pedido.update({
+          where: { id },
+          data: {
+            status: novo as any,
+            ...(novo === 'ENTREGUE' && { entregue_em: agora }),
+          },
+        })
+        return novo
+      }
+      return null
+    })
+
+    // O cliente só é avisado quando o PEDIDO muda de etapa (todos os itens chegaram nela)
+    if (novoStatusPedido) this.notificarCliente(pedido, novoStatusPedido)
+
+    return this.findById(id, estabelecimento_id)
   }
 
   // Caixa — TRANSFERIR PEDIDOS: move pedidos em andamento de uma mesa para OUTRA mesa
@@ -271,6 +389,9 @@ export class PedidoService {
     }
 
     return prisma.$transaction(async (tx) => {
+      // Uma operação por vez nas duas mesas (ordem fixa, sem deadlock)
+      await travarMesa(tx, origem_mesa_id, destino_mesa_id)
+
       const origem = await tx.mesa.findFirst({
         where: { id: origem_mesa_id, estabelecimento_id },
         select: { id: true, numero: true },
@@ -286,14 +407,12 @@ export class PedidoService {
         throw new AppError(`A Mesa ${destino.numero} está inativa`, 400)
       }
 
-      const emAndamento: ('RECEBIDO' | 'PREPARO' | 'PRONTO')[] = ['RECEBIDO', 'PREPARO', 'PRONTO']
-
       const pedidosOrigem = await tx.pedido.findMany({
-        where: { mesa_id: origem.id, estabelecimento_id, status: { in: emAndamento } },
+        where: filtroContaAberta(origem.id, estabelecimento_id),
         select: { id: true, numero_pedido: true },
       })
       if (pedidosOrigem.length === 0) {
-        throw new AppError(`A Mesa ${origem.numero} não tem pedido em andamento`, 400)
+        throw new AppError(`A Mesa ${origem.numero} não tem conta aberta`, 400)
       }
 
       let aMover = pedidosOrigem
@@ -301,12 +420,12 @@ export class PedidoService {
         const escolhidos = new Set(pedido_ids)
         aMover = pedidosOrigem.filter((p) => escolhidos.has(p.id))
         if (aMover.length !== escolhidos.size) {
-          throw new AppError('Algum pedido informado não está em andamento nesta mesa', 400)
+          throw new AppError('Algum pedido informado não está na conta aberta desta mesa', 400)
         }
       }
 
       const pedidosNoDestino = await tx.pedido.count({
-        where: { mesa_id: destino.id, estabelecimento_id, status: { in: emAndamento } },
+        where: filtroContaAberta(destino.id, estabelecimento_id),
       })
       const destinoOcupada =
         pedidosNoDestino > 0 || destino.status === 'OCUPADA' || destino.status === 'RESERVADA'
@@ -318,13 +437,31 @@ export class PedidoService {
         )
       }
 
+      const origemLiberada = aMover.length === pedidosOrigem.length
+
+      // Pagamentos parciais pertencem à conta da mesa: só acompanham se a conta inteira se mover
+      const parciaisAbertos = await tx.pagamentoMesa.count({
+        where: { mesa_id: origem.id, estabelecimento_id, liquidado_em: null },
+      })
+      if (parciaisAbertos > 0 && !origemLiberada) {
+        throw new AppError(
+          `A Mesa ${origem.numero} tem pagamentos parciais registrados: transfira todos os pedidos de uma vez ou desfaça os pagamentos parciais.`,
+          409
+        )
+      }
+      if (parciaisAbertos > 0) {
+        await tx.pagamentoMesa.updateMany({
+          where: { mesa_id: origem.id, estabelecimento_id, liquidado_em: null },
+          data: { mesa_id: destino.id },
+        })
+      }
+
       await tx.pedido.updateMany({
         where: { id: { in: aMover.map((p) => p.id) } },
         data: { mesa_id: destino.id },
       })
       await tx.mesa.update({ where: { id: destino.id }, data: { status: 'OCUPADA' } })
 
-      const origemLiberada = aMover.length === pedidosOrigem.length
       if (origemLiberada) {
         await tx.mesa.update({ where: { id: origem.id }, data: { status: 'LIVRE' } })
       }
@@ -352,6 +489,8 @@ export class PedidoService {
     }
 
     return prisma.$transaction(async (tx) => {
+      await travarMesa(tx, data.mesa_id)
+
       const pedidos = await tx.pedido.findMany({
         where: { id: { in: ids }, estabelecimento_id },
         include: { pagamento: { select: { status: true } } },
@@ -364,8 +503,16 @@ export class PedidoService {
       if (pedidos.some((p) => p.mesa_id !== data.mesa_id)) {
         throw new AppError('Só é possível juntar pedidos da mesma mesa', 400)
       }
-      if (pedidos.some((p) => !['RECEBIDO', 'PREPARO', 'PRONTO'].includes(p.status))) {
-        throw new AppError('Só é possível juntar pedidos em andamento', 400)
+      if (pedidos.some((p) => p.status === 'CANCELADO' || p.liquidado_em)) {
+        throw new AppError('Só é possível juntar pedidos da conta aberta (não cancelados nem pagos)', 400)
+      }
+      // Misturar entregue com não entregue faria a cozinha refazer o que já foi servido
+      const entregues = pedidos.filter((p) => p.status === 'ENTREGUE').length
+      if (entregues > 0 && entregues < pedidos.length) {
+        throw new AppError(
+          'Não é possível juntar pedidos já entregues com pedidos ainda em preparo. Junte só os entregues entre si ou só os que ainda estão na cozinha.',
+          400
+        )
       }
       if (pedidos.some((p) => p.pagamento?.status === 'CONFIRMADO')) {
         throw new AppError(
@@ -393,13 +540,14 @@ export class PedidoService {
       const total = Math.max(arredondar(subtotal + taxa_entrega - desconto), 0)
 
       // O pedido unido fica na etapa mais atrasada: itens novos ainda precisam ser preparados
-      const ordemStatus = ['RECEBIDO', 'PREPARO', 'PRONTO']
+      const ordemStatus = ['RECEBIDO', 'PREPARO', 'PRONTO', 'ENTREGUE']
       const status = [...pedidos]
         .map((p) => p.status as string)
         .sort((a, b) => ordemStatus.indexOf(a) - ordemStatus.indexOf(b))[0] as
         | 'RECEBIDO'
         | 'PREPARO'
         | 'PRONTO'
+        | 'ENTREGUE'
 
       const unicos = (valores: (string | null)[]) =>
         Array.from(
@@ -465,21 +613,39 @@ export class PedidoService {
     }
 
     return prisma.$transaction(async (tx) => {
+      await travarMesa(tx, mesa_id)
+
       const pedidos = await tx.pedido.findMany({
-        where: {
-          mesa_id,
-          estabelecimento_id,
-          status: { in: ['RECEBIDO', 'PREPARO', 'PRONTO'] },
-        },
+        where: filtroContaAberta(mesa_id, estabelecimento_id),
         select: {
           id: true,
           numero_pedido: true,
+          status: true,
           pagamento: { select: { status: true } },
         },
       })
 
       if (pedidos.length === 0) {
-        throw new AppError(`A Mesa ${mesa.numero} não tem pedido em andamento`, 400)
+        throw new AppError(`A Mesa ${mesa.numero} não tem conta aberta`, 400)
+      }
+
+      // Pedido já servido não se cancela (a comida saiu e as vendas já foram contadas)
+      if (pedidos.some((p) => p.status === 'ENTREGUE')) {
+        throw new AppError(
+          `A Mesa ${mesa.numero} tem pedidos já entregues. Para encerrar sem cobrar, feche a conta com desconto total.`,
+          409
+        )
+      }
+
+      // Já recebeu algo em pagamento parcial/abatimento: desfaça antes de cancelar a mesa
+      const parciais = await tx.pagamentoMesa.count({
+        where: { mesa_id, estabelecimento_id, liquidado_em: null },
+      })
+      if (parciais > 0) {
+        throw new AppError(
+          `A Mesa ${mesa.numero} tem pagamentos parciais registrados. Desfaça-os antes de cancelar.`,
+          409
+        )
       }
 
       // Pedido já pago não se cancela: o valor precisa ser estornado antes
@@ -588,6 +754,48 @@ export class PedidoService {
       )
 
     await prisma.$transaction(async (tx) => {
+      if (pedido.mesa_id) {
+        await travarMesa(tx, pedido.mesa_id)
+
+        // Itens que já têm unidades pagas em pagamento parcial não podem sumir nem encolher
+        // (apagar o item apagaria o registro do que foi pago)
+        const alocados = await tx.pagamentoMesaItem.findMany({
+          where: {
+            item_pedido_id: { in: existentes.map((i) => i.id) },
+            pagamento_mesa: { liquidado_em: null },
+          },
+          select: { item_pedido_id: true, quantidade: true },
+        })
+        const pagoPorItem = new Map<string, number>()
+        alocados.forEach((a) =>
+          pagoPorItem.set(a.item_pedido_id, (pagoPorItem.get(a.item_pedido_id) ?? 0) + a.quantidade)
+        )
+        for (const item of existentes) {
+          const pagas = pagoPorItem.get(item.id) ?? 0
+          if (pagas === 0) continue
+          const nome = item.produto?.nome ?? 'Item'
+          const mantido = mantidos.find((m) => m.id === item.id)
+          if (!mantido) {
+            throw new AppError(
+              `"${nome}" tem ${pagas} unidade(s) já paga(s) em pagamento parcial e não pode ser removido. Desfaça o pagamento parcial antes.`,
+              409
+            )
+          }
+          if (mantido.quantidade < pagas) {
+            throw new AppError(
+              `"${nome}" tem ${pagas} unidade(s) já paga(s) em pagamento parcial: a quantidade não pode ficar abaixo de ${pagas}. Desfaça o pagamento parcial antes.`,
+              409
+            )
+          }
+        }
+
+        // A conta editada não pode ficar menor que o já pago em parcial/abatimento
+        const subtotalOutros = await subtotalDaConta(tx, pedido.mesa_id, estabelecimento_id, {
+          ignorarPedidoId: id,
+        })
+        await garantirContaCobrePagos(tx, pedido.mesa_id, estabelecimento_id, r2(subtotalOutros + total), 'Esta edição')
+      }
+
       if (idsRemovidos.length > 0) {
         await tx.itemPedido.deleteMany({ where: { id: { in: idsRemovidos }, pedido_id: id } })
       }
@@ -611,6 +819,10 @@ export class PedidoService {
         })
       }
 
+      // Item novo entra na cozinha como RECEBIDO: o pedido volta à etapa do item mais atrasado
+      const statusItens = await tx.itemPedido.findMany({ where: { pedido_id: id }, select: { status: true } })
+      const statusPedido = statusDoPedido(statusItens.map((i) => i.status as string))
+
       await tx.pedido.update({
         where: { id },
         data: {
@@ -618,6 +830,7 @@ export class PedidoService {
           observacoes: data.observacoes ? data.observacoes : null,
           subtotal,
           total,
+          ...(statusPedido && { status: statusPedido as any }),
         },
       })
     })

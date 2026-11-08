@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { HiPencil, HiTrash, HiPlus, HiX, HiPuzzle, HiChevronDown, HiChevronUp, HiChevronRight } from 'react-icons/hi';
+import { HiPencil, HiTrash, HiPlus, HiX, HiPuzzle, HiChevronDown, HiChevronUp, HiChevronRight, HiLockClosed} from 'react-icons/hi';
 import { MdDragIndicator } from 'react-icons/md';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
 import {
@@ -15,6 +15,7 @@ import CategoriaService, { Categoria } from '../../../../services/categoria.serv
 import ProdutoService from '../../../../services/produto.service';
 import AdicionalCategoriaService, { AdicionalCategoria } from '../../../../services/adicionalCategoria.service';
 import ModalAlerta from '../../../../shared/components/ModalAlerta/ModalAlerta';
+import QuantidadeStepper from '../../../../shared/components/QuantidadeStepper/QuantidadeStepper';
 import SeletorCategoria from '../../../../shared/components/SeletorCategoria/SeletorCategoria';
 import ContadorCaracteres from '../../../../shared/components/ContadorCaracteres/ContadorCaracteres';
 import {
@@ -42,13 +43,24 @@ const FORM_VAZIO: FormCategoria = { nome: SELECAO_VAZIA, descricao: '', ativo: t
 // Formulário do adicional (a categoria vem do contexto: o cadastro já nasce dentro dela)
 interface FormAdicional {
   nome: string;
-  /** Preço em centavos; null enquanto o campo está vazio */
+  /** "incluso" = já vem no produto · "adicional" = só entra se o cliente pedir */
+  tipo: 'incluso' | 'adicional';
+  /** Preço do extra em centavos; null enquanto o campo está vazio */
   precoCentavos: number | null;
   descricao: string;
   ativo: boolean;
+  /** Quantas unidades já vêm no produto (1 a 20; só vale para tipo "incluso") */
+  quantidadeInclusa: number;
+  /** O máximo que o cliente pode pedir no total */
+  quantidadeMaxima: number;
+  /** Fixo: o cliente vê, mas não pode retirar */
+  fixo: boolean;
 }
 
-const FORM_ADICIONAL_VAZIO: FormAdicional = { nome: '', precoCentavos: null, descricao: '', ativo: true };
+const FORM_ADICIONAL_VAZIO: FormAdicional = {
+  nome: '', tipo: 'incluso', precoCentavos: null, descricao: '', ativo: true,
+  quantidadeInclusa: 1, quantidadeMaxima: 1, fixo: false,
+};
 
 const PRECO_MAX_CENTAVOS = 99_999_999; // R$ 999.999,99 (limite do banco: decimal 8,2)
 
@@ -127,10 +139,10 @@ const LinhaCategoria: React.FC<LinhaProps> = ({
         <button
           className="cate__btn-adicional"
           onClick={() => onRegistrarAdicional(categoria)}
-          title={`Registrar adicionais em ${categoria.nome}`}
+          title={`Ingredientes e adicionais de ${categoria.nome}`}
         >
           <HiPuzzle aria-hidden="true" />
-          <span className="cate__btn-adicional-texto">Registrar adicionais</span>
+          <span className="cate__btn-adicional-texto">Ingredientes e adicionais</span>
         </button>
         <button
           className="cate__btn-expandir"
@@ -284,6 +296,20 @@ const GestaoCate: React.FC = () => {
     atualizarFormAdic({ precoCentavos: digitos ? Math.min(parseInt(digitos, 10), PRECO_MAX_CENTAVOS) : null });
   };
 
+  // Troca entre "já vem no produto" e "adicional", ajustando as quantidades para fazerem sentido
+  const mudarTipo = (tipo: 'incluso' | 'adicional') =>
+    setFormAdic((prev) => ({
+      ...prev,
+      tipo,
+      quantidadeInclusa: tipo === 'incluso' ? Math.max(1, prev.quantidadeInclusa) : 0,
+      quantidadeMaxima: Math.max(1, prev.quantidadeMaxima, tipo === 'incluso' ? Math.max(1, prev.quantidadeInclusa) : 0),
+      fixo: tipo === 'incluso' ? prev.fixo : false,
+    }));
+
+  // "Quantidade que vem" sobe o limite junto, para nunca ficar maior que o máximo
+  const mudarInclusa = (valor: number) =>
+    setFormAdic((prev) => ({ ...prev, quantidadeInclusa: valor, quantidadeMaxima: Math.max(prev.quantidadeMaxima, valor) }));
+
   const abrirModalAdicional = (categoria: CategoriaComContagem, editando: AdicionalCategoria | null = null) => {
     setFormAdic(
       editando
@@ -292,6 +318,10 @@ const GestaoCate: React.FC = () => {
             precoCentavos: Math.round(editando.preco * 100),
             descricao: editando.descricao ?? '',
             ativo: editando.ativo,
+            tipo: editando.quantidade_inclusa > 0 ? 'incluso' : 'adicional',
+            quantidadeInclusa: editando.quantidade_inclusa,
+            quantidadeMaxima: editando.quantidade_maxima,
+            fixo: editando.fixo,
           }
         : FORM_ADICIONAL_VAZIO,
     );
@@ -303,14 +333,25 @@ const GestaoCate: React.FC = () => {
     if (!modalAdicional) return;
     const nome = formAdic.nome.trim();
     if (!nome) { setErroModalAdic('Informe o nome do adicional.'); return; }
-    if (formAdic.precoCentavos === null) { setErroModalAdic('Informe o preço do adicional.'); return; }
+
+    const inclusa = formAdic.tipo === 'incluso' ? formAdic.quantidadeInclusa : 0;
+    const maxima  = formAdic.quantidadeMaxima;
+    // Só existe extra a cobrar quando o cliente pode pedir mais do que já vem
+    const temExtra = maxima > inclusa;
+    if (temExtra && formAdic.precoCentavos === null) {
+      setErroModalAdic('Informe o preço de cada extra (use R$ 0,00 se for grátis).');
+      return;
+    }
 
     const { categoria, editando } = modalAdicional;
     const dados = {
       nome,
-      preco: formAdic.precoCentavos / 100,
+      preco: temExtra ? (formAdic.precoCentavos ?? 0) / 100 : 0,
       descricao: formAdic.descricao.trim() || null,
       ativo: formAdic.ativo,
+      quantidade_inclusa: inclusa,
+      quantidade_maxima: maxima,
+      fixo: formAdic.tipo === 'incluso' && formAdic.fixo,
     };
 
     setErroModalAdic('');
@@ -668,15 +709,14 @@ const GestaoCate: React.FC = () => {
           )}
         </div>
 
-        {/* ── Adicionais: painel embaixo (desktop) / tela cheia (celular, via CSS) ── */}
-        {categoriaDaAba && (
-          <div className="cate__tela">
-            <button className="cate__tela-fechar" onClick={() => setCategoriaAberta(null)} aria-label="Fechar adicionais">
-              <HiX />
-            </button>
-            {painelAdicionais}
-          </div>
-        )}
+       {categoriaDaAba && (
+  <div className="cate__tela">
+    <button className="cate__tela-fechar" onClick={() => setCategoriaAberta(null)} aria-label="Fechar adicionais">
+      <HiX />
+    </button>
+    {painelAdicionais}
+  </div>
+)}
 
         {/* ── Modal Novo / Editar Adicional (já dentro da categoria) ── */}
         {modalAdicional && (
@@ -685,7 +725,7 @@ const GestaoCate: React.FC = () => {
               <div className="cate__modal-header">
                 <h3 id="adic-titulo" className="cate__modal-titulo-icone">
                   <HiPuzzle aria-hidden="true" />
-                  {modalAdicional.editando ? 'Editar Adicional' : 'Novo Adicional'}
+                  {modalAdicional.editando ? 'Editar item' : 'Novo item'}
                 </h3>
                 <button className="cate__modal-fechar" onClick={() => setModalAdicional(null)} disabled={salvandoAdic} aria-label="Fechar">
                   <HiX />
@@ -698,12 +738,12 @@ const GestaoCate: React.FC = () => {
                 </p>
 
                 <div className="cate__campo">
-                  <label className="cate__label" htmlFor="adic-nome">Nome do adicional <span className="cate__obrigatorio">*</span></label>
+                  <label className="cate__label" htmlFor="adic-nome">Nome <span className="cate__obrigatorio">*</span></label>
                   <input
                     id="adic-nome"
                     className="cate__input"
                     maxLength={100}
-                    placeholder="Ex.: Borda recheada com catupiry"
+                    placeholder="Ex.: Pão"
                     value={formAdic.nome}
                     onChange={(e) => atualizarFormAdic({ nome: e.target.value })}
                     disabled={salvandoAdic}
@@ -712,16 +752,94 @@ const GestaoCate: React.FC = () => {
                 </div>
 
                 <div className="cate__campo">
-                  <label className="cate__label" htmlFor="adic-preco">Preço adicional <span className="cate__obrigatorio">*</span></label>
-                  <input
-                    id="adic-preco"
-                    className="cate__input"
-                    inputMode="numeric"
-                    placeholder="R$ 0,00"
-                    value={formAdic.precoCentavos === null ? '' : formatarReais(formAdic.precoCentavos)}
-                    onChange={(e) => mudarPreco(e.target.value)}
-                    disabled={salvandoAdic}
-                  />
+                  <span className="cate__label">Como esse item funciona?</span>
+                  <div className="cate__tipos">
+                    <button
+                      type="button"
+                      className={`cate__tipo${formAdic.tipo === 'incluso' ? ' cate__tipo--ativo' : ''}`}
+                      onClick={() => mudarTipo('incluso')}
+                      disabled={salvandoAdic}
+                      aria-pressed={formAdic.tipo === 'incluso'}
+                    >
+                      <strong>Já vem no produto</strong>
+                      <span>Faz parte do item, já está no preço.</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`cate__tipo${formAdic.tipo === 'adicional' ? ' cate__tipo--ativo' : ''}`}
+                      onClick={() => mudarTipo('adicional')}
+                      disabled={salvandoAdic}
+                      aria-pressed={formAdic.tipo === 'adicional'}
+                    >
+                      <strong>Adicional</strong>
+                      <span>Não vem no produto, só entra se o cliente pedir.</span>
+                    </button>
+                  </div>
+                </div>
+
+                {formAdic.tipo === 'incluso' && (
+                  <div className="cate__campo cate__campo--linha">
+                    <div className="cate__subcampo">
+                      <span className="cate__label">Quantidade que vem</span>
+                      <QuantidadeStepper
+                        valor={formAdic.quantidadeInclusa}
+                        min={1}
+                        max={20}
+                        onChange={mudarInclusa}
+                        disabled={salvandoAdic}
+                        rotulo="quantidade que vem no produto"
+                      />
+                    </div>
+                    <label className="cate__fixo">
+                      <input
+                        type="checkbox"
+                        checked={formAdic.fixo}
+                        onChange={(e) => atualizarFormAdic({ fixo: e.target.checked })}
+                        disabled={salvandoAdic}
+                      />
+                      <HiLockClosed aria-hidden="true" />
+                      <span>
+                        <strong>Fixo</strong>
+                        <small>O cliente vê, mas não pode retirar.</small>
+                      </span>
+                    </label>
+                  </div>
+                )}
+
+                <div className="cate__campo cate__campo--linha">
+                  <div className="cate__subcampo">
+                    <span className="cate__label">Cliente pode pedir até</span>
+                    <QuantidadeStepper
+                      valor={formAdic.quantidadeMaxima}
+                      min={formAdic.tipo === 'incluso' ? formAdic.quantidadeInclusa : 1}
+                      max={20}
+                      onChange={(v) => atualizarFormAdic({ quantidadeMaxima: v })}
+                      disabled={salvandoAdic}
+                      rotulo="limite que o cliente pode pedir"
+                    />
+                  </div>
+                  <div className="cate__subcampo cate__subcampo--preco">
+                    <label className="cate__label" htmlFor="adic-preco">
+                      {formAdic.tipo === 'incluso' ? 'Preço de cada extra' : 'Preço de cada um'}
+                    </label>
+                    {(() => {
+                      const semExtra = formAdic.tipo === 'incluso' && formAdic.quantidadeMaxima <= formAdic.quantidadeInclusa;
+                      return (
+                        <>
+                          <input
+                            id="adic-preco"
+                            className="cate__input"
+                            inputMode="numeric"
+                            placeholder={semExtra ? '—' : 'R$ 0,00'}
+                            value={semExtra || formAdic.precoCentavos === null ? '' : formatarReais(formAdic.precoCentavos)}
+                            onChange={(e) => mudarPreco(e.target.value)}
+                            disabled={salvandoAdic || semExtra}
+                          />
+                          {semExtra && <small className="cate__dica-campo">Aumente o limite para cobrar extras.</small>}
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 <div className="cate__campo">

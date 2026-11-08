@@ -9,6 +9,7 @@ import {
 import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
 import { z } from 'zod'
+import { parsePeriodo } from '@shared/utils/periodo'
 
 const repository = new PedidoRepository()
 const service = new PedidoService(repository)
@@ -46,12 +47,13 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
         throw new AppError('Usuário não vinculado a um estabelecimento', 400)
       }
 
-      const { status, modalidade, mesa_id, data_inicio, data_fim } = request.query as {
+      const { status, modalidade, mesa_id, data_inicio, data_fim, conta_aberta } = request.query as {
         status?: string // um ou vários separados por vírgula: RECEBIDO,PREPARO,PRONTO
         modalidade?: string
         mesa_id?: string
         data_inicio?: string
         data_fim?: string
+        conta_aberta?: string // 'true' = só pedidos da conta aberta da mesa (Caixa)
       }
 
       const statusValidos = ['RECEBIDO', 'PREPARO', 'PRONTO', 'ENTREGUE', 'CANCELADO']
@@ -70,8 +72,8 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
         ...(listaStatus.length > 0 && { status: listaStatus }),
         ...(mesa_id && { mesa_id }),
         ...(modalidade && { modalidade }),
-        ...(data_inicio && { data_inicio: new Date(data_inicio) }),
-        ...(data_fim && { data_fim: new Date(data_fim) }),
+        ...(conta_aberta === 'true' && { conta_aberta: true }),
+        ...parsePeriodo(data_inicio, data_fim),
       })
 
       return reply.send(pedidos)
@@ -130,6 +132,32 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
         user.estabelecimento_id
       )
 
+      return reply.send(pedido)
+    }
+  )
+
+  // PATCH /:id/itens/status — Fila: avança UM OU MAIS itens do pedido para a próxima etapa
+  // (a comida é entregue assim que fica pronta, sem esperar o pedido inteiro)
+  app.patch(
+    '/:id/itens/status',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = request.user as JWTPayload
+
+      if (!user.estabelecimento_id) {
+        throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+      }
+
+      const { id } = z
+        .object({ id: z.string().uuid('ID do pedido inválido') })
+        .parse(request.params)
+      const data = z
+        .object({
+          item_ids: z.array(z.string().uuid('ID de item inválido')).min(1, 'Escolha pelo menos 1 item').max(100),
+          status: z.enum(['PREPARO', 'PRONTO', 'ENTREGUE']),
+        })
+        .parse(request.body)
+
+      const pedido = await service.atualizarStatusItens(id, data, user.estabelecimento_id)
       return reply.send(pedido)
     }
   )

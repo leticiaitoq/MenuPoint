@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { HiCheckCircle, HiClipboardList } from 'react-icons/hi';
-import { FiCheck } from 'react-icons/fi';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
+import { useConvidado } from '../../../shared/contexts/Convidadocontext';
+import MesaPublicaService, { PedidoMesaPublico } from '../../../services/mesaPublica.service';
 import './Controlepedidolocal.css';
 
-// ── Tipos ──────────────────────────────────────────────
 
 type StatusPedidoLocal = 'pendente' | 'pronto' | 'finalizado';
 
@@ -27,77 +27,72 @@ interface PedidoLocal {
   itens: ItemPedidoLocal[];
 }
 
-// ── Dados mockados
-// Futuramente virão da API via useEffect com o id da mesa / sessão local
 
-const PEDIDOS_LOCAL_MOCK: PedidoLocal[] = [
-  {
-    id: 'pl-1025',
-    numero: 1025,
-    status: 'pendente',
-    horario: '12:30',
-    mesa: 2,
-    itens: [
-      { id: 'li-8', nome: 'Pizza Calabresa', quantidade: 1, preco: 42.00, imagem: '/images/Menu/pp.jpg' },
-      { id: 'li-9', nome: 'Suco de Laranja', quantidade: 2, preco: 8.00,  imagem: '/images/Menu/coca.jpg' },
-    ],
-  },
-  {
-    id: 'pl-1024',
-    numero: 1024,
-    status: 'pronto',
-    horario: '12:10',
-    mesa: 7,
-    itens: [
-      { id: 'li-1', nome: 'Pizza Portuguesa', quantidade: 1, preco: 45.00, imagem: '/images/Menu/pp.jpg' },
-      { id: 'li-2', nome: 'Coca-Cola Lata',   quantidade: 1, preco: 6.00,  imagem: '/images/Menu/coca.jpg' },
-    ],
-  },
-  {
-    id: 'pl-1023',
-    numero: 1023,
-    status: 'finalizado',
-    horario: '11:50',
-    mesa: 3,
-    itens: [
-      { id: 'li-3', nome: 'Salada Cesar',   quantidade: 2, preco: 38.00, imagem: '/images/Menu/ceaser.jpg' },
-      { id: 'li-4', nome: 'Coca-Cola Lata', quantidade: 2, preco: 6.00,  imagem: '/images/Menu/coca.jpg' },
-    ],
-  },
-  {
-    id: 'pl-1022',
-    numero: 1022,
-    status: 'finalizado',
-    horario: '11:30',
-    mesa: 5,
-    itens: [
-      { id: 'li-5', nome: 'Hamburguer Celestino', quantidade: 1, preco: 25.00, imagem: '/images/Menu/lanche.jpg' },
-      { id: 'li-6', nome: 'Caipirinha',           quantidade: 1, preco: 6.00,  imagem: '/images/Menu/caipira.jpg' },
-      { id: 'li-7', nome: 'Sorvete',              quantidade: 1, preco: 18.00, imagem: '/images/Menu/sor.jpg' },
-    ],
-  },
-];
+const IMAGEM_PADRAO_PRODUTO = '/icons/restaurant-logo.png';
+const INTERVALO_ATUALIZACAO_MS = 15000; // atualiza sozinho para o cliente ver o pedido ficar pronto
 
-// ── Helpers
+const STATUS_API_PARA_TELA: Record<PedidoMesaPublico['status'], StatusPedidoLocal> = {
+  RECEBIDO: 'pendente',
+  PREPARO: 'pendente',
+  PRONTO: 'pronto',
+  ENTREGUE: 'finalizado',
+};
 
-/**
- * Calcula o total de um pedido somando preco * quantidade de cada item.
- */
+const converterPedido = (p: PedidoMesaPublico, mesa: number): PedidoLocal => ({
+  id: p.id,
+  numero: p.numero_pedido,
+  status: STATUS_API_PARA_TELA[p.status],
+  horario: new Date(p.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+  mesa,
+  itens: p.itens.map((i) => ({
+    id: i.id,
+    nome: i.produto.nome,
+    quantidade: i.quantidade,
+    // preço unitário + extras (ingredientes acima do incluso), igual ao total cobrado no pedido
+    preco: Number(i.preco_unitario) + (i.itens_adicionais ?? []).reduce((s, a) => s + Number(a.preco_extra), 0),
+    imagem: i.produto.imagem_url || IMAGEM_PADRAO_PRODUTO,
+  })),
+});
+
+
 const calcularTotalLocal = (itens: ItemPedidoLocal[]): number =>
   itens.reduce((acc, item) => acc + item.preco * item.quantidade, 0);
 
-/**
- * Formata número como moeda brasileira.
- * Ex.: 51 → "R$ 51,00"
- */
 const formatarPrecoLocal = (valor: number): string =>
   `R$ ${valor.toFixed(2).replace('.', ',')}`;
 
-// ── Componente
 
 const ControlePedidoLocal: React.FC = () => {
   const [filtroLocal, setFiltroLocal]   = useState<FiltroAtivoLocal>('todos');
-  const [pedidosLocal, setPedidosLocal] = useState<PedidoLocal[]>(PEDIDOS_LOCAL_MOCK);
+  const { mesaToken } = useConvidado();
+  const [pedidosLocal, setPedidosLocal] = useState<PedidoLocal[]>([]);
+  const [carregando, setCarregando]     = useState(true);
+  const [erro, setErro]                 = useState<string | null>(null);
+  const [mesaNumero, setMesaNumero]     = useState<number | null>(null);
+
+  const carregarPedidos = useCallback(async () => {
+    if (!mesaToken) {
+      setCarregando(false);
+      return;
+    }
+    try {
+      const dados = await MesaPublicaService.listarPedidos(mesaToken);
+      setMesaNumero(dados.mesa.numero);
+      setPedidosLocal(dados.pedidos.map((p) => converterPedido(p, dados.mesa.numero)));
+      setErro(null);
+    } catch (err: any) {
+      // Em atualização automática, mantém o que já está na tela e só avisa
+      setErro(err?.response?.data?.message ?? 'Não foi possível carregar os pedidos.');
+    } finally {
+      setCarregando(false);
+    }
+  }, [mesaToken]);
+
+  useEffect(() => {
+    carregarPedidos();
+    const timer = setInterval(carregarPedidos, INTERVALO_ATUALIZACAO_MS);
+    return () => clearInterval(timer);
+  }, [carregarPedidos]);
 
   // ── Contagens para os badges dos filtros
   const contagensLocal = {
@@ -115,23 +110,31 @@ const ControlePedidoLocal: React.FC = () => {
     return true;
   });
 
-  /**
-   * Marca um pedido como finalizado.
-   * Futuramente: chamar API PATCH /pedidos/:id com { status: 'finalizado' }.
-   */
-  const handleFinalizarLocal = (id: string) => {
-    setPedidosLocal((prev) =>
-      prev.map((p) => p.id === id ? { ...p, status: 'finalizado' } : p)
-    );
-  };
 
-  // ── Render
   return (
     <CustomerLayout mode="guest">
       <div className="pedidos-local">
 
         {/* ── Cabeçalho ── */}
         <h1 className="pedidos-local__titulo">Meus Pedidos</h1>
+
+        {/* ── Resumo da mesa: vale também para quem chega numa mesa que já estava aberta ── */}
+        {mesaToken && mesaNumero !== null && !carregando && pedidosLocal.length > 0 && (
+          <div className="pedidos-local__resumo">
+            <div className="pedidos-local__resumo-item">
+              <span>Mesa</span>
+              <strong>{String(mesaNumero).padStart(2, '0')}</strong>
+            </div>
+            <div className="pedidos-local__resumo-item">
+              <span>Pedidos</span>
+              <strong>{pedidosLocal.length}</strong>
+            </div>
+            <div className="pedidos-local__resumo-item">
+              <span>Total da mesa</span>
+              <strong>{formatarPrecoLocal(pedidosLocal.reduce((acc, p) => acc + calcularTotalLocal(p.itens), 0))}</strong>
+            </div>
+          </div>
+        )}
 
         {/* ── Filtros ── */}
         <div className="pedidos-local__filtros">
@@ -149,8 +152,20 @@ const ControlePedidoLocal: React.FC = () => {
 
         {/* ── Lista de pedidos ── */}
         <div className="pedidos-local__lista">
-          {pedidosLocalFiltrados.length === 0 ? (
-            <p className="pedidos-local__vazio">Nenhum pedido encontrado.</p>
+          {!mesaToken ? (
+            <p className="pedidos-local__vazio">
+              Escaneie o QR Code da sua mesa para acompanhar os pedidos.
+            </p>
+          ) : carregando ? (
+            <p className="pedidos-local__vazio">Carregando pedidos...</p>
+          ) : erro && pedidosLocal.length === 0 ? (
+            <p className="pedidos-local__vazio">{erro}</p>
+          ) : pedidosLocalFiltrados.length === 0 ? (
+            <p className="pedidos-local__vazio">
+              {pedidosLocal.length === 0
+                ? `Ainda não há pedidos na mesa${mesaNumero !== null ? ` ${String(mesaNumero).padStart(2, '0')}` : ''}. Faça o primeiro pelo cardápio.`
+                : 'Nenhum pedido nesta aba.'}
+            </p>
           ) : (
             pedidosLocalFiltrados.map((pedido) => {
               const totalLocal = calcularTotalLocal(pedido.itens);
@@ -217,13 +232,10 @@ const ControlePedidoLocal: React.FC = () => {
                       )}
 
                       {pedido.status === 'pronto' && (
-                        <button
-                          className="pedidos-local__btn pedidos-local__btn--finalizar"
-                          onClick={() => handleFinalizarLocal(pedido.id)}
-                        >
-                          <FiCheck className="pedidos-local__btn-icon" />
-                          Finalizar
-                        </button>
+                        // A baixa (entregue) é feita pelo restaurante; o cliente só acompanha
+                        <span className="pedidos-local__btn pedidos-local__btn--aguardando">
+                          Pronto! Já vai à mesa
+                        </span>
                       )}
 
                       {pedido.status === 'finalizado' && (

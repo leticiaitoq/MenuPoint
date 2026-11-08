@@ -72,6 +72,7 @@ model Estabelecimento {
   reservas   Reserva[]
   pedidos    Pedido[]
   pagamentos Pagamento[]
+  pagamentos_mesa PagamentoMesa[]
 
   @@map("estabelecimentos")
 }
@@ -101,8 +102,10 @@ model Usuario {
   pedidos_atendidos    Pedido[]    @relation("AtendidoPor")
   reservas_confirmadas Reserva[]   @relation("ConfirmadaPor")
   pagamentos_confirmados Pagamento[] @relation("ConfirmadoPor")
+  pagamentos_mesa_registrados PagamentoMesa[] @relation("RegistradoPor")
   tokens_recuperacao TokenRecuperacaoSenha[]
   tokens_confirmacao_email TokenConfirmacaoEmail[]
+  tokens_alteracao_email TokenAlteracaoEmailUsuario[]
   refresh_tokens     RefreshToken[]
 
   @@map("usuarios")
@@ -118,6 +121,21 @@ model TokenConfirmacaoEmail {
   criado_em   DateTime @default(now()) @db.Timestamptz(0)
 
   @@map("tokens_confirmacao_email")
+}
+
+// Troca de e-mail do usuário logado: o e-mail novo fica guardado junto do código de
+// 6 dígitos até ser confirmado. O e-mail atual só muda quando o código é confirmado.
+model TokenAlteracaoEmailUsuario {
+  id         String   @id @default(uuid()) @db.Uuid
+  usuario_id String   @db.Uuid
+  usuario    Usuario  @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  novo_email String   @db.VarChar(150)
+  token      String   @unique @db.VarChar(64)
+  expira_em  DateTime @db.Timestamptz
+  usado      Boolean  @default(false)
+  criado_em  DateTime @default(now()) @db.Timestamptz
+
+  @@map("tokens_alteracao_email_usuario")
 }
 
 // ============================================================
@@ -137,10 +155,30 @@ model Categoria {
 
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   produtos        Produto[]
+  ingredientes_padrao IngredienteCategoria[]
 
   @@map("categorias")
 }
 
+// Ingredientes/adicionais padrão da categoria: modelo que o restaurante importa ao cadastrar um produto
+model IngredienteCategoria {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoria_id       String   @db.Uuid
+  nome               String   @db.VarChar(100)
+  descricao          String?  @db.VarChar(255)
+  preco_extra        Decimal  @default(0) @db.Decimal(8, 2)
+  quantidade_inclusa Int      @default(0)
+  quantidade_maxima  Int      @default(1)
+  fixo               Boolean  @default(false)
+  ativo              Boolean  @default(true)
+  ordem              Int      @default(0)
+  criado_em          DateTime @default(now()) @db.Timestamptz
+
+  categoria Categoria @relation(fields: [categoria_id], references: [id], onDelete: Cascade)
+
+  @@index([categoria_id])
+  @@map("ingredientes_categoria")
+}
 model Produto {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   estabelecimento_id String   @db.Uuid
@@ -182,7 +220,6 @@ model GrupoAdicional {
 
   @@map("grupos_adicionais")
 }
-
 model Adicional {
   id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   grupo_id    String  @db.Uuid
@@ -190,12 +227,16 @@ model Adicional {
   preco_extra Decimal @default(0) @db.Decimal(8, 2)
   disponivel  Boolean @default(true)
   ordem       Int     @default(0)
+  quantidade_inclusa Int @default(0)
+  quantidade_maxima  Int @default(1)
+  fixo               Boolean @default(false)
 
   grupo            GrupoAdicional   @relation(fields: [grupo_id], references: [id])
   itens_adicionais ItemAdicional[]
 
   @@map("adicionais")
 }
+
 
 // ============================================================
 // GRUPO 4 — MESAS
@@ -216,6 +257,7 @@ model Mesa {
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   reservas        Reserva[]
   pedidos         Pedido[]
+  pagamentos_mesa PagamentoMesa[]
 
   @@unique([estabelecimento_id, numero])
   @@map("mesas")
@@ -230,6 +272,7 @@ model Reserva {
   estabelecimento_id String        @db.Uuid
   mesa_id            String?       @db.Uuid
   confirmada_por_id  String?       @db.Uuid
+  cliente_id         String?       @db.Uuid   // cliente cadastrado que reservou pelo app (null = reserva feita pelo restaurante)
   cliente_nome       String        @db.VarChar(100)
   cliente_telefone   String        @db.VarChar(20)
   cliente_email      String?       @db.VarChar(150)
@@ -245,8 +288,11 @@ model Reserva {
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   mesa            Mesa?           @relation(fields: [mesa_id], references: [id])
   confirmada_por  Usuario?        @relation("ConfirmadaPor", fields: [confirmada_por_id], references: [id])
+  cliente         Cliente?        @relation(fields: [cliente_id], references: [id])
   pedidos         Pedido[]
 
+  @@index([estabelecimento_id, data_reserva])
+  @@index([cliente_id])
   @@map("reservas")
 }
 
@@ -279,6 +325,8 @@ model Pedido {
   criado_em          DateTime      @default(now()) @db.Timestamptz
   atualizado_em      DateTime      @default(now()) @updatedAt @db.Timestamptz
   entregue_em        DateTime?     @db.Timestamptz
+  // Quando o pedido saiu da conta aberta da mesa (conta paga/encerrada). Nulo = ainda faz parte da conta.
+  liquidado_em       DateTime?     @db.Timestamptz
 
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   mesa            Mesa?           @relation(fields: [mesa_id], references: [id])
@@ -288,6 +336,7 @@ model Pedido {
   itens           ItemPedido[]
   pagamento       Pagamento?
 
+  @@index([mesa_id, liquidado_em])
   @@map("pedidos")
 }
 
@@ -299,11 +348,16 @@ model ItemPedido {
   preco_unitario  Decimal  @db.Decimal(10, 2)
   preco_total     Decimal  @db.Decimal(10, 2)
   observacoes     String?
+  // Etapa deste item na cozinha: cada comida avança sozinha (RECEBIDO → PREPARO → PRONTO → ENTREGUE).
+  // O status do pedido é calculado a partir dos itens (o mais atrasado) — ver itemStatus.ts.
+  status          StatusPedido @default(RECEBIDO)
 
   pedido           Pedido          @relation(fields: [pedido_id], references: [id])
   produto          Produto         @relation(fields: [produto_id], references: [id])
   itens_adicionais ItemAdicional[]
+  pagamentos_mesa  PagamentoMesaItem[]
 
+  @@index([pedido_id, status])
   @@map("itens_pedido")
 }
 
@@ -348,6 +402,49 @@ model Pagamento {
   @@map("pagamentos")
 }
 
+// ------------------------------------------------------------
+// Pagamentos PARCIAIS da mesa (Caixa): pagar só alguns itens ou abater um valor da conta.
+// Ficam "abertos" (liquidado_em = null) até a conta da mesa ser fechada; aí são liquidados.
+// ------------------------------------------------------------
+
+model PagamentoMesa {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String            @db.Uuid
+  mesa_id            String            @db.Uuid
+  registrado_por_id  String?           @db.Uuid
+  tipo               TipoPagamentoMesa
+  metodo             FormaPagamento
+  valor              Decimal           @db.Decimal(10, 2) // quanto foi abatido da conta (com taxa de serviço)
+  valor_recebido     Decimal?          @db.Decimal(10, 2) // dinheiro entregue pelo cliente
+  troco              Decimal?          @db.Decimal(10, 2)
+  observacoes        String?
+  liquidado_em       DateTime?         @db.Timestamptz
+  criado_em          DateTime          @default(now()) @db.Timestamptz
+
+  estabelecimento Estabelecimento     @relation(fields: [estabelecimento_id], references: [id])
+  mesa            Mesa                @relation(fields: [mesa_id], references: [id])
+  registrado_por  Usuario?            @relation("RegistradoPor", fields: [registrado_por_id], references: [id])
+  itens           PagamentoMesaItem[]
+
+  @@index([mesa_id, liquidado_em])
+  @@map("pagamentos_mesa")
+}
+
+// Itens (e quantidades) que um pagamento parcial quitou
+model PagamentoMesaItem {
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pagamento_mesa_id String  @db.Uuid
+  item_pedido_id    String  @db.Uuid
+  quantidade        Int
+  valor             Decimal @db.Decimal(10, 2)
+
+  pagamento_mesa PagamentoMesa @relation(fields: [pagamento_mesa_id], references: [id], onDelete: Cascade)
+  item_pedido    ItemPedido    @relation(fields: [item_pedido_id], references: [id], onDelete: Cascade)
+
+  @@index([item_pedido_id])
+  @@map("pagamentos_mesa_itens")
+}
+
 // ============================================================
 // GRUPO - 9 - REFRESH TOKENS
 // ============================================================
@@ -385,6 +482,7 @@ model Cliente {
   criado_em        DateTime  @default(now()) @db.Timestamptz
 
   pedidos            Pedido[]
+  reservas           Reserva[]
   refresh_tokens     RefreshToken[]
   tokens_recuperacao TokenRecuperacaoSenhaCliente[]
   tokens_confirmacao TokenConfirmacaoEmailCliente[]
@@ -570,6 +668,13 @@ enum StatusPagamento {
   FALHOU
 
   @@map("status_pagamento")
+}
+
+enum TipoPagamentoMesa {
+  PARCIAL
+  ABATIMENTO
+
+  @@map("tipo_pagamento_mesa")
 }
 
 enum StatusAssinatura {

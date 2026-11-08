@@ -1,7 +1,7 @@
 .perso-pedido {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 20px;
   padding-bottom: 16px;
 }
 
@@ -54,95 +54,149 @@
   flex-shrink: 0;
 }
 
-/* ── Grupos: Personalização e Adicionais lado a lado ── */
-.perso-pedido__grupos {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
+/* ── Avisos (produto sem ingredientes, sem produto escolhido) ── */
+.perso-pedido__aviso {
+  margin: 0;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background-color: var(--bg-surface);
+  border: 1px dashed var(--border-strong, var(--border));
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
-.perso-pedido__grupo-titulo {
-  font-size: 22px;
+/* ── Seções: "O que vem no produto" e "Quer adicionar mais?" ── */
+.perso-pedido__secao {
+  background-color: var(--bg-surface);
+  border-radius: 20px;
+  padding: 20px 20px 8px;
+  box-shadow: 0 1px 4px var(--shadow-color);
+}
+
+.perso-pedido__secao-cab { margin-bottom: 6px; }
+
+.perso-pedido__secao-titulo {
+  margin: 0 0 4px;
+  font-size: 20px;
   font-weight: 700;
-  color: var(--accent);
-  margin: 0 0 12px;
+  color: var(--text);
 }
 
-.perso-pedido__opcoes {
-  background-color: var(--border);
-  border-radius: 16px;
-  padding: 20px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px 16px;
+.perso-pedido__secao-sub {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 
-/* ── Cada opção (ingrediente/adicional) ── */
-.perso-pedido__opcao {
+.perso-pedido__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Cada ingrediente: nome e explicação à esquerda, seletor à direita */
+.perso-pedido__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+.perso-pedido__item:first-child { border-top: 0; }
+
+.perso-pedido__item-info {
   display: flex;
   flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.perso-pedido__item-nome {
+  display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
-}
-
-.perso-pedido__opcao-nome {
   font-size: 16px;
+  font-weight: 600;
   color: var(--text);
-  text-align: center;
 }
 
-.perso-pedido__opcao-controle {
+.perso-pedido__item-detalhe {
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+/* Retirado: nome riscado, fica claro que não vai */
+.perso-pedido__item--removido .perso-pedido__item-nome {
+  text-decoration: line-through;
+  color: var(--text-faint);
+}
+
+/* Pediu extra: o valor que soma aparece em destaque */
+.perso-pedido__item--extra .perso-pedido__item-detalhe {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+/* Etiqueta "Fixo" (não pode retirar) */
+.perso-pedido__fixo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: var(--bg-surface-alt);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── Para levar (interruptor) ── */
+.perso-pedido__levar {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.perso-pedido__botao {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: none;
-  color: var(--on-brand);
-  font-size: 16px;
-  font-weight: 700;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 20px;
+  background-color: var(--bg-surface);
+  box-shadow: 0 1px 4px var(--shadow-color);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  transition: transform 0.15s, opacity 0.15s;
 }
 
-.perso-pedido__botao:hover  { transform: scale(1.08); }
-.perso-pedido__botao:active { transform: scale(0.95); }
+.perso-pedido__levar-info { display: flex; flex-direction: column; gap: 2px; color: var(--text); }
+.perso-pedido__levar-info strong { font-size: 16px; }
+.perso-pedido__levar-info small { font-size: 13px; color: var(--text-faint); }
 
-.perso-pedido__botao:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
+.perso-pedido__switch {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+  background-color: var(--border-strong, #bdbdbd);
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
-
-.perso-pedido__botao--menos { background-color: var(--brand); }
-.perso-pedido__botao--mais  { background-color: var(--success); }
-
-.perso-pedido__opcao-qtd {
-  width: 26px;
-  height: 26px;
+.perso-pedido__switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background-color: var(--on-status);
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s;
 }
-
-.perso-pedido__opcao-preco {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text);
-}
+.perso-pedido__switch:checked { background-color: var(--brand); }
+.perso-pedido__switch:checked::after { transform: translateX(20px); }
+.perso-pedido__switch:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
 /* ── Observação ── */
 .perso-pedido__observacao {
@@ -152,9 +206,9 @@
 }
 
 .perso-pedido__observacao-titulo {
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--text);
   margin: 0;
 }
 
@@ -163,7 +217,7 @@
   border-radius: 20px;
   background-color: var(--bg-page);
   padding: 20px 24px;
-  min-height: 140px;
+  min-height: 120px;
   font-size: 16px;
   font-family: inherit;
   color: var(--text);
@@ -172,19 +226,35 @@
   box-sizing: border-box;
 }
 
-.perso-pedido__observacao-campo::placeholder {
-  color: var(--text-faint);
+.perso-pedido__observacao-campo::placeholder { color: var(--text-faint); }
+
+/* ── Barra de confirmação: o total fica sempre visível ── */
+.perso-pedido__barra {
+  position: sticky;
+  bottom: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 12px 12px 24px;
+  border-radius: 999px;
+  background-color: var(--bg-surface);
+  box-shadow: 0 4px 18px var(--shadow-color);
+  border: 1px solid var(--border);
 }
 
-/* ── Botão de confirmação ── */
+.perso-pedido__barra-total { display: flex; flex-direction: column; line-height: 1.15; color: var(--text); }
+.perso-pedido__barra-total span { font-size: 12px; color: var(--text-faint); }
+.perso-pedido__barra-total strong { font-size: 24px; font-weight: 800; }
+
 .perso-pedido__botao-confirmar {
-  align-self: center;
   background-color: var(--brand);
   color: var(--on-brand);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  padding: 18px 72px;
+  letter-spacing: 0.3px;
+  padding: 16px 40px;
   border: none;
   border-radius: 50px;
   cursor: pointer;
