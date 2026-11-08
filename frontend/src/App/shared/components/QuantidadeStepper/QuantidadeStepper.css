@@ -20,7 +20,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: backgrouand 0.15s;
+  transition: background 0.15s;
 }
 .qstepper__btn:hover:not(:disabled) { background: var(--brand-soft); }
 .qstepper__btn:disabled { opacity: 0.3; cursor: not-allowed; }

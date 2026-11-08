@@ -89,6 +89,25 @@
   }
 }
 
+/* Páginas com fundo em arte: o .menu preenche toda a altura disponível */
+.customer-layout__content:has(> .menu) {
+  display: flex;
+  flex-direction: column;
+}
+
+.customer-layout__content > .menu {
+  flex: 1 0 auto;
+}
+
+/* Tablet e celular: o .menu "sangra" até a borda cancelando o padding do conteúdo
+   com as mesmas variáveis --cl-pad-* (assim acompanha cada breakpoint) */
+@media (max-width: 768px) {
+  .customer-layout__content > .menu {
+    margin: calc(-1 * var(--cl-pad-y)) calc(-1 * var(--cl-pad-x)) calc(-1 * var(--cl-pad-b));
+    padding: var(--cl-pad-y) var(--cl-pad-x) var(--cl-pad-b);
+  }
+}
+
 /* ── Botão "Voltar" no topo das telas internas ── */
 .customer-layout__voltar {
   display: inline-flex;

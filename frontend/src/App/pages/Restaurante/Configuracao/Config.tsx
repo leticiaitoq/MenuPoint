@@ -1871,7 +1871,10 @@ const Config: React.FC = () => {
                 role="tab"
                 aria-selected={abaAtiva === aba.id}
                 className={`config__aba${abaAtiva === aba.id ? ' config__aba--ativa' : ''}`}
-                onClick={() => setAbaAtiva(aba.id)}
+                onClick={(e) => {
+                  setAbaAtiva(aba.id);
+                  e.currentTarget.scrollIntoView?.({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }}
               >
                 <span className="config__aba-icone">{aba.icone}</span>
                 {aba.titulo}
@@ -1960,7 +1963,7 @@ const Config: React.FC = () => {
                   rotulo="Link para seus clientes"
                   dica="Divulgue no Instagram, WhatsApp ou em QR code. O cliente entra direto no seu restaurante."
                 >
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div className="config__linha-link">
                     <input
                       id="link-cardapio"
                       className="config__input"

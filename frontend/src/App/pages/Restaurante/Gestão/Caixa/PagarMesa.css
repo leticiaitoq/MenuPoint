@@ -287,6 +287,12 @@
   text-decoration: underline;
 }
 
+.pagar__acoes-fixas {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .pagar__resumo-total {
   display: flex;
   align-items: center;
@@ -809,4 +815,138 @@
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   margin: 8px 0; padding: 8px 12px; border-radius: 10px;
   background: #fff7e6; color: #8a5a00; font-size: 13px; font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVIDADE
+   900px (e não 768): a sidebar de 200px ocupa espaço, então as duas
+   colunas ficam apertadas antes de chegar no breakpoint padrão.
+═══════════════════════════════════════════════ */
+
+/* Tablet: colunas empilhadas (itens primeiro, resumo depois) */
+@media (max-width: 900px) {
+  .pagar__corpo {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .pagar__coluna-itens,
+  .pagar__coluna-resumo {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Celular / tablet com barra inferior: cabeçalho e itens compactos */
+@media (max-width: 768px) {
+  .pagar__titulo { font-size: 20px; }
+
+  .pagar__header { gap: 12px; }
+
+  /* tela com respiro no fim para a barra fixa não cobrir o conteúdo */
+  .pagar__corpo { padding-bottom: 150px; }
+
+  /* Barra fixa: total + botões sempre visíveis, acima da navegação inferior */
+  .pagar__acoes-fixas {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+    z-index: 90; /* abaixo da barra de navegação (100) e dos menus/modais */
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 16px var(--shadow-color);
+  }
+
+  .pagar__acoes-fixas .pagar__resumo-total {
+    grid-column: 1 / -1;
+    padding-top: 0;
+    border-top: none;
+    font-size: 17px;
+  }
+
+  .pagar__acoes-fixas .pagar__btn-parcial,
+  .pagar__acoes-fixas .pagar__btn-finalizar {
+    min-height: 46px;
+  }
+}
+
+/* Celular */
+@media (max-width: 600px) {
+  .pagar__caixa { padding: 16px; }
+
+  .pagar__header-acoes { margin-left: auto; }
+
+  /* só o ícone no botão imprimir: sobra espaço para o título */
+  .pagar__btn-imprimir,
+  .pagar__btn-mais { padding: 9px 12px; }
+
+  /* item: nome em cima (linha inteira); preço unitário e total embaixo */
+  .pagar__item {
+    grid-template-columns: 1fr auto;
+    gap: 4px 12px;
+    padding: 12px 0;
+  }
+
+  .pagar__item-qtd-nome {
+    grid-column: 1 / -1;
+    overflow-wrap: anywhere;
+  }
+
+  .pagar__item-unitario {
+    grid-column: 1;
+    min-width: 0;
+    text-align: left;
+    font-size: 13px;
+  }
+
+  .pagar__item-total {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+  }
+
+  /* sem preço unitário: o total ocupa a 2ª linha, à direita */
+  .pagar__item-qtd-nome + .pagar__item-total { grid-column: 1 / -1; text-align: right; }
+
+  /* modais cabem na tela e rolam quando o teclado aparece */
+  .pagar__modal,
+  .desconto__modal {
+    width: 100%;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    padding: 22px 18px 20px;
+  }
+
+  .pagar__formas-grid { gap: 8px; }
+}
+
+/* Celular pequeno: botões do cabeçalho dividem a linha, sem quebrar o texto */
+@media (max-width: 480px) {
+  .pagar__header { flex-wrap: wrap; }
+
+  .pagar__header-acoes { width: 100%; margin-left: 0; }
+
+  .pagar__header-acoes > *,
+  .pagar__menu-wrap { flex: 1 1 0; }
+
+  .pagar__btn-imprimir,
+  .pagar__btn-mais { width: 100%; justify-content: center; white-space: nowrap; }
+}
+
+/* Integração: "Pagamento parcial"/"Abater um valor" e o aviso da cozinha também ficam dentro da barra fixa */
+@media (max-width: 768px) {
+  .pagar__corpo { padding-bottom: 240px; }
+
+  .pagar__acoes-fixas .pagar__botoes-parciais,
+  .pagar__acoes-fixas .pagar__btn-finalizar,
+  .pagar__acoes-fixas .pagar__aviso-cozinha { grid-column: 1 / -1; }
+
+  .pagar__acoes-fixas .pagar__aviso-cozinha { margin: 0; padding: 6px 10px; font-size: 12px; }
 }

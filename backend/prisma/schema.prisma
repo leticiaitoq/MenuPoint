@@ -17,13 +17,13 @@ datasource db {
 // ============================================================
 
 model Empresa {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nome         String   @db.VarChar(150)
   razao_social String?  @db.VarChar(200)
   cnpj         String?  @unique @db.VarChar(18)
   plano        Plano
-  ativo      Boolean  @default(true)
-  criado_em  DateTime @default(now()) @db.Timestamptz
+  ativo        Boolean  @default(true)
+  criado_em    DateTime @default(now()) @db.Timestamptz
 
   estabelecimentos Estabelecimento[]
   usuarios         Usuario[]
@@ -33,47 +33,47 @@ model Empresa {
 }
 
 model Estabelecimento {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  empresa_id    String?  @db.Uuid
-  nome          String   @db.VarChar(150)
-  slug          String   @unique @db.VarChar(100)
-  cnpj          String?  @unique @db.VarChar(18)
-  telefone      String?  @db.VarChar(20)
-  whatsapp      String?  @db.VarChar(20)
-  email         String?  @unique @db.VarChar(150)
-  endereco      Json?
-  logo_url      String?  @db.VarChar(500)
-  banner_url    String?  @db.VarChar(500)
-  tema          Tema     @default(CLARO)
-  tipo_cozinha  String?  @db.VarChar(60)   // ex.: "Pizzaria", "Japonesa", "Lanches"
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  empresa_id   String? @db.Uuid
+  nome         String  @db.VarChar(150)
+  slug         String  @unique @db.VarChar(100)
+  cnpj         String? @unique @db.VarChar(18)
+  telefone     String? @db.VarChar(20)
+  whatsapp     String? @db.VarChar(20)
+  email        String? @unique @db.VarChar(150)
+  endereco     Json?
+  logo_url     String? @db.VarChar(500)
+  banner_url   String? @db.VarChar(500)
+  tema         Tema    @default(CLARO)
+  tipo_cozinha String? @db.VarChar(60) // ex.: "Pizzaria", "Japonesa", "Lanches"
 
-  chave_pix                  String?  @db.VarChar(150)
+  chave_pix                  String?       @db.VarChar(150)
   tipo_chave_pix             TipoChavePix?
-  tempo_entrega_min          Int      @default(30)
-  tempo_entrega_max          Int      @default(60)
-  taxa_entrega               Decimal  @default(0) @db.Decimal(8, 2)
-  pedido_minimo              Decimal  @default(0) @db.Decimal(8, 2)
-  aceita_entrega             Boolean  @default(true)
-  aceita_retirada            Boolean  @default(true)
-  aceita_mesa                Boolean  @default(true)
+  tempo_entrega_min          Int           @default(30)
+  tempo_entrega_max          Int           @default(60)
+  taxa_entrega               Decimal       @default(0) @db.Decimal(8, 2)
+  pedido_minimo              Decimal       @default(0) @db.Decimal(8, 2)
+  aceita_entrega             Boolean       @default(true)
+  aceita_retirada            Boolean       @default(true)
+  aceita_mesa                Boolean       @default(true)
   horario_funcionamento      Json?
-  desconto_boas_vindas_usado Boolean  @default(false)
-  ativo                      Boolean  @default(true)
+  desconto_boas_vindas_usado Boolean       @default(false)
+  ativo                      Boolean       @default(true)
   // false no cadastro inicial (só nome, CNPJ e endereço); vira true quando o
   // dono completa telefone, WhatsApp, horários etc. no "completar perfil".
-  perfil_completo            Boolean  @default(false)
-  criado_em                  DateTime @default(now()) @db.Timestamptz
+  perfil_completo            Boolean       @default(false)
+  criado_em                  DateTime      @default(now()) @db.Timestamptz
 
-  empresa    Empresa?  @relation(fields: [empresa_id], references: [id])
-  usuarios   Usuario[]
-  categorias Categoria[]
-  produtos   Produto[]
-  mesas      Mesa[]
-  reservas   Reserva[]
-  pedidos    Pedido[]
-  pagamentos Pagamento[]
-  pagamentos_mesa PagamentoMesa[]
-  despesas          Despesa[]
+  empresa            Empresa?           @relation(fields: [empresa_id], references: [id])
+  usuarios           Usuario[]
+  categorias         Categoria[]
+  produtos           Produto[]
+  mesas              Mesa[]
+  reservas           Reserva[]
+  pedidos            Pedido[]
+  pagamentos         Pagamento[]
+  pagamentos_mesa    PagamentoMesa[]
+  despesas           Despesa[]
   categorias_despesa CategoriaDespesa[]
 
   @@map("estabelecimentos")
@@ -84,43 +84,43 @@ model Estabelecimento {
 // ============================================================
 
 model Usuario {
-  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  empresa_id           String?  @db.Uuid
-  estabelecimento_id   String?  @db.Uuid
-  nome                 String   @db.VarChar(100)
-  cpf                  String?  @db.VarChar(14)
-  email                String   @unique @db.VarChar(150)
-  senha_hash           String   @db.VarChar(255)
-  perfil               Perfil
-  escopo               Escopo   @default(LOCAL)
-  ativo                Boolean  @default(true)
-  email_verificado     Boolean  @default(false)
-  ultimo_acesso        DateTime? @db.Timestamptz
-  criado_em            DateTime @default(now()) @db.Timestamptz
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  empresa_id         String?   @db.Uuid
+  estabelecimento_id String?   @db.Uuid
+  nome               String    @db.VarChar(100)
+  cpf                String?   @db.VarChar(14)
+  email              String    @unique @db.VarChar(150)
+  senha_hash         String    @db.VarChar(255)
+  perfil             Perfil
+  escopo             Escopo    @default(LOCAL)
+  ativo              Boolean   @default(true)
+  email_verificado   Boolean   @default(false)
+  ultimo_acesso      DateTime? @db.Timestamptz
+  criado_em          DateTime  @default(now()) @db.Timestamptz
 
-  empresa          Empresa?         @relation(fields: [empresa_id], references: [id])
-  estabelecimento  Estabelecimento? @relation(fields: [estabelecimento_id], references: [id])
+  empresa         Empresa?         @relation(fields: [empresa_id], references: [id])
+  estabelecimento Estabelecimento? @relation(fields: [estabelecimento_id], references: [id])
 
-  pedidos_atendidos    Pedido[]    @relation("AtendidoPor")
-  reservas_confirmadas Reserva[]   @relation("ConfirmadaPor")
-  pagamentos_confirmados Pagamento[] @relation("ConfirmadoPor")
-  pagamentos_mesa_registrados PagamentoMesa[] @relation("RegistradoPor")
-  tokens_recuperacao TokenRecuperacaoSenha[]
-  tokens_confirmacao_email TokenConfirmacaoEmail[]
-  tokens_alteracao_email TokenAlteracaoEmailUsuario[]
-  refresh_tokens     RefreshToken[]
+  pedidos_atendidos           Pedido[]                     @relation("AtendidoPor")
+  reservas_confirmadas        Reserva[]                    @relation("ConfirmadaPor")
+  pagamentos_confirmados      Pagamento[]                  @relation("ConfirmadoPor")
+  pagamentos_mesa_registrados PagamentoMesa[]              @relation("RegistradoPor")
+  tokens_recuperacao          TokenRecuperacaoSenha[]
+  tokens_confirmacao_email    TokenConfirmacaoEmail[]
+  tokens_alteracao_email      TokenAlteracaoEmailUsuario[]
+  refresh_tokens              RefreshToken[]
 
   @@map("usuarios")
 }
 
 model TokenConfirmacaoEmail {
-  id          String   @id @default(uuid()) @db.Uuid
-  usuario_id  String   @db.Uuid
-  usuario     Usuario  @relation(fields: [usuario_id], references: [id])
-  token       String   @unique @db.VarChar(64)
-  expira_em   DateTime @db.Timestamptz(0)
-  usado       Boolean  @default(false)
-  criado_em   DateTime @default(now()) @db.Timestamptz(0)
+  id         String   @id @default(uuid()) @db.Uuid
+  usuario_id String   @db.Uuid
+  usuario    Usuario  @relation(fields: [usuario_id], references: [id])
+  token      String   @unique @db.VarChar(64)
+  expira_em  DateTime @db.Timestamptz(0)
+  usado      Boolean  @default(false)
+  criado_em  DateTime @default(now()) @db.Timestamptz(0)
 
   @@map("tokens_confirmacao_email")
 }
@@ -155,8 +155,8 @@ model Categoria {
   ativo              Boolean  @default(true)
   criado_em          DateTime @default(now()) @db.Timestamptz
 
-  estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
-  produtos        Produto[]
+  estabelecimento     Estabelecimento        @relation(fields: [estabelecimento_id], references: [id])
+  produtos            Produto[]
   ingredientes_padrao IngredienteCategoria[]
 
   @@map("categorias")
@@ -181,6 +181,7 @@ model IngredienteCategoria {
   @@index([categoria_id])
   @@map("ingredientes_categoria")
 }
+
 model Produto {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   estabelecimento_id String   @db.Uuid
@@ -199,8 +200,8 @@ model Produto {
   criado_em          DateTime @default(now()) @db.Timestamptz
   atualizado_em      DateTime @default(now()) @updatedAt @db.Timestamptz
 
-  estabelecimento   Estabelecimento    @relation(fields: [estabelecimento_id], references: [id])
-  categoria         Categoria          @relation(fields: [categoria_id], references: [id])
+  estabelecimento   Estabelecimento  @relation(fields: [estabelecimento_id], references: [id])
+  categoria         Categoria        @relation(fields: [categoria_id], references: [id])
   grupos_adicionais GrupoAdicional[]
   itens_pedido      ItemPedido[]
 
@@ -222,39 +223,39 @@ model GrupoAdicional {
 
   @@map("grupos_adicionais")
 }
+
 model Adicional {
-  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  grupo_id    String  @db.Uuid
-  nome        String  @db.VarChar(100)
-  preco_extra Decimal @default(0) @db.Decimal(8, 2)
-  disponivel  Boolean @default(true)
-  ordem       Int     @default(0)
-  quantidade_inclusa Int @default(0)
-  quantidade_maxima  Int @default(1)
+  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  grupo_id           String  @db.Uuid
+  nome               String  @db.VarChar(100)
+  preco_extra        Decimal @default(0) @db.Decimal(8, 2)
+  disponivel         Boolean @default(true)
+  ordem              Int     @default(0)
+  quantidade_inclusa Int     @default(0)
+  quantidade_maxima  Int     @default(1)
   fixo               Boolean @default(false)
 
-  grupo            GrupoAdicional   @relation(fields: [grupo_id], references: [id])
+  grupo            GrupoAdicional  @relation(fields: [grupo_id], references: [id])
   itens_adicionais ItemAdicional[]
 
   @@map("adicionais")
 }
-
 
 // ============================================================
 // GRUPO 4 — MESAS
 // ============================================================
 
 model Mesa {
-  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  estabelecimento_id String      @db.Uuid
+  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String     @db.Uuid
   numero             Int
   capacidade         Int
-  qr_code_token      String      @unique @db.VarChar(64)
-  qr_code_url        String?     @db.VarChar(500)
-  localizacao        String?     @db.VarChar(100)
-  status             StatusMesa  @default(LIVRE)
-  ativo              Boolean     @default(true)
-  criado_em          DateTime    @default(now()) @db.Timestamptz
+  qr_code_token      String     @unique @db.VarChar(64)
+  qr_code_url        String?    @db.VarChar(500)
+  localizacao        String?    @db.VarChar(100)
+  status             StatusMesa @default(LIVRE)
+  ativo              Boolean    @default(true)
+  criado_em          DateTime   @default(now()) @db.Timestamptz
 
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   reservas        Reserva[]
@@ -274,6 +275,7 @@ model Reserva {
   estabelecimento_id String        @db.Uuid
   mesa_id            String?       @db.Uuid
   confirmada_por_id  String?       @db.Uuid
+  cliente_id         String?       @db.Uuid // cliente cadastrado que reservou pelo app (null = reserva feita pelo restaurante)
   cliente_nome       String        @db.VarChar(100)
   cliente_telefone   String        @db.VarChar(20)
   cliente_email      String?       @db.VarChar(150)
@@ -285,14 +287,15 @@ model Reserva {
   status             StatusReserva @default(PENDENTE)
   criado_em          DateTime      @default(now()) @db.Timestamptz
   atualizado_em      DateTime      @default(now()) @updatedAt @db.Timestamptz
-  cliente_id String?
 
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   mesa            Mesa?           @relation(fields: [mesa_id], references: [id])
-  cliente    Cliente? @relation(fields: [cliente_id], references: [id])
   confirmada_por  Usuario?        @relation("ConfirmadaPor", fields: [confirmada_por_id], references: [id])
+  cliente         Cliente?        @relation(fields: [cliente_id], references: [id])
   pedidos         Pedido[]
 
+  @@index([estabelecimento_id, data_reserva])
+  @@index([cliente_id])
   @@map("reservas")
 }
 
@@ -301,32 +304,32 @@ model Reserva {
 // ============================================================
 
 model Pedido {
-  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  estabelecimento_id String        @db.Uuid
-  mesa_id            String?       @db.Uuid
-  reserva_id         String?       @db.Uuid
-  atendido_por_id    String?       @db.Uuid
-  cliente_id         String?       @db.Uuid   // cliente cadastrado (opcional)
-  numero_pedido      Int           @default(autoincrement())
-  modalidade         Modalidade
-  status             StatusPedido  @default(RECEBIDO)
-  cliente_nome       String        @db.VarChar(100)
-  cliente_telefone   String        @db.VarChar(20)
-  endereco_entrega   Json?
-  observacoes        String?
-  subtotal           Decimal       @db.Decimal(10, 2)
-  taxa_entrega       Decimal       @default(0) @db.Decimal(8, 2)
-  desconto           Decimal       @default(0) @db.Decimal(8, 2)
-  total              Decimal       @db.Decimal(10, 2)
-  forma_pagamento    FormaPagamento?
-  troco_para         Decimal?      @db.Decimal(10, 2)
-  whatsapp_enviado   Boolean       @default(false)
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id  String          @db.Uuid
+  mesa_id             String?         @db.Uuid
+  reserva_id          String?         @db.Uuid
+  atendido_por_id     String?         @db.Uuid
+  cliente_id          String?         @db.Uuid // cliente cadastrado (opcional)
+  numero_pedido       Int             @default(autoincrement())
+  modalidade          Modalidade
+  status              StatusPedido    @default(RECEBIDO)
+  cliente_nome        String          @db.VarChar(100)
+  cliente_telefone    String          @db.VarChar(20)
+  endereco_entrega    Json?
+  observacoes         String?
+  subtotal            Decimal         @db.Decimal(10, 2)
+  taxa_entrega        Decimal         @default(0) @db.Decimal(8, 2)
+  desconto            Decimal         @default(0) @db.Decimal(8, 2)
+  total               Decimal         @db.Decimal(10, 2)
+  forma_pagamento     FormaPagamento?
+  troco_para          Decimal?        @db.Decimal(10, 2)
+  whatsapp_enviado    Boolean         @default(false)
   cancelamento_motivo String?
-  criado_em          DateTime      @default(now()) @db.Timestamptz
-  atualizado_em      DateTime      @default(now()) @updatedAt @db.Timestamptz
-  entregue_em        DateTime?     @db.Timestamptz
+  criado_em           DateTime        @default(now()) @db.Timestamptz
+  atualizado_em       DateTime        @default(now()) @updatedAt @db.Timestamptz
+  entregue_em         DateTime?       @db.Timestamptz
   // Quando o pedido saiu da conta aberta da mesa (conta paga/encerrada). Nulo = ainda faz parte da conta.
-  liquidado_em       DateTime?     @db.Timestamptz
+  liquidado_em        DateTime?       @db.Timestamptz
 
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   mesa            Mesa?           @relation(fields: [mesa_id], references: [id])
@@ -341,19 +344,19 @@ model Pedido {
 }
 
 model ItemPedido {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  pedido_id       String   @db.Uuid
-  produto_id      String   @db.Uuid
-  quantidade      Int
-  preco_unitario  Decimal  @db.Decimal(10, 2)
-  preco_total     Decimal  @db.Decimal(10, 2)
-  observacoes     String?
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pedido_id      String       @db.Uuid
+  produto_id     String       @db.Uuid
+  quantidade     Int
+  preco_unitario Decimal      @db.Decimal(10, 2)
+  preco_total    Decimal      @db.Decimal(10, 2)
+  observacoes    String?
   // Etapa deste item na cozinha: cada comida avança sozinha (RECEBIDO → PREPARO → PRONTO → ENTREGUE).
   // O status do pedido é calculado a partir dos itens (o mais atrasado) — ver itemStatus.ts.
-  status          StatusPedido @default(RECEBIDO)
+  status         StatusPedido @default(RECEBIDO)
 
-  pedido           Pedido          @relation(fields: [pedido_id], references: [id])
-  produto          Produto         @relation(fields: [produto_id], references: [id])
+  pedido           Pedido              @relation(fields: [pedido_id], references: [id])
+  produto          Produto             @relation(fields: [produto_id], references: [id])
   itens_adicionais ItemAdicional[]
   pagamentos_mesa  PagamentoMesaItem[]
 
@@ -362,11 +365,11 @@ model ItemPedido {
 }
 
 model ItemAdicional {
-  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  item_pedido_id  String  @db.Uuid
-  adicional_id    String  @db.Uuid
-  nome_adicional  String  @db.VarChar(100)
-  preco_extra     Decimal @db.Decimal(8, 2)
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  item_pedido_id String  @db.Uuid
+  adicional_id   String  @db.Uuid
+  nome_adicional String  @db.VarChar(100)
+  preco_extra    Decimal @db.Decimal(8, 2)
 
   item_pedido ItemPedido @relation(fields: [item_pedido_id], references: [id])
   adicional   Adicional  @relation(fields: [adicional_id], references: [id])
@@ -379,21 +382,21 @@ model ItemAdicional {
 // ============================================================
 
 model Pagamento {
-  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  pedido_id          String         @unique @db.Uuid
-  estabelecimento_id String         @db.Uuid
-  confirmado_por_id  String?        @db.Uuid
-  valor              Decimal        @db.Decimal(10, 2)
-  metodo             FormaPagamento
-  status             StatusPagamento @default(PENDENTE)
-  chave_pix_usada    String?        @db.VarChar(150)
-  comprovante_url    String?        @db.VarChar(500)
-  valor_original     Decimal?       @db.Decimal(10, 2)
-  desconto_percentual Decimal?      @default(0) @db.Decimal(5, 2)
-  desconto_valor     Decimal?       @default(0) @db.Decimal(10, 2)
-  observacoes        String?
-  confirmado_em      DateTime?      @db.Timestamptz
-  criado_em          DateTime       @default(now()) @db.Timestamptz
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pedido_id           String          @unique @db.Uuid
+  estabelecimento_id  String          @db.Uuid
+  confirmado_por_id   String?         @db.Uuid
+  valor               Decimal         @db.Decimal(10, 2)
+  metodo              FormaPagamento
+  status              StatusPagamento @default(PENDENTE)
+  chave_pix_usada     String?         @db.VarChar(150)
+  comprovante_url     String?         @db.VarChar(500)
+  valor_original      Decimal?        @db.Decimal(10, 2)
+  desconto_percentual Decimal?        @default(0) @db.Decimal(5, 2)
+  desconto_valor      Decimal?        @default(0) @db.Decimal(10, 2)
+  observacoes         String?
+  confirmado_em       DateTime?       @db.Timestamptz
+  criado_em           DateTime        @default(now()) @db.Timestamptz
 
   pedido          Pedido          @relation(fields: [pedido_id], references: [id])
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
@@ -450,16 +453,16 @@ model PagamentoMesaItem {
 // ============================================================
 
 model RefreshToken {
-  id          String   @id @default(uuid()) @db.Uuid
-  usuario_id  String?  @db.Uuid
-  cliente_id  String?  @db.Uuid
-  token       String   @unique @db.Text
-  expira_em   DateTime @db.Timestamptz
-  usado       Boolean  @default(false)
-  criado_em   DateTime @default(now()) @db.Timestamptz
+  id         String   @id @default(uuid()) @db.Uuid
+  usuario_id String?  @db.Uuid
+  cliente_id String?  @db.Uuid
+  token      String   @unique @db.Text
+  expira_em  DateTime @db.Timestamptz
+  usado      Boolean  @default(false)
+  criado_em  DateTime @default(now()) @db.Timestamptz
 
-  usuario  Usuario? @relation(fields: [usuario_id], references: [id])
-  cliente  Cliente? @relation(fields: [cliente_id], references: [id])
+  usuario Usuario? @relation(fields: [usuario_id], references: [id])
+  cliente Cliente? @relation(fields: [cliente_id], references: [id])
 
   @@map("refresh_tokens")
 }
@@ -480,11 +483,11 @@ model Cliente {
   ativo            Boolean   @default(true)
   criado_em        DateTime  @default(now()) @db.Timestamptz
 
-  pedidos            Pedido[]
-  refresh_tokens     RefreshToken[]
-  reservas           Reserva[]
-  tokens_recuperacao TokenRecuperacaoSenhaCliente[]
-  tokens_confirmacao TokenConfirmacaoEmailCliente[]
+  pedidos                Pedido[]
+  refresh_tokens         RefreshToken[]
+  reservas               Reserva[]
+  tokens_recuperacao     TokenRecuperacaoSenhaCliente[]
+  tokens_confirmacao     TokenConfirmacaoEmailCliente[]
   tokens_alteracao_email TokenAlteracaoEmailCliente[]
 
   @@map("clientes")
@@ -533,41 +536,38 @@ model TokenRecuperacaoSenhaCliente {
 // ============================================================
 
 model Assinatura {
-  id                  String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  empresa_id          String           @db.Uuid
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  empresa_id          String            @db.Uuid
   plano               Plano
-  status              StatusAssinatura @default(PENDENTE)
-  gateway             String           @db.VarChar(50)   // "stripe" | "asaas" | "mercadopago"
-  gateway_id          String?          @db.VarChar(200)  // ID externo da assinatura
-  gateway_customer_id String?          @db.VarChar(200)
-  checkout_url        String?          @db.VarChar(500)  // Link de pagamento enviado ao cliente
-  token_registro      String?          @unique @db.VarChar(128) // Token liberado após pagamento
-  valor               Decimal          @db.Decimal(10, 2)
+  status              StatusAssinatura  @default(PENDENTE)
+  gateway             String            @db.VarChar(50) // "stripe" | "asaas" | "mercadopago"
+  gateway_id          String?           @db.VarChar(200) // ID externo da assinatura
+  gateway_customer_id String?           @db.VarChar(200)
+  checkout_url        String?           @db.VarChar(500) // Link de pagamento enviado ao cliente
+  token_registro      String?           @unique @db.VarChar(128) // Token liberado após pagamento
+  valor               Decimal           @db.Decimal(10, 2)
   periodo             PeriodoAssinatura @default(MENSAL)
-  inicia_em           DateTime?        @db.Timestamptz
-  expira_em           DateTime?        @db.Timestamptz
-  cancelada_em        DateTime?        @db.Timestamptz
-  criado_em           DateTime         @default(now()) @db.Timestamptz
-  atualizado_em       DateTime         @default(now()) @updatedAt @db.Timestamptz
+  inicia_em           DateTime?         @db.Timestamptz
+  expira_em           DateTime?         @db.Timestamptz
+  cancelada_em        DateTime?         @db.Timestamptz
+  criado_em           DateTime          @default(now()) @db.Timestamptz
+  atualizado_em       DateTime          @default(now()) @updatedAt @db.Timestamptz
 
   empresa Empresa @relation(fields: [empresa_id], references: [id])
 
   @@map("assinaturas")
 }
 
-
-
 model TokenRecuperacaoSenha {
-  id          String   @id @default(uuid()) @db.Uuid
-  usuario_id  String   @db.Uuid
-  usuario     Usuario  @relation(fields: [usuario_id], references: [id])
-  token       String   @unique @db.VarChar(64)
-  expira_em   DateTime @db.Timestamptz(0)
-  usado       Boolean  @default(false)
-  criado_em   DateTime @default(now()) @db.Timestamptz(0)
+  id         String   @id @default(uuid()) @db.Uuid
+  usuario_id String   @db.Uuid
+  usuario    Usuario  @relation(fields: [usuario_id], references: [id])
+  token      String   @unique @db.VarChar(64)
+  expira_em  DateTime @db.Timestamptz(0)
+  usado      Boolean  @default(false)
+  criado_em  DateTime @default(now()) @db.Timestamptz(0)
 
   @@map("tokens_recuperacao_senha")
-  
 }
 
 // ============================================================

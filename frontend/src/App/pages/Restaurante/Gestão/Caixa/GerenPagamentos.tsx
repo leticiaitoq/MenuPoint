@@ -212,6 +212,17 @@ const GerenPagamentos: React.FC = () => {
   const [filtro, setFiltro]             = useState<FiltroMesas>('todas');
   const [visualizacao, setVisualizacao] = useState<ModoVisualizacao>('grade');
 
+  // O modo lista só existe no desktop (> 768px). No celular/tablet sempre mostra a grade,
+  // mesmo que a lista tenha sido escolhida antes de reduzir a janela.
+  const [ehDesktop, setEhDesktop] = useState(() => window.matchMedia('(min-width: 769px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 769px)');
+    const atualizar = () => setEhDesktop(mq.matches);
+    mq.addEventListener('change', atualizar);
+    return () => mq.removeEventListener('change', atualizar);
+  }, []);
+  const modoExibido: ModoVisualizacao = ehDesktop ? visualizacao : 'grade';
+
   // id da mesa com o menu de ações (⋮) aberto — null = nenhum menu aberto
   const [menuAberto, setMenuAberto] = useState<string | null>(null);
 
@@ -835,7 +846,7 @@ const GerenPagamentos: React.FC = () => {
           ) : mesasFiltradas.length === 0 ? (
             <div className="caixa__vazio">{mensagemVazio}</div>
           ) : (
-            <div className={`caixa__grid caixa__grid--${visualizacao}`}>
+            <div className={`caixa__grid caixa__grid--${modoExibido}`}>
               {mesasFiltradas.map((mesa) => {
                 const clicavel = temPedido(mesa);
 

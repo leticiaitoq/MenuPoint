@@ -28,10 +28,22 @@ interface CarrinhoProps {
   itens: ItemCarrinho[];
   onFinalizar: () => void;
   onRemover: (id: string) => void;
+  /** Mostra o botão "Fechar a conta" abaixo do enviar. Só passe no cardápio da mesa (QR Code). */
+  onFecharConta?: () => void;
+  /** Bloqueia o botão depois que a conta já foi pedida */
+  contaPedida?: boolean;
 }
 
 
-const Carrinho: React.FC<CarrinhoProps> = ({ aberto, onFechar, itens, onFinalizar, onRemover }) => {
+const Carrinho: React.FC<CarrinhoProps> = ({
+  aberto,
+  onFechar,
+  itens,
+  onFinalizar,
+  onRemover,
+  onFecharConta,
+  contaPedida = false,
+}) => {
   const total = itens.reduce((acc, i) => acc + i.preco * i.quantidade, 0);
   
   return (
@@ -110,6 +122,16 @@ const Carrinho: React.FC<CarrinhoProps> = ({ aberto, onFechar, itens, onFinaliza
           >
             Enviar para a cozinha
           </button>
+
+          {onFecharConta && (
+            <button
+              className="carrinho__btn-conta"
+              onClick={onFecharConta}
+              disabled={contaPedida}
+            >
+              {contaPedida ? 'Conta solicitada' : 'Fechar a conta'}
+            </button>
+          )}
         </div>
 
       </aside>

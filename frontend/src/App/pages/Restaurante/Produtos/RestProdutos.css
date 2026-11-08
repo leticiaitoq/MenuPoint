@@ -223,3 +223,255 @@
   font-weight: 600;
   vertical-align: middle;
 }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVIDADE
+═══════════════════════════════════════════════ */
+
+/* Alça de arrastar: no toque, o dedo arrasta a linha em vez de rolar a página */
+.prod__drag-icon {
+  touch-action: none;
+}
+
+/* Tablet e celular: a tabela mantém a largura natural e ROLA PARA O LADO */
+@media (max-width: 768px) {
+  .prod__tabela-scroll {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 65vh;
+    max-height: 65dvh;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+
+    /* sombra na borda direita indica que há mais conteúdo para ver */
+    background:
+      linear-gradient(to right, var(--bg-surface) 30%, transparent) 0 0 / 40px 100% no-repeat local,
+      linear-gradient(to left, var(--bg-surface) 30%, transparent) 100% 0 / 40px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, var(--shadow-color), transparent) 0 0 / 14px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, var(--shadow-color), transparent) 100% 0 / 14px 100% no-repeat scroll;
+  }
+
+  .prod__tabela {
+    min-width: 680px; /* força a rolagem lateral em vez de espremer as colunas */
+  }
+
+  .prod__tabela th,
+  .prod__tabela td {
+    padding: 12px;
+    white-space: nowrap;
+  }
+
+  /* coluna "Produto" fica fixa à esquerda enquanto o resto desliza */
+  .prod__tabela th:nth-child(2),
+  .prod__tabela td:nth-child(2) {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--bg-surface);
+    box-shadow: 1px 0 0 var(--bg-surface-alt);
+  }
+
+  .prod__tabela thead th:nth-child(2) {
+    z-index: 2;
+    background: var(--brand-soft);
+  }
+
+  /* nome longo corta com "…" para a coluna fixa não cobrir as outras */
+  .prod__tabela td:nth-child(2) {
+    width: 190px;
+    max-width: 190px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* alvos de toque maiores nas ações */
+  .prod__btn-acao { padding: 8px; font-size: 20px; }
+}
+
+/* Celular */
+@media (max-width: 600px) {
+  .prod__titulo { font-size: 21px; }
+
+  .prod__header { flex-wrap: wrap; gap: 12px; }
+
+  .prod__btn-novo {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .prod__filtros { gap: 10px; }
+
+  .prod__busca-wrap { flex: 1 1 100%; min-width: 0; }
+
+  .prod__select {
+    flex: 1 1 calc(50% - 5px);
+    min-width: 0;
+    min-height: 40px;
+  }
+
+  .prod__container { border-radius: 10px; padding-top: 12px; }
+
+  .prod__dica { padding: 0 12px 10px 12px; }
+}
+
+/* ═══════════════════════════════════════════════
+   CELULAR (≤ 600px): cada produto vira um CARD
+   (acima disso continua a tabela com rolagem lateral)
+
+   ┌───────────────────────────────┐
+   │ ⋮⋮ 1  [foto] Nome       ★    │
+   │        R$ 19,90    Lanches    │
+   │        [Ativa]      ✎  🗑     │
+   └───────────────────────────────┘
+═══════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  /* sem rolagem lateral: a página rola normalmente */
+  .prod__tabela-scroll {
+    overflow: visible;
+    max-height: none;
+    background: none;
+  }
+
+  .prod__tabela,
+  .prod__tabela tbody {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* cabeçalho some da tela, mas continua para leitores de tela */
+  .prod__tabela thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .prod__tabela tbody {
+    padding: 0 12px;
+  }
+
+  .prod__linha {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto auto;
+    column-gap: 10px;
+    row-gap: 6px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .prod__linha--arrastando {
+    box-shadow: 0 6px 18px var(--shadow-color);
+  }
+
+  .prod__tabela td,
+  .prod__tabela td:nth-child(2) {
+    display: block;
+    position: static;
+    width: auto;
+    max-width: none;
+    padding: 0;
+    overflow: visible;
+    white-space: normal;
+    background: none;
+    box-shadow: none;
+  }
+
+  /* 1. ordem + alça: coluna da esquerda, ocupa as 3 linhas */
+  .prod__td-ordem {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+  }
+
+  .prod__drag-icon {
+    margin: 0;
+    font-size: 24px;
+    padding: 6px 2px; /* área de toque maior */
+  }
+
+  /* 2. foto à esquerda; nome ao lado; selo "Destaque" embaixo do nome */
+  .prod__tabela td.prod__td-produto {
+    grid-column: 2 / span 2;
+    grid-row: 1;
+    display: block;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .prod__td-produto::after { content: ""; display: table; clear: both; }
+
+  .prod__imagem {
+    float: left;
+    width: 52px;
+    height: 52px;
+    margin: 0 10px 0 0;
+  }
+
+  .prod__destaque {
+    display: flex;
+    width: fit-content;
+    margin: 4px 0 0 0;
+    white-space: nowrap;
+  }
+
+  /* 3. preço */
+  .prod__tabela td:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  /* 4. categoria */
+  .prod__tabela td:nth-child(4) {
+    grid-column: 3;
+    grid-row: 2;
+    text-align: right;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* 5. status */
+  .prod__tabela td:nth-child(5) {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  /* 6. ações: botões grandes para o toque */
+  .prod__tabela td.prod__td-acoes {
+    grid-column: 3;
+    grid-row: 3;
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .prod__btn-acao {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--bg-surface-alt);
+    border-radius: 10px;
+  }
+
+  /* dica de arrastar: fica fora dos cards */
+  .prod__dica--bottom { padding: 4px 12px 8px; }
+}

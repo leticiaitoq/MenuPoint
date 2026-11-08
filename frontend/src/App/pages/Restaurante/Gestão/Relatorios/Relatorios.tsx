@@ -237,7 +237,7 @@ const Relatorios: React.FC = () => {
         {/* ── Cards de resumo ── */}
         <div className="relatorios__cards">
 
-          <div className="relatorios__card relatorios__card--vermelho">
+          <div className="relatorios__card relatorios__card--vermelho relatorios__card--largo">
             <div className="relatorios__card-topo">
               <HiTrendingUp className="relatorios__card-icone" />
               <span>Faturamento</span>
@@ -262,7 +262,7 @@ const Relatorios: React.FC = () => {
             <p className="relatorios__card-valor">{formatarPreco(ticketMedio)}</p>
           </div>
 
-          <div className="relatorios__card relatorios__card--amarelo">
+          <div className="relatorios__card relatorios__card--amarelo relatorios__card--largo">
             <div className="relatorios__card-topo">
               <BsTrophy className="relatorios__card-icone" />
               <span>Produtos Mais Vendidos</span>

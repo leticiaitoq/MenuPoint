@@ -312,3 +312,52 @@
   background: var(--brand-soft);
   color: var(--accent);
 }
+
+
+/* ═══════════════════════════════════════════════
+   MOBILE: lista do botão ☰ (Configurações, Filiais, WhatsApp, tema)
+═══════════════════════════════════════════════ */
+
+.mobile-drawer__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px; /* alvo de toque confortável */
+  font-size: 15px;
+  font-family: inherit;
+  text-align: left;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.mobile-drawer__link-icon {
+  display: flex;
+  align-items: center;
+  font-size: 22px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.mobile-drawer__tema {
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 8px 8px;
+  margin-top: 4px;
+}
+
+/* Telas bem estreitas: barra mais compacta para caber 7 itens */
+@media (max-width: 360px) {
+  .mobile-nav {
+    padding: 0;
+  }
+
+  .mobile-nav__icon {
+    font-size: 20px;
+  }
+
+  .mobile-nav__label {
+    font-size: 9px;
+  }
+}

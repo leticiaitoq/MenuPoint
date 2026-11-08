@@ -384,3 +384,65 @@
 .pagar-parcial__badge--parcial { background: #fff4d6; color: #8a5a00; }
 .pagar-parcial__badge--nao { background: #f2f2f2; color: #888; }
 .pagar-parcial__aviso--erro { color: #b3261e; }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVIDADE
+   900px: mesmo ponto de quebra da PagarMesa (a sidebar de 200px
+   deixa as duas colunas apertadas antes do breakpoint padrão).
+═══════════════════════════════════════════════ */
+
+/* Tablet: colunas empilhadas (itens primeiro, pagamento depois) */
+@media (max-width: 900px) {
+  .pagar-parcial__corpo {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .pagar-parcial__card--itens,
+  .pagar-parcial__card--pagamento {
+    flex: none;
+    width: 100%;
+    min-width: 0; /* remove o min-width: 320px */
+  }
+}
+
+/* Celular */
+@media (max-width: 600px) {
+  .pagar-parcial { gap: 16px; }
+
+  .pagar-parcial__titulo-pagina { font-size: 19px; }
+
+  .pagar-parcial__card { padding: 16px; }
+
+  /* linha do item: área de toque confortável (checkbox + nome) */
+  .pagar-parcial__item {
+    gap: 10px;
+    padding: 8px 0;
+    min-height: 48px;
+  }
+
+  .pagar-parcial__item-label { gap: 12px; min-width: 0; }
+
+  .pagar-parcial__item-nome { overflow-wrap: anywhere; }
+
+  .pagar-parcial__checkbox { width: 22px; height: 22px; flex-shrink: 0; }
+
+  .pagar-parcial__item-preco { min-width: 0; }
+
+  .pagar-parcial__tabs { gap: 16px; overflow-x: auto; scrollbar-width: none; }
+
+  .pagar-parcial__tab { white-space: nowrap; }
+}
+
+/* Celular pequeno: forma de pagamento em 2 linhas (select em cima) */
+@media (max-width: 480px) {
+  .pagar-parcial__forma {
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+  }
+
+  .pagar-parcial__forma > :first-child { grid-column: 1 / -1; }
+
+  .pagar-parcial__concluir { min-height: 48px; }
+}

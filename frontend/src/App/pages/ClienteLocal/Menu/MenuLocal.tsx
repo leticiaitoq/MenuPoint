@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import Carrinho from '../../../shared/components/Carrinho/Carrinho';
+import ChamarGarcom from '../../../shared/components/ChamarGarcom/Chamargarcom';
+import FecharConta from '../../../shared/components/FecharConta/FecharConta';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
 import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/ingredientes';
@@ -9,7 +11,7 @@ import RestaurantePublicoService from '../../../services/restaurantePublico.serv
 import MesaPublicaService from '../../../services/mesaPublica.service';
 import './MenuLocal.css';
 
-// ── Tipos 
+// ── Tipos
 interface Categoria {
   id: string;
   label: string;
@@ -48,10 +50,16 @@ const MenuLocal: React.FC = () => {
   // ── Estados
   const navigate = useNavigate();
   const { itens: itensCarrinho, removerItem, limparCarrinho } = useCarrinho();
-  const { nome: nomeConvidado, mesaToken, estabelecimentoId } = useConvidado();
+  const { mesa, nome: nomeConvidado, mesaToken, estabelecimentoId } = useConvidado();
   const [busca, setBusca]                     = useState('');
   const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
   const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
+  const [contaAberta, setContaAberta]         = useState(false);
+  const [contaPedida, setContaPedida]         = useState(false);
+  const timerConta = useRef<number | undefined>(undefined);
+
+  // Limpa o temporizador ao sair da tela
+  useEffect(() => () => window.clearTimeout(timerConta.current), []);
 
   const [categorias, setCategorias] = useState<Categoria[]>([CATEGORIA_TODOS]);
   const [produtos, setProdutos]     = useState<Produto[]>([]);
@@ -142,6 +150,13 @@ const MenuLocal: React.FC = () => {
     navigate('/personaliza', { state: { produto, modoCliente: 'guest' } });
   };
 
+  // Depois de pedir a conta, o botão fica bloqueado por 2 minutos (evita pedidos repetidos)
+  const aoPedirConta = () => {
+    setContaPedida(true);
+    window.clearTimeout(timerConta.current);
+    timerConta.current = window.setTimeout(() => setContaPedida(false), 120_000);
+  };
+
   // Envia o carrinho para a cozinha. O preço é recalculado pelo servidor.
   const finalizarPedido = async () => {
     if (enviando || itensCarrinho.length === 0) return;
@@ -214,16 +229,21 @@ const MenuLocal: React.FC = () => {
           </p>
         )}
 
-        {/* Busca */}
-        <div className="menu__busca-wrap">
-           <img src="/icons/lupa.png" alt="" className="menu__busca-icon" />
-          <input
-            className="menu__busca"
-            type="text"
-            placeholder="Procurar"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
+        {/* Busca + botão Chamar garçom (o botão só aparece quando entrou pelo QR da mesa) */}
+        <div className="menu__topo">
+          <div className="menu__busca-wrap">
+            <img src="/icons/lupa.png" alt="" className="menu__busca-icon" />
+            <input
+              className="menu__busca"
+              type="text"
+              placeholder="Procurar"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </div>
+          {mesaToken && (
+            <ChamarGarcom mesa={mesa} onChamar={() => MesaPublicaService.chamarGarcom(mesaToken)} />
+          )}
         </div>
 
         {/* Categorias */}
@@ -285,7 +305,20 @@ const MenuLocal: React.FC = () => {
         itens={itensCarrinho}
         onRemover={removerItem}
         onFinalizar={finalizarPedido}
+        onFecharConta={mesaToken ? () => setContaAberta(true) : undefined}
+        contaPedida={contaPedida}
       />
+
+      {mesaToken && (
+        <FecharConta
+          aberto={contaAberta}
+          mesa={mesa}
+          itensNoCarrinho={totalCarrinho}
+          onPedir={(forma) => MesaPublicaService.pedirConta(mesaToken, forma)}
+          onConcluido={aoPedirConta}
+          onFechar={() => setContaAberta(false)}
+        />
+      )}
     </CustomerLayout>
   );
 };

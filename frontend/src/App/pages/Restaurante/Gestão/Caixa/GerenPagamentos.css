@@ -224,7 +224,8 @@
 ═══════════════════════════════════════════════ */
 .caixa__grid--grade {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* fluido: 2 colunas no celular, 3 no tablet, 4+ no desktop */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr));
   gap: 18px;
 }
 
@@ -975,4 +976,50 @@
 @media (max-width: 720px) {
   .caixa__resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .caixa__reserva-acoes { width: 100%; }
+}
+
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVIDADE — lista de mesas
+═══════════════════════════════════════════════ */
+
+/* Tablet e celular */
+@media (max-width: 768px) {
+  .caixa__titulo { font-size: 22px; }
+
+  /* abas rolam na horizontal em vez de quebrar linha */
+  .caixa__filtros { flex-wrap: nowrap; gap: 8px; }
+
+  .caixa__abas {
+    gap: 20px;
+    overflow-x: auto;
+    flex: 1;
+    min-width: 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .caixa__abas::-webkit-scrollbar { display: none; }
+
+  .caixa__aba { white-space: nowrap; flex-shrink: 0; }
+
+  /* alternar grade/lista só faz sentido no desktop */
+  .caixa__visualizacao { display: none; }
+}
+
+/* Celular */
+@media (max-width: 600px) {
+  .caixa__grid--grade { gap: 12px; }
+
+  .caixa__card { padding: 14px; }
+
+  .caixa__card-nome { font-size: 16px; }
+
+  /* header: chip e botões ocupam a linha toda, sem estourar */
+  .caixa__header-acoes { width: 100%; }
+
+  .caixa__header-acoes > * { flex: 1 1 auto; justify-content: center; }
+
+  /* menus ⋮ nunca passam da borda da tela */
+  .caixa__card-menu { max-width: calc(100vw - 32px); }
 }

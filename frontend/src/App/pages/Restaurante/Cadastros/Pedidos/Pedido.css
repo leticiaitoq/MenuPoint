@@ -605,3 +605,95 @@
   font-weight: 600;
   color: var(--accent);
 }
+
+/* ═══════════════════════════════════════════════
+   CELULAR (≤ 600px): itens do pedido viram mini CARDS
+
+   ┌───────────────────────────────┐
+   │ Nome do item              🗑  │
+   │ R$ 19,90 cada                 │
+   │ [−] 2 [+]          R$ 39,80   │
+   └───────────────────────────────┘
+═══════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .pedido__tabela-wrap {
+    overflow: visible;
+    border: none;
+    border-radius: 0;
+  }
+
+  .pedido__tabela,
+  .pedido__tabela tbody {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* cabeçalho some da tela, mas continua para leitores de tela */
+  .pedido__tabela thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .pedido__tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 10px;
+    row-gap: 6px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .pedido__tr .pedido__td {
+    display: block;
+    padding: 0;
+    border: none;
+    min-width: 0;
+    text-align: left;
+  }
+
+  /* nome do item */
+  .pedido__tr .pedido__td:nth-child(1) {
+    grid-column: 1; grid-row: 1;
+    font-size: 15px; font-weight: 600; overflow-wrap: anywhere;
+  }
+
+  /* lixeira */
+  .pedido__tr .pedido__td:nth-child(5) { grid-column: 2; grid-row: 1; display: flex; justify-content: flex-end; }
+
+  .pedido__tr .pedido__btn-del { min-width: 40px; min-height: 40px; }
+
+  /* preço unitário */
+  .pedido__tr .pedido__td:nth-child(3) {
+    grid-column: 1 / -1; grid-row: 2;
+    font-size: 13px; color: var(--text-muted);
+  }
+
+  .pedido__tr .pedido__td:nth-child(3)::after { content: " cada"; }
+
+  /* quantidade */
+  .pedido__tr .pedido__td:nth-child(2) { grid-column: 1; grid-row: 3; }
+
+  /* subtotal */
+  .pedido__tr .pedido__td:nth-child(4) {
+    grid-column: 2; grid-row: 3; text-align: right;
+    font-size: 17px; font-weight: 700; color: var(--accent);
+  }
+
+  /* linha "Nenhum item adicionado ainda" */
+  .pedido__tabela tbody tr:not(.pedido__tr) { display: block; }
+
+  .pedido__tabela td.pedido__vazio { display: block; text-align: center; padding: 16px 0; }
+
+  /* botões do rodapé: Salvar / Sair ocupam a largura toda */
+  .pedido__acoes { flex-direction: column-reverse; }
+
+  .pedido__acoes > button { width: 100%; min-height: 46px; }
+}
