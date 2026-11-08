@@ -9,3 +9,17 @@ html, body, #root {
   width: 100%;
   height: 100%;
 }
+
+/* Autofill do navegador: usa as cores do tema (antes ficava sempre branco no escuro) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-surface-alt) inset;
+  box-shadow: 0 0 0 1000px var(--bg-surface-alt) inset;
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  transition: background-color 9999s ease-in-out 0s;
+}

@@ -14,7 +14,7 @@
   display: flex; align-items: center; justify-content: center;
   background: var(--info-soft); color: var(--info); font-size: 22px;
 }
-.acaoped__icone--perigo { background: var(--brand-soft); color: var(--brand); }
+.acaoped__icone--perigo { background: var(--brand-soft); color: var(--accent); }
 .acaoped__header-texto { flex: 1; }
 .acaoped__titulo { margin: 0; font-size: 17px; font-weight: 700; color: var(--text); }
 .acaoped__subtitulo { margin: 2px 0 0; font-size: 13px; color: var(--text-faint); }
@@ -39,7 +39,7 @@
 .acaoped__textarea { margin-top: 8px; min-height: 70px; resize: vertical; }
 .acaoped__erro {
   margin-top: 12px; padding: 10px 12px; border-radius: 10px;
-  background: var(--brand-soft); color: var(--brand); font-size: 13px;
+  background: var(--brand-soft); color: var(--accent); font-size: 13px;
 }
 .acaoped__acoes { display: flex; gap: 10px; padding: 12px 20px 18px; }
 .acaoped__btn {

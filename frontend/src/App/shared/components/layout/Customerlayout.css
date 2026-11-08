@@ -11,8 +11,14 @@
 }
 
 .customer-layout__content {
+  /* Respiro da área de conteúdo. As telas com fundo em arte (.menu) usam estas
+     mesmas variáveis para "sangrar" até a borda sem gerar rolagem horizontal. */
+  --cl-pad-x: 24px;
+  --cl-pad-y: 24px;
+  --cl-pad-b: 24px;
   flex: 1;
-  padding: 24px;
+  min-width: 0;            /* evita estourar a largura dentro do flex */
+  padding: var(--cl-pad-y) var(--cl-pad-x) var(--cl-pad-b);
   overflow-y: auto;
 }
 
@@ -71,6 +77,7 @@
   flex: 1 0 auto;
 }
 
+<<<<<<< HEAD
 @media (max-width: 600px) {
   /* cancela exatamente o padding do main no celular */
   .customer-layout__content > .menu {
@@ -78,6 +85,29 @@
     padding: 16px 12px 60px; /* os 60px de baixo são o espaço da bottom nav */
   }
 }
+=======
+/* ── Tablet e celular ──
+   Mesmo ponto de corte (768px) da sidebar que vira barra inferior e do layout do restaurante. */
+@media (max-width: 768px) {
+  .customer-layout__body {
+    flex-direction: column;
+  }
+
+  .customer-layout__content {
+    --cl-pad-x: 16px;
+    --cl-pad-y: 16px;
+    /* altura da barra inferior (60px) + folga + área segura do iPhone */
+    --cl-pad-b: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 480px) {
+  .customer-layout__content {
+    --cl-pad-x: 12px;
+  }
+}
+
+>>>>>>> origin/feature/integracao-front
 /* ── Botão "Voltar" no topo das telas internas ── */
 .customer-layout__voltar {
   display: inline-flex;
@@ -94,6 +124,11 @@
   cursor: pointer;
   transition: background-color 0.15s, border-color 0.15s;
 }
+<<<<<<< HEAD
 .customer-layout__voltar:hover { border-color: var(--brand); color: var(--brand); }
 .customer-layout__voltar:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+=======
+.customer-layout__voltar:hover { border-color: var(--accent); color: var(--accent); }
+.customer-layout__voltar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+>>>>>>> origin/feature/integracao-front
 

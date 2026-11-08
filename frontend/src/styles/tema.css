@@ -33,6 +33,7 @@
   --success-soft: #e6f2e2;
   --success-text: #166534;
   --warning: #e6a817;
+  --warning-hover: #cf8f00;
   --warning-soft: #fff4e5;
   --warning-text: #7a4a00;
   --danger: #dc2626;
@@ -80,6 +81,7 @@
   --success-soft: #1d3326;
   --success-text: #7fdba0;
   --warning: #f5b35a;
+  --warning-hover: #e8a040;
   --warning-soft: #3b2f17;
   --warning-text: #f5c26b;
   --danger: #ff7a6e;
@@ -118,6 +120,7 @@ optgroup {
   filter: invert(1) hue-rotate(180deg) brightness(0.85);
 }
 
+<<<<<<< HEAD
 .login-page__input:-webkit-autofill,
 .login-page__input:-webkit-autofill:hover,
 .login-page__input:-webkit-autofill:focus,
@@ -144,3 +147,20 @@ optgroup {
   caret-color: #1a1a1a;
   transition: background-color 9999s ease-in-out 0s;
 }
+=======
+
+
+/* Telas de login/cadastro (restaurante e cliente) usam a arte clara Register-Back.png.
+   No escuro ela é multiplicada por um cinza para não ofuscar ao redor do cartão. */
+[data-theme="dark"] .login-page,
+[data-theme="dark"] .register-page,
+[data-theme="dark"] .recover-pass,
+[data-theme="dark"] .verify-page,
+[data-theme="dark"] .login-cliente,
+[data-theme="dark"] .register-cliente,
+[data-theme="dark"] .recover-pass-cliente,
+[data-theme="dark"] .verify-cliente {
+  background-color: #4a4545;
+  background-blend-mode: multiply;
+}
+>>>>>>> origin/feature/integracao-front

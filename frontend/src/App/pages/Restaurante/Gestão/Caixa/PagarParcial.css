@@ -384,6 +384,7 @@
 .pagar-parcial__badge--parcial { background: #fff4d6; color: #8a5a00; }
 .pagar-parcial__badge--nao { background: #f2f2f2; color: #888; }
 .pagar-parcial__aviso--erro { color: #b3261e; }
+<<<<<<< HEAD
 
 /* ═══════════════════════════════════════════════
    RESPONSIVIDADE
@@ -446,3 +447,5 @@
 
   .pagar-parcial__concluir { min-height: 48px; }
 }
+=======
+>>>>>>> origin/feature/integracao-front

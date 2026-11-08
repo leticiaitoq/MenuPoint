@@ -1,11 +1,16 @@
 .comprov__overlay {
   position: fixed; inset: 0; z-index: 1200;
   display: flex; align-items: center; justify-content: center;
+<<<<<<< HEAD
   padding: 16px; background: rgba(0, 0, 0, 0.5);
+=======
+  padding: 16px; background: var(--overlay);
+>>>>>>> origin/feature/integracao-front
 }
 .comprov__modal {
   width: 100%; max-width: 440px; max-height: calc(100vh - 32px);
   display: flex; flex-direction: column; overflow: hidden;
+<<<<<<< HEAD
   background: #fff; border-radius: 16px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
 .comprov__header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 8px; }
@@ -18,12 +23,30 @@
 }
 .comprov__abas .comprov__aba--ativa { border-color: #c0392b; background: #fdecea; color: #c0392b; }
 .comprov__corpo { padding: 8px 20px; overflow-y: auto; background: #f4f4f4; }
+=======
+  background: var(--bg-surface); color: var(--text); border-radius: 16px; box-shadow: 0 20px 50px var(--shadow-color);
+}
+.comprov__header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 8px; }
+.comprov__header h3 { margin: 0; font-size: 17px; }
+.comprov__fechar { display: flex; background: none; border: none; font-size: 22px; color: var(--text-muted); cursor: pointer; }
+.comprov__abas { display: flex; gap: 8px; padding: 0 20px 8px; }
+.comprov__abas button {
+  flex: 1; padding: 8px 10px; border-radius: 50px; border: 1.5px solid var(--border);
+  background: var(--bg-surface); font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer;
+}
+.comprov__abas .comprov__aba--ativa { border-color: var(--accent); background: var(--brand-soft); color: var(--accent); }
+.comprov__corpo { padding: 8px 20px; overflow-y: auto; background: var(--bg-surface-alt); }
+>>>>>>> origin/feature/integracao-front
 
 /* A "folha" imita o cupom */
 .comprov-folha {
   margin: 0 auto; width: 100%; max-width: 340px; padding: 18px 16px;
   background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+<<<<<<< HEAD
   font-family: "Courier New", monospace; font-size: 13px; color: #111;
+=======
+  font-family: "Courier New", monospace; font-size: 13px; color: #111; /* papel: fixo de propósito, também no tema escuro */
+>>>>>>> origin/feature/integracao-front
 }
 .comprov__texto { margin: 0 0 4px; word-break: break-word; }
 .comprov__texto--centro { text-align: center; }

@@ -73,6 +73,11 @@ model Estabelecimento {
   pedidos    Pedido[]
   pagamentos Pagamento[]
   pagamentos_mesa PagamentoMesa[]
+<<<<<<< HEAD
+=======
+  despesas          Despesa[]
+  categorias_despesa CategoriaDespesa[]
+>>>>>>> origin/feature/integracao-front
 
   @@map("estabelecimentos")
 }
@@ -284,9 +289,11 @@ model Reserva {
   status             StatusReserva @default(PENDENTE)
   criado_em          DateTime      @default(now()) @db.Timestamptz
   atualizado_em      DateTime      @default(now()) @updatedAt @db.Timestamptz
+  cliente_id String?
 
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   mesa            Mesa?           @relation(fields: [mesa_id], references: [id])
+  cliente    Cliente? @relation(fields: [cliente_id], references: [id])
   confirmada_por  Usuario?        @relation("ConfirmadaPor", fields: [confirmada_por_id], references: [id])
   cliente         Cliente?        @relation(fields: [cliente_id], references: [id])
   pedidos         Pedido[]
@@ -467,7 +474,6 @@ model RefreshToken {
 // ============================================================
 // GRUPO - 10 - CLIENTES (endusers do cardápio)
 // ============================================================
-
 model Cliente {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nome             String    @db.VarChar(100)
@@ -475,7 +481,7 @@ model Cliente {
   email            String?   @unique @db.VarChar(150)
   senha_hash       String?   @db.VarChar(255)
   cpf              String?   @unique @db.VarChar(14)
-  foto_url         String?   @db.VarChar(500)   // foto de perfil (URL pública no Supabase Storage)
+  foto_url         String?   @db.VarChar(500)
   email_verificado Boolean   @default(false)
   ultimo_acesso    DateTime? @db.Timestamptz
   ativo            Boolean   @default(true)
@@ -484,6 +490,7 @@ model Cliente {
   pedidos            Pedido[]
   reservas           Reserva[]
   refresh_tokens     RefreshToken[]
+  reservas           Reserva[]
   tokens_recuperacao TokenRecuperacaoSenhaCliente[]
   tokens_confirmacao TokenConfirmacaoEmailCliente[]
   tokens_alteracao_email TokenAlteracaoEmailCliente[]
@@ -599,6 +606,52 @@ enum TipoChavePix {
   ALEATORIA
 
   @@map("tipo_chave_pix")
+}
+
+// ============================================================
+// DESPESAS (Relatórios do restaurante)
+// ============================================================
+
+// Despesas do estabelecimento: alimentam a tela de Despesas e o painel do Relatórios.
+model Despesa {
+  id                 String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String                @db.Uuid
+  descricao          String                @db.VarChar(100)
+  categoria          String                @db.VarChar(50)
+  fornecedor         String?               @db.VarChar(100)
+  forma_pagamento    FormaPagamentoDespesa
+  valor              Decimal               @db.Decimal(10, 2)
+  data_despesa       DateTime              @db.Date
+  observacoes        String?
+  criado_em          DateTime              @default(now()) @db.Timestamptz
+  atualizado_em      DateTime              @default(now()) @updatedAt @db.Timestamptz
+
+  estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
+
+  @@index([estabelecimento_id, data_despesa])
+  @@map("despesas")
+}
+
+// Categorias criadas pelo próprio restaurante (as padrão ficam no código, ver Despesa.schema.ts)
+model CategoriaDespesa {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String   @db.Uuid
+  nome               String   @db.VarChar(50)
+  criado_em          DateTime @default(now()) @db.Timestamptz
+
+  estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
+
+  @@unique([estabelecimento_id, nome])
+  @@map("categorias_despesa")
+}
+
+enum FormaPagamentoDespesa {
+  PIX
+  BOLETO
+  CARTAO
+  DINHEIRO
+
+  @@map("forma_pagamento_despesa")
 }
 
 enum Perfil {

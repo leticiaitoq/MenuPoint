@@ -14,13 +14,21 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
+<<<<<<< HEAD
   color: var(--brand);
+=======
+  color: var(--accent);
+>>>>>>> origin/feature/integracao-front
   font-size: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+<<<<<<< HEAD
   transition: background 0.15s;
+=======
+  transition: backgrouand 0.15s;
+>>>>>>> origin/feature/integracao-front
 }
 .qstepper__btn:hover:not(:disabled) { background: var(--brand-soft); }
 .qstepper__btn:disabled { opacity: 0.3; cursor: not-allowed; }

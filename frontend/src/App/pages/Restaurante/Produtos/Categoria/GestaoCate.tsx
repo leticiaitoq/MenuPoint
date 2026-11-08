@@ -1,5 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+<<<<<<< HEAD
 import { HiPencil, HiTrash, HiPlus, HiX, HiPuzzle, HiChevronDown, HiChevronUp, HiChevronRight, HiLockClosed} from 'react-icons/hi';
+=======
+import { HiPencil, HiTrash, HiPlus, HiX, HiPuzzle, HiChevronDown, HiChevronUp, HiLockClosed } from 'react-icons/hi';
+>>>>>>> origin/feature/integracao-front
 import { MdDragIndicator } from 'react-icons/md';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
 import {
@@ -709,6 +713,7 @@ const GestaoCate: React.FC = () => {
           )}
         </div>
 
+<<<<<<< HEAD
        {categoriaDaAba && (
   <div className="cate__tela">
     <button className="cate__tela-fechar" onClick={() => setCategoriaAberta(null)} aria-label="Fechar adicionais">
@@ -717,6 +722,99 @@ const GestaoCate: React.FC = () => {
     {painelAdicionais}
   </div>
 )}
+=======
+        {/* ── Aba: adicionais da categoria selecionada ── */}
+        {categoriaDaAba && (
+          <div className="cate__adic" ref={painelAdicionaisRef} role="region" aria-label={`Adicionais de ${categoriaDaAba.nome}`}>
+            <div className="cate__adic-aba">
+              <HiPuzzle aria-hidden="true" />
+              Adicionais de
+              <strong>{categoriaDaAba.icone ?? '🍽️'} {categoriaDaAba.nome}</strong>
+              <span className="cate__adic-qtd">{adicionais.length}</span>
+            </div>
+
+            <div className="cate__adic-corpo">
+              <div className="cate__adic-topo">
+                <p className="cate__subtitulo">Complementos que o cliente pode escolher nos produtos desta categoria.</p>
+                <button className="cate__btn-interno" onClick={() => abrirModalAdicional(categoriaDaAba)}>
+                  <HiPlus /> Novo item
+                </button>
+              </div>
+
+              {!categoriaDaAba.ativo && (
+                <p className="cate__aviso-categoria">
+                  Esta categoria está desativada, então nenhum adicional aparece no cardápio. Ao reativá-la, eles voltam ao status que tinham.
+                </p>
+              )}
+
+              {erroAdicionais && <p className="cate__erro">{erroAdicionais}</p>}
+
+              {carregandoAdic || adicionaisDe !== categoriaAberta ? (
+                <p className="cate__dica cate__dica--neutra">Carregando adicionais...</p>
+              ) : adicionais.length === 0 ? (
+                <p className="cate__dica cate__dica--neutra">Nenhum item cadastrado nesta categoria ainda.</p>
+              ) : (
+                <div className="cate__tabela-scroll">
+                  <table className="cate__tabela cate__tabela--adic">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th>Tipo</th>
+                        <th>Pode pedir até</th>
+                        <th>Preço do extra</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {adicionais.map((adicional) => (
+                        <tr key={adicional.id}>
+                          <td className="cate__td-nome cate__td-quebra">
+                            {adicional.nome}
+                            {adicional.descricao && <small className="cate__adic-descricao">{adicional.descricao}</small>}
+                          </td>
+                          <td>
+                            {adicional.quantidade_inclusa > 0 ? (
+                              <span className="cate__tag">
+                                Vem {adicional.quantidade_inclusa}
+                                {adicional.fixo && <span className="cate__tag-fixo"><HiLockClosed aria-hidden="true" /> Fixo</span>}
+                              </span>
+                            ) : (
+                              <span className="cate__tag cate__tag--extra">Adicional</span>
+                            )}
+                          </td>
+                          <td>{adicional.quantidade_maxima}</td>
+                          <td>
+                            {adicional.quantidade_maxima > adicional.quantidade_inclusa
+                              ? formatarReais(Math.round(adicional.preco * 100))
+                              : '—'}
+                          </td>
+                          <td>
+                            {/* Categoria desativada oculta os adicionais sem alterar o status de cada um */}
+                            <span className={`cate__badge ${adicional.ativo && categoriaDaAba.ativo ? 'cate__badge--ativo' : 'cate__badge--inativo'}`}>
+                              {!adicional.ativo ? 'Oculto' : !categoriaDaAba.ativo ? 'Oculto (categoria desativada)' : 'Ativo'}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="cate__td-acoes cate__td-acoes--adic">
+                              <button className="cate__btn-acao" onClick={() => abrirModalAdicional(categoriaDaAba, adicional)} aria-label={`Editar ${adicional.nome}`}>
+                                <HiPencil />
+                              </button>
+                              <button className="cate__btn-acao cate__btn-acao--deletar" onClick={() => setAdicParaExcluir(adicional)} aria-label={`Excluir ${adicional.nome}`}>
+                                <HiTrash />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+>>>>>>> origin/feature/integracao-front
 
         {/* ── Modal Novo / Editar Adicional (já dentro da categoria) ── */}
         {modalAdicional && (

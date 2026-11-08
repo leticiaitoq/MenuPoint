@@ -136,7 +136,11 @@
 
 /* Pediu extra: o valor que soma aparece em destaque */
 .perso-pedido__item--extra .perso-pedido__item-detalhe {
+<<<<<<< HEAD
   color: var(--brand);
+=======
+  color: var(--accent);
+>>>>>>> origin/feature/integracao-front
   font-weight: 700;
 }
 
@@ -190,13 +194,22 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
+<<<<<<< HEAD
   background-color: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+=======
+  background-color: var(--bg-surface);
+  box-shadow: 0 1px 3px var(--shadow-color);
+>>>>>>> origin/feature/integracao-front
   transition: transform 0.2s;
 }
 .perso-pedido__switch:checked { background-color: var(--brand); }
 .perso-pedido__switch:checked::after { transform: translateX(20px); }
+<<<<<<< HEAD
 .perso-pedido__switch:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+=======
+.perso-pedido__switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+>>>>>>> origin/feature/integracao-front
 
 /* ── Observação ── */
 .perso-pedido__observacao {
@@ -261,6 +274,7 @@
   transition: background-color 0.2s;
 }
 
+<<<<<<< HEAD
 .perso-pedido__botao-confirmar:hover {
   background-color: var(--brand-hover);
 }
@@ -342,4 +356,17 @@
     align-self: stretch;
     padding: 16px 24px;
   }
+=======
+.perso-pedido__botao-confirmar:hover { background-color: var(--brand-hover); }
+
+/* ── Celular ── */
+@media (max-width: 640px) {
+  .perso-pedido__topo { flex-wrap: wrap; gap: 14px; padding: 16px; }
+  .perso-pedido__imagem { width: 96px; height: 96px; }
+  .perso-pedido__nome { font-size: 20px; }
+  .perso-pedido__preco { font-size: 26px; width: 100%; }
+  .perso-pedido__secao { padding: 16px 16px 4px; }
+  .perso-pedido__barra { padding-left: 18px; }
+  .perso-pedido__botao-confirmar { padding: 14px 22px; }
+>>>>>>> origin/feature/integracao-front
 }

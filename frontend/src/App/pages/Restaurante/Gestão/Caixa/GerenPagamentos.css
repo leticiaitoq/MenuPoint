@@ -803,6 +803,7 @@
   cursor: not-allowed;
 }
 
+<<<<<<< HEAD
 
 /* ═══════════════════════════════════════════════
    RESPONSIVIDADE — lista de mesas
@@ -847,4 +848,179 @@
 
   /* menus ⋮ nunca passam da borda da tela */
   .caixa__card-menu { max-width: calc(100vw - 32px); }
+=======
+/* ── Andamento da cozinha no card da mesa ── */
+.caixa__card-cozinha { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.caixa__card-chip {
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 50px;
+  background: #f2f2f2; color: #555; white-space: nowrap;
+}
+.caixa__card-chip--cozinha { background: #fff4d6; color: #8a5a00; }
+.caixa__card-chip--pronto { background: #e6f6ec; color: #1e8e4e; animation: caixa-pisca 1.6s ease-in-out infinite; }
+.caixa__card-chip--entregue { background: #e8f0fe; color: #2f5fb3; }
+@keyframes caixa-pisca { 50% { opacity: 0.55; } }
+
+
+/* ── Disponibilidade de mesas + reservas dos clientes ── */
+.caixa__resumo {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.caixa__resumo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+
+.caixa__resumo-item--destaque {
+  background: var(--brand-soft);
+  border-color: var(--brand-soft-border);
+}
+
+.caixa__resumo-numero {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.caixa__resumo-item--destaque .caixa__resumo-numero {
+  color: var(--accent);
+}
+
+.caixa__resumo-rotulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.caixa__reservas {
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.caixa__reservas-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.caixa__reservas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.caixa__reserva {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.caixa__reserva-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.caixa__reserva-hora {
+  font-size: 15px;
+  color: var(--text);
+}
+
+.caixa__reserva-nome {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.caixa__reserva-detalhe,
+.caixa__reserva-obs {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.caixa__reserva-obs {
+  font-style: italic;
+}
+
+.caixa__reserva-status {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 50px;
+  white-space: nowrap;
+}
+
+.caixa__reserva-status--pendente { background: var(--warning-soft); color: var(--warning-text); }
+.caixa__reserva-status--confirmada { background: #e6f6ec; color: #1e8e4e; }
+
+.caixa__reserva-acoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.caixa__reserva-btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.caixa__reserva-btn:hover:not(:disabled) { background: var(--bg-surface-alt); }
+.caixa__reserva-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.caixa__reserva-btn--ok {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+
+.caixa__reserva-btn--ok:hover:not(:disabled) { background: var(--brand-hover); }
+.caixa__reserva-btn--perigo { color: var(--danger); }
+
+.caixa__card-reserva {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--warning-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.caixa__card-reserva--proxima {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+@media (max-width: 720px) {
+  .caixa__resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .caixa__reserva-acoes { width: 100%; }
+>>>>>>> origin/feature/integracao-front
 }

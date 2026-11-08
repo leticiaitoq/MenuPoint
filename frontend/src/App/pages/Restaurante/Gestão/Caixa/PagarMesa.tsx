@@ -806,8 +806,11 @@ const PagarMesaConteudo: React.FC<{
                 </div>
               )}
 
+<<<<<<< HEAD
               {/* No celular este bloco vira uma barra fixa no rodapé (ver PagarMesa.css) */}
               <div className="pagar__acoes-fixas">
+=======
+>>>>>>> origin/feature/integracao-front
               <div className="pagar__resumo-total">
                 <span>{pagoParcial > 0 ? 'Falta pagar' : 'Total'}</span>
                 <span>{formatarMoeda(total)}</span>
