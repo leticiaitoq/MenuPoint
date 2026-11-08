@@ -22,6 +22,8 @@ import { mesasRoutes } from '@modules/mesas/Mesa.controller'
 import { pedidosRoutes } from '@modules/pedidos/Pedido.controller'
 import { pagamentosRoutes } from '@modules/pagamentos/Pagamento.controller'
 import { reservasRoutes } from '@modules/reservas/Reserva.controller'
+import { despesasRoutes } from '@modules/despesas/Despesa.controller'
+import { relatoriosRoutes } from '@modules/relatorios/Relatorio.controller'
 import { empresasRoutes } from '@modules/empresas/Empresa.controller'
 import { clientesRoutes } from '@modules/clientes/Cliente.controller'
 import { assinaturaRoutes } from '@modules/assinatura/Assinatura.controller'
@@ -107,6 +109,7 @@ app.register(fastifySwaggerUi, {
     api.addHook('onRequest', async (request) => {
       if (request.url.startsWith('/api/v1/auth/')) return
 
+
       // Rotas públicas de leitura (cardápio por slug) também servem o cliente logado
       if (request.method === 'GET' && ROTAS_PUBLICAS_GET.test(request.url)) return
 
@@ -138,6 +141,8 @@ app.register(fastifySwaggerUi, {
     api.register(pagamentosRoutes,      { prefix: '/pagamentos'})
     api.register(pedidosRoutes,         { prefix: '/pedidos' })
     api.register(reservasRoutes,        { prefix: '/reservas' })
+    api.register(despesasRoutes,        { prefix: '/despesas' })
+    api.register(relatoriosRoutes,      { prefix: '/relatorios' })
     api.register(empresasRoutes, { prefix: '/empresas' })
     api.register(assinaturaRoutes,      { prefix: '/assinatura' })
     api.register(contatoRoutes, { prefix: '/contato' })

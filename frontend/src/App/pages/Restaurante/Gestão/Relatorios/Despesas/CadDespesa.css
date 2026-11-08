@@ -598,3 +598,9 @@
     grid-template-columns: 1fr;
   }
 }
+/* ── Botões desabilitados enquanto salva ── */
+.cadd__btn-primario:disabled,
+.cadd__btn-secundario:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

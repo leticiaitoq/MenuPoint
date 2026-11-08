@@ -17,7 +17,7 @@
   flex-direction: column;
   background: var(--bg-surface);
   border-radius: 16px;
-  box-shadow: 0 20px 50pxvar(--shadow-color);
+  box-shadow: 0 20px 50px var(--shadow-color);
   overflow: hidden;
 }
 
@@ -108,7 +108,7 @@
 }
 .cancelar__motivo:hover { background: var(--bg-surface-alt); }
 .cancelar__motivo input { accent-color: var(--brand); }
-.cancelar__motivo--ativo { border-color: var(--brand); background: var(--brand-soft); }
+.cancelar__motivo--ativo { border-color: var(--accent); background: var(--brand-soft); }
 
 .cancelar__outro { margin-top: 10px; }
 
@@ -122,7 +122,7 @@
   font-size: 14px;
   resize: vertical;
 }
-.cancelar__textarea:focus { outline: none; border-color: var(--brand); }
+.cancelar__textarea:focus { outline: none; border-color: var(--accent); }
 
 .cancelar__outro-rodape {
   display: flex;

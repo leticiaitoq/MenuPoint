@@ -73,6 +73,8 @@ model Estabelecimento {
   pedidos    Pedido[]
   pagamentos Pagamento[]
   pagamentos_mesa PagamentoMesa[]
+  despesas          Despesa[]
+  categorias_despesa CategoriaDespesa[]
 
   @@map("estabelecimentos")
 }
@@ -272,7 +274,6 @@ model Reserva {
   estabelecimento_id String        @db.Uuid
   mesa_id            String?       @db.Uuid
   confirmada_por_id  String?       @db.Uuid
-  cliente_id         String?       @db.Uuid   // cliente cadastrado que reservou pelo app (null = reserva feita pelo restaurante)
   cliente_nome       String        @db.VarChar(100)
   cliente_telefone   String        @db.VarChar(20)
   cliente_email      String?       @db.VarChar(150)
@@ -288,11 +289,8 @@ model Reserva {
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   mesa            Mesa?           @relation(fields: [mesa_id], references: [id])
   confirmada_por  Usuario?        @relation("ConfirmadaPor", fields: [confirmada_por_id], references: [id])
-  cliente         Cliente?        @relation(fields: [cliente_id], references: [id])
   pedidos         Pedido[]
 
-  @@index([estabelecimento_id, data_reserva])
-  @@index([cliente_id])
   @@map("reservas")
 }
 
@@ -482,7 +480,6 @@ model Cliente {
   criado_em        DateTime  @default(now()) @db.Timestamptz
 
   pedidos            Pedido[]
-  reservas           Reserva[]
   refresh_tokens     RefreshToken[]
   tokens_recuperacao TokenRecuperacaoSenhaCliente[]
   tokens_confirmacao TokenConfirmacaoEmailCliente[]
@@ -599,6 +596,52 @@ enum TipoChavePix {
   ALEATORIA
 
   @@map("tipo_chave_pix")
+}
+
+// ============================================================
+// DESPESAS (Relatórios do restaurante)
+// ============================================================
+
+// Despesas do estabelecimento: alimentam a tela de Despesas e o painel do Relatórios.
+model Despesa {
+  id                 String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String                @db.Uuid
+  descricao          String                @db.VarChar(100)
+  categoria          String                @db.VarChar(50)
+  fornecedor         String?               @db.VarChar(100)
+  forma_pagamento    FormaPagamentoDespesa
+  valor              Decimal               @db.Decimal(10, 2)
+  data_despesa       DateTime              @db.Date
+  observacoes        String?
+  criado_em          DateTime              @default(now()) @db.Timestamptz
+  atualizado_em      DateTime              @default(now()) @updatedAt @db.Timestamptz
+
+  estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
+
+  @@index([estabelecimento_id, data_despesa])
+  @@map("despesas")
+}
+
+// Categorias criadas pelo próprio restaurante (as padrão ficam no código, ver Despesa.schema.ts)
+model CategoriaDespesa {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String   @db.Uuid
+  nome               String   @db.VarChar(50)
+  criado_em          DateTime @default(now()) @db.Timestamptz
+
+  estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
+
+  @@unique([estabelecimento_id, nome])
+  @@map("categorias_despesa")
+}
+
+enum FormaPagamentoDespesa {
+  PIX
+  BOLETO
+  CARTAO
+  DINHEIRO
+
+  @@map("forma_pagamento_despesa")
 }
 
 enum Perfil {
