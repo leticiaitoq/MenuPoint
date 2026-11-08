@@ -538,7 +538,6 @@
     padding: 2px 2px 6px;
     scrollbar-width: none;
   }
-<<<<<<< HEAD
   .fila__abas::-webkit-scrollbar { display: none; }
 
   .fila__aba {
@@ -631,8 +630,6 @@
   .fila__modal-btn-cancelar,
   .fila__modal-btn-confirmar { min-height: 44px; }
 }
-=======
-}
 
 /* ── Integração com o Caixa / dados reais ── */
 .fila__btn-atualizar {
@@ -676,4 +673,3 @@ label.fila__item { cursor: pointer; }
 .fila__modal-lista li { margin: 2px 0; }
 .fila__modal-nota { margin: 10px 0 0; font-size: 13px; color: #8a5a00; }
 .fila__erro--modal { margin: 10px 0 0; }
->>>>>>> origin/feature/integracao-front

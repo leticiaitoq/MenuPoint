@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import React, { useEffect, useRef, useState } from 'react';
-=======
-import React, { useEffect, useState } from 'react';
->>>>>>> origin/feature/integracao-front
 import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import Carrinho from '../../../shared/components/Carrinho/Carrinho';
@@ -10,11 +6,8 @@ import ChamarGarcom from '../../../shared/components/ChamarGarcom/Chamargarcom';
 import FecharConta from '../../../shared/components/FecharConta/FecharConta';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
-<<<<<<< HEAD
-=======
 import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/ingredientes';
 import RestaurantePublicoService from '../../../services/restaurantePublico.service';
->>>>>>> origin/feature/integracao-front
 import MesaPublicaService from '../../../services/mesaPublica.service';
 import './MenuLocal.css';
 
@@ -56,9 +49,8 @@ const compararProdutos = (idsCategorias: string[]) => (a: Produto, b: Produto) =
 const MenuLocal: React.FC = () => {
   // ── Estados
   const navigate = useNavigate();
-  const { mesa, mesaToken } = useConvidado();
   const { itens: itensCarrinho, removerItem, limparCarrinho } = useCarrinho();
-  const { nome: nomeConvidado, mesaToken, estabelecimentoId } = useConvidado();
+  const { mesa, nome: nomeConvidado, mesaToken, estabelecimentoId } = useConvidado();
   const [busca, setBusca]                     = useState('');
   const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
   const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
@@ -158,7 +150,6 @@ const MenuLocal: React.FC = () => {
     navigate('/personaliza', { state: { produto, modoCliente: 'guest' } });
   };
 
-<<<<<<< HEAD
   // Depois de pedir a conta, o botão fica bloqueado por 2 minutos (evita pedidos repetidos)
   const aoPedirConta = () => {
     setContaPedida(true);
@@ -166,10 +157,6 @@ const MenuLocal: React.FC = () => {
     timerConta.current = window.setTimeout(() => setContaPedida(false), 120_000);
   };
 
-  const finalizarPedido = () => {
-    limparCarrinho();
-    setCarrinhoAberto(false);
-=======
   // Envia o carrinho para a cozinha. O preço é recalculado pelo servidor.
   const finalizarPedido = async () => {
     if (enviando || itensCarrinho.length === 0) return;
@@ -210,7 +197,6 @@ const MenuLocal: React.FC = () => {
     } finally {
       setEnviando(false);
     }
->>>>>>> origin/feature/integracao-front
   };
 
   // ── Render
@@ -237,7 +223,12 @@ const MenuLocal: React.FC = () => {
         )}
       </button>
 
-<<<<<<< HEAD
+        {erroEnvio && (
+          <p className="menu__erro-envio" role="alert" onClick={() => setErroEnvio('')}>
+            {erroEnvio}
+          </p>
+        )}
+
         {/* Busca + botão Chamar garçom (o botão só aparece quando entrou pelo QR da mesa) */}
         <div className="menu__topo">
           <div className="menu__busca-wrap">
@@ -253,24 +244,6 @@ const MenuLocal: React.FC = () => {
           {mesaToken && (
             <ChamarGarcom mesa={mesa} onChamar={() => MesaPublicaService.chamarGarcom(mesaToken)} />
           )}
-=======
-        {erroEnvio && (
-          <p className="menu__erro-envio" role="alert" onClick={() => setErroEnvio('')}>
-            {erroEnvio}
-          </p>
-        )}
-
-        {/* Busca */}
-        <div className="menu__busca-wrap">
-           <img src="/icons/lupa.png" alt="" className="menu__busca-icon" />
-          <input
-            className="menu__busca"
-            type="text"
-            placeholder="Procurar"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
->>>>>>> origin/feature/integracao-front
         </div>
 
         {/* Categorias */}

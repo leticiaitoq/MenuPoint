@@ -67,25 +67,7 @@
   border-radius: 50%;
   object-fit: cover;
 }
-/* Páginas com fundo em arte: o .menu preenche toda a altura disponível */
-.customer-layout__content:has(> .menu) {
-  display: flex;
-  flex-direction: column;
-}
 
-.customer-layout__content > .menu {
-  flex: 1 0 auto;
-}
-
-<<<<<<< HEAD
-@media (max-width: 600px) {
-  /* cancela exatamente o padding do main no celular */
-  .customer-layout__content > .menu {
-    margin: -16px -12px -60px;
-    padding: 16px 12px 60px; /* os 60px de baixo são o espaço da bottom nav */
-  }
-}
-=======
 /* ── Tablet e celular ──
    Mesmo ponto de corte (768px) da sidebar que vira barra inferior e do layout do restaurante. */
 @media (max-width: 768px) {
@@ -107,7 +89,25 @@
   }
 }
 
->>>>>>> origin/feature/integracao-front
+/* Páginas com fundo em arte: o .menu preenche toda a altura disponível */
+.customer-layout__content:has(> .menu) {
+  display: flex;
+  flex-direction: column;
+}
+
+.customer-layout__content > .menu {
+  flex: 1 0 auto;
+}
+
+/* Tablet e celular: o .menu "sangra" até a borda cancelando o padding do conteúdo
+   com as mesmas variáveis --cl-pad-* (assim acompanha cada breakpoint) */
+@media (max-width: 768px) {
+  .customer-layout__content > .menu {
+    margin: calc(-1 * var(--cl-pad-y)) calc(-1 * var(--cl-pad-x)) calc(-1 * var(--cl-pad-b));
+    padding: var(--cl-pad-y) var(--cl-pad-x) var(--cl-pad-b);
+  }
+}
+
 /* ── Botão "Voltar" no topo das telas internas ── */
 .customer-layout__voltar {
   display: inline-flex;
@@ -124,11 +124,6 @@
   cursor: pointer;
   transition: background-color 0.15s, border-color 0.15s;
 }
-<<<<<<< HEAD
-.customer-layout__voltar:hover { border-color: var(--brand); color: var(--brand); }
-.customer-layout__voltar:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-=======
 .customer-layout__voltar:hover { border-color: var(--accent); color: var(--accent); }
 .customer-layout__voltar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
->>>>>>> origin/feature/integracao-front
 

@@ -1168,7 +1168,6 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
 
 @media (prefers-reduced-motion: reduce) {
   .config__otp--chacoalha { animation: none; }
-<<<<<<< HEAD
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1248,6 +1247,4 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   .config__aba--ativa { border-color: var(--accent); }
   .config__aba--ativa::after { display: none; }
   .config__aba-ponto { margin-left: auto; flex-shrink: 0; }
-=======
->>>>>>> origin/feature/integracao-front
 }

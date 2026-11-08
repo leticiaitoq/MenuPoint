@@ -610,7 +610,62 @@
   padding: 8px 12px;
 }
 
-<<<<<<< HEAD
+/* ── Modal de ingrediente/adicional ── */
+.cate__tipos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cate__tipo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  text-align: left;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.cate__tipo span { font-size: 12px; color: var(--text-muted); line-height: 1.35; }
+.cate__tipo--ativo { border-color: var(--brand); background: var(--brand-soft); }
+.cate__tipo:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.cate__campo--linha { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: flex-start; }
+.cate__subcampo { display: flex; flex-direction: column; gap: 6px; }
+.cate__subcampo--preco { flex: 1; min-width: 150px; }
+
+.cate__fixo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  cursor: pointer;
+}
+.cate__fixo input { width: 18px; height: 18px; accent-color: var(--brand); }
+.cate__fixo span { display: flex; flex-direction: column; line-height: 1.25; }
+.cate__fixo small { font-size: 12px; color: var(--text-muted); }
+
+.cate__dica-campo { display: block; margin-top: 4px; font-size: 12px; color: var(--text-faint); line-height: 1.4; }
+
+/* Etiquetas da tabela de itens */
+.cate__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.cate__tag--extra { background: rgba(120, 120, 120, 0.15); color: var(--text-muted); }
+.cate__tag-fixo { display: inline-flex; align-items: center; gap: 3px; }
+
+@media (max-width: 480px) { .cate__tipos { grid-template-columns: 1fr; } }
+
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVO — fica no FINAL do arquivo para vencer as regras base
 ═══════════════════════════════════════════════════════════ */
@@ -741,60 +796,3 @@
   .cate__modal { max-height: 90vh; max-height: 90dvh; }
   .cate__input { font-size: 16px; } /* evita o zoom automático do iOS ao focar */
 }
-=======
-/* ── Modal de ingrediente/adicional ── */
-.cate__tipos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.cate__tipo {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px;
-  text-align: left;
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-}
-.cate__tipo span { font-size: 12px; color: var(--text-muted); line-height: 1.35; }
-.cate__tipo--ativo { border-color: var(--brand); background: var(--brand-soft); }
-.cate__tipo:disabled { opacity: 0.6; cursor: not-allowed; }
-
-.cate__campo--linha { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: flex-start; }
-.cate__subcampo { display: flex; flex-direction: column; gap: 6px; }
-.cate__subcampo--preco { flex: 1; min-width: 150px; }
-
-.cate__fixo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text);
-  cursor: pointer;
-}
-.cate__fixo input { width: 18px; height: 18px; accent-color: var(--brand); }
-.cate__fixo span { display: flex; flex-direction: column; line-height: 1.25; }
-.cate__fixo small { font-size: 12px; color: var(--text-muted); }
-
-.cate__dica-campo { display: block; margin-top: 4px; font-size: 12px; color: var(--text-faint); line-height: 1.4; }
-
-/* Etiquetas da tabela de itens */
-.cate__tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--brand-soft);
-  color: var(--brand);
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.cate__tag--extra { background: rgba(120, 120, 120, 0.15); color: var(--text-muted); }
-.cate__tag-fixo { display: inline-flex; align-items: center; gap: 3px; }
-
-@media (max-width: 480px) { .cate__tipos { grid-template-columns: 1fr; } }
->>>>>>> origin/feature/integracao-front

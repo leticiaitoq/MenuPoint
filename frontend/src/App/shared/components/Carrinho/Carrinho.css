@@ -12,11 +12,7 @@
   position: fixed;
   top: 0;
   right: 0;
-<<<<<<< HEAD
   width: min(420px, 100%); /* nunca passa da largura da tela */
-=======
-  width: min(420px, 100vw);
->>>>>>> origin/feature/integracao-front
   height: 100vh;
   height: 100dvh; /* celular: ignora a barra de endereço */
   background-color: var(--bg-surface);

@@ -21,11 +21,10 @@ export interface MesaPublica {
   }
 }
 
-<<<<<<< HEAD
 /** Formas de pagamento que o cliente pode avisar ao pedir a conta (valores do enum FormaPagamento do backend) */
 export type FormaPagamentoConta = 'PIX_PRESENCIAL' | 'DINHEIRO' | 'CARTAO'
 
-=======
+
 export interface PedidoMesaPublico {
   id: string
   numero_pedido: number
@@ -46,7 +45,6 @@ export interface HistoricoMesaPublico {
   mesa: { id: string; numero: number; status?: string }
   pedidos: PedidoMesaPublico[]
 }
->>>>>>> origin/feature/integracao-front
 
 const MesaPublicaService = {
 
@@ -54,7 +52,6 @@ const MesaPublicaService = {
     const r = await apiPublica.get<MesaPublica>(`mesas/qrcode/${encodeURIComponent(token)}`)
     return r.data
   },
-<<<<<<< HEAD
   /** Cliente na mesa pede atendimento */
 async chamarGarcom(token: string): Promise<void> {
   await apiPublica.post(`mesas/qrcode/${encodeURIComponent(token)}/chamar-garcom`)
@@ -74,7 +71,6 @@ async chamarGarcom(token: string): Promise<void> {
     )
   },
 
-=======
 
   /** Envia o pedido da mesa para a cozinha (rota pública, sem login). O preço é calculado pelo servidor. */
   async criarPedido(
@@ -102,7 +98,6 @@ async chamarGarcom(token: string): Promise<void> {
     const r = await apiPublica.get<HistoricoMesaPublico>(`mesas/qrcode/${encodeURIComponent(token)}/pedidos`)
     return r.data
   },
->>>>>>> origin/feature/integracao-front
 }
 
 export default MesaPublicaService

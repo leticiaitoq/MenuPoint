@@ -571,15 +571,6 @@
   .relatorios__destaque-valor {
     font-size: 22px;
   }
-<<<<<<< HEAD
-}
-=======
-
-  .relatorios__destaque-corpo {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
 }
 
 /* ── Despesas reais (API): período, avisos de carregando/erro/vazio ── */
@@ -632,4 +623,3 @@
   font-size: 13px;
   color: var(--cor-texto-fraco);
 }
->>>>>>> origin/feature/integracao-front
