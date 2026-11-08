@@ -663,3 +663,20 @@
     grid-template-columns: 1fr;
   }
 }
+/* ── Erro e estados desabilitados (integração com a API) ── */
+.despesas__erro {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.despesas__form-salvar:disabled,
+.despesas__form-excluir:disabled,
+.despesas__form-cancelar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

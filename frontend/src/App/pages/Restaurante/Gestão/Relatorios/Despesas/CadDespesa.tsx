@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   HiOutlineDocumentText,
@@ -18,10 +18,16 @@ import {
   HiOutlineHome,
   HiPlus,
   HiOutlineCheckCircle,
+  HiOutlineDotsHorizontal,
 } from 'react-icons/hi';
 import { BsPercent, BsMegaphone } from 'react-icons/bs';
 import RestaurantLayout from '../../../../../shared/components/layout/Restaurantelayout';
 import ContadorCaracteres from '../../../../../shared/components/ContadorCaracteres/ContadorCaracteres';
+import DespesaService, {
+  FORMAS_PAGAMENTO_DESPESA,
+  formaPagamentoDoRotulo,
+  mensagemErroDespesa,
+} from '../../../../../services/despesa.service';
 import './CadDespesa.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────
@@ -43,18 +49,23 @@ interface FormDespesa {
 }
 
 // ── Constantes ────────────────────────────────────────────────────────
-const FORMAS_PAGAMENTO = ['Pix', 'Boleto', 'Cartão', 'Dinheiro'];
+const FORMAS_PAGAMENTO = FORMAS_PAGAMENTO_DESPESA.map((f) => f.rotulo);
 const LIMITE_OBSERVACOES = 500;
 const LIMITE_NOME_CATEGORIA = 50;
 
-const CATEGORIAS_PADRAO: CategoriaDespesa[] = [
-  { nome: 'Custos dos Produtos', icone: <HiOutlineShoppingCart />, cor: '#16a34a' },
-  { nome: 'Taxas e Comissões',   icone: <BsPercent />,             cor: '#d97706' },
-  { nome: 'Marketing',           icone: <BsMegaphone />,           cor: '#7c3aed' },
-  { nome: 'Aluguel',             icone: <HiOutlineHome />,         cor: '#2563eb' },
-];
+// Ícone e cor das categorias que já vêm no sistema. As criadas pelo restaurante usam o visual padrão.
+const VISUAL_CATEGORIA: Record<string, Pick<CategoriaDespesa, 'icone' | 'cor'>> = {
+  'Custos dos Produtos': { icone: <HiOutlineShoppingCart />,   cor: '#16a34a' },
+  'Taxas e Comissões':   { icone: <BsPercent />,               cor: '#d97706' },
+  Marketing:             { icone: <BsMegaphone />,             cor: '#7c3aed' },
+  Aluguel:               { icone: <HiOutlineHome />,           cor: '#2563eb' },
+  Contas:                { icone: <HiOutlineDocumentText />,   cor: '#0891b2' },
+  Outros:                { icone: <HiOutlineDotsHorizontal />, cor: '#6b7280' },
+};
 
-const CATEGORIA_PADRAO_NOVA: CategoriaDespesa['icone'] = <HiOutlineTag />;
+const VISUAL_CATEGORIA_NOVA: Pick<CategoriaDespesa, 'icone' | 'cor'> = { icone: <HiOutlineTag />, cor: '#6b7280' };
+
+const comVisual = (nome: string): CategoriaDespesa => ({ nome, ...(VISUAL_CATEGORIA[nome] ?? VISUAL_CATEGORIA_NOVA) });
 
 const FORMULARIO_VAZIO: FormDespesa = {
   descricao: '',
@@ -87,11 +98,19 @@ const CadDespesa: React.FC = () => {
 
   const [passoAtual, setPassoAtual] = useState<1 | 2>(1);
   const [formulario, setFormulario] = useState<FormDespesa>(FORMULARIO_VAZIO);
-  const [categorias, setCategorias] = useState<CategoriaDespesa[]>(CATEGORIAS_PADRAO);
+  const [categorias, setCategorias] = useState<CategoriaDespesa[]>(() => Object.keys(VISUAL_CATEGORIA).map(comVisual));
+  const [salvando, setSalvando] = useState(false);
   const [adicionandoCategoria, setAdicionandoCategoria] = useState(false);
   const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
+
+  // Categorias reais do restaurante (padrão + as que ele criou antes)
+  useEffect(() => {
+    DespesaService.categorias()
+      .then((lista) => setCategorias(lista.map((c) => comVisual(c.nome))))
+      .catch(() => { /* mantém as categorias padrão; o erro aparece ao salvar */ });
+  }, []);
 
   // ── Atualiza qualquer campo do formulário ──────────────────────────
   const atualizarForm = (campo: Partial<FormDespesa>) => {
@@ -109,12 +128,24 @@ const CadDespesa: React.FC = () => {
   };
 
   // ── Nova categoria (inline, igual ao padrão de CadProdutos) ────────
-  const handleNovaCategoria = () => {
+  const handleNovaCategoria = async () => {
     const nome = novaCategoriaNome.trim();
-    if (!nome || categorias.some((c) => c.nome === nome)) return;
-    setCategorias((prev) => [...prev, { nome, icone: CATEGORIA_PADRAO_NOVA, cor: '#6b7280' }]);
-    setNovaCategoriaNome('');
-    setAdicionandoCategoria(false);
+    if (!nome) return;
+    if (categorias.some((c) => c.nome.toLowerCase() === nome.toLowerCase())) {
+      setErro('Já existe uma categoria com esse nome.');
+      return;
+    }
+
+    try {
+      const criada = await DespesaService.criarCategoria(nome);
+      setCategorias((prev) => [...prev, comVisual(criada.nome)]);
+      atualizarForm({ categoria: criada.nome });
+      setErro('');
+      setNovaCategoriaNome('');
+      setAdicionandoCategoria(false);
+    } catch (err) {
+      setErro(mensagemErroDespesa(err, 'Não foi possível criar a categoria.'));
+    }
   };
 
   // ── Validação e navegação entre os passos ──────────────────────────
@@ -131,9 +162,25 @@ const CadDespesa: React.FC = () => {
 
   const voltarParaDados = () => setPassoAtual(1);
 
-  const confirmarESalvar = () => {
-    console.log(formulario); // substituir por chamada à API
-    setSucesso(true);
+  const confirmarESalvar = async () => {
+    setSalvando(true);
+    setErro('');
+    try {
+      await DespesaService.criar({
+        descricao: formulario.descricao.trim(),
+        categoria: formulario.categoria,
+        data_despesa: formulario.dataISO,
+        forma_pagamento: formaPagamentoDoRotulo(formulario.pagamento),
+        fornecedor: formulario.fornecedor.trim(),
+        valor: formulario.valorNumerico,
+        observacoes: formulario.observacoes.trim(),
+      });
+      setSucesso(true);
+    } catch (err) {
+      setErro(mensagemErroDespesa(err, 'Não foi possível salvar a despesa.'));
+    } finally {
+      setSalvando(false);
+    }
   };
 
   const cancelar = () => navigate('/restaurante/relatorios');
@@ -339,11 +386,11 @@ const CadDespesa: React.FC = () => {
                       maxLength={LIMITE_NOME_CATEGORIA}
                       value={novaCategoriaNome}
                       onChange={(e) => setNovaCategoriaNome(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleNovaCategoria()}
+                      onKeyDown={(e) => e.key === 'Enter' && void handleNovaCategoria()}
                       autoFocus
                     />
                     <ContadorCaracteres valor={novaCategoriaNome} max={LIMITE_NOME_CATEGORIA} />
-                    <button type="button" onClick={handleNovaCategoria} aria-label="Confirmar nova categoria">
+                    <button type="button" onClick={() => void handleNovaCategoria()} aria-label="Confirmar nova categoria">
                       <HiCheck />
                     </button>
                   </div>
@@ -475,6 +522,8 @@ const CadDespesa: React.FC = () => {
           </div>
         )}
 
+        {passoAtual === 2 && erro && <p className="cadd__erro" role="alert">{erro}</p>}
+
         {/* ── Ações do rodapé ── */}
         <div className="cadd__acoes">
           {passoAtual === 1 ? (
@@ -488,11 +537,11 @@ const CadDespesa: React.FC = () => {
             </>
           ) : (
             <>
-              <button type="button" className="cadd__btn-secundario" onClick={voltarParaDados}>
+              <button type="button" className="cadd__btn-secundario" onClick={voltarParaDados} disabled={salvando}>
                 <HiArrowLeft /> Voltar
               </button>
-              <button type="button" className="cadd__btn-primario" onClick={confirmarESalvar}>
-                <HiCheck /> Confirmar e Salvar
+              <button type="button" className="cadd__btn-primario" onClick={() => void confirmarESalvar()} disabled={salvando}>
+                <HiCheck /> {salvando ? 'Salvando...' : 'Confirmar e Salvar'}
               </button>
             </>
           )}

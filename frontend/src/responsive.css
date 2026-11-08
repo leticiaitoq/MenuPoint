@@ -10,11 +10,12 @@
    VARIÁVEIS GLOBAIS
 ────────────────────────────────────────────────────────── */
 :root {
-  --mp-red: #c0392b;
-  --mp-red-dark: #a93226;
+  /* Cores vêm de styles/tema.css (claro/escuro). Mantidos como apelidos por compatibilidade. */
+  --mp-red: var(--brand);
+  --mp-red-dark: var(--brand-hover);
   --mp-yellow: #f1c40f;
-  --mp-bg: #ececec;
-  --mp-white: #ffffff;
+  --mp-bg: var(--bg-page);
+  --mp-white: var(--bg-surface);
   --mp-sidebar-w: 200px;
   --mp-sidebar-icon-w: 72px;
   --mp-navbar-h: 80px;
@@ -49,8 +50,8 @@
   max-width: 1000px;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.22);
-  background-color: var(--mp-white);
+  box-shadow: 0 8px 40px var(--shadow-color);
+  background-color: var(--bg-surface);
 
   /* Mobile: coluna — AuthCard em cima, formulário embaixo */
   flex-direction: column;
@@ -90,7 +91,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background-color: var(--mp-white);
+  background-color: var(--bg-surface);
 }
 
 /* ── Títulos ── */
@@ -99,7 +100,7 @@
 .recover-pass__title {
   font-size: 26px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text);
   margin-bottom: 22px;
 }
 
@@ -142,11 +143,11 @@
 .recover-pass__input {
   width: 100%;
   padding: 12px 16px;
-  border: 1.5px solid #e0e0e0;
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   font-size: 15px;
-  color: #1a1a1a;
-  background-color: #fafafa;
+  color: var(--text);
+  background-color: var(--bg-surface-alt);
   outline: none;
   transition: border-color 0.2s;
   box-sizing: border-box;
@@ -157,7 +158,7 @@
 .login-page__input:focus,
 .register-page__input:focus,
 .recover-pass__input:focus {
-  border-color: var(--mp-red);
+  border-color: var(--accent);
 }
 
 /* ── Botão principal ── */
@@ -166,8 +167,8 @@
 .recover-pass__submit {
   width: 100%;
   padding: 14px;
-  background-color: var(--mp-red);
-  color: var(--mp-white);
+  background-color: var(--brand);
+  color: var(--on-brand);
   font-size: 16px;
   font-weight: 700;
   border: none;
@@ -182,14 +183,14 @@
 .login-page__submit:hover,
 .register-page__submit:hover,
 .recover-pass__submit:hover {
-  background-color: var(--mp-red-dark);
+  background-color: var(--brand-hover);
 }
 
 /* ── Textos de navegação ── */
 .login-page__forgot {
   background: none;
   border: none;
-  color: #888;
+  color: var(--text-faint);
   font-size: 14px;
   cursor: pointer;
   text-align: center;
@@ -203,7 +204,7 @@
 .recover-pass__redirect {
   text-align: center;
   font-size: 14px;
-  color: #888;
+  color: var(--text-faint);
   margin: 0;
 }
 
@@ -212,7 +213,7 @@
 .recover-pass__redirect-link {
   background: none;
   border: none;
-  color: var(--mp-red);
+  color: var(--accent);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -223,7 +224,7 @@
 .recover-pass__divider {
   width: 100%;
   height: 1px;
-  background-color: #e0e0e0;
+  background-color: var(--border);
   margin: 14px 0;
 }
 
@@ -256,7 +257,7 @@
 .navbar__subtitle {
   font-size: 13px;
   font-weight: 500;
-  color: var(--mp-white);
+  color: var(--on-brand);
   margin-top: 2px;
 }
 
@@ -283,7 +284,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--mp-bg);
+  background-color: var(--bg-page);
 }
 
 .restaurant-layout__body,
@@ -331,7 +332,7 @@
   gap: 10px;
   padding: 10px 20px;
   text-decoration: none;
-  color: #888;
+  color: var(--text-faint);
   font-size: 15px;
   font-weight: 500;
   border-radius: 6px;
@@ -340,8 +341,8 @@
   overflow: hidden;
 }
 
-.sidebar__item:hover { color: var(--mp-red); }
-.sidebar__item.active { color: var(--mp-red); font-weight: 700; }
+.sidebar__item:hover { color: var(--accent); }
+.sidebar__item.active { color: var(--accent); font-weight: 700; }
 
 .sidebar__icon {
   font-size: 20px;
@@ -356,7 +357,7 @@
 .customer-sidebar {
   width: var(--mp-sidebar-icon-w);
   min-height: 100%;
-  background-color: #f5f5f5;
+  background-color: var(--bg-surface-alt);
   padding: 16px 0;
   display: flex;
   flex-direction: column;
@@ -383,13 +384,13 @@
   border: none;
   background: none;
   text-decoration: none;
-  color: #bbb;
+  color: var(--text-faint);
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
 }
 
-.customer-sidebar__item:hover { background-color: #ebebeb; color: var(--mp-red); }
-.customer-sidebar__item.active { background-color: #fdecea; color: var(--mp-red); }
+.customer-sidebar__item:hover { background-color: var(--border); color: var(--accent); }
+.customer-sidebar__item.active { background-color: var(--brand-soft); color: var(--accent); }
 .customer-sidebar__icon { font-size: 24px; }
 
 /* ──────────────────────────────────────────────────────────
@@ -406,7 +407,7 @@
 .home-rest__title {
   font-size: 20px;
   font-weight: 600;
-  color: #333;
+  color: var(--text);
   margin: 0;
 }
 
@@ -419,7 +420,7 @@
 }
 
 .home-rest__card {
-  background-color: #ffffffc9;
+  background-color: var(--bg-surface);
   border: none;
   border-radius: 20px;
   padding: 28px 24px;
@@ -428,29 +429,29 @@
   align-items: flex-start;
   gap: 14px;
   position: relative;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  box-shadow: 0 1px 4px var(--shadow-color);
   min-height: 120px;
   cursor: pointer;
   text-align: left;
   transition: box-shadow 0.2s, transform 0.15s;
 }
 
-.home-rest__card:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.13); transform: translateY(-2px); }
+.home-rest__card:hover { box-shadow: 0 6px 16px var(--shadow-color); transform: translateY(-2px); }
 
 .home-rest__card-icon { font-size: 28px; }
-.home-rest__card-icon--red { color: var(--mp-red); }
-.home-rest__card-icon--yellow { color: #e6a817; }
-.home-rest__card-icon--green { color: #27ae60; }
+.home-rest__card-icon--red { color: var(--accent); }
+.home-rest__card-icon--yellow { color: var(--warning); }
+.home-rest__card-icon--green { color: var(--success); }
 
-.home-rest__card-value { font-size: 20px; font-weight: 600; color: var(--mp-red); }
-.home-rest__card-sub { font-size: 13px; color: #888; font-weight: 400; }
+.home-rest__card-value { font-size: 20px; font-weight: 600; color: var(--accent); }
+.home-rest__card-sub { font-size: 13px; color: var(--text-faint); font-weight: 400; }
 
 .home-rest__card-badge {
   position: absolute;
   top: 12px;
   right: 12px;
-  background-color: #e6a817;
-  color: var(--mp-white);
+  background-color: var(--warning);
+  color: var(--on-brand);
   font-size: 16px;
   font-weight: 700;
   width: 40px;
@@ -462,21 +463,21 @@
 }
 
 .home-rest__alert {
-  background-color: var(--mp-white);
+  background-color: var(--bg-surface);
   border-radius: 12px;
   padding: 16px 20px;
   display: flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  box-shadow: 0 1px 4px var(--shadow-color);
 }
 
-.home-rest__alert-icon { font-size: 24px; color: #e6a817; flex-shrink: 0; }
+.home-rest__alert-icon { font-size: 24px; color: var(--warning); flex-shrink: 0; }
 
 .home-rest__alert span {
   font-size: 15px;
   font-weight: 500;
-  color: #555;
+  color: var(--text-muted);
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -486,30 +487,27 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding-bottom: 80px; /* espaço para FAB */
-  margin: -20px -16px;
-  padding: 20px 16px;
-  box-sizing: border-box;
 }
 
 .menu__busca-wrap {
   display: flex;
   align-items: center;
   gap: 10px;
-  background-color: #e0e0e0;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
   border-radius: 30px;
   padding: 10px 18px;
   width: 100%;
   max-width: 500px;
 }
 
-.menu__busca-icon { font-size: 18px; color: #888; flex-shrink: 0; }
+.menu__busca-icon { font-size: 18px; color: var(--text-faint); flex-shrink: 0; }
 .menu__busca {
   border: none;
   background: transparent;
   outline: none;
   font-size: 16px;
-  color: #333;
+  color: var(--text);
   width: 100%;
   min-height: 28px;
 }
@@ -531,17 +529,17 @@
   min-width: 68px;
   border-radius: 18px;
   border: none;
-  background-color: var(--mp-white);
+  background-color: var(--bg-surface);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px var(--shadow-color);
   transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s;
 }
 
 .menu__cat-icon { font-size: 28px; }
-.menu__cat-btn--ativo { background-color: #fdecea; box-shadow: 0 0 0 2px var(--mp-red); }
+.menu__cat-btn--ativo { background-color: var(--brand-soft); box-shadow: 0 0 0 2px var(--accent); }
 
 /* Grid de produtos: 3 colunas → 2 → 1 */
 .menu__grid {
@@ -551,10 +549,10 @@
 }
 
 .menu__card {
-  background-color: var(--mp-white);
+  background-color: var(--bg-surface);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px var(--shadow-color);
   display: flex;
   flex-direction: column;
   transition: transform 0.15s, box-shadow 0.15s;
@@ -562,8 +560,8 @@
 
 .menu__card-img { width: 100%; height: 160px; object-fit: cover; }
 .menu__card-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
-.menu__card-nome { font-size: 15px; font-weight: 700; color: #222; margin: 0; }
-.menu__card-desc { font-size: 12px; color: #666; margin: 0; line-height: 1.4; flex: 1; }
+.menu__card-nome { font-size: 15px; font-weight: 700; color: var(--text); margin: 0; }
+.menu__card-desc { font-size: 12px; color: var(--text-muted); margin: 0; line-height: 1.4; flex: 1; }
 
 .menu__card-rodape {
   display: flex;
@@ -572,15 +570,15 @@
   margin-top: 8px;
 }
 
-.menu__card-preco { font-size: 20px; font-weight: 800; color: var(--mp-red); }
+.menu__card-preco { font-size: 20px; font-weight: 800; color: var(--accent); }
 
 .menu__card-add {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   border: none;
-  background-color: var(--mp-red);
-  color: var(--mp-white);
+  background-color: var(--brand);
+  color: var(--on-brand);
   font-size: 22px;
   cursor: pointer;
   display: flex;
@@ -589,7 +587,7 @@
   transition: background-color 0.15s, transform 0.15s;
 }
 
-.menu__card-add:hover { background-color: var(--mp-red-dark); transform: scale(1.08); }
+.menu__card-add:hover { background-color: var(--brand-hover); transform: scale(1.08); }
 .menu__card-add:active { transform: scale(0.95); }
 
 /* FAB carrinho */
@@ -600,27 +598,27 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background-color: var(--mp-red);
-  color: var(--mp-white);
+  background-color: var(--brand);
+  color: var(--on-brand);
   border: none;
   font-size: 26px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  box-shadow: 0 4px 16px var(--shadow-color);
   z-index: 99;
   transition: transform 0.2s, background-color 0.2s;
 }
 
-.menu__carrinho-fab:hover { transform: scale(1.08); background-color: var(--mp-red-dark); }
+.menu__carrinho-fab:hover { transform: scale(1.08); background-color: var(--brand-hover); }
 
 .menu__carrinho-fab-badge {
   position: absolute;
   top: -4px;
   right: -4px;
-  background-color: var(--mp-white);
-  color: var(--mp-red);
+  background-color: var(--bg-surface);
+  color: var(--accent);
   font-size: 11px;
   font-weight: 700;
   width: 20px;
@@ -629,14 +627,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--mp-red);
+  border: 2px solid var(--brand);
 }
 
 /* Modal tipo pedido */
 .mtp__overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0,0,0,0.55);
+  background-color: var(--overlay);
   z-index: 200;
   cursor: pointer;
 }
@@ -656,7 +654,7 @@
 }
 
 .mtp__card {
-  background-color: var(--mp-red);
+  background-color: var(--brand);
   border: none;
   border-radius: 20px;
   flex: 1;
@@ -672,19 +670,19 @@
 }
 
 .mtp__card-img { width: 120px; height: 120px; object-fit: contain; }
-.mtp__card-label { font-size: 28px; font-weight: 800; color: var(--mp-white); text-align: center; }
+.mtp__card-label { font-size: 28px; font-weight: 800; color: var(--on-brand); text-align: center; }
 
 /* ──────────────────────────────────────────────────────────
    8. PEDIDO (RESTAURANTE)
 ────────────────────────────────────────────────────────── */
 .pedido__card {
-  background-color: var(--mp-white);
+  background-color: var(--bg-surface);
   border-radius: 16px;
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  box-shadow: 0 1px 4px var(--shadow-color);
 }
 
 .pedido__linha {
@@ -713,7 +711,7 @@
 .pedido__tabela-wrap {
   border-radius: 8px;
   overflow-x: auto;
-  border: 1px solid #eee;
+  border: 1px solid var(--border);
   -webkit-overflow-scrolling: touch;
 }
 
@@ -732,7 +730,7 @@
 }
 
 .footer__text {
-  color: var(--mp-white);
+  color: var(--on-brand);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -760,7 +758,7 @@
   .recover-pass {
     padding: 0;
     align-items: flex-start;
-    background-color: #c0392b; /* fallback enquanto imagem carrega */
+    background-color: var(--brand); /* fallback enquanto imagem carrega */
   }
 
   .login-page__container,
@@ -823,8 +821,8 @@
     bottom: 0;
     left: 0;
     z-index: 50;
-    background-color: #e8e8e8f5;
-    box-shadow: 0 -2px 12px rgba(0,0,0,0.10);
+    background-color: var(--bg-sidebar);
+    box-shadow: 0 -2px 12px var(--shadow-color);
   }
 
   .sidebar__nav {
@@ -858,42 +856,7 @@
     padding-bottom: 90px;
   }
 
-  /* ── Sidebar cliente: também vira bottom nav ── */
-  .customer-layout__body {
-    flex-direction: column;
-  }
-
-  .customer-sidebar {
-    width: 100%;
-    height: auto;
-    min-height: unset;
-    border-radius: 20px 20px 0 0;
-    padding: 8px 0 env(safe-area-inset-bottom);
-    flex-direction: row;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    z-index: 50;
-    background-color: #f5f5f5;
-    box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
-  }
-
-  .customer-sidebar__nav {
-    flex-direction: row;
-    justify-content: space-around;
-    width: 100%;
-    padding: 4px 8px;
-    gap: 0;
-  }
-
-  .customer-sidebar__item {
-    width: 52px;
-    height: 52px;
-  }
-
-  .customer-layout__content {
-    padding-bottom: 90px;
-  }
+  /* Sidebar e conteúdo do cliente: ver CustomerSidebar.css e Customerlayout.css */
 
   /* FAB carrinho — reposicionado para não conflitar com bottom nav */
   .menu__carrinho-fab {
@@ -1068,11 +1031,6 @@
     gap: 8px;
   }
 
-  .customer-layout__content {
-    padding: 24px;
-    padding-bottom: 24px;
-  }
-
   /* FAB volta ao canto superior direito */
   .menu__carrinho-fab {
     top: calc(var(--mp-navbar-h) + 6px);
@@ -1111,15 +1069,14 @@
   .menu__card:hover,
   .menu__cat-btn:hover {
     transform: none;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    box-shadow: 0 1px 4px var(--shadow-color);
   }
 }
 
 /* Área segura para dispositivos com notch */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   @media (max-width: 768px) {
-    .sidebar,
-    .customer-sidebar {
+    .sidebar {
       padding-bottom: calc(8px + env(safe-area-inset-bottom));
     }
   }

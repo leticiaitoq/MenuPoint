@@ -42,7 +42,7 @@
 }
 .conta-convidado__btn--prim { border: none; background: var(--brand); color: var(--text-muted); }
 .conta-convidado__btn--prim:hover { background: var(--brand-hover); }
-.conta-convidado__btn--sec { border: 2px solid var(--brand); background: var(--bg-surface); color: var(--brand); }
+.conta-convidado__btn--sec { border: 2px solid var(--brand); background: var(--bg-surface); color: var(--accent); }
 .conta-convidado__btn--sec:hover { background: var(--brand-soft); }
 .conta-convidado__link {
   border: none;

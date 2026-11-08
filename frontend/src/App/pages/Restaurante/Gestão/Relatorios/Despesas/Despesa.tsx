@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   HiPlus,
@@ -17,21 +17,24 @@ import { MdOutlineReceiptLong } from 'react-icons/md';
 import { BsCashStack } from 'react-icons/bs';
 import RestaurantLayout from '../../../../../shared/components/layout/Restaurantelayout';
 import ContadorCaracteres from '../../../../../shared/components/ContadorCaracteres/ContadorCaracteres';
+import DespesaService, {
+  CategoriaDespesaApi,
+  DespesaApi,
+  DespesaPayload,
+  FORMAS_PAGAMENTO_DESPESA,
+  formaPagamentoDoRotulo,
+  mensagemErroDespesa,
+  rotuloFormaPagamento,
+} from '../../../../../services/despesa.service';
 import './Despesas.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────
-type Categoria =
-  | 'Custos dos Produtos'
-  | 'Contas'
-  | 'Marketing'
-  | 'Aluguel'
-  | 'Taxas e Comissões'
-  | 'Outros';
+type Categoria = string;
 
 type FormaPagamento = 'Pix' | 'Boleto' | 'Cartão' | 'Dinheiro';
 
 interface Despesa {
-  id: number;
+  id: string;
   dataISO: string; // yyyy-mm-dd, facilita ordenação e filtro
   descricao: string;
   categoria: Categoria;
@@ -52,16 +55,10 @@ interface FormularioDespesa {
 type ChaveOrdenacao = 'dataISO' | 'descricao' | 'categoria' | 'fornecedor' | 'valor';
 
 // ── Constantes ────────────────────────────────────────────────────────
-const CATEGORIAS: Categoria[] = [
-  'Custos dos Produtos',
-  'Contas',
-  'Marketing',
-  'Aluguel',
-  'Taxas e Comissões',
-  'Outros',
-];
+// Mesmas categorias do cadastro (a lista real vem da API; esta é só o que aparece antes de carregar)
+const CATEGORIAS_INICIAIS = ['Custos dos Produtos', 'Contas', 'Marketing', 'Aluguel', 'Taxas e Comissões', 'Outros'];
 
-const FORMAS_PAGAMENTO: FormaPagamento[] = ['Pix', 'Boleto', 'Cartão', 'Dinheiro'];
+const FORMAS_PAGAMENTO: FormaPagamento[] = FORMAS_PAGAMENTO_DESPESA.map((f) => f.rotulo as FormaPagamento);
 
 const ITENS_POR_PAGINA = 7;
 
@@ -74,46 +71,16 @@ const FORMULARIO_VAZIO: FormularioDespesa = {
   valor: '',
 };
 
-// ── Mock (substituir por chamada à API futuramente) ──────────────────
-const DESPESAS_MOCK: Despesa[] = [
-  { id: 23, dataISO: '2024-04-27', descricao: 'Compra de carnes',           categoria: 'Custos dos Produtos', fornecedor: 'Frigorífico Bom Corte', pagamento: 'Pix',      valor: 850,  },
-  { id: 22, dataISO: '2024-04-26', descricao: 'Conta de energia',           categoria: 'Contas',               fornecedor: 'CPFL',                  pagamento: 'Boleto',   valor: 420,  },
-  { id: 21, dataISO: '2024-04-25', descricao: 'Anúncio Instagram',          categoria: 'Marketing',            fornecedor: 'Meta',                  pagamento: 'Cartão',   valor: 300,      },
-  { id: 20, dataISO: '2024-04-24', descricao: 'Aluguel do imóvel',          categoria: 'Aluguel',              fornecedor: 'Imobiliária Alpha',     pagamento: 'Cartão',   valor: 1200,  },
-  { id: 19, dataISO: '2024-04-23', descricao: 'Material de limpeza',        categoria: 'Outros',               fornecedor: 'Casa do Produtor',      pagamento: 'Dinheiro', valor: 180,    },
-  { id: 18, dataISO: '2024-04-22', descricao: 'Taxas bancárias',            categoria: 'Taxas e Comissões',    fornecedor: 'Banco do Brasil',       pagamento: 'Cartão',   valor: 90,   },
-  { id: 17, dataISO: '2024-04-21', descricao: 'Manutenção de equipamentos', categoria: 'Outros',               fornecedor: 'Técnico Todo Dia',      pagamento: 'Pix',      valor: 410,    },
-  { id: 16, dataISO: '2024-04-20', descricao: 'Compra de hortifruti',       categoria: 'Custos dos Produtos',  fornecedor: 'Sacolão da Serra',      pagamento: 'Dinheiro', valor: 260,  },
-  { id: 15, dataISO: '2024-04-19', descricao: 'Conta de água',              categoria: 'Contas',               fornecedor: 'Sabesp',                pagamento: 'Boleto',   valor: 150,  },
-  { id: 14, dataISO: '2024-04-18', descricao: 'Impulsionamento de posts',   categoria: 'Marketing',            fornecedor: 'Meta',                  pagamento: 'Cartão',   valor: 220, 
-    
-      },
-  { id: 13, dataISO: '2024-04-17', descricao: 'Comissão de aplicativo',     categoria: 'Taxas e Comissões',    fornecedor: 'iFood',                 pagamento: 'Pix',      valor: 340, 
-    
-      },
-  { id: 12, dataISO: '2024-04-16', descricao: 'Compra de bebidas',          categoria: 'Custos dos Produtos',  fornecedor: 'Distribuidora Nova Era',pagamento: 'Boleto',   valor: 610,  },
-  { id: 11, dataISO: '2024-04-15', descricao: 'Internet do estabelecimento',categoria: 'Contas',               fornecedor: 'Vivo Fibra',            pagamento: 'Cartão',   valor: 199, 
-    
-      },
-  { id: 10, dataISO: '2024-04-14', descricao: 'Uniformes da equipe',        categoria: 'Outros',               fornecedor: 'Confecções União',      pagamento: 'Dinheiro', valor: 320,  },
-  { id: 9,  dataISO: '2024-04-13', descricao: 'Panfletos promocionais',     categoria: 'Marketing',            fornecedor: 'Gráfica Rápida',        pagamento: 'Dinheiro', valor: 130, 
-    
-      },
-  { id: 8,  dataISO: '2024-04-12', descricao: 'Compra de embalagens',       categoria: 'Custos dos Produtos',  fornecedor: 'EmbalaFácil',           pagamento: 'Boleto',   valor: 275,  },
-  { id: 7,  dataISO: '2024-04-11', descricao: 'Taxa de máquina de cartão',  categoria: 'Taxas e Comissões',    fornecedor: 'Stone',                 pagamento: 'Pix',      valor: 75,   },
-  { id: 6,  dataISO: '2024-04-10', descricao: 'Aluguel do estacionamento',  categoria: 'Aluguel',              fornecedor: 'Imobiliária Alpha',     pagamento: 'Boleto',   valor: 350, 
-    
-      },
-  { id: 5,  dataISO: '2024-04-09', descricao: 'Compra de laticínios',       categoria: 'Custos dos Produtos',  fornecedor: 'Laticínios Bom Sabor',  pagamento: 'Dinheiro', valor: 190,  },
-  { id: 4,  dataISO: '2024-04-08', descricao: 'Conta de gás',               categoria: 'Contas',               fornecedor: 'Comgás',                pagamento: 'Boleto',   valor: 240, 
-    
-      },
-  { id: 3,  dataISO: '2024-04-07', descricao: 'Dedetização',                categoria: 'Outros',               fornecedor: 'Higine Total',          pagamento: 'Cartão',   valor: 280,  },
-  { id: 2,  dataISO: '2024-04-06', descricao: 'Reposição de gás de cozinha',categoria: 'Custos dos Produtos',  fornecedor: 'Gás Rápido',            pagamento: 'Pix',      valor: 165, 
-    
-      },
-  { id: 1,  dataISO: '2024-04-05', descricao: 'Manutenção do freezer',      categoria: 'Outros',               fornecedor: 'Técnico Todo Dia',      pagamento: 'Cartão',   valor: 310,  },
-];
+// ── Conversão API <-> tela ───────────────────────────────────────────────
+const doServidor = (d: DespesaApi): Despesa => ({
+  id: d.id,
+  dataISO: d.data_despesa,
+  descricao: d.descricao,
+  categoria: d.categoria,
+  fornecedor: d.fornecedor,
+  pagamento: rotuloFormaPagamento(d.forma_pagamento) as FormaPagamento,
+  valor: d.valor,
+});
 
 // ── Helpers ────────────────────────────────────────────────────────────
 const formatarPreco = (valor: number): string =>
@@ -125,7 +92,7 @@ const formatarDataExibicao = (iso: string): string => {
   return `${dia}/${mes}/${ano}`;
 };
 
-const CATEGORIA_ESTILO: Record<Categoria, string> = {
+const CATEGORIA_ESTILO: Record<string, string> = {
   'Custos dos Produtos': 'despesas__badge--rosa',
   Contas: 'despesas__badge--azul',
   Marketing: 'despesas__badge--roxo',
@@ -153,7 +120,12 @@ const Despesas: React.FC = () => {
   const navigate = useNavigate();
 
   // Dados
-  const [despesas, setDespesas] = useState<Despesa[]>(DESPESAS_MOCK);
+  const [despesas, setDespesas] = useState<Despesa[]>([]);
+  const [categorias, setCategorias] = useState<string[]>(CATEGORIAS_INICIAIS);
+  const [carregando, setCarregando] = useState(true);
+  const [erroLista, setErroLista] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [erroModal, setErroModal] = useState('');
 
   // Filtros
   const [periodoInicio, setPeriodoInicio] = useState('');
@@ -172,11 +144,47 @@ const Despesas: React.FC = () => {
 
   // Modal de edição
   const [modalAberto, setModalAberto] = useState(false);
-  const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   const [formulario, setFormulario] = useState<FormularioDespesa>(FORMULARIO_VAZIO);
 
   // Modal de exclusão
   const [despesaParaExcluir, setDespesaParaExcluir] = useState<Despesa | null>(null);
+
+  // ── Carregamento (API) ─────────────────────────────────────────────
+  // O período vai para o servidor; categoria e forma de pagamento filtram na própria tela.
+  const carregar = useCallback(async () => {
+    if (periodoInicio && periodoFim && periodoInicio > periodoFim) {
+      setDespesas([]);
+      setErroLista('A data inicial não pode ser depois da data final.');
+      setCarregando(false);
+      return;
+    }
+
+    setCarregando(true);
+    setErroLista('');
+    try {
+      const lista = await DespesaService.listar({
+        ...(periodoInicio && { data_inicio: periodoInicio }),
+        ...(periodoFim && { data_fim: periodoFim }),
+      });
+      setDespesas(lista.map(doServidor));
+    } catch (err) {
+      setErroLista(mensagemErroDespesa(err, 'Não foi possível carregar as despesas.'));
+    } finally {
+      setCarregando(false);
+    }
+  }, [periodoInicio, periodoFim]);
+
+  useEffect(() => {
+    void carregar();
+  }, [carregar]);
+
+  // Categorias do restaurante (as padrão + as que ele criou no cadastro)
+  useEffect(() => {
+    DespesaService.categorias()
+      .then((lista: CategoriaDespesaApi[]) => setCategorias(lista.map((c) => c.nome)))
+      .catch(() => { /* mantém a lista inicial; o erro principal aparece na tabela */ });
+  }, []);
 
   // ── Filtragem ──────────────────────────────────────────────────────
   const despesasFiltradas = useMemo(() => {
@@ -231,6 +239,7 @@ const Despesas: React.FC = () => {
   };
 
   const abrirModalEdicao = (despesa: Despesa) => {
+    setErroModal('');
     setEditandoId(despesa.id);
     setFormulario({
       dataISO: despesa.dataISO,
@@ -244,6 +253,7 @@ const Despesas: React.FC = () => {
   };
 
   const fecharModal = () => {
+    setErroModal('');
     setModalAberto(false);
     setEditandoId(null);
     setFormulario(FORMULARIO_VAZIO);
@@ -253,53 +263,57 @@ const Despesas: React.FC = () => {
     setFormulario((atual) => ({ ...atual, [campo]: valor }));
   };
 
-  const salvarDespesa = (evento: React.FormEvent) => {
+  const salvarDespesa = async (evento: React.FormEvent) => {
     evento.preventDefault();
 
     const valorNumerico = Number(formulario.valor.replace(',', '.'));
     if (!formulario.dataISO || !formulario.descricao.trim() || !valorNumerico || valorNumerico <= 0) {
+      setErroModal('Preencha a data, a descrição e um valor maior que zero.');
       return;
     }
 
-    if (editandoId !== null) {
-      setDespesas((atual) =>
-        atual.map((d) =>
-          d.id === editandoId
-            ? {
-                ...d,
-                dataISO: formulario.dataISO,
-                descricao: formulario.descricao.trim(),
-                categoria: formulario.categoria,
-                fornecedor: formulario.fornecedor.trim(),
-                pagamento: formulario.pagamento,
-                valor: valorNumerico,
-              }
-            : d
-        )
-      );
-    } else {
-      const novoId = despesas.reduce((max, d) => Math.max(max, d.id), 0) + 1;
-      setDespesas((atual) => [
-        {
-          id: novoId,
-          dataISO: formulario.dataISO,
-          descricao: formulario.descricao.trim(),
-          categoria: formulario.categoria,
-          fornecedor: formulario.fornecedor.trim(),
-          pagamento: formulario.pagamento,
-          valor: valorNumerico,      },
-        ...atual,
-      ]);
-      setPaginaAtual(1);
-    }
+    const payload: DespesaPayload = {
+      data_despesa: formulario.dataISO,
+      descricao: formulario.descricao.trim(),
+      categoria: formulario.categoria,
+      fornecedor: formulario.fornecedor.trim(),
+      forma_pagamento: formaPagamentoDoRotulo(formulario.pagamento),
+      valor: valorNumerico,
+    };
 
-    fecharModal();
+    setSalvando(true);
+    setErroModal('');
+    try {
+      if (editandoId !== null) {
+        const atualizada = doServidor(await DespesaService.atualizar(editandoId, payload));
+        setDespesas((atual) => atual.map((d) => (d.id === editandoId ? atualizada : d)));
+      } else {
+        const criada = doServidor(await DespesaService.criar(payload));
+        setDespesas((atual) => [criada, ...atual]);
+        setPaginaAtual(1);
+      }
+      fecharModal();
+    } catch (err) {
+      setErroModal(mensagemErroDespesa(err, 'Não foi possível salvar a despesa.'));
+    } finally {
+      setSalvando(false);
+    }
   };
 
-  const confirmarExclusao = () => {
+  const confirmarExclusao = async () => {
     if (!despesaParaExcluir) return;
-    setDespesas((atual) => atual.filter((d) => d.id !== despesaParaExcluir.id));
-    setDespesaParaExcluir(null);
+
+    setSalvando(true);
+    setErroModal('');
+    try {
+      await DespesaService.excluir(despesaParaExcluir.id);
+      setDespesas((atual) => atual.filter((d) => d.id !== despesaParaExcluir.id));
+      setDespesaParaExcluir(null);
+    } catch (err) {
+      setErroModal(mensagemErroDespesa(err, 'Não foi possível excluir a despesa.'));
+    } finally {
+      setSalvando(false);
+    }
   };
 
   const IconeOrdenacao = ({ coluna }: { coluna: ChaveOrdenacao }) => (
@@ -396,7 +410,7 @@ const Despesas: React.FC = () => {
                 }}
               >
                 <option>Todas as categorias</option>
-                {CATEGORIAS.map((c) => (
+                {categorias.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>
@@ -471,7 +485,7 @@ const Despesas: React.FC = () => {
                     <td>{formatarDataExibicao(despesa.dataISO)}</td>
                     <td>{despesa.descricao}</td>
                     <td>
-                      <span className={`despesas__badge ${CATEGORIA_ESTILO[despesa.categoria]}`}>
+                      <span className={`despesas__badge ${CATEGORIA_ESTILO[despesa.categoria] ?? 'despesas__badge--cinza'}`}>
                         {despesa.categoria}
                       </span>
                     </td>
@@ -496,7 +510,7 @@ const Despesas: React.FC = () => {
                         </button>
                         <button
                           className="despesas__btn-acao despesas__btn-acao--excluir"
-                          onClick={() => setDespesaParaExcluir(despesa)}
+                          onClick={() => { setErroModal(''); setDespesaParaExcluir(despesa); }}
                           aria-label="Excluir despesa"
                         >
                           <HiTrash />
@@ -509,7 +523,18 @@ const Despesas: React.FC = () => {
                 {despesasDaPagina.length === 0 && (
                   <tr>
                     <td colSpan={7} className="despesas__vazio">
-                      Nenhuma despesa encontrada para os filtros selecionados.
+                      {carregando
+                        ? 'Carregando despesas...'
+                        : erroLista
+                          ? (
+                            <>
+                              {erroLista}{' '}
+                              <button type="button" className="despesas__periodo-limpar" onClick={() => void carregar()}>
+                                Tentar novamente
+                              </button>
+                            </>
+                          )
+                          : 'Nenhuma despesa encontrada para os filtros selecionados.'}
                     </td>
                   </tr>
                 )}
@@ -559,7 +584,7 @@ const Despesas: React.FC = () => {
                 </button>
               </div>
 
-              <form className="despesas__form" onSubmit={salvarDespesa}>
+              <form className="despesas__form" onSubmit={(e) => void salvarDespesa(e)}>
                 <label className="despesas__form-campo">
                   Data
                   <input
@@ -590,7 +615,7 @@ const Despesas: React.FC = () => {
                       value={formulario.categoria}
                       onChange={(e) => atualizarCampoFormulario('categoria', e.target.value as Categoria)}
                     >
-                      {CATEGORIAS.map((c) => (
+                      {categorias.map((c) => (
                         <option key={c}>{c}</option>
                       ))}
                     </select>
@@ -636,12 +661,14 @@ const Despesas: React.FC = () => {
                   </label>
                 </div>
 
+                {erroModal && <p className="despesas__erro" role="alert">{erroModal}</p>}
+
                 <div className="despesas__form-acoes">
-                  <button type="button" className="despesas__form-cancelar" onClick={fecharModal}>
+                  <button type="button" className="despesas__form-cancelar" onClick={fecharModal} disabled={salvando}>
                     Cancelar
                   </button>
-                  <button type="submit" className="despesas__form-salvar">
-                    {editandoId !== null ? 'Salvar Alterações' : 'Adicionar Despesa'}
+                  <button type="submit" className="despesas__form-salvar" disabled={salvando}>
+                    {salvando ? 'Salvando...' : editandoId !== null ? 'Salvar Alterações' : 'Adicionar Despesa'}
                   </button>
                 </div>
               </form>
@@ -658,12 +685,13 @@ const Despesas: React.FC = () => {
                 Tem certeza que deseja excluir <strong>{despesaParaExcluir.descricao}</strong> ({formatarPreco(despesaParaExcluir.valor)})?
                 Essa ação não pode ser desfeita.
               </p>
+              {erroModal && <p className="despesas__erro" role="alert">{erroModal}</p>}
               <div className="despesas__form-acoes">
-                <button className="despesas__form-cancelar" onClick={() => setDespesaParaExcluir(null)}>
+                <button className="despesas__form-cancelar" onClick={() => { setErroModal(''); setDespesaParaExcluir(null); }} disabled={salvando}>
                   Cancelar
                 </button>
-                <button className="despesas__form-excluir" onClick={confirmarExclusao}>
-                  Excluir
+                <button className="despesas__form-excluir" onClick={() => void confirmarExclusao()} disabled={salvando}>
+                  {salvando ? 'Excluindo...' : 'Excluir'}
                 </button>
               </div>
             </div>

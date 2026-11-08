@@ -14,13 +14,13 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: var(--brand);
+  color: var(--accent);
   font-size: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: backgrouand 0.15s;
 }
 .qstepper__btn:hover:not(:disabled) { background: var(--brand-soft); }
 .qstepper__btn:disabled { opacity: 0.3; cursor: not-allowed; }

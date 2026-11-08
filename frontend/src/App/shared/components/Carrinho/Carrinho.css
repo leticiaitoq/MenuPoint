@@ -12,7 +12,7 @@
   position: fixed;
   top: 0;
   right: 0;
-  width: 420px;
+  width: min(420px, 100vw);
   height: 100vh;
   background-color: var(--bg-surface);
   border-radius: 24px 0 0 24px;
@@ -218,7 +218,7 @@
 .carrinho__btn-finalizar {
   width: 100%;
   padding: 18px;
-  background-color: #7b2020;
+  background-color: var(--brand);
   color: var(--on-brand);
   border: none;
   border-radius: 12px;
@@ -229,7 +229,7 @@
 }
 
 .carrinho__btn-finalizar:hover:not(:disabled) {
-  background-color: #5e1818;
+  background-color: var(--brand-hover);
   transform: translateY(-1px);
 }
 

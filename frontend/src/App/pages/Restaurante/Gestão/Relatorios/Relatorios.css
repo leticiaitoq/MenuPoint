@@ -16,7 +16,7 @@
   --cor-texto-fraco:var(--text-muted);
   --cor-borda:      var(--border);
   --cor-fundo-card: var(--bg-card-glass);
-  --sombra:         0 1px 4pxvar(--shadow-color);
+  --sombra:         0 1px 4px var(--shadow-color);
   --raio:           14px;
   --raio-sm:        8px;
 
@@ -655,4 +655,55 @@
     align-items: flex-start;
     gap: 10px;
   }
+}
+
+/* ── Despesas reais (API): período, avisos de carregando/erro/vazio ── */
+.relatorios__despesas-periodo {
+  margin: -4px 0 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.relatorios__despesas-aviso {
+  margin: 8px 0 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.relatorios__despesas-aviso--erro {
+  color: var(--danger);
+}
+
+/* ── Avisos de carregando/erro e estados vazios ── */
+.relatorios__aviso {
+  margin: 0;
+  font-size: 13px;
+  color: var(--cor-texto-fraco);
+}
+
+.relatorios__aviso--erro {
+  color: var(--danger);
+}
+
+.relatorios__aviso-botao {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 6px;
+  font-size: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.relatorios__aviso-botao:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.relatorios__vazio {
+  margin: 8px 0;
+  font-size: 13px;
+  color: var(--cor-texto-fraco);
 }
