@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import AuthCard from '../auth/AuthCard';
 import AuthService from '../../services/auth.service';
 import AssinaturaService from '../../services/assinatura.service';
-import { useAuth, ROTA_APOS_LOGIN } from '../../shared/contexts/Authcontext';
+import { useAuth } from '../../shared/contexts/Authcontext';
 import '../auth/LoginPage.css';
 import './PagamentoPage.css';
 
 // Tela de retorno do Mercado Pago: confere o pagamento direto no MP (sem esperar o webhook)
-// e segue para a confirmação do e-mail ou para o sistema.
+// e, se aprovado, volta ao login com um aviso de sucesso.
 
 type Estado = 'checando' | 'ativa' | 'demorando' | 'recusado';
 
@@ -24,27 +24,36 @@ const STATUS_MP_PT: Record<string, string> = {
 
 const AssinaturaSucesso: React.FC = () => {
   const navigate = useNavigate();
-  const { token, usuario, entrar } = useAuth();
+  const { sair } = useAuth();
   const [estado, setEstado] = useState<Estado>('checando');
   const [rodada, setRodada] = useState(0);
   const [statusMP, setStatusMP] = useState<string | null>(null);
+  const [progresso, setProgresso] = useState(5);
 
-  // Logo após o cadastro falta confirmar o e-mail; nos demais casos vai direto ao sistema
-  const irParaProximaTela = () => {
+  // Pagamento aprovado: encerra a sessão e volta ao login, que mostra o modal de sucesso.
+  // Se o e-mail ainda não foi confirmado, manda um código novo (o do cadastro pode ter expirado);
+  // falhas, como o intervalo mínimo entre reenvios, são ignoradas: o login tem o botão "Reenviar".
+  const voltarParaLogin = () => {
     let pos: { email?: string; verificarEmail?: boolean } = {};
     try { pos = JSON.parse(localStorage.getItem('@menupoint:pos_pagamento') || '{}'); } catch { /* ignora */ }
     localStorage.removeItem('@menupoint:pos_pagamento');
-    // Pagamento aprovado: envia um código novo (o do cadastro pode ter expirado). Falhas, como o
-    // intervalo mínimo entre reenvios, são ignoradas: a tela do código tem o botão "Reenviar".
     if (pos.verificarEmail && pos.email) AuthService.resendCode(pos.email, 'registro').catch(() => undefined);
-    if (pos.verificarEmail) navigate('/verify-code', { state: { email: pos.email, mode: 'register' }, replace: true });
-    else navigate(ROTA_APOS_LOGIN, { replace: true });
+    sair();
+    navigate('/login', { replace: true, state: { pagamentoAprovado: true } });
   };
+
+  // Barra "carregando": avança devagar até 90% enquanto confere o pagamento e completa ao aprovar
+  useEffect(() => {
+    if (estado !== 'checando') return;
+    const id = setInterval(() => setProgresso((p) => (p < 90 ? p + (90 - p) * 0.06 : p)), 300);
+    return () => clearInterval(id);
+  }, [estado, rodada]);
 
   useEffect(() => {
     let cancelado = false;
     let tentativas = 0;
     setEstado('checando');
+    setProgresso(5);
 
     const verificar = async () => {
       if (cancelado) return;
@@ -58,9 +67,8 @@ const AssinaturaSucesso: React.FC = () => {
         }
         if (status === 'ATIVA') {
           setEstado('ativa');
-          // Pagamento aprovado: libera o restante do sistema
-          if (token && usuario) entrar({ token, usuario: { ...usuario, pagamento_pendente: false } });
-          setTimeout(() => { if (!cancelado) irParaProximaTela(); }, 800);
+          setProgresso(100);
+          setTimeout(() => { if (!cancelado) voltarParaLogin(); }, 2000);
           return;
         }
       } catch {
@@ -89,8 +97,10 @@ const AssinaturaSucesso: React.FC = () => {
           <div className="pagamento pagamento--centro">
             {estado === 'checando' && (
               <>
-                <div className="pagamento__spinner" aria-hidden="true" />
                 <h1 className="pagamento__titulo">Confirmando seu pagamento...</h1>
+                <div className="pagamento__barra" role="progressbar" aria-valuenow={Math.round(progresso)} aria-valuemin={0} aria-valuemax={100}>
+                  <div className="pagamento__barra-preenchimento" style={{ width: `${progresso}%` }} />
+                </div>
                 <p className="pagamento__subtitulo">Estamos consultando o Mercado Pago. Isso leva só alguns segundos, não feche esta página.</p>
               </>
             )}
@@ -99,7 +109,10 @@ const AssinaturaSucesso: React.FC = () => {
               <>
                 <div className="pagamento__icone pagamento__icone--ok" aria-hidden="true">✓</div>
                 <h1 className="pagamento__titulo">Pagamento confirmado!</h1>
-                <p className="pagamento__subtitulo">Levando você para o próximo passo...</p>
+                <div className="pagamento__barra" role="progressbar" aria-valuenow={100} aria-valuemin={0} aria-valuemax={100}>
+                  <div className="pagamento__barra-preenchimento" style={{ width: '100%' }} />
+                </div>
+                <p className="pagamento__subtitulo">Redirecionando para o login...</p>
               </>
             )}
 

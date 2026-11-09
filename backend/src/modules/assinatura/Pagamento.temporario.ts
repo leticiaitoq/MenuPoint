@@ -50,13 +50,13 @@ export async function temPagamentoPendente(empresa_id: string | null): Promise<b
   return pagamentoRecusado(empresa_id)
 }
 
-/** Empresa inativa, sem nenhuma assinatura ATIVA e com tentativa de pagamento que falhou. */
+/** Empresa inativa, sem nenhuma assinatura ATIVA e com tentativa de pagamento que falhou ou venceu. */
 export async function pagamentoRecusado(empresa_id: string): Promise<boolean> {
   const empresa = await prisma.empresa.findUnique({ where: { id: empresa_id }, select: { ativo: true } })
   if (!empresa || empresa.ativo) return false
   const [ativa, falha] = await Promise.all([
     prisma.assinatura.findFirst({ where: { empresa_id, status: 'ATIVA' }, select: { id: true } }),
-    prisma.assinatura.findFirst({ where: { empresa_id, status: { in: ['FALHOU', 'CANCELADA'] } }, select: { id: true } }),
+    prisma.assinatura.findFirst({ where: { empresa_id, status: { in: ['FALHOU', 'CANCELADA', 'EXPIRADA'] } }, select: { id: true } }),
   ])
   return !ativa && Boolean(falha)
 }
