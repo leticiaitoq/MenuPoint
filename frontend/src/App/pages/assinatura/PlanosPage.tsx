@@ -1,19 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CheckoutShell from './CheckoutShell';
+import AuthCard from '../auth/AuthCard';
 import AssinaturaService from '../../services/assinatura.service';
 import { ROTA_APOS_LOGIN } from '../../shared/contexts/Authcontext';
+import '../auth/LoginPage.css';
+import './PagamentoPage.css';
 
-// Escolha do plano (depois da confirmação do e-mail e antes do pagamento).
+// Tela única de escolha do plano: aparece depois da confirmação do e-mail e antes do pagamento.
+// Quem já escolheu o plano no site (/cadastro?plano=...) não passa por aqui.
 
 const CHAVE_PLANO = '@menupoint:plano';
+
 const CHAVE_PERIODO = '@menupoint:periodo';
 
 // Valor mensal de cada plano. O anual é calculado no backend (Planos.config.ts: 12 x mensal, menos o
 // desconto anual, se houver); aqui o desconto precisa ser o mesmo, por isso fica numa constante só.
 const PLANOS = [
-  { slug: 'starter', nome: 'Starter', valor: 97, popular: false },
-  { slug: 'pro', nome: 'Pro', valor: 197, popular: true },
+  { slug: 'starter', nome: 'Starter', valor: 97 },
+  { slug: 'pro', nome: 'Pro', valor: 197 },
 ];
 const DESCONTO_ANUAL_PERCENTUAL = 0; // manter igual ao backend
 
@@ -25,10 +29,10 @@ const PlanosPage: React.FC = () => {
   const navigate = useNavigate();
   const [escolhido, setEscolhido] = useState<string | null>(() => {
     const guardado = sessionStorage.getItem(CHAVE_PLANO);
-    return PLANOS.some((p) => p.slug === guardado) ? guardado : 'pro';
+    return PLANOS.some((p) => p.slug === guardado) ? guardado : null;
   });
   const [periodo, setPeriodo] = useState<'mensal' | 'anual'>(
-    () => (sessionStorage.getItem(CHAVE_PERIODO) === 'mensal' ? 'mensal' : 'anual')
+    () => (sessionStorage.getItem(CHAVE_PERIODO) === 'anual' ? 'anual' : 'mensal')
   );
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
@@ -57,48 +61,87 @@ const PlanosPage: React.FC = () => {
   };
 
   return (
-    <CheckoutShell>
-      <h1 className="ck__titulo">Escolha seu plano</h1>
-      <p className="ck__sub">Pagamento único pelo Mercado Pago. Sem cobrança automática.</p>
+    <div className="login-page" style={{ backgroundImage: 'url(/images/Register-Back.png)' }}>
+      <div className="login-page__container">
+        <AuthCard />
 
-      <div className="ck__periodo" role="group" aria-label="Período de cobrança">
-        {(['mensal', 'anual'] as const).map((p) => (
-          <button key={p} type="button" onClick={() => setPeriodo(p)} aria-pressed={periodo === p}>
-            {p === 'mensal' ? 'Mensal' : 'Anual'}
-          </button>
-        ))}
+        <div className="login-page__form-side">
+          <div className="pagamento">
+            <h1 className="pagamento__titulo">Escolha seu plano</h1>
+            <p className="pagamento__subtitulo">
+              Seu e-mail foi confirmado. Falta escolher o plano para seguir ao pagamento.
+            </p>
+
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }} role="group" aria-label="Período de cobrança">
+              {(['mensal', 'anual'] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPeriodo(p)}
+                  aria-pressed={periodo === p}
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    borderRadius: 999,
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    background: periodo === p ? '#a91e22' : '#fff',
+                    color: periodo === p ? '#fff' : '#111827',
+                    border: `2px solid ${periodo === p ? '#a91e22' : '#e5e7eb'}`,
+                  }}
+                >
+                  {p === 'mensal' ? 'Mensal' : 'Anual'}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+              {PLANOS.map((pl) => {
+                const ativo = escolhido === pl.slug;
+                return (
+                  <button
+                    key={pl.slug}
+                    type="button"
+                    onClick={() => setEscolhido(pl.slug)}
+                    aria-pressed={ativo}
+                    style={{
+                      flex: '1 1 180px',
+                      textAlign: 'left',
+                      padding: '16px 18px',
+                      borderRadius: 12,
+                      cursor: 'pointer',
+                      background: ativo ? '#fdf2f2' : '#fff',
+                      border: `2px solid ${ativo ? '#a91e22' : '#e5e7eb'}`,
+                      color: '#111827',
+                    }}
+                  >
+                    <strong style={{ display: 'block', fontSize: 18 }}>{pl.nome}</strong>
+                    <span style={{ fontSize: 24, fontWeight: 700 }}>
+                      {brl(periodo === 'anual' ? valorAnual(pl.valor) : pl.valor)}
+                    </span>
+                    <small style={{ color: '#6b7280' }}> {periodo === 'anual' ? '/ano' : '/mês'}</small>
+                    <span style={{ display: 'block', fontSize: 13, color: '#6b7280', marginTop: 4 }}>
+                      {periodo === 'anual' ? 'Pagamento único, válido por 12 meses.' : 'Pagamento único, válido por 1 mês.'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {erro && <p className="pagamento__erro">{erro}</p>}
+
+            <button
+              type="button"
+              className="pagamento__botao"
+              onClick={handleContinuar}
+              disabled={carregando || !escolhido}
+            >
+              {carregando ? 'Salvando...' : 'Continuar para o pagamento'}
+            </button>
+          </div>
+        </div>
       </div>
-
-      <span className="ck__rotulo">Planos disponíveis</span>
-      {PLANOS.map((pl) => (
-        <button
-          key={pl.slug}
-          type="button"
-          className="ck__plano"
-          aria-pressed={escolhido === pl.slug}
-          onClick={() => setEscolhido(pl.slug)}
-        >
-          {pl.popular && <span className="ck__selo">Mais popular</span>}
-          <span className="ck__plano-icone" aria-hidden="true">{pl.nome[0]}</span>
-          <span className="ck__plano-info">
-            <span className="ck__plano-nome">{pl.nome}</span>
-            <span className="ck__plano-detalhe">
-              {periodo === 'anual' ? `12 meses por ${brl(valorAnual(pl.valor))}` : '1 mês, pagamento único'}
-            </span>
-          </span>
-          <span className="ck__plano-preco">
-            {brl(periodo === 'anual' ? valorAnual(pl.valor) / 12 : pl.valor)}
-            <small>/mês</small>
-          </span>
-        </button>
-      ))}
-
-      {erro && <p className="ck__aviso ck__aviso--erro">{erro}</p>}
-
-      <button type="button" className="ck__botao" onClick={handleContinuar} disabled={carregando || !escolhido}>
-        {carregando ? 'Salvando...' : 'Continuar'}
-      </button>
-    </CheckoutShell>
+    </div>
   );
 };
 

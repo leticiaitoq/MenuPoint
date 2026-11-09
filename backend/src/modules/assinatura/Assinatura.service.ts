@@ -219,7 +219,6 @@ export class AssinaturaService {
           expiration_time: 'P1D',
           payer: { email: emailPagador },
           config: {
-            notification_url: `${env.API_URL}/api/v1/assinatura/webhook`,
             online: {
               success_url: voltar,
               failure_url: voltar,
@@ -228,7 +227,7 @@ export class AssinaturaService {
             },
           },
           items: [
-            { title: titulo, unit_price: valor, quantity: 1, unit_measure: 'unit', total_amount: valor },
+            { title: titulo, unit_price: valor, quantity: 1 },
           ],
         },
         { headers: { 'X-Idempotency-Key': randomUUID() } }
