@@ -23,7 +23,6 @@ import RestProdutos from '../pages/Restaurante/Produtos/RestProdutos';
 import CadProdutos from '../pages/Restaurante/Cadastros/Produtos/CadProdutos';
 import EditProduto from '../pages/Restaurante/Cadastros/Produtos/EditProduto';
 import GestaoCate from '../pages/Restaurante/Produtos/Categoria/GestaoCate';
-import GestaoMesas from "../pages/Restaurante/Gestão/Mesas/GestaoMesas";
 import InfoRetirada from "../pages/cliente/Retirada/InfoRetirada";
 import PerfilCliente from "../pages/cliente/Perfil/PerfilCliente";
 import PerfilLocal from "../pages/ClienteLocal/Perfil/PerfilLocal";
@@ -50,6 +49,7 @@ import AbaterValor from "../pages/Restaurante/Gestão/Caixa/AbaterValor";
 import Despesas from "../pages/Restaurante/Gestão/Relatorios/Despesas/Despesa";
 import CadDespesa from "../pages/Restaurante/Gestão/Relatorios/Despesas/CadDespesa";
 import { EmBreve } from "../pages/Restaurante/Embreve/EmBreve";
+import Termospage from "../pages/Termos/Termospage";
 /**
  * Entrada do sistema: o cadastro fica em /cadastro (aberto a partir do site, com ?plano=).
  * "/" mantém os links antigos (/?plano=pro) funcionando e leva ao mesmo lugar;
@@ -90,6 +90,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/historicolocal" element={<ControlePedidoLocal />} />
           <Route path="/perfilLocal" element={<PerfilLocal />} />
          <Route path="/personaliza" element={<Persopedido />} />
+         <Route path="/termos" element={<Termospage />} />
 
 
         {/* Rotas do cliente cadastrado: exigem login do cliente (/login/cliente) */}
@@ -117,7 +118,6 @@ const AppRoutes: React.FC = () => {
           <Route path="/restaurante/cadprodutos" element={<CadProdutos />} />
           <Route path="/restaurante/editprodutos/:id" element={<EditProduto />} />
           <Route path="/restaurante/categories" element={<GestaoCate />} />
-          <Route path="/restaurante/mesas" element={<GestaoMesas />} />
           <Route path="/restaurante/fila" element={<Fila />} />
           <Route path="/restaurante/relatorios" element={<Relatorios />} />
           <Route path="/restaurante/config" element={<Config />} />

@@ -315,13 +315,13 @@ const Fila: React.FC = () => {
           {pedido.numero}
           {algumMarcado && <HiCheck className="fila__icone-check" />}
         </td>
-        <td className="fila__td">{pedido.cliente}</td>
-        <td className="fila__td">
+        <td className="fila__td fila__td--cliente">{pedido.cliente}</td>
+        <td className="fila__td fila__td--local">
           <span className="fila__mesa">
             <MdTableRestaurant /> {pedido.local}
           </span>
         </td>
-        <td className="fila__td">
+        <td className="fila__td fila__td--itens">
           <ul className="fila__itens-lista">
             {itens.map((item) => (
               <li key={item.id}>
@@ -359,7 +359,7 @@ const Fila: React.FC = () => {
         <td className="fila__td fila__td--tempo">
           <HiClock className="fila__icone-tempo" /> {tempoRelativo(pedido.criadoEm)}
         </td>
-        <td className="fila__td">
+        <td className="fila__td fila__td--comanda">
           {aguardandoPagamento && <span className="fila__badge-pagamento">Aguardando pagamento</span>}
           {pedido.mesaId && pedido.mesaNumero !== undefined && (
             <button
@@ -436,9 +436,12 @@ const Fila: React.FC = () => {
 
   const proximaColuna = COLUNAS.find((c) => c.status === colunaDoModal?.proximoStatus);
 
+  // Celular: barra fixa com o "Avançar" enquanto houver itens marcados (o CSS só a mostra em ≤600px)
+  const mostrarBarra = marcados.length > 0 && colunaAtual.proximoStatus !== null;
+
   return (
     <RestaurantLayout>
-      <div className="fila">
+      <div className={`fila${mostrarBarra ? ' fila--com-selecao' : ''}`}>
 
         {/* ── Cabeçalho ── */}
         <div className="fila__header">
@@ -484,6 +487,23 @@ const Fila: React.FC = () => {
           </div>
         ) : (
           <>
+            {/* ── Abas das etapas (só no celular; no desktop vale o kanban) ── */}
+            <div className="fila__abas" role="tablist" aria-label="Etapas do pedido">
+              {COLUNAS.map((coluna) => (
+                <button
+                  key={coluna.status}
+                  type="button"
+                  role="tab"
+                  aria-selected={colunaAtiva === coluna.status}
+                  className={`fila__aba fila__aba--${coluna.status}${colunaAtiva === coluna.status ? ' fila__aba--ativa' : ''}`}
+                  onClick={() => carregarColuna(coluna.status)}
+                >
+                  {coluna.rotulo}
+                  <span className="fila__aba-contador">{quantidadeNaColuna(coluna.status)}</span>
+                </button>
+              ))}
+            </div>
+
             {/* ── Kanban (conta itens, não pedidos) ── */}
             <div className="fila__kanban">{COLUNAS.map(renderColuna)}</div>
 
@@ -522,6 +542,25 @@ const Fila: React.FC = () => {
               )}
             </div>
           </>
+        )}
+
+        {/* ── Barra de ação do celular (o CSS a esconde acima de 600px) ── */}
+        {mostrarBarra && (
+          <div className="fila__barra-acao">
+            <span className="fila__barra-acao-texto">
+              <strong>{marcados.length}</strong> {marcados.length === 1 ? 'item marcado' : 'itens marcados'}
+            </span>
+            <button type="button" className="fila__barra-acao-limpar" onClick={() => setItensMarcados(new Set())}>
+              Limpar
+            </button>
+            <button
+              type="button"
+              className="fila__btn-avancar fila__btn-avancar--ativo"
+              onClick={() => abrirModal(colunaAtual)}
+            >
+              Avançar <FiChevronRight />
+            </button>
+          </div>
         )}
       </div>
 

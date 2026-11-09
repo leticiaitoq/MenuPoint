@@ -21,6 +21,7 @@ import {
 } from 'react-icons/hi';
 import { BsCashCoin, BsTrophy } from 'react-icons/bs';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
+import { useTema } from '../../../../shared/contexts/TemaContext';
 import DespesaService, { mensagemErroDespesa, ResumoDespesas } from '../../../../services/despesa.service';
 import RelatorioService, { mensagemErroRelatorio, ResumoRelatorio } from '../../../../services/relatorio.service';
 import './Relatorios.css';
@@ -36,9 +37,32 @@ const PERIODOS: { valor: PeriodoPredefinido; rotulo: string }[] = [
   { valor: 'mes_anterior', rotulo: 'Mês anterior' },
 ];
 
-// Cores só para o gráfico (a API manda nomes e números)
-const CORES_RANKING   = ['#e07b39', '#d97706', '#16a34a', '#2563eb'];
-const CORES_CATEGORIA = ['#8B1A1A', '#d97706', '#16a34a', '#2563eb', '#0891b2', '#6b7280'];
+// Cores só para o gráfico (a API manda nomes e números).
+// Os gráficos são SVG desenhados pelo Recharts, então as cores vêm daqui (não do CSS)
+// e trocam conforme o tema.
+const GRAFICO_CLARO = {
+  ranking:   ['#e07b39', '#d97706', '#16a34a', '#2563eb'],
+  categoria: ['#8B1A1A', '#d97706', '#16a34a', '#2563eb', '#0891b2', '#6b7280'],
+  barra: '#d97706',
+  barraMelhor: '#8B1A1A',
+  grade: '#f0f0f0',
+  eixo: '#9ca3af',
+  cursor: '#f5f5f5',
+  bordaFatia: '#ffffff',
+  textoFatia: '#ffffff',
+};
+
+const GRAFICO_ESCURO = {
+  ranking:   ['#f08a4b', '#f5b35a', '#4cc07a', '#6ea0ff'],
+  categoria: ['#ff7a6e', '#f5b35a', '#4cc07a', '#6ea0ff', '#22b8cf', '#9ca3af'],
+  barra: '#f5b35a',
+  barraMelhor: '#ff7a6e',
+  grade: '#414141',
+  eixo: '#b3b3b3',
+  cursor: '#303030',
+  bordaFatia: '#262626',
+  textoFatia: '#1a1a1a',
+};
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 const formatarPreco = (valor: number): string =>
@@ -108,14 +132,14 @@ const TooltipPizza = ({ active, payload }: any) => {
 };
 
 // ── Label percentual dentro de cada fatia ────────────────────────────────
-const LabelPizza = ({ cx, cy, midAngle, innerRadius, outerRadius, value }: any) => {
+const LabelPizza = ({ cx, cy, midAngle, innerRadius, outerRadius, value, corTexto }: any) => {
   const RADIAN = Math.PI / 180;
   const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
   const x      = cx + radius * Math.cos(-midAngle * RADIAN);
   const y      = cy + radius * Math.sin(-midAngle * RADIAN);
   if (value < 8) return null;
   return (
-    <text x={x} y={y} fill="#fff" textAnchor="middle"
+    <text x={x} y={y} fill={corTexto} textAnchor="middle"
       dominantBaseline="central" fontSize={11} fontWeight={700}>
       {value}%
     </text>
@@ -125,6 +149,8 @@ const LabelPizza = ({ cx, cy, midAngle, innerRadius, outerRadius, value }: any) 
 // ── Componente principal ─────────────────────────────────────────────────
 const Relatorios: React.FC = () => {
   const navigate = useNavigate();
+  const { escuro } = useTema();
+  const cores = escuro ? GRAFICO_ESCURO : GRAFICO_CLARO;
 
   const [periodoTipo, setPeriodoTipo] = useState<PeriodoPredefinido>('mes');
   const periodo = calcularPeriodo(periodoTipo);
@@ -174,11 +200,11 @@ const Relatorios: React.FC = () => {
   const ticketMedio       = resumo?.ticket_medio ?? 0;
   const pedidosTotal      = resumo?.pedidos_total ?? 0;
   const faturamentoDiario = (resumo?.faturamento_diario ?? []).map((d) => ({ dia: dataCurta(d.data), valor: d.valor }));
-  const ranking           = (resumo?.produtos_mais_vendidos ?? []).map((p, i) => ({ ...p, cor: CORES_RANKING[i % CORES_RANKING.length] }));
+  const ranking           = (resumo?.produtos_mais_vendidos ?? []).map((p, i) => ({ ...p, cor: cores.ranking[i % cores.ranking.length] }));
   const fatias            = (resumo?.pedidos_por_categoria ?? []).map((c, i) => ({
     name: c.categoria,
     value: c.percentual,
-    cor: CORES_CATEGORIA[i % CORES_CATEGORIA.length],
+    cor: cores.categoria[i % cores.categoria.length],
   }));
   const maxProduto  = ranking[0]?.quantidade ?? 1;
   const melhorValor = resumo?.melhor_dia?.valor ?? 0;
@@ -298,27 +324,27 @@ const Relatorios: React.FC = () => {
             <h3 className="relatorios__painel-titulo">Faturamento Durante o Período</h3>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={faturamentoDiario} barCategoryGap="30%">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={cores.grade} vertical={false} />
                 <XAxis
                   dataKey="dia"
-                  tick={{ fontSize: 11, fill: '#9ca3af' }}
+                  tick={{ fontSize: 11, fill: cores.eixo }}
                   axisLine={false}
                   tickLine={false}
                   interval="preserveStartEnd"
                   minTickGap={14}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#9ca3af' }}
+                  tick={{ fontSize: 11, fill: cores.eixo }}
                   axisLine={false}
                   tickLine={false}
                   width={40}
                 />
-                <Tooltip content={<TooltipBarras />} cursor={{ fill: '#f5f5f5' }} />
+                <Tooltip content={<TooltipBarras />} cursor={{ fill: cores.cursor }} />
                 <Bar dataKey="valor" radius={[6, 6, 0, 0]} maxBarSize={48}>
                   {faturamentoDiario.map((entry, index) => (
                     <Cell
                       key={`bar-${index}`}
-                      fill={melhorValor > 0 && entry.valor === melhorValor ? '#8B1A1A' : '#d97706'}
+                      fill={melhorValor > 0 && entry.valor === melhorValor ? cores.barraMelhor : cores.barra}
                     />
                   ))}
                 </Bar>
@@ -340,7 +366,7 @@ const Relatorios: React.FC = () => {
                   cy="50%"
                   outerRadius={80}
                   labelLine={false}
-                  label={LabelPizza}
+                  label={(props: any) => LabelPizza({ ...props, corTexto: cores.textoFatia })}
                   animationBegin={0}
                   animationDuration={800}
                 >
@@ -348,7 +374,7 @@ const Relatorios: React.FC = () => {
                     <Cell
                       key={`cell-${index}`}
                       fill={fatia.cor}
-                      stroke="#fff"
+                      stroke={cores.bordaFatia}
                       strokeWidth={2}
                     />
                   ))}

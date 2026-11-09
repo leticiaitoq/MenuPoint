@@ -171,3 +171,20 @@
     height: 44px;
   }
 }
+/* Logo clicável (vai para a tela inicial) */
+.navbar__logo--link {
+  display: inline-block;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.navbar__logo--link:hover {
+  transform: scale(1.04);
+  opacity: 0.9;
+}
+
+.navbar__logo--link:focus-visible {
+  outline: 2px solid var(--on-brand);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
