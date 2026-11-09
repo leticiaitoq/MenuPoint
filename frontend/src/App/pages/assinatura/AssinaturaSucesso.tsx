@@ -29,6 +29,9 @@ const AssinaturaSucesso: React.FC = () => {
   const [rodada, setRodada] = useState(0);
   const [statusMP, setStatusMP] = useState<string | null>(null);
   const [progresso, setProgresso] = useState(5);
+  // O Mercado Pago já mostrou a própria tela de carregamento, então a conferência roda em silêncio.
+  // Só aparece uma tela de "Confirmando..." se demorar mais que isso (ou ao verificar de novo).
+  const [mostrarCarregando, setMostrarCarregando] = useState(false);
 
   // Pagamento aprovado: encerra a sessão e volta ao login, que mostra o modal de sucesso.
   // Se o e-mail ainda não foi confirmado, manda um código novo (o do cadastro pode ter expirado);
@@ -54,6 +57,8 @@ const AssinaturaSucesso: React.FC = () => {
     let tentativas = 0;
     setEstado('checando');
     setProgresso(5);
+    setMostrarCarregando(rodada > 0);
+    const timerCarregando = setTimeout(() => { if (!cancelado) setMostrarCarregando(true); }, 2500);
 
     const verificar = async () => {
       if (cancelado) return;
@@ -68,7 +73,7 @@ const AssinaturaSucesso: React.FC = () => {
         if (status === 'ATIVA') {
           setEstado('ativa');
           setProgresso(100);
-          setTimeout(() => { if (!cancelado) voltarParaLogin(); }, 2000);
+          voltarParaLogin(); // o login já mostra o aviso de pagamento aprovado
           return;
         }
       } catch {
@@ -84,7 +89,7 @@ const AssinaturaSucesso: React.FC = () => {
     };
 
     verificar();
-    return () => { cancelado = true; };
+    return () => { cancelado = true; clearTimeout(timerCarregando); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rodada]);
 
@@ -95,7 +100,7 @@ const AssinaturaSucesso: React.FC = () => {
 
         <div className="login-page__form-side">
           <div className="pagamento pagamento--centro">
-            {estado === 'checando' && (
+            {estado === 'checando' && mostrarCarregando && (
               <>
                 <h1 className="pagamento__titulo">Confirmando seu pagamento...</h1>
                 <div className="pagamento__barra" role="progressbar" aria-valuenow={Math.round(progresso)} aria-valuemin={0} aria-valuemax={100}>
