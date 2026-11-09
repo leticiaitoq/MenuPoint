@@ -10,11 +10,12 @@
 
 /* ── Card do formulário ── */
 .reserva__card {
-  flex: 1;
+  /* Formulário compacto: não ocupa mais a tela toda, sobra espaço para a lista de mesas */
+  flex: 0 0 400px;
   min-width: 0;
   background-color: var(--bg-surface);
   border-radius: 20px;
-  padding: 32px 36px;
+  padding: 28px 28px;
   box-shadow: 0 2px 12px var(--shadow-color);
 }
 
@@ -29,7 +30,7 @@
 
 /* ── Ilustração como elemento real no fluxo ── */
 .reserva__ilustracao {
-  width: 220px;
+  width: 130px;
   height: auto;
   object-fit: contain;
   flex-shrink: 0;
@@ -209,8 +210,8 @@
 
 /* ── Painel lateral de mesas ── */
 .reserva__painel {
-  width: 320px;
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -226,9 +227,15 @@
 
 /* ── Lista de botões de mesa ── */
 .reserva__mesas {
-  display: flex;
-  flex-direction: column;
+  /* Mesas em 2 colunas; avisos e mensagens ocupam a linha toda */
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  align-items: start;
+}
+
+.reserva__mesas > .reserva__aviso {
+  grid-column: 1 / -1;
 }
 
 /* ── Botão de mesa individual ── */
@@ -399,11 +406,13 @@
   }
 
   .reserva__card {
+    flex: none;
     width: 100%;
     box-sizing: border-box;
   }
 
   .reserva__painel {
+    flex: none;
     width: 100%;
   }
 
@@ -577,3 +586,289 @@
 
 .reserva__status--pendente { color: var(--warning); }
 .reserva__status--confirmada { color: var(--success); }
+
+/* ── Horários livres por mesa ── */
+.reserva__mesa-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background-color: var(--bg-surface-alt);
+  border: 2px solid transparent;
+}
+
+.reserva__mesa-card--ativa {
+  border-color: var(--brand);
+}
+
+.reserva__mesa-topo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.reserva__horarios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reserva__horario {
+  padding: 6px 12px;
+  border-radius: 50px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg-surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.reserva__horario:hover {
+  border-color: var(--brand);
+}
+
+.reserva__horario--ativo {
+  background-color: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+
+.reserva__funcionamento {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.reserva__opcional {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.reserva__link--limpar {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.reserva__aviso--discreto {
+  background: none;
+  padding: 0;
+  font-size: 12px;
+}
+
+.reserva__alerta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background-color: var(--warning-soft, #fff4e5);
+  border-left: 4px solid var(--danger);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.reserva__alerta p {
+  margin: 0;
+}
+
+/* ── Tempo na mesa ── */
+.reserva__input--duracao { width: 180px; }
+.reserva__dica { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+@media (max-width: 600px) { .reserva__input--duracao { width: 100%; } }
+
+/* ── Lista de mesas: modo compacto ── */
+.reserva__painel-cabecalho {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+}
+
+.reserva__atualizar {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.reserva__atualizado {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.reserva__badge {
+  margin-left: 0;
+  padding: 2px 10px;
+  border-radius: 50px;
+  background: var(--brand-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.reserva__resumo-horarios {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.reserva__resumo-horarios .reserva__link { white-space: nowrap; }
+
+
+/* ── Aba "Mesas disponíveis" (minimizável) ── */
+.reserva__aba {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+}
+
+.reserva__aba .reserva__painel-titulo { margin: 0; }
+
+.reserva__aba-seta {
+  font-size: 16px;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+  transform: rotate(-90deg);
+}
+
+.reserva__aba-seta--aberta { transform: rotate(0deg); }
+
+.reserva__mesas[hidden] { display: none; }
+
+/* ── Botão RESERVAR: no topo (desktop) ou flutuante (mobile) ── */
+/* Mesmo tamanho e formato do botão original (padding/fonte/raio de .reserva__btn-reservar);
+   só ajusta a largura (auto) para caber ao lado do "Atualizar" no topo do painel */
+.reserva__btn-reservar--topo {
+  width: auto;
+  margin: 0;
+  align-self: center;
+}
+
+.reserva__btn-reservar--flutuante { display: none; }
+
+@media (max-width: 768px) {
+  .reserva__btn-reservar--topo { display: none; }
+
+  .reserva__btn-reservar--flutuante {
+    display: block;
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    /* acima da barra de navegação inferior (60px) */
+    bottom: calc(60px + 12px + env(safe-area-inset-bottom, 0px));
+    z-index: 90;
+    width: auto;
+    margin: 0;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  }
+
+  /* o último conteúdo não fica escondido atrás do botão */
+  .reserva { padding-bottom: 72px; }
+}
+
+
+/* ── Página: faixa de reservas no topo + formulário/mesas ── */
+.reserva-pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Cada reserva do cliente ocupa 1 linha no topo da tela */
+.reserva__topo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.reserva__faixa {
+  background-color: var(--bg-surface);
+  border-radius: 12px;
+  border-left: 5px solid var(--warning);
+  box-shadow: 0 2px 8px var(--shadow-color);
+  padding: 8px 14px;
+  box-sizing: border-box;
+}
+.reserva__faixa--confirmada { border-left-color: var(--success); }
+.reserva__faixa--cancelada,
+.reserva__faixa--recusada { border-left-color: var(--danger); }
+
+.reserva__faixa-linha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 28px;
+}
+
+.reserva__faixa-texto {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reserva__faixa-linha .reserva__status { white-space: nowrap; font-weight: 700; font-size: 13px; }
+.reserva__faixa-linha .reserva__link { white-space: nowrap; }
+.reserva__status--recusada,
+.reserva__status--cancelada { color: var(--danger); }
+
+.reserva__faixa-recado {
+  margin: 6px 0 2px;
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* Aviso de funcionamento (fecha no OK) */
+.reserva__aviso-horario {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border-left: 4px solid var(--warning);
+  background-color: var(--warning-soft, #fff4e5);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.reserva__aviso-horario p { margin: 0; flex: 1; }
+
+/* Resumo da seleção automática de mesas */
+.reserva__selecao {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+.reserva__selecao-falta { color: var(--danger); font-weight: 600; }
+
+.reserva__mesa-marcar { margin: 2px 0 6px; align-self: flex-start; }
+
+@media (max-width: 600px) {
+  /* mobile: a linha pode quebrar para os botões não sumirem */
+  .reserva__faixa-linha { flex-wrap: wrap; }
+  .reserva__faixa-texto { flex-basis: 100%; order: 3; white-space: normal; }
+}

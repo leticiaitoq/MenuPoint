@@ -1,7 +1,7 @@
 import prisma from '@config/prisma'
 import { Prisma } from '@prisma/client'
 import { CriarReservaDTO } from './Reserva.schema'
-import { montarJanela } from './Reserva.horario'
+import { montarJanela, comMargem } from './Reserva.horario'
 
 // Cliente do Prisma OU a transação em andamento (para checar conflito e gravar sem brecha no meio)
 type Db = Prisma.TransactionClient | typeof prisma
@@ -9,7 +9,13 @@ type Db = Prisma.TransactionClient | typeof prisma
 export class ReservaRepository {
 
   async create(
-    data: CriarReservaDTO & { estabelecimento_id: string; cliente_id?: string },
+    data: CriarReservaDTO & {
+      estabelecimento_id: string
+      cliente_id?: string
+      grupo_id?: string
+      pessoas_total?: number
+      falta_assentos?: number
+    },
     db: Db = prisma
   ) {
     const { data_reserva, hora_inicio, hora_fim, ...rest } = data
@@ -87,7 +93,7 @@ export class ReservaRepository {
           : {}),
       },
       include: {
-        mesa: { select: { id: true, numero: true } },
+        mesa: { select: { id: true, numero: true, capacidade: true } },
         confirmada_por: { select: { id: true, nome: true } },
       },
       // Mais recente primeiro dentro do dia, depois por hora
@@ -104,6 +110,9 @@ export class ReservaRepository {
     ignorar_id?: string,
     db: Db = prisma
   ) {
+    // Bate também quem fica a menos de MARGEM_ENTRE_RESERVAS_MIN de distância (não só quem sobrepõe)
+    const janela = comMargem(hora_inicio, hora_fim)
+
     return db.reserva.findFirst({
       where: {
         estabelecimento_id,
@@ -112,8 +121,8 @@ export class ReservaRepository {
         status: { in: ['PENDENTE', 'CONFIRMADA'] },
         ...(ignorar_id ? { id: { not: ignorar_id } } : {}),
         AND: [
-          { hora_inicio: { lt: hora_fim } },
-          { hora_fim: { gt: hora_inicio } },
+          { hora_inicio: { lt: janela.fim } },
+          { hora_fim: { gt: janela.inicio } },
         ],
       },
     })
@@ -126,9 +135,12 @@ export class ReservaRepository {
     data_reserva: Date,
     hora_inicio: Date,
     hora_fim: Date,
-    pessoas?: number
+    pessoas?: number,
+    db: Db = prisma
   ) {
-    return prisma.mesa.findMany({
+    const janela = comMargem(hora_inicio, hora_fim)
+
+    return db.mesa.findMany({
       where: {
         estabelecimento_id,
         ativo: true,
@@ -138,12 +150,35 @@ export class ReservaRepository {
           none: {
             data_reserva,
             status: { in: ['PENDENTE', 'CONFIRMADA'] },
-            hora_inicio: { lt: hora_fim },
-            hora_fim: { gt: hora_inicio },
+            hora_inicio: { lt: janela.fim },
+            hora_fim: { gt: janela.inicio },
           },
         },
       },
       select: { id: true, numero: true, capacidade: true, localizacao: true },
+      orderBy: { numero: 'asc' },
+    })
+  }
+
+  // ── MESAS + RESERVAS ATIVAS DO DIA (base da tela "horários livres" do cliente)
+  async mesasComReservasDoDia(estabelecimento_id: string, data_reserva: Date, pessoas?: number) {
+    return prisma.mesa.findMany({
+      where: {
+        estabelecimento_id,
+        ativo: true,
+        status: { not: 'INATIVA' },
+        ...(pessoas && { capacidade: { gte: pessoas } }),
+      },
+      select: {
+        id: true,
+        numero: true,
+        capacidade: true,
+        localizacao: true,
+        reservas: {
+          where: { data_reserva, status: { in: ['PENDENTE', 'CONFIRMADA'] } },
+          select: { hora_inicio: true, hora_fim: true },
+        },
+      },
       orderBy: { numero: 'asc' },
     })
   }
@@ -156,9 +191,13 @@ export class ReservaRepository {
       status: any
       mesa_id: string | null
       confirmada_por_id: string
-    }>
+      cancelada_por: string
+      mensagem_restaurante: string
+      mensagem_em: Date
+    }>,
+    db: Db = prisma
   ) {
-    return prisma.reserva.update({
+    return db.reserva.update({
       where: { id },
       data,
       include: {
@@ -166,6 +205,20 @@ export class ReservaRepository {
         confirmada_por: { select: { id: true, nome: true } },
       },
     })
+  }
+
+  // ── LINHAS DO MESMO GRUPO (reserva em várias mesas)
+  async findByGrupo(grupo_id: string, db: Db = prisma) {
+    return db.reserva.findMany({
+      where: { grupo_id },
+      include: { mesa: { select: { id: true, numero: true, capacidade: true } } },
+      orderBy: { criado_em: 'asc' },
+    })
+  }
+
+  async updateGrupo(grupo_id: string, data: Record<string, unknown>, db: Db = prisma) {
+    await db.reserva.updateMany({ where: { grupo_id }, data: data as any })
+    return this.findByGrupo(grupo_id, db)
   }
 
   // ── DELETAR

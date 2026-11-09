@@ -79,10 +79,10 @@ test('confirmar uma reserva pendente chama a API; "cliente chegou" conclui e abr
   await screen.findByRole('status', { name: /Resumo de disponibilidade/i });
 
   await userEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
-  await waitFor(() => expect(ReservaRestauranteService.atualizarStatus).toHaveBeenCalledWith('r1', 'CONFIRMADA'));
+  await waitFor(() => expect(ReservaRestauranteService.atualizarStatus).toHaveBeenCalledWith('r1', 'CONFIRMADA', undefined));
 
   const botoes = screen.getAllByRole('button', { name: 'Cliente chegou' });
   await userEvent.click(botoes[0]);
-  await waitFor(() => expect(ReservaRestauranteService.atualizarStatus).toHaveBeenCalledWith('r1', 'CONCLUIDA'));
+  await waitFor(() => expect(ReservaRestauranteService.atualizarStatus).toHaveBeenCalledWith('r1', 'CONCLUIDA', undefined));
   await waitFor(() => expect(screen.getByTestId('rota').textContent).toBe('/restaurante/pedido?mesa=m1'));
 });

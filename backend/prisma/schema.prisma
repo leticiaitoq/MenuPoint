@@ -284,7 +284,14 @@ model Reserva {
   hora_fim           DateTime      @db.Time
   num_pessoas        Int
   observacoes        String?
+  duracao_indefinida Boolean       @default(false)   // cliente marcou "não sei ainda": a mesa é segurada por um tempo padrão
   status             StatusReserva @default(PENDENTE)
+  cancelada_por      String?       @db.VarChar(20)   // CLIENTE | RESTAURANTE (quem cancelou; o cliente é avisado quando foi o restaurante)
+  grupo_id           String?       @db.Uuid          // reserva em várias mesas: uma linha por mesa, todas com o mesmo grupo_id
+  pessoas_total      Int?                            // total de pessoas da reserva (num_pessoas é só a parte desta mesa)
+  falta_assentos     Int           @default(0)       // assentos que faltam (o restaurante decide se aceita, ex.: cadeiras extras)
+  mensagem_restaurante String?     @db.VarChar(500)  // recado do restaurante ao cliente (locação de mesas/cadeiras extras etc.)
+  mensagem_em        DateTime?     @db.Timestamptz
   criado_em          DateTime      @default(now()) @db.Timestamptz
   atualizado_em      DateTime      @default(now()) @updatedAt @db.Timestamptz
 
@@ -296,6 +303,7 @@ model Reserva {
 
   @@index([estabelecimento_id, data_reserva])
   @@index([cliente_id])
+  @@index([grupo_id])
   @@map("reservas")
 }
 

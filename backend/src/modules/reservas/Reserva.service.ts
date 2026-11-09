@@ -1,14 +1,30 @@
 import { AppError } from '@shared/errors/AppError'
 import { Prisma } from '@prisma/client'
+import { randomUUID } from 'crypto'
 import { ReservaRepository } from './Reserva.repository'
 import {
   CriarReservaDTO,
   CriarReservaClienteDTO,
   AtualizarStatusReservaDTO,
   MesasDisponiveisQuery,
+  DisponibilidadeQuery,
+  MensagemReservaDTO,
 } from './Reserva.schema'
-import { montarJanela, agoraNoBrasil } from './Reserva.horario'
+import {
+  montarJanela,
+  agoraNoBrasil,
+  comMargem,
+  dateParaHHMM,
+  funcionamentoNoDia,
+  horarioDentroDoFuncionamento,
+  FOLGA_ANTES_DE_FECHAR_MIN,
+  MARGEM_ENTRE_RESERVAS_MIN,
+  ANTECEDENCIA_MINIMA_HOJE_MIN,
+} from './Reserva.horario'
 import prisma from '@config/prisma'
+import { env } from '@config/env'
+import { transporter } from '@config/mailer'
+import { templateReservaDecisao } from '@shared/emails/templates'
 
 // Quantas reservas em aberto (pendentes/confirmadas, de hoje em diante) um cliente pode ter no mesmo
 // restaurante. Sem isso, uma pessoa poderia "segurar" todas as mesas e o controle de disponibilidade
@@ -52,7 +68,7 @@ export class ReservaService {
 
       if (conflito) {
         throw new AppError(
-          'Esta mesa já possui uma reserva neste horário. Escolha outro horário ou mesa.',
+          `Não é possível reservar esta mesa neste dia e horário: ela já tem reserva nesse período ou muito próxima (intervalo mínimo de ${MARGEM_ENTRE_RESERVAS_MIN} min entre reservas). Escolha outro horário ou outra mesa.`,
           409
         )
       }
@@ -66,7 +82,7 @@ export class ReservaService {
   private async buscarEstabelecimentoPorSlug(slug: string) {
     const estabelecimento = await prisma.estabelecimento.findFirst({
       where: { slug, ativo: true },
-      select: { id: true },
+      select: { id: true, nome: true, horario_funcionamento: true },
     })
 
     if (!estabelecimento) {
@@ -74,6 +90,56 @@ export class ReservaService {
     }
 
     return estabelecimento
+  }
+
+  // ── AVISO AO CLIENTE por e-mail (o app também mostra o aviso no topo da tela de reservas).
+  // Recebe as linhas do grupo (uma por mesa). Falha de e-mail nunca atrapalha a operação.
+  private notificarCliente(
+    tipo: 'CONFIRMADA' | 'RECUSADA' | 'CANCELADA' | 'MENSAGEM',
+    linhas: any[],
+    mensagem?: string | null
+  ) {
+    const reserva = linhas[0]
+    if (!reserva?.cliente_id || !reserva?.cliente_email) return
+
+    void (async () => {
+      try {
+        const estab = await prisma.estabelecimento.findUnique({
+          where: { id: reserva.estabelecimento_id },
+          select: { nome: true },
+        })
+        const [ano, mes, dia] = new Date(reserva.data_reserva).toISOString().slice(0, 10).split('-')
+        const numeros = linhas.map((l) => l.mesa?.numero).filter(Boolean)
+        const assunto: Record<string, string> = {
+          CONFIRMADA: 'Sua reserva foi confirmada!',
+          RECUSADA: 'Sua reserva não pôde ser aceita',
+          CANCELADA: 'Sua reserva foi cancelada pelo restaurante',
+          MENSAGEM: 'O restaurante enviou um recado sobre a sua reserva',
+        }
+
+        await transporter.sendMail({
+          from: env.MAIL_FROM,
+          to: reserva.cliente_email,
+          subject: assunto[tipo],
+          html: templateReservaDecisao({
+            tipo,
+            nomeCliente: reserva.cliente_nome,
+            restaurante: estab?.nome ?? 'O restaurante',
+            data: `${dia}/${mes}/${ano}`,
+            horario: dateParaHHMM(new Date(reserva.hora_inicio)),
+            mesas: numeros.length ? `${numeros.length > 1 ? 'Mesas' : 'Mesa'} ${numeros.join(', ')}` : '',
+            mensagem: mensagem ?? reserva.mensagem_restaurante ?? null,
+          }),
+        })
+      } catch (err) {
+        console.error('Falha ao avisar o cliente sobre a reserva:', err)
+      }
+    })()
+  }
+
+  // Todas as linhas da reserva (várias mesas = várias linhas com o mesmo grupo_id)
+  private async linhasDaReserva(reserva: any, db: Prisma.TransactionClient | typeof prisma = prisma) {
+    return reserva.grupo_id ? this.repository.findByGrupo(reserva.grupo_id, db) : [reserva]
   }
 
   // ── CLIENTE: CRIAR RESERVA ───────────────────────────────────────────────
@@ -92,21 +158,52 @@ export class ReservaService {
       throw new AppError('Conta de cliente não encontrada', 404)
     }
 
-    // Não reserva no passado (horário de Brasília)
-    const agora = agoraNoBrasil()
-    const [h, m] = data.hora_inicio.split(':').map(Number)
-    if (data.data_reserva < agora.data || (data.data_reserva === agora.data && h * 60 + m <= agora.minutos)) {
-      throw new AppError('Escolha uma data e um horário que ainda não passaram', 400)
+    // Só dentro do horário de funcionamento do dia (se o restaurante configurou) e começando
+    // pelo menos FOLGA_ANTES_DE_FECHAR_MIN minutos antes de fechar
+    const func = funcionamentoNoDia(estabelecimento.horario_funcionamento, data.data_reserva)
+    if (func) {
+      if (!func.aberto) {
+        throw new AppError('O restaurante não abre neste dia. Escolha outra data.', 400)
+      }
+      if (!horarioDentroDoFuncionamento(func, data.hora_inicio)) {
+        throw new AppError(
+          `O restaurante funciona das ${func.abertura} às ${func.fechamento} neste dia, e as reservas precisam começar ` +
+            `até ${FOLGA_ANTES_DE_FECHAR_MIN} min antes de fechar. Escolha outro horário.`,
+          400
+        )
+      }
     }
 
-    const abertas = await prisma.reserva.count({
+    // Não reserva no passado e, para o mesmo dia, exige 2h de antecedência (horário de Brasília)
+    const agora = agoraNoBrasil()
+    const [h, m] = data.hora_inicio.split(':').map(Number)
+    if (data.data_reserva < agora.data) {
+      throw new AppError('Escolha uma data a partir de hoje', 400)
+    }
+    if (data.data_reserva === agora.data && h * 60 + m < agora.minutos + ANTECEDENCIA_MINIMA_HOJE_MIN) {
+      const minimo = agora.minutos + ANTECEDENCIA_MINIMA_HOJE_MIN
+      const aPartirDe =
+        minimo > 23 * 60 + 58
+          ? null
+          : `${String(Math.floor(minimo / 60)).padStart(2, '0')}:${String(minimo % 60).padStart(2, '0')}`
+      throw new AppError(
+        `Para reservar hoje é preciso ter ${ANTECEDENCIA_MINIMA_HOJE_MIN / 60}h de antecedência.` +
+          (aPartirDe ? ` Escolha um horário a partir das ${aPartirDe}.` : ' Escolha outro dia.'),
+        400
+      )
+    }
+
+    // Conta reservas (não linhas): uma reserva em várias mesas conta uma vez só
+    const abertasLinhas = await prisma.reserva.findMany({
       where: {
         estabelecimento_id: estabelecimento.id,
         cliente_id,
         status: { in: ['PENDENTE', 'CONFIRMADA'] },
         data_reserva: { gte: new Date(`${agora.data}T00:00:00.000Z`) },
       },
+      select: { id: true, grupo_id: true },
     })
+    const abertas = new Set(abertasLinhas.map((r) => r.grupo_id ?? r.id)).size
 
     if (abertas >= MAX_RESERVAS_ABERTAS_POR_CLIENTE) {
       throw new AppError(
@@ -115,29 +212,113 @@ export class ReservaService {
       )
     }
 
-    // Garante que a mesa é DESTE restaurante (o id vem do navegador, não dá pra confiar)
-    const mesa = await prisma.mesa.findFirst({
-      where: { id: data.mesa_id, estabelecimento_id: estabelecimento.id, ativo: true },
+    // Mesas escolhidas: precisam ser DESTE restaurante (os ids vêm do navegador)
+    const mesas_ids = [...new Set(data.mesas_ids)]
+    const mesasEncontradas = await prisma.mesa.findMany({
+      where: {
+        id: { in: mesas_ids },
+        estabelecimento_id: estabelecimento.id,
+        ativo: true,
+        status: { not: 'INATIVA' },
+      },
+      select: { id: true, numero: true, capacidade: true },
     })
 
-    if (!mesa || mesa.status === 'INATIVA') {
+    if (mesasEncontradas.length !== mesas_ids.length) {
       throw new AppError('Mesa não encontrada neste restaurante', 404)
     }
 
-    if (mesa.capacidade < data.num_pessoas) {
-      throw new AppError(`Esta mesa comporta no máximo ${mesa.capacidade} pessoas`, 400)
+    // Maiores primeiro: as pessoas vão enchendo as mesas e a sobra cai na última
+    const mesas = [...mesasEncontradas].sort((a, b) => b.capacidade - a.capacidade || a.numero - b.numero)
+    const capacidadeTotal = mesas.reduce((t, m) => t + m.capacidade, 0)
+    const falta = Math.max(0, data.num_pessoas - capacidadeTotal)
+
+    // Não vale pegar mesa a mais do que o necessário (segurar mesa à toa tira disponibilidade do restaurante)
+    if (mesas.length > 1 && capacidadeTotal - mesas[mesas.length - 1].capacidade >= data.num_pessoas) {
+      throw new AppError('Você escolheu mais mesas do que o necessário para esta quantidade de pessoas', 400)
     }
 
-    return this.criar(
-      {
-        ...data,
-        cliente_nome: cliente.nome,
-        cliente_telefone: cliente.telefone,
-        ...(cliente.email && { cliente_email: cliente.email }),
-      },
-      estabelecimento.id,
-      cliente_id
-    )
+    const janela = montarJanela(data.data_reserva, data.hora_inicio, data.hora_fim)
+    if (janela.fim <= janela.inicio) {
+      throw new AppError('Hora fim deve ser posterior à hora início', 400)
+    }
+
+    // Quantas pessoas ficam em cada mesa
+    let restantes = data.num_pessoas
+    const lugares = mesas.map((m, i) => {
+      const ultima = i === mesas.length - 1
+      const ocupa = ultima && falta === 0 ? restantes : Math.min(m.capacidade, restantes)
+      restantes -= ocupa
+      return { mesa_id: m.id, num_pessoas: Math.max(ocupa, 1) }
+    })
+
+    const { mesas_ids: _ignorado, ...resto } = data
+    const grupo_id = mesas.length > 1 ? randomUUID() : undefined
+    const linhas = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // Trava as mesas sempre na mesma ordem (evita deadlock entre dois grupos que pegam as mesmas mesas)
+      for (const id of [...mesas_ids].sort()) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`
+      }
+
+      for (const l of lugares) {
+        const conflito = await this.repository.verificarConflito(
+          estabelecimento.id,
+          l.mesa_id,
+          janela.data,
+          janela.inicio,
+          janela.fim,
+          undefined,
+          tx
+        )
+        if (conflito) {
+          throw new AppError(
+            `Não é possível reservar estas mesas neste dia e horário: uma delas já tem reserva nesse período ou muito próxima (intervalo mínimo de ${MARGEM_ENTRE_RESERVAS_MIN} min entre reservas). Atualize a tela e escolha outro horário ou outras mesas.`,
+            409
+          )
+        }
+      }
+
+      // Faltando assentos só passa se o cliente pegou TODAS as mesas livres no horário
+      // (se sobrar mesa livre, ele precisa escolhê-la antes de falar em falta)
+      if (falta > 0) {
+        const livres = await this.repository.mesasDisponiveis(
+          estabelecimento.id,
+          janela.data,
+          janela.inicio,
+          janela.fim,
+          undefined,
+          tx
+        )
+        if (livres.some((m: any) => !mesas_ids.includes(m.id))) {
+          throw new AppError('Ainda há mesas livres neste horário. Selecione todas elas para esta reserva.', 400)
+        }
+      }
+
+      const criadas = []
+      for (const l of lugares) {
+        criadas.push(
+          await this.repository.create(
+            {
+              ...resto,
+              mesa_id: l.mesa_id,
+              num_pessoas: l.num_pessoas,
+              cliente_nome: cliente.nome,
+              cliente_telefone: cliente.telefone,
+              ...(cliente.email && { cliente_email: cliente.email }),
+              estabelecimento_id: estabelecimento.id,
+              cliente_id,
+              ...(grupo_id && { grupo_id }),
+              pessoas_total: data.num_pessoas,
+              falta_assentos: falta,
+            },
+            tx
+          )
+        )
+      }
+      return criadas
+    })
+
+    return { ...linhas[0], mesas_do_grupo: linhas }
   }
 
   // ── CLIENTE: MINHAS RESERVAS (de hoje em diante) ─────────────────────────
@@ -170,7 +351,12 @@ export class ReservaService {
       throw new AppError(`Esta reserva já está ${status}. Não é possível cancelar.`, 400)
     }
 
-    return this.repository.update(id, { status: 'CANCELADA' })
+    const dados = { status: 'CANCELADA', cancelada_por: 'CLIENTE' }
+    if ((reserva as any).grupo_id) {
+      const linhas = await this.repository.updateGrupo((reserva as any).grupo_id, dados)
+      return linhas[0]
+    }
+    return this.repository.update(id, dados)
   }
 
   // ── CLIENTE: MESAS DISPONÍVEIS ───────────────────────────────────────────
@@ -191,6 +377,29 @@ export class ReservaService {
       janela.fim,
       query.pessoas
     )
+  }
+
+  // ── CLIENTE: HORÁRIOS LIVRES DE CADA MESA NO DIA ─────────────────────────
+  // Devolve, por mesa, os trechos do dia que NÃO dá para reservar ("bloqueios" = reservas ativas já
+  // alargadas pelo intervalo mínimo). O app calcula os horários livres a partir disso, e o servidor
+  // confere de novo na hora de reservar.
+
+  async disponibilidadeDoDia(slug: string, query: DisponibilidadeQuery) {
+    const estabelecimento = await this.buscarEstabelecimentoPorSlug(slug)
+    const data = new Date(`${query.data_reserva}T00:00:00.000Z`)
+
+    const mesas = await this.repository.mesasComReservasDoDia(estabelecimento.id, data, query.pessoas)
+
+    return {
+      funcionamento: funcionamentoNoDia(estabelecimento.horario_funcionamento, query.data_reserva),
+      mesas: mesas.map(({ reservas, ...mesa }: any) => ({
+        ...mesa,
+        bloqueios: reservas.map((r: any) => {
+          const j = comMargem(r.hora_inicio, r.hora_fim)
+          return { inicio: dateParaHHMM(j.inicio), fim: dateParaHHMM(j.fim) }
+        }),
+      })),
+    }
   }
 
   // ── BUSCAR POR ID ────────────────────────────────────────────────────────
@@ -244,31 +453,90 @@ export class ReservaService {
       throw new AppError('Apenas reservas PENDENTES podem ser confirmadas', 400)
     }
 
-    if (data.status === 'CONFIRMADA' && data.mesa_id) {
-      const dataBase = new Date((reserva as any).data_reserva)
+    const grupo_id: string | null = (reserva as any).grupo_id ?? null
+    const recado = data.mensagem?.trim() || undefined
 
-      const conflito = await this.repository.verificarConflito(
-        estabelecimento_id,
-        data.mesa_id,
-        dataBase,
-        (reserva as any).hora_inicio,
-        (reserva as any).hora_fim,
-        id
-      )
-
-      if (conflito) {
-        throw new AppError(
-          'Mesa indisponível neste horário. Escolha outra mesa.',
-          409
-        )
-      }
-    }
-
-    return this.repository.update(id, {
+    const dados: Record<string, any> = {
       status: data.status,
       confirmada_por_id,
-      ...(data.mesa_id && { mesa_id: data.mesa_id }),
-    })
+      ...(data.status === 'CANCELADA' && {
+        // PENDENTE cancelada pelo restaurante = recusa; CONFIRMADA = cancelamento
+        cancelada_por: statusAtual === 'PENDENTE' ? 'RECUSADA' : 'RESTAURANTE',
+      }),
+      ...(recado && { mensagem_restaurante: recado, mensagem_em: new Date() }),
+    }
+
+    let linhas: any[]
+    if (grupo_id) {
+      // Reserva em várias mesas: a decisão vale para todas as mesas de uma vez
+      // (trocar mesa não se aplica: o restaurante cancela e orienta o cliente)
+      linhas = await this.repository.updateGrupo(grupo_id, dados)
+    } else if (data.status === 'CONFIRMADA' && data.mesa_id) {
+      // Troca/atribui a mesa ao confirmar: mesma regra da criação. Trava a mesa, confere o conflito
+      // (ignorando a própria reserva) e grava na mesma transação, para duas trocas simultâneas
+      // para a mesma mesa não passarem juntas.
+      const mesa_id = data.mesa_id
+
+      const atualizada = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${mesa_id}))`
+
+        // O id da mesa vem do navegador: precisa ser uma mesa ativa DESTE restaurante
+        const mesa = await tx.mesa.findFirst({
+          where: { id: mesa_id, estabelecimento_id, ativo: true },
+          select: { status: true },
+        })
+        if (!mesa || mesa.status === 'INATIVA') {
+          throw new AppError('Mesa não encontrada neste restaurante', 404)
+        }
+
+        const conflito = await this.repository.verificarConflito(
+          estabelecimento_id,
+          mesa_id,
+          new Date((reserva as any).data_reserva),
+          (reserva as any).hora_inicio,
+          (reserva as any).hora_fim,
+          id,
+          tx
+        )
+
+        if (conflito) {
+          throw new AppError('Mesa indisponível neste horário. Escolha outra mesa.', 409)
+        }
+
+        return this.repository.update(id, { ...dados, mesa_id }, tx)
+      })
+      linhas = [atualizada]
+    } else {
+      linhas = [await this.repository.update(id, dados)]
+    }
+
+    // Avisa o cliente da decisão (e-mail; o app mostra no topo da tela de reservas)
+    if (data.status === 'CONFIRMADA') this.notificarCliente('CONFIRMADA', linhas, recado)
+    if (data.status === 'CANCELADA') {
+      this.notificarCliente(statusAtual === 'PENDENTE' ? 'RECUSADA' : 'CANCELADA', linhas, recado)
+    }
+
+    return { ...linhas[0], mesas_do_grupo: linhas }
+  }
+
+  // ── MENSAGEM DO RESTAURANTE PARA O CLIENTE ───────────────────────────────
+  // Ex.: depois de aceitar uma reserva com falta de assentos, combinar como ficam mesas e cadeiras extras.
+
+  async enviarMensagem(id: string, data: MensagemReservaDTO, estabelecimento_id: string) {
+    const reserva = await this.findById(id, estabelecimento_id)
+
+    if (!(reserva as any).cliente_id) {
+      throw new AppError('Esta reserva não foi feita pelo app: não há cliente para receber a mensagem', 400)
+    }
+
+    const dados = { mensagem_restaurante: data.mensagem, mensagem_em: new Date() }
+    const linhas: any[] = (reserva as any).grupo_id
+      ? await this.repository.updateGrupo((reserva as any).grupo_id, dados)
+      : [await this.repository.update(id, dados)]
+
+    this.notificarCliente('MENSAGEM', linhas, data.mensagem)
+
+    return { ...linhas[0], mesas_do_grupo: linhas }
   }
 
   // ── CANCELAR ─────────────────────────────────────────────────────────────
@@ -283,22 +551,29 @@ export class ReservaService {
       )
     }
 
+    const linhas = await this.linhasDaReserva(reserva)
+    const statusAtual = (reserva as any).status
+
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      await tx.reserva.update({
-        where: { id },
-        data: { status: 'CANCELADA' },
+      await tx.reserva.updateMany({
+        where: { id: { in: linhas.map((l: any) => l.id) } },
+        data: {
+          status: 'CANCELADA',
+          cancelada_por: statusAtual === 'PENDENTE' ? 'RECUSADA' : 'RESTAURANTE',
+        },
       })
 
-      // Libera a mesa se estava marcada como RESERVADA por esta reserva
-      if ((reserva as any).mesa_id) {
+      // Libera as mesas se estavam marcadas como RESERVADA por esta reserva
+      const mesaIds = linhas.map((l: any) => l.mesa_id).filter(Boolean)
+      if (mesaIds.length) {
         await tx.mesa.updateMany({
-          where: {
-            id: (reserva as any).mesa_id,
-            status: 'RESERVADA',
-          },
+          where: { id: { in: mesaIds }, status: 'RESERVADA' },
           data: { status: 'LIVRE' },
         })
       }
     })
+
+    // Quem cancelou foi o restaurante: avisa o cliente
+    this.notificarCliente(statusAtual === 'PENDENTE' ? 'RECUSADA' : 'CANCELADA', linhas)
   }
 }

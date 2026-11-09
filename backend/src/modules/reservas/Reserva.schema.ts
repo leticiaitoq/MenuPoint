@@ -35,15 +35,24 @@ export const criarReservaSchema = z.object({
     .max(50),
 
   observacoes: z.string().max(500).optional(),
+
+  // true = o cliente não sabe quanto tempo vai ficar (hora_fim é só o tempo que a mesa fica segura)
+  duracao_indefinida: z.boolean().optional(),
 })
 
 export type CriarReservaDTO = z.infer<typeof criarReservaSchema>
 
 // Reserva feita pelo CLIENTE logado: nome/telefone/e-mail vêm da conta dele (servidor), não do corpo,
 // e a mesa é obrigatória (é ela que sai da lista de disponíveis do restaurante).
+// Pode ocupar várias mesas (grupo grande): `mesas_ids` traz todas; `mesa_id` é omitido.
 export const criarReservaClienteSchema = criarReservaSchema
-  .omit({ cliente_nome: true, cliente_telefone: true, cliente_email: true })
-  .extend({ mesa_id: z.string().uuid('ID de mesa inválido') })
+  .omit({ cliente_nome: true, cliente_telefone: true, cliente_email: true, mesa_id: true })
+  .extend({
+    mesas_ids: z
+      .array(z.string().uuid('ID de mesa inválido'))
+      .min(1, 'Escolha ao menos uma mesa')
+      .max(30),
+  })
 
 export type CriarReservaClienteDTO = z.infer<typeof criarReservaClienteSchema>
 
@@ -52,7 +61,15 @@ export const atualizarStatusReservaSchema = z.object({
     message: 'Status deve ser CONFIRMADA, CONCLUIDA ou CANCELADA',
   }),
   mesa_id: z.string().uuid('ID de mesa inválido').optional(),
+  // Recado ao cliente junto da decisão (ex.: como as mesas e cadeiras extras serão arrumadas)
+  mensagem: z.string().trim().max(500).optional(),
 });
+
+export const mensagemReservaSchema = z.object({
+  mensagem: z.string().trim().min(1, 'Escreva a mensagem').max(500),
+})
+
+export type MensagemReservaDTO = z.infer<typeof mensagemReservaSchema>
 
 export type AtualizarStatusReservaDTO = z.infer<typeof atualizarStatusReservaSchema>
 
@@ -68,3 +85,13 @@ export const mesasDisponiveisQuerySchema = z.object({
 })
 
 export type MesasDisponiveisQuery = z.infer<typeof mesasDisponiveisQuerySchema>
+
+// Query de GET /reservas/publico/:slug/disponibilidade (horários livres de cada mesa no dia)
+export const disponibilidadeQuerySchema = z.object({
+  data_reserva: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve estar no formato YYYY-MM-DD'),
+  pessoas: z.coerce.number().int().min(1).max(50).optional(),
+})
+
+export type DisponibilidadeQuery = z.infer<typeof disponibilidadeQuerySchema>

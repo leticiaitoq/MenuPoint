@@ -367,3 +367,127 @@ export function templateContatoEspecialista(dados: {
     </html>
   `
 }
+
+
+// Aviso ao cliente: o restaurante cancelou a reserva dele. Os textos vêm do banco (nome do cliente e
+// do restaurante), então são escapados antes de entrar no HTML.
+export function templateReservaCancelada(dados: {
+  nomeCliente: string
+  restaurante: string
+  data: string
+  horario: string
+  mesa?: number | null
+}): string {
+  return `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8">
+      <title>Reserva cancelada</title>
+      <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { background-color: #1A1A2E; padding: 32px; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 24px; }
+        .body { padding: 32px; color: #333333; line-height: 1.6; }
+        .body p { margin: 0 0 16px; }
+        .warning { background-color: #FEF3C7; border-left: 4px solid #D97706; padding: 12px 16px; border-radius: 4px; font-size: 14px; color: #92400E; margin: 16px 0; }
+        .footer { background-color: #f4f4f4; padding: 20px 32px; text-align: center; font-size: 12px; color: #999999; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🍽️ Menupoint</h1>
+        </div>
+        <div class="body">
+          <p>Olá, <strong>${escaparHtml(dados.nomeCliente)}</strong>!</p>
+          <div class="warning">
+            O restaurante <strong>${escaparHtml(dados.restaurante)}</strong> cancelou a sua reserva de
+            <strong>${escaparHtml(dados.data)}</strong> às <strong>${escaparHtml(dados.horario)}</strong>${
+              dados.mesa ? ` (Mesa ${dados.mesa})` : ''
+            }.
+          </div>
+          <p>
+            Sentimos o transtorno. Você pode escolher outro dia ou horário livre direto no app,
+            em “Reserva de mesas”.
+          </p>
+        </div>
+        <div class="footer">
+          <p>Este é um e-mail automático, não responda.</p>
+          <p>© ${new Date().getFullYear()} Menupoint. Todos os direitos reservados.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+}
+
+
+// Aviso ao cliente sobre a decisão do restaurante (confirmou/recusou) ou um recado sobre a reserva.
+// Todos os textos vêm do banco ou do restaurante, então são escapados.
+export function templateReservaDecisao(dados: {
+  tipo: 'CONFIRMADA' | 'RECUSADA' | 'CANCELADA' | 'MENSAGEM'
+  nomeCliente: string
+  restaurante: string
+  data: string
+  horario: string
+  mesas: string
+  mensagem?: string | null
+}): string {
+  const titulo =
+    dados.tipo === 'CONFIRMADA'
+      ? 'Sua reserva foi confirmada!'
+      : dados.tipo === 'RECUSADA'
+        ? 'Sua reserva não pôde ser aceita'
+        : dados.tipo === 'CANCELADA'
+          ? 'Sua reserva foi cancelada pelo restaurante'
+          : 'Recado do restaurante sobre a sua reserva'
+  const cor = dados.tipo === 'CONFIRMADA' ? '#065F46' : dados.tipo === 'MENSAGEM' ? '#1E3A8A' : '#92400E'
+  const fundo = dados.tipo === 'CONFIRMADA' ? '#D1FAE5' : dados.tipo === 'MENSAGEM' ? '#DBEAFE' : '#FEF3C7'
+  const resumo = `${escaparHtml(dados.data)} às ${escaparHtml(dados.horario)}${
+    dados.mesas ? ` (${escaparHtml(dados.mesas)})` : ''
+  }`
+
+  return `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8">
+      <title>${titulo}</title>
+      <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { background-color: #1A1A2E; padding: 32px; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 24px; }
+        .body { padding: 32px; color: #333333; line-height: 1.6; }
+        .body p { margin: 0 0 16px; }
+        .box { background-color: ${fundo}; border-left: 4px solid ${cor}; padding: 12px 16px; border-radius: 4px; font-size: 14px; color: ${cor}; margin: 16px 0; }
+        .footer { background-color: #f4f4f4; padding: 20px 32px; text-align: center; font-size: 12px; color: #999999; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header"><h1>🍽️ Menupoint</h1></div>
+        <div class="body">
+          <p>Olá, <strong>${escaparHtml(dados.nomeCliente)}</strong>!</p>
+          <div class="box">
+            <strong>${titulo}</strong><br>
+            ${escaparHtml(dados.restaurante)} — ${resumo}
+          </div>
+          ${
+            dados.mensagem
+              ? `<p><strong>Mensagem do restaurante:</strong><br>${escaparHtml(dados.mensagem)}</p>`
+              : ''
+          }
+          <p>Acompanhe tudo em “Reserva de mesas”, no app.</p>
+        </div>
+        <div class="footer">
+          <p>Este é um e-mail automático, não responda.</p>
+          <p>© ${new Date().getFullYear()} Menupoint. Todos os direitos reservados.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+}

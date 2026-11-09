@@ -6,6 +6,8 @@ import {
   criarReservaClienteSchema,
   atualizarStatusReservaSchema,
   mesasDisponiveisQuerySchema,
+  disponibilidadeQuerySchema,
+  mensagemReservaSchema,
 } from './Reserva.schema'
 import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
@@ -41,6 +43,17 @@ export async function reservasRoutes(app: FastifyInstance): Promise<void> {
 
     const mesas = await service.mesasDisponiveis(slug, query)
     return reply.send(mesas)
+  })
+
+  // GET /publico/:slug/disponibilidade?data_reserva=2026-11-10&pessoas=4 — horários livres de cada mesa no dia
+  app.get('/publico/:slug/disponibilidade', async (request: FastifyRequest, reply: FastifyReply) => {
+    exigirCliente(request)
+
+    const { slug } = request.params as { slug: string }
+    const query = disponibilidadeQuerySchema.parse(request.query)
+
+    const disponibilidade = await service.disponibilidadeDoDia(slug, query)
+    return reply.send(disponibilidade)
   })
 
   // GET /publico/:slug/minhas — reservas do cliente logado neste restaurante (de hoje em diante)
@@ -142,6 +155,20 @@ export async function reservasRoutes(app: FastifyInstance): Promise<void> {
       user.estabelecimento_id
     )
 
+    return reply.send(reserva)
+  })
+
+  // POST /:id/mensagem — recado do restaurante ao cliente (e-mail + aviso no app)
+  app.post('/:id/mensagem', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string }
+    const user = request.user as JWTPayload
+
+    if (!user.estabelecimento_id) {
+      throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+    }
+
+    const data = mensagemReservaSchema.parse(request.body)
+    const reserva = await service.enviarMensagem(id, data, user.estabelecimento_id)
     return reply.send(reserva)
   })
 
