@@ -44,6 +44,9 @@ const FecharConta: React.FC<FecharContaProps> = ({
 }) => {
   const [etapa, setEtapa] = useState<Etapa>('confirmar');
   const [forma, setForma] = useState<FormaPagamentoConta | undefined>(undefined);
+  const [erroMsg, setErroMsg] = useState('');
+  // 409 = regra do restaurante (ex.: ainda há itens sem entregar): tentar de novo agora não adianta
+  const [erroRegra, setErroRegra] = useState(false);
   const cancelarRef = useRef<HTMLButtonElement>(null);
 
   const textoMesa = mesa ? ` da mesa ${mesa}` : '';
@@ -57,6 +60,8 @@ const FecharConta: React.FC<FecharContaProps> = ({
     if (aberto) {
       setEtapa('confirmar');
       setForma(undefined);
+      setErroMsg('');
+      setErroRegra(false);
     }
   }, [aberto]);
 
@@ -81,7 +86,9 @@ const FecharConta: React.FC<FecharContaProps> = ({
       await onPedir(forma);
       setEtapa('sucesso');
       onConcluido?.();
-    } catch {
+    } catch (err: any) {
+      setErroMsg(typeof err?.message === 'string' ? err.message : '');
+      setErroRegra(err?.status === 409);
       setEtapa('erro');
     }
   };
@@ -177,21 +184,36 @@ const FecharConta: React.FC<FecharContaProps> = ({
         {etapa === 'erro' && (
           <>
             <HiExclamationCircle className="fechar-conta__status fechar-conta__status--erro" aria-hidden="true" />
-            <h3 id="fechar-conta-titulo" className="fechar-conta__titulo">Não foi possível pedir a conta</h3>
+            <h3 id="fechar-conta-titulo" className="fechar-conta__titulo">
+              {erroRegra ? 'Ainda não dá para fechar a conta' : 'Não foi possível pedir a conta'}
+            </h3>
             <p id="fechar-conta-texto" className="fechar-conta__texto">
-              Tente de novo ou faça sinal para um atendente.
+              {erroMsg || 'Tente de novo ou faça sinal para um atendente.'}
             </p>
             <div className="fechar-conta__acoes">
-              <button ref={cancelarRef} type="button" className="fechar-conta__acao" onClick={onFechar}>
-                Fechar
-              </button>
-              <button
-                type="button"
-                className="fechar-conta__acao fechar-conta__acao--primaria"
-                onClick={() => void confirmar()}
-              >
-                Tentar de novo
-              </button>
+              {erroRegra ? (
+                <button
+                  ref={cancelarRef}
+                  type="button"
+                  className="fechar-conta__acao fechar-conta__acao--primaria"
+                  onClick={onFechar}
+                >
+                  Entendi
+                </button>
+              ) : (
+                <>
+                  <button ref={cancelarRef} type="button" className="fechar-conta__acao" onClick={onFechar}>
+                    Fechar
+                  </button>
+                  <button
+                    type="button"
+                    className="fechar-conta__acao fechar-conta__acao--primaria"
+                    onClick={() => void confirmar()}
+                  >
+                    Tentar de novo
+                  </button>
+                </>
+              )}
             </div>
           </>
         )}
