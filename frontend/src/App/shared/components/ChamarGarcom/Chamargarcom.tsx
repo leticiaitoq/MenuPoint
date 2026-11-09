@@ -29,6 +29,7 @@ interface ChamarGarcomProps {
 const ChamarGarcom: React.FC<ChamarGarcomProps> = ({ mesa, onChamar, intervaloMs = 60_000 }) => {
   const [etapa, setEtapa] = useState<Etapa>('fechado');
   const [bloqueado, setBloqueado] = useState(false);
+  const [erroMsg, setErroMsg] = useState('');
 
   const botaoRef = useRef<HTMLButtonElement>(null);
   const cancelarRef = useRef<HTMLButtonElement>(null);
@@ -75,7 +76,8 @@ const ChamarGarcom: React.FC<ChamarGarcomProps> = ({ mesa, onChamar, intervaloMs
       setBloqueado(true);
       timerBloqueio.current = window.setTimeout(() => setBloqueado(false), intervaloMs);
       timerFechar.current = window.setTimeout(fechar, 5000);
-    } catch {
+    } catch (err: any) {
+      setErroMsg(typeof err?.message === 'string' ? err.message : '');
       setEtapa('erro');
     }
   };
@@ -160,7 +162,7 @@ const ChamarGarcom: React.FC<ChamarGarcomProps> = ({ mesa, onChamar, intervaloMs
                 <HiExclamationCircle className="chamar-garcom__status chamar-garcom__status--erro" aria-hidden="true" />
                 <h3 id="chamar-garcom-titulo" className="chamar-garcom__titulo">Não foi possível chamar</h3>
                 <p id="chamar-garcom-texto" className="chamar-garcom__texto">
-                  Tente de novo ou faça sinal para um atendente.
+                  {erroMsg || 'Tente de novo ou faça sinal para um atendente.'}
                 </p>
                 <div className="chamar-garcom__acoes">
                   <button ref={cancelarRef} type="button" className="chamar-garcom__acao" onClick={fechar}>
