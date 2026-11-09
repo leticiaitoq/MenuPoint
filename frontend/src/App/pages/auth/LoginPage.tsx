@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MdEmail } from 'react-icons/md';
 import { HiEye, HiEyeOff, HiCheckCircle } from 'react-icons/hi';
 import AuthCard from './AuthCard';
@@ -10,6 +10,7 @@ import './LoginPage.css';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { entrar } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -21,6 +22,18 @@ const LoginPage: React.FC = () => {
   const [pagamentoPendente, setPagamentoPendente] = useState(false);
   const [emailNaoVerificado, setEmailNaoVerificado] = useState(false);
   const [reenviando, setReenviando] = useState(false);
+  // Vindo da tela de retorno do Mercado Pago com o pagamento aprovado
+  const [pagamentoAprovado, setPagamentoAprovado] = useState(
+    Boolean(
+      (location.state as { pagamentoAprovado?: boolean; pagamentoConfirmado?: boolean } | null)?.pagamentoAprovado ||
+      (location.state as { pagamentoAprovado?: boolean; pagamentoConfirmado?: boolean } | null)?.pagamentoConfirmado
+    )
+  );
+
+  // Limpa o estado da navegação: atualizar a página não mostra o modal de novo
+  useEffect(() => {
+    if (pagamentoAprovado) window.history.replaceState({}, document.title);
+  }, [pagamentoAprovado]);
 
   // Mesmo padrão usado na tela de verificação de código: mostra o toast de
   // sucesso e só navega depois de um tempinho, pra pessoa ver a confirmação.
@@ -221,6 +234,21 @@ const LoginPage: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {pagamentoAprovado && (
+        <div className="login-page__toast-overlay">
+          <div className="login-page__toast">
+            <div className="login-page__toast-inner">
+              <HiCheckCircle className="login-page__toast-icon" />
+              <p className="login-page__toast-text">Pagamento realizado com sucesso!</p>
+              <p className="login-page__toast-sub">Sua assinatura está ativa. Entre com sua conta para continuar.</p>
+              <button type="button" className="login-page__submit" onClick={() => setPagamentoAprovado(false)}>
+                Fazer login
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showSucesso && (
         <div className="login-page__toast-overlay">

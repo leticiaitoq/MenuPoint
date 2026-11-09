@@ -1,11 +1,13 @@
 import MercadoPagoConfig, { PreApproval } from 'mercadopago'
+import axios from 'axios'
+import { randomUUID } from 'crypto'
 import { env } from '@config/env'
 import { AppError } from '@shared/errors/AppError'
 import { CriarAssinaturaDTO } from './Assinatura.schema'
 import prisma from '@config/prisma'
 import { Plano, StatusAssinatura } from '@prisma/client'
 import { pagamentoRecusado, planoDoSlug, GATEWAY_TEMPORARIO } from './Pagamento.temporario'
-import { PLANOS } from './Planos.config'
+import { PLANOS, PeriodoCobranca, periodoDoTexto, valorDoPlano, fimDoPeriodo } from './Planos.config'
 
 // FRONTEND_URL pode ter várias origens separadas por vírgula (CORS): o retorno do MP usa a primeira
 const FRONTEND_PRINCIPAL = env.FRONTEND_URL.split(',')[0].trim().replace(/\/$/, '')
@@ -15,6 +17,32 @@ const mpClient = new MercadoPagoConfig({
 })
 
 const preApprovalClient = new PreApproval(mpClient)
+
+// Checkout Pro com ORDER (Orders API): pagamento único, com retorno automático ao site
+const mpApi = axios.create({
+  baseURL: 'https://api.mercadopago.com',
+  headers: { Authorization: `Bearer ${env.MP_ACCESS_TOKEN}` },
+  timeout: 15000,
+})
+
+/** Id de order do Mercado Pago (ORD... em produção, ORDTST... em teste). */
+export const ehOrderId = (id?: string | null) => Boolean(id && id.startsWith('ORD'))
+
+/** Traduz o status da order do Mercado Pago para o status da assinatura. */
+function statusDaOrder(order: any): { status: StatusAssinatura; status_mp: string } {
+  const st = String(order?.status ?? '').toLowerCase()
+  const detalhe = String(order?.status_detail ?? '').toLowerCase()
+  const pagamentos: any[] = Array.isArray(order?.transactions?.payments) ? order.transactions.payments : []
+  const pago =
+    (st === 'processed' && detalhe === 'accredited') ||
+    pagamentos.some(
+      (p) => String(p?.status).toLowerCase() === 'processed' && String(p?.status_detail).toLowerCase() === 'accredited'
+    )
+  if (pago) return { status: 'ATIVA', status_mp: 'approved' }
+  if (['canceled', 'cancelled', 'refunded'].includes(st)) return { status: 'CANCELADA', status_mp: st }
+  if (['failed', 'expired'].includes(st)) return { status: 'FALHOU', status_mp: st }
+  return { status: 'PENDENTE', status_mp: st || 'pending' }
+}
 
 // Mapeia o plan_id do MP para o enum Plano do banco
 const PLAN_ID_TO_PLANO: Record<string, Plano> = {
@@ -88,9 +116,10 @@ export class AssinaturaService {
    * ESCOLHA DO PLANO (tela /planos): define ou troca o plano da cobrança pendente antes do
    * pagamento. Trocar o plano descarta o link de checkout antigo (o valor mudou).
    */
-  async escolherPlano(empresa_id: string, slug: string) {
+  async escolherPlano(empresa_id: string, slug: string, periodoTexto?: string) {
     const plano = planoDoSlug(slug)
     if (!plano) throw new AppError('Plano inválido', 400)
+    const periodo: PeriodoCobranca = periodoDoTexto(periodoTexto)
 
     const ativa = await prisma.assinatura.findFirst({
       where: { empresa_id, status: 'ATIVA' },
@@ -98,7 +127,7 @@ export class AssinaturaService {
     })
     if (ativa) throw new AppError('Sua empresa já possui uma assinatura ativa', 409)
 
-    const valor = PLANOS[plano as 'STARTER' | 'PRO'].valor
+    const valor = valorDoPlano(plano as 'STARTER' | 'PRO', periodo)
 
     const pendente = await prisma.assinatura.findFirst({
       where: { empresa_id, status: 'PENDENTE' },
@@ -106,26 +135,27 @@ export class AssinaturaService {
     })
 
     if (pendente) {
-      if (pendente.plano !== plano) {
+      // Trocar plano ou período muda o valor: descarta o link de checkout antigo
+      if (pendente.plano !== plano || pendente.periodo !== periodo) {
         await prisma.assinatura.update({
           where: { id: pendente.id },
-          data: { plano, valor, gateway: GATEWAY_TEMPORARIO, gateway_id: null, checkout_url: null },
+          data: { plano, periodo, valor, gateway: GATEWAY_TEMPORARIO, gateway_id: null, checkout_url: null },
         })
       }
     } else {
-      // Pagamento recusado/cancelado antes: abre uma nova tentativa com o plano escolhido
+      // Pagamento recusado/cancelado/vencido antes: abre uma nova tentativa
       await prisma.assinatura.create({
-        data: { empresa_id, plano, status: 'PENDENTE', gateway: GATEWAY_TEMPORARIO, valor, periodo: 'MENSAL' },
+        data: { empresa_id, plano, periodo, status: 'PENDENTE', gateway: GATEWAY_TEMPORARIO, valor },
       })
     }
 
-    return { plano, valor }
+    return { plano, periodo, valor }
   }
 
   /**
-   * CHECKOUT DO CADASTRO: cria a assinatura no Mercado Pago para a cobrança
-   * PENDENTE criada no cadastro e devolve o link de pagamento (init_point).
-   * Sem plano pré-criado no MP: valor e recorrência vêm daqui (VALOR do plano).
+   * CHECKOUT (Checkout Pro com ORDER): cria uma order no Mercado Pago para a cobrança PENDENTE
+   * da empresa (mensal ou anual) e devolve o link de pagamento. Ao pagar, o Mercado Pago devolve
+   * o cliente sozinho para /assinatura/sucesso (auto_return) e avisa o backend pelo webhook.
    */
   async criarCheckout(empresa_id: string, email: string) {
     let pendente = await prisma.assinatura.findFirst({
@@ -133,7 +163,7 @@ export class AssinaturaService {
       orderBy: { criado_em: 'desc' },
     })
 
-    // Pagamento recusado/cancelado antes: abre uma nova tentativa com o mesmo plano
+    // Pagamento recusado/cancelado/vencido antes: abre uma nova tentativa com o mesmo plano e período
     if (!pendente && (await pagamentoRecusado(empresa_id))) {
       const ultima = await prisma.assinatura.findFirst({
         where: { empresa_id },
@@ -144,10 +174,10 @@ export class AssinaturaService {
           data: {
             empresa_id,
             plano:   ultima.plano,
+            periodo: ultima.periodo,
             status:  'PENDENTE',
             gateway: 'mercadopago',
-            valor:   ultima.valor,
-            periodo: 'MENSAL',
+            valor:   valorDoPlano(ultima.plano as 'STARTER' | 'PRO', ultima.periodo),
           },
         })
       }
@@ -157,15 +187,12 @@ export class AssinaturaService {
       throw new AppError('Nenhum pagamento pendente para esta conta', 404)
     }
 
-    // E-mail que o Mercado Pago vai exigir no checkout (o pagador precisa ser exatamente este)
-    const emailPagador = (env.MP_PAYER_EMAIL_TESTE?.trim() || email).toLowerCase()
-
-    // Já gerou o link antes (usuário voltou do checkout sem pagar): reaproveita, mas só se o
-    // e-mail do pagador desse link ainda for o esperado.
-    if (pendente.gateway === 'mercadopago' && pendente.checkout_url && pendente.gateway_id) {
+    // Já gerou o link antes (usuário voltou do checkout sem pagar): reaproveita enquanto a order
+    // ainda estiver aberta no Mercado Pago
+    if (ehOrderId(pendente.gateway_id) && pendente.checkout_url) {
       try {
-        const antiga: any = await preApprovalClient.get({ id: pendente.gateway_id } as any)
-        if (String(antiga?.payer_email ?? '').toLowerCase() === emailPagador) {
+        const { data: antiga } = await mpApi.get(`/v1/orders/${pendente.gateway_id}`)
+        if (statusDaOrder(antiga).status === 'PENDENTE') {
           return { init_point: pendente.checkout_url }
         }
       } catch {
@@ -173,47 +200,122 @@ export class AssinaturaService {
       }
     }
 
-    try {
-      const mpAssinatura = await preApprovalClient.create({
-        body: {
-          reason:             `MenuPoint - Plano ${pendente.plano}`,
-          external_reference: empresa_id,
-          // Modo teste: MP_PAYER_EMAIL_TESTE substitui o e-mail do cadastro (pagador de teste do MP)
-          payer_email:        emailPagador,
-          back_url:           `${FRONTEND_PRINCIPAL}/assinatura/sucesso`,
-          // Experimento (MP_AUTO_RETURN=true): pede ao MP o retorno automático ao site
-          ...(env.MP_AUTO_RETURN === 'true' && { auto_return: 'approved' }),
-          notification_url:   `${env.API_URL}/api/v1/assinatura/webhook`,
-          status:             'pending',
-          auto_recurring: {
-            frequency:          1,
-            frequency_type:     'months',
-            transaction_amount: Number(pendente.valor),
-            currency_id:        'BRL',
-          },
-        } as any,
-      })
+    // Modo teste: MP_PAYER_EMAIL_TESTE substitui o e-mail do cadastro (comprador de teste do MP)
+    const emailPagador = (env.MP_PAYER_EMAIL_TESTE?.trim() || email).toLowerCase()
+    const valor = Number(pendente.valor).toFixed(2)
+    const nomePlano = PLANOS[pendente.plano as 'STARTER' | 'PRO']?.nome ?? pendente.plano
+    const titulo = `MenuPoint - Plano ${nomePlano} (${pendente.periodo === 'ANUAL' ? 'anual' : 'mensal'})`
+    const voltar = `${FRONTEND_PRINCIPAL}/assinatura/sucesso`
 
-      if (!mpAssinatura.init_point) {
+    try {
+      const { data: order } = await mpApi.post(
+        '/v1/orders',
+        {
+          type: 'online',
+          processing_mode: 'manual',
+          total_amount: valor,
+          external_reference: pendente.id, // volta no webhook: identifica a cobrança
+          description: titulo,
+          expiration_time: 'P1D',
+          payer: { email: emailPagador },
+          config: {
+            notification_url: `${env.API_URL}/api/v1/assinatura/webhook`,
+            online: {
+              success_url: voltar,
+              failure_url: voltar,
+              pending_url: voltar,
+              auto_return: 'approved', // devolve o cliente ao site sozinho (como no quadro: back_url)
+            },
+          },
+          items: [
+            { title: titulo, unit_price: valor, quantity: 1, unit_measure: 'unit', total_amount: valor },
+          ],
+        },
+        { headers: { 'X-Idempotency-Key': randomUUID() } }
+      )
+
+      if (!order?.checkout_url || !order?.id) {
         throw new AppError('Mercado Pago não retornou o link de checkout', 502)
       }
 
       await prisma.assinatura.update({
         where: { id: pendente.id },
-        data: {
-          gateway:      'mercadopago',
-          gateway_id:   mpAssinatura.id ?? null,
-          checkout_url: mpAssinatura.init_point,
-        },
+        data: { gateway: 'mercadopago', gateway_id: String(order.id), checkout_url: order.checkout_url },
       })
 
-      return { init_point: mpAssinatura.init_point }
+      return { init_point: order.checkout_url as string }
     } catch (err: any) {
       if (err instanceof AppError) throw err
-      console.error('[checkout] erro do Mercado Pago:', JSON.stringify(err?.cause ?? err?.message ?? err))
-      const msg = err?.cause?.[0]?.description ?? err?.message ?? 'Erro ao criar assinatura'
+      const detalhe = err?.response?.data
+      console.error('[checkout] erro do Mercado Pago:', JSON.stringify(detalhe ?? err?.message ?? err))
+      const msg = detalhe?.errors?.[0]?.message ?? detalhe?.message ?? err?.message ?? 'Erro ao criar pagamento'
       throw new AppError(`Mercado Pago: ${msg}`, 502)
     }
+  }
+
+  /**
+   * Consulta a order no Mercado Pago e atualiza a assinatura dona dela. Serve ao webhook, ao
+   * "sincronizar" (tela de retorno) e ao cron: as três vias usam esta mesma regra, então não
+   * há divergência entre elas e repetir a chamada é seguro.
+   */
+  async processarOrder(orderId: string) {
+    let order: any
+    try {
+      order = (await mpApi.get(`/v1/orders/${orderId}`)).data
+    } catch (err: any) {
+      console.error(`[order] falha ao consultar ${orderId}: ${err?.response?.status ?? ''} ${err?.message ?? err}`)
+      throw new AppError('Erro ao consultar pagamento no Mercado Pago', 502)
+    }
+
+    const assinaturaId = String(order?.external_reference ?? '')
+    const assinatura = assinaturaId
+      ? await prisma.assinatura.findUnique({ where: { id: assinaturaId } }).catch(() => null)
+      : null
+    if (!assinatura) return { ignorado: true, motivo: 'assinatura não encontrada' }
+
+    // Só vale a order que cobra exatamente o valor desta assinatura
+    if (Number(order?.total_amount) !== Number(assinatura.valor)) {
+      console.error(`[order] valor divergente: order=${order?.total_amount} assinatura=${assinatura.valor}`)
+      return { ignorado: true, motivo: 'valor divergente' }
+    }
+
+    const { status: novoStatus, status_mp } = statusDaOrder(order)
+
+    if (novoStatus === 'ATIVA') {
+      const agora = new Date()
+      // Condicional: se o webhook e o "sincronizar" chegarem juntos, só um deles ativa
+      const r = await prisma.assinatura.updateMany({
+        where: { id: assinatura.id, status: { not: 'ATIVA' } },
+        data: {
+          status: 'ATIVA',
+          gateway: 'mercadopago',
+          gateway_id: String(order.id),
+          inicia_em: agora,
+          expira_em: fimDoPeriodo(agora, assinatura.periodo),
+        },
+      })
+      if (r.count > 0) {
+        // Assinaturas anteriores da empresa (ex.: período vencido) deixam de valer
+        await prisma.assinatura.updateMany({
+          where: { empresa_id: assinatura.empresa_id, id: { not: assinatura.id }, status: 'ATIVA' },
+          data: { status: 'EXPIRADA' },
+        })
+        await prisma.empresa.update({
+          where: { id: assinatura.empresa_id },
+          data: { plano: assinatura.plano, ativo: true },
+        })
+      }
+    } else if (novoStatus !== 'PENDENTE' && assinatura.status === 'PENDENTE') {
+      await prisma.assinatura.update({
+        where: { id: assinatura.id },
+        data: {
+          status: novoStatus,
+          ...(novoStatus === 'CANCELADA' && { cancelada_em: new Date() }),
+        },
+      })
+    }
+
+    return { assinatura_id: assinatura.id, order_id: order.id, status: novoStatus, status_mp }
   }
 
   /**
@@ -228,6 +330,19 @@ export class AssinaturaService {
     })
     if (!ultima) {
       throw new AppError('Nenhuma assinatura encontrada', 404)
+    }
+
+    // Pagamento por ORDER (Checkout Pro): consulta a order e devolve o status atual
+    if (ultima.status === 'PENDENTE' && ultima.gateway === 'mercadopago' && ehOrderId(ultima.gateway_id)) {
+      let statusMP: string | null = null
+      try {
+        const r: any = await this.processarOrder(ultima.gateway_id as string)
+        statusMP = r?.status_mp ?? null
+      } catch (err: any) {
+        console.error(`[sincronizar] falha ao consultar a order: ${err?.message ?? err}`)
+      }
+      const atual = await prisma.assinatura.findUnique({ where: { id: ultima.id } })
+      return { status: atual?.status ?? ultima.status, status_mp: statusMP }
     }
 
     if (ultima.status === 'PENDENTE' && ultima.gateway === 'mercadopago' && ultima.gateway_id) {
@@ -283,6 +398,12 @@ export class AssinaturaService {
   }
 
   async processarWebhook(id: string, type: string) {
+    // Pagamento por ORDER (Checkout Pro)
+    if (type === 'order') {
+      return this.processarOrder(id)
+    }
+
+    // Assinaturas antigas (PreApproval): continuam sendo tratadas como antes
     if (type !== 'subscription_preapproval') {
       return { ignorado: true }
     }
