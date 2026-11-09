@@ -6,15 +6,6 @@ import AssinaturaService from '../../services/assinatura.service';
 import { useAuth, ROTA_APOS_LOGIN } from '../../shared/contexts/Authcontext';
 import '../auth/LoginPage.css';
 import './PagamentoPage.css';
-
-// Pagamento real pelo Mercado Pago: o botão pede o link ao backend (/assinatura/checkout)
-// e abre o checkout em OUTRA ABA. Esta aba fica esperando e confere o pagamento sozinha; quando
-// o Mercado Pago aprova, fecha a aba dele (se o navegador deixar) e leva direto para o login com
-// a mensagem de sucesso. Assim a pessoa não precisa clicar em "Ir para o site do vendedor".
-// Se o navegador bloquear a nova aba, cai no fluxo antigo (mesma aba + /assinatura/sucesso).
-// Com REACT_APP_PAGAMENTO_MESMA_ABA=true o checkout abre sempre na mesma aba (útil quando o próprio
-// Mercado Pago devolve o cliente sozinho, ver MP_AUTO_RETURN no backend).
-
 interface LocationState {
   email?: string;
   verificarEmail?: boolean;
@@ -28,7 +19,7 @@ const PagamentoPage: React.FC = () => {
   const state = (location.state as LocationState) || {};
   const { token, usuario, entrar, sair } = useAuth();
 
-  const [plano, setPlano] = useState<{ plano: string; valor: number } | null>(null);
+  const [plano, setPlano] = useState<{ plano: string; valor: number; periodo?: string } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [verificando, setVerificando] = useState(false);
@@ -151,7 +142,7 @@ const PagamentoPage: React.FC = () => {
       if (liberado || cancelado) return;
       try {
         const a = await AssinaturaService.minha();
-        if (!cancelado) setPlano({ plano: a.plano, valor: Number(a.valor) });
+        if (!cancelado) setPlano({ plano: a.plano, valor: Number(a.valor), periodo: a.periodo });
       } catch {
         if (!cancelado) navigate(ROTA_APOS_LOGIN, { replace: true });
       }
@@ -167,7 +158,9 @@ const PagamentoPage: React.FC = () => {
     setAviso(null);
     setCarregando(true);
 
-    const mesmaAba = process.env.REACT_APP_PAGAMENTO_MESMA_ABA === 'true';
+    // Padrão: mesma aba. O Mercado Pago devolve o cliente sozinho para /assinatura/sucesso (auto_return).
+    // REACT_APP_PAGAMENTO_NOVA_ABA=true volta ao modo antigo (checkout em outra aba).
+    const mesmaAba = process.env.REACT_APP_PAGAMENTO_NOVA_ABA !== 'true';
     const janela = mesmaAba ? null : window.open('', '_blank');
     if (janela) {
       // Corta o vínculo da aba do MP com esta (ela não precisa controlar o nosso site).
@@ -236,9 +229,11 @@ const PagamentoPage: React.FC = () => {
                 <span className="pagamento__card-plano">{NOME_PLANO[plano.plano] ?? plano.plano}</span>
                 <span className="pagamento__card-preco">
                   {plano.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  <small> /mês</small>
+                  <small> {plano.periodo === 'ANUAL' ? '/ano' : '/mês'}</small>
                 </span>
-                <span className="pagamento__card-obs">Cobrança mensal recorrente.</span>
+                <span className="pagamento__card-obs">
+                  {plano.periodo === 'ANUAL' ? 'Pagamento único, válido por 12 meses.' : 'Pagamento único, válido por 1 mês.'}
+                </span>
               </div>
             )}
 

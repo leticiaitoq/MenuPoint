@@ -47,6 +47,10 @@ const envSchema = z.object({
   // apague a variável.
   MP_AUTO_RETURN: z.string().optional(),
 
+  // Chave secreta do webhook (Mercado Pago > Suas integrações > Webhooks). Com ela o backend confere
+  // a assinatura (x-signature) de cada notificação e recusa as que não vierem do Mercado Pago.
+  MP_WEBHOOK_SECRET: z.string().optional(),
+
   // URL pública do backend (usada no notification_url do MP)
   API_URL: z.string().url().default('http://localhost:3333')
 })

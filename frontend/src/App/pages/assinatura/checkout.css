@@ -1,0 +1,66 @@
+/* Telas de assinatura no padrão do fluxo de pagamento de referência (vídeo) */
+.ck { min-height: 100vh; display: flex; flex-direction: column; background: #fff; font-family: 'Arimo', Arial, Helvetica, sans-serif; color: #1a1a1a; }
+.ck * { font-family: inherit; box-sizing: border-box; }
+
+.ck__topo { height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 clamp(16px, 7vw, 96px); background: #f6efec; border-bottom: 1px solid #ece3df; }
+.ck__marca { font-size: 18px; font-weight: 700; letter-spacing: 0.02em; color: #1a1a1a; }
+.ck__marca span { color: #a91e22; }
+.ck__seguro { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #6b6b6b; }
+
+.ck__corpo { flex: 1; display: flex; min-height: 0; }
+.ck__coluna { flex: 1 1 50%; display: flex; flex-direction: column; padding: 22px clamp(16px, 4vw, 56px) 40px; }
+.ck__imagem { flex: 1 1 50%; background-size: cover; background-position: center; }
+.ck__voltar { align-self: flex-start; background: none; border: 0; padding: 4px 0; font-size: 13px; color: #555; cursor: pointer; }
+.ck__voltar:hover { color: #a91e22; }
+.ck__conteudo { flex: 1; width: 100%; max-width: 380px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 16px; }
+.ck__conteudo--centro { align-items: center; text-align: center; }
+
+.ck__titulo { margin: 0; font-size: 26px; font-weight: 700; }
+.ck__sub { margin: -8px 0 0; font-size: 13px; color: #8a8a8a; line-height: 1.5; }
+.ck__rotulo { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8a8a8a; margin-top: 4px; }
+
+/* alternância Mensal / Anual */
+.ck__periodo { display: flex; gap: 6px; padding: 4px; border: 1px solid #e6e0dd; border-radius: 10px; background: #faf7f6; }
+.ck__periodo button { flex: 1; padding: 8px; border: 0; border-radius: 7px; background: transparent; font-size: 13px; font-weight: 600; color: #6b6b6b; cursor: pointer; }
+.ck__periodo button[aria-pressed='true'] { background: #fff; color: #a91e22; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+/* cartão de plano (lista e resumo) */
+.ck__plano { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px; background: #fff; border: 1px solid #e6e0dd; border-radius: 10px; cursor: pointer; }
+.ck__plano--resumo { cursor: default; }
+.ck__plano[aria-pressed='true'] { border-color: #a91e22; box-shadow: 0 0 0 1px #a91e22 inset; }
+.ck__plano-icone { width: 32px; height: 32px; flex: none; border-radius: 8px; background: #f7e4e2; color: #a91e22; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+.ck__plano-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ck__plano-nome { font-size: 14px; font-weight: 700; }
+.ck__plano-detalhe { font-size: 11px; color: #8a8a8a; }
+.ck__plano-preco { font-size: 18px; font-weight: 700; text-align: right; line-height: 1.1; white-space: nowrap; }
+.ck__plano-preco small { display: block; font-size: 11px; font-weight: 400; color: #8a8a8a; }
+.ck__selo { position: absolute; top: -9px; left: 14px; padding: 1px 8px; border-radius: 999px; background: #f7e4e2; color: #a91e22; font-size: 10px; font-weight: 700; }
+.ck__link { background: none; border: 0; padding: 0; font-size: 12px; font-weight: 600; color: #a91e22; text-decoration: underline; cursor: pointer; align-self: flex-start; }
+
+.ck__texto { margin: 0; font-size: 13px; color: #555; line-height: 1.55; }
+.ck__nota { display: flex; gap: 6px; align-items: flex-start; margin: 0; font-size: 11px; color: #8a8a8a; line-height: 1.5; }
+.ck__aviso { margin: 0; padding: 10px 12px; border-radius: 8px; font-size: 13px; line-height: 1.45; background: #eef3fb; color: #34507a; border: 1px solid #d6e0f0; }
+.ck__aviso--erro { background: #fdecea; color: #a93226; border-color: #f5c6c1; }
+.ck__aviso--teste { background: #fff8e6; color: #7a5a14; border-color: #f2e2b3; }
+
+.ck__botao { width: 100%; padding: 13px; border: 0; border-radius: 8px; background: #a91e22; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .2s, opacity .2s; }
+.ck__botao:hover:not(:disabled) { background: #8a1519; }
+.ck__botao:disabled { opacity: .55; cursor: not-allowed; }
+.ck__botao--sec { background: #fff; color: #a91e22; border: 1.5px solid #a91e22; }
+.ck__botao--sec:hover:not(:disabled) { background: #fdf2f2; }
+
+/* retorno */
+.ck__icone { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 700; }
+.ck__icone--ok { background: #e8f6ee; color: #1e8e4e; }
+.ck__icone--aviso { background: #fff4e0; color: #c77700; }
+.ck__icone--erro { background: #fdecea; color: #c0392b; }
+.ck__giro { width: 44px; height: 44px; border: 4px solid #f0d4d0; border-top-color: #a91e22; border-radius: 50%; animation: ck-giro .9s linear infinite; }
+@keyframes ck-giro { to { transform: rotate(360deg); } }
+.ck__barra { width: 100%; height: 8px; border-radius: 999px; background: #f0d4d0; overflow: hidden; }
+.ck__barra > div { height: 100%; background: #a91e22; border-radius: 999px; transition: width .4s ease; }
+
+@media (max-width: 860px) {
+  .ck__imagem { display: none; }
+  .ck__coluna { flex-basis: 100%; }
+  .ck__titulo { font-size: 23px; }
+}

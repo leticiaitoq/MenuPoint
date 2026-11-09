@@ -6,9 +6,33 @@ import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
 import { env } from '@config/env'
 import prisma from '@config/prisma'
-import { PLANOS } from './Planos.config'
+import { PLANOS, valorDoPlano } from './Planos.config'
+import { createHmac, timingSafeEqual } from 'crypto'
 
 const service = new AssinaturaService()
+
+// Confere a assinatura (x-signature) da notificação do Mercado Pago com a chave secreta do webhook.
+// Sem MP_WEBHOOK_SECRET configurada, aceita (o status real é sempre consultado na API do MP).
+function assinaturaDoWebhookValida(request: FastifyRequest, dataId: string): boolean {
+  const secret = env.MP_WEBHOOK_SECRET
+  if (!secret) return true
+
+  const cabecalho = String(request.headers['x-signature'] ?? '')
+  const requestId = String(request.headers['x-request-id'] ?? '')
+  const partes = Object.fromEntries(
+    cabecalho.split(',').map((p) => {
+      const [k, ...v] = p.trim().split('=')
+      return [k, v.join('=')]
+    })
+  ) as Record<string, string>
+  if (!partes.ts || !partes.v1) return false
+
+  const manifesto = `id:${dataId.toLowerCase()};request-id:${requestId};ts:${partes.ts};`
+  const esperado = createHmac('sha256', secret).update(manifesto).digest('hex')
+  const a = Buffer.from(esperado)
+  const b = Buffer.from(partes.v1)
+  return a.length === b.length && timingSafeEqual(a, b)
+}
 
 export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
 
@@ -69,7 +93,7 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
    * POST /api/v1/assinatura/plano
    *
    * Tela /planos: define (ou troca) o plano da cobrança pendente antes do pagamento.
-   * Body: { plano: 'starter' | 'pro' }
+   * Body: { plano: 'starter' | 'pro', periodo?: 'mensal' | 'anual' }
    */
   app.post(
     '/plano',
@@ -83,8 +107,10 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
         throw new AppError('Usuário não vinculado a uma empresa', 400)
       }
 
-      const { plano } = z.object({ plano: z.string().min(1) }).parse(request.body)
-      const resultado = await service.escolherPlano(user.empresa_id, plano)
+      const { plano, periodo } = z
+        .object({ plano: z.string().min(1), periodo: z.enum(['mensal', 'anual']).optional() })
+        .parse(request.body)
+      const resultado = await service.escolherPlano(user.empresa_id, plano, periodo)
       return reply.status(200).send(resultado)
     }
   )
@@ -139,7 +165,11 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(200).send({ ok: true })
       }
 
-      const resultado = await service.processarWebhook(id, type)
+      if (!assinaturaDoWebhookValida(request, String(id))) {
+        return reply.status(401).send({ ok: false })
+      }
+
+      const resultado = await service.processarWebhook(String(id), type)
 
       // MP espera status 200 para parar de retentar o envio
       return reply.status(200).send(resultado)
@@ -157,8 +187,8 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
     '/planos',
     async (_request: FastifyRequest, reply: FastifyReply) => {
       return reply.send([
-        { id: env.MP_PLAN_ID_BASICO, plano: 'STARTER', ...PLANOS.STARTER },
-        { id: env.MP_PLAN_ID_PRO,    plano: 'PRO',     ...PLANOS.PRO },
+        { id: env.MP_PLAN_ID_BASICO, plano: 'STARTER', ...PLANOS.STARTER, valor_anual: valorDoPlano('STARTER', 'ANUAL') },
+        { id: env.MP_PLAN_ID_PRO,    plano: 'PRO',     ...PLANOS.PRO,     valor_anual: valorDoPlano('PRO', 'ANUAL') },
       ])
     }
   )

@@ -155,3 +155,20 @@
   .pagamento__titulo { font-size: 24px; }
   .pagamento__card-preco { font-size: 28px; }
 }
+/* Barra de progresso da confirmação do pagamento */
+.pagamento__barra {
+  width: 100%;
+  max-width: 360px;
+  height: 10px;
+  background: #f0d4d0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 8px auto;
+}
+
+.pagamento__barra-preenchimento {
+  height: 100%;
+  background: linear-gradient(90deg, #f1c40f, #c0392b);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
