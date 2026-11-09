@@ -152,7 +152,7 @@ const HomeRestaurante: React.FC = () => {
           resumo.mesasDisponiveis === 1 ? 'mesa' : 'mesas'
         }`
       ),
-      route: '/restaurante/mesas',
+      route: '/restaurante/caixa',
     },
   ];
 

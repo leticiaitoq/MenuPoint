@@ -64,10 +64,11 @@
 .btn-imagem img {
   width: 60px;
   height: 60px;
+  flex-shrink: 0;        /* impede o flex de achatar a imagem */
+  aspect-ratio: 1 / 1;   /* garante sempre um quadrado, então o círculo fica perfeito */
   border-radius: 50%;
   object-fit: cover;
 }
-
 /* ── Tablet e celular ──
    Mesmo ponto de corte (768px) da sidebar que vira barra inferior e do layout do restaurante. */
 @media (max-width: 768px) {
@@ -126,4 +127,10 @@
 }
 .customer-layout__voltar:hover { border-color: var(--accent); color: var(--accent); }
 .customer-layout__voltar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Foto do perfil acompanha o ícone da navbar (44px no celular) */
+  .btn-imagem img {
+    width: 44px;
+    height: 44px;
+  }
 

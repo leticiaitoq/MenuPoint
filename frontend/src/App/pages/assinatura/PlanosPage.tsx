@@ -11,10 +11,19 @@ import './PagamentoPage.css';
 
 const CHAVE_PLANO = '@menupoint:plano';
 
+const CHAVE_PERIODO = '@menupoint:periodo';
+
+// Valor mensal de cada plano. O anual é calculado no backend (Planos.config.ts: 12 x mensal, menos o
+// desconto anual, se houver); aqui o desconto precisa ser o mesmo, por isso fica numa constante só.
 const PLANOS = [
   { slug: 'starter', nome: 'Starter', valor: 97 },
   { slug: 'pro', nome: 'Pro', valor: 197 },
 ];
+const DESCONTO_ANUAL_PERCENTUAL = 0; // manter igual ao backend
+
+const valorAnual = (mensal: number) =>
+  Math.round(mensal * 12 * (1 - DESCONTO_ANUAL_PERCENTUAL / 100) * 100) / 100;
+const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const PlanosPage: React.FC = () => {
   const navigate = useNavigate();
@@ -22,6 +31,9 @@ const PlanosPage: React.FC = () => {
     const guardado = sessionStorage.getItem(CHAVE_PLANO);
     return PLANOS.some((p) => p.slug === guardado) ? guardado : null;
   });
+  const [periodo, setPeriodo] = useState<'mensal' | 'anual'>(
+    () => (sessionStorage.getItem(CHAVE_PERIODO) === 'anual' ? 'anual' : 'mensal')
+  );
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
 
@@ -38,8 +50,9 @@ const PlanosPage: React.FC = () => {
     setErro(null);
     setCarregando(true);
     try {
-      await AssinaturaService.escolherPlano(escolhido);
+      await AssinaturaService.escolherPlano(escolhido, periodo);
       sessionStorage.setItem(CHAVE_PLANO, escolhido);
+      sessionStorage.setItem(CHAVE_PERIODO, periodo);
       navigate('/pagamento', { replace: true });
     } catch (err: any) {
       setErro(err?.response?.data?.message ?? 'Não foi possível salvar o plano. Tente novamente.');
@@ -58,6 +71,29 @@ const PlanosPage: React.FC = () => {
             <p className="pagamento__subtitulo">
               Seu e-mail foi confirmado. Falta escolher o plano para seguir ao pagamento.
             </p>
+
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }} role="group" aria-label="Período de cobrança">
+              {(['mensal', 'anual'] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPeriodo(p)}
+                  aria-pressed={periodo === p}
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    borderRadius: 999,
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    background: periodo === p ? '#a91e22' : '#fff',
+                    color: periodo === p ? '#fff' : '#111827',
+                    border: `2px solid ${periodo === p ? '#a91e22' : '#e5e7eb'}`,
+                  }}
+                >
+                  {p === 'mensal' ? 'Mensal' : 'Anual'}
+                </button>
+              ))}
+            </div>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
               {PLANOS.map((pl) => {
@@ -81,11 +117,11 @@ const PlanosPage: React.FC = () => {
                   >
                     <strong style={{ display: 'block', fontSize: 18 }}>{pl.nome}</strong>
                     <span style={{ fontSize: 24, fontWeight: 700 }}>
-                      {pl.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {brl(periodo === 'anual' ? valorAnual(pl.valor) : pl.valor)}
                     </span>
-                    <small style={{ color: '#6b7280' }}> /mês</small>
+                    <small style={{ color: '#6b7280' }}> {periodo === 'anual' ? '/ano' : '/mês'}</small>
                     <span style={{ display: 'block', fontSize: 13, color: '#6b7280', marginTop: 4 }}>
-                      Cobrança mensal recorrente.
+                      {periodo === 'anual' ? 'Pagamento único, válido por 12 meses.' : 'Pagamento único, válido por 1 mês.'}
                     </span>
                   </button>
                 );

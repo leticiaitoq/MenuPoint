@@ -26,8 +26,11 @@ const AssinaturaService = {
   },
 
   /** Define (ou troca) o plano da cobrança pendente, antes de ir para o pagamento. */
-  async escolherPlano(plano: string): Promise<{ plano: string; valor: number }> {
-    const { data } = await api.post('/assinatura/plano', { plano })
+  async escolherPlano(
+    plano: string,
+    periodo: 'mensal' | 'anual' = 'mensal'
+  ): Promise<{ plano: string; valor: number; periodo: string }> {
+    const { data } = await api.post('/assinatura/plano', { plano, periodo })
     return data
   },
 
@@ -38,7 +41,7 @@ const AssinaturaService = {
   },
 
   /** Assinatura mais recente da empresa (status, plano e valor). */
-  async minha(): Promise<{ plano: string; status: string; valor: string | number }> {
+  async minha(): Promise<{ plano: string; status: string; valor: string | number; periodo?: 'MENSAL' | 'ANUAL' }> {
     const { data } = await api.get('/assinatura/minha')
     return data
   },

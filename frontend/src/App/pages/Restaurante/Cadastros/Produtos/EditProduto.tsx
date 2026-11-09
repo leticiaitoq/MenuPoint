@@ -7,7 +7,8 @@ import ProdutoService from '../../../../services/produto.service';
 import ContadorCaracteres, { DicaLimite } from '../../../../shared/components/ContadorCaracteres/ContadorCaracteres';
 import RecortadorImagem from '../../../../shared/components/RecortadorImagem/RecortadorImagem';
 import IngredientesEditor, { LinhaIngrediente, linhasDaCategoria, linhasDoProduto, linhasParaPayload, mesclarLinhas } from '../../../../shared/components/IngredientesEditor/IngredientesEditor';
-import AdicionalCategoriaService from '../../../../services/adicionalCategoria.service';
+import { AdicionalCategoria } from '../../../../services/adicionalCategoria.service';
+import ImportarPadraoModal from '../../../../shared/components/IngredientesEditor/ImportarPadraoModal';
 import './EditProduto.css';
 
 // ── Tipos
@@ -47,7 +48,7 @@ const EditProduto: React.FC = () => {
   const [form, setForm]     = useState<FormEdicao>(FORM_VAZIO);
   const [fotoParaAjustar, setFotoParaAjustar] = useState<File | null>(null);
   const [ingredientes, setIngredientes] = useState<LinhaIngrediente[]>([]);
-  const [importando, setImportando]     = useState(false);
+  const [modalImportar, setModalImportar] = useState(false);
   const [msgIngredientes, setMsgIngredientes] = useState('');
   const [erroIng, setErroIng] = useState('');
   const ingredientesRef = useRef<LinhaIngrediente[]>([]);
@@ -59,25 +60,22 @@ const EditProduto: React.FC = () => {
   const [falhaCarregar, setFalhaCarregar] = useState(false);
   const [salvando, setSalvando]     = useState(false);
 
-  // Traz os ingredientes padrão da categoria do produto (sem repetir os que ele já tem)
-  const importarPadrao = async () => {
+  // Abre o modal onde o restaurante escolhe o que trazer do padrão da categoria
+  const importarPadrao = () => {
     if (!form.categoria_id) { setMsgIngredientes('Escolha a categoria primeiro.'); return; }
-    setImportando(true);
-    try {
-      const padrao = linhasDaCategoria(await AdicionalCategoriaService.listar(form.categoria_id));
-      // usa o valor MAIS RECENTE da lista (o usuário pode ter editado enquanto carregava)
-      const { linhas, adicionadas } = mesclarLinhas(ingredientesRef.current, padrao);
-      setIngredientes(linhas);
-      setMsgIngredientes(
-        padrao.length === 0
-          ? 'Esta categoria ainda não tem ingredientes padrão (cadastre em Produtos → Categorias).'
-          : adicionadas > 0 ? `${adicionadas} ingrediente(s) importado(s).` : 'Todos os ingredientes da categoria já estão aqui.'
-      );
-    } catch {
-      setMsgIngredientes('Não foi possível carregar os ingredientes da categoria.');
-    } finally {
-      setImportando(false);
-    }
+    setModalImportar(true);
+  };
+
+  // Recebe só o que foi escolhido no modal (ou tudo, em "Importar todos")
+  const aoImportarDoModal = (escolhidos: AdicionalCategoria[]) => {
+    // usa o valor MAIS RECENTE da lista (o usuário pode ter editado com o modal aberto)
+    const { linhas, adicionadas } = mesclarLinhas(ingredientesRef.current, linhasDaCategoria(escolhidos));
+    setIngredientes(linhas);
+    setMsgIngredientes(
+      adicionadas > 0 ? `${adicionadas} ingrediente(s) importado(s).` : 'Nada novo para importar.'
+    );
+    setErroIng('');
+    setModalImportar(false);
   };
 
   // ── Carrega o produto real e as categorias do estabelecimento
@@ -371,9 +369,17 @@ const EditProduto: React.FC = () => {
               onChange={(l) => { setMsgIngredientes(''); setErroIng(''); setIngredientes(l); }}
               disabled={salvando}
               onImportar={importarPadrao}
-              importando={importando}
               mensagem={msgIngredientes}
               erro={erroIng}
+            />
+
+            <ImportarPadraoModal
+              aberto={modalImportar}
+              categoriaId={form.categoria_id}
+              categoriaNome={categorias.find((c) => c.id === form.categoria_id)?.nome}
+              nomesNoProduto={ingredientes.map((l) => l.nome)}
+              onImportar={aoImportarDoModal}
+              onFechar={() => setModalImportar(false)}
             />
           </div>
 

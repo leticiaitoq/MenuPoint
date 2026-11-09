@@ -510,127 +510,6 @@
   color: var(--on-status);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   RESPONSIVO — fica no FINAL do arquivo para vencer as regras base
-═══════════════════════════════════════════════════════════ */
-.fila__abas        { display: none; }  /* só aparece no celular */
-.fila__td--acao    { display: none; }  /* botão Avançar do card: só no celular */
-.fila__modal-overlay { padding: 16px; }
-
-/* Tablet: 4 colunas espremidas viram grade 2×2 */
-@media (max-width: 900px) {
-  .fila__kanban { grid-template-columns: repeat(2, 1fr); }
-}
-
-/* Celular */
-@media (max-width: 600px) {
-  .fila__titulo { font-size: 22px; }
-  .fila__resumo-badge { display: none; }  /* as abas já mostram as contagens */
-
-  /* ── Kanban sai, abas entram ── */
-  .fila__kanban { display: none; }
-
-  .fila__abas {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 2px 2px 6px;
-    scrollbar-width: none;
-  }
-  .fila__abas::-webkit-scrollbar { display: none; }
-
-  .fila__aba {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 44px;
-    padding: 8px 14px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    border-bottom: 3px solid var(--aba-cor);
-    background: var(--bg-surface);
-    color: var(--text-muted);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .fila__aba--recebido   { --aba-cor: var(--fila-recebido); }
-  .fila__aba--preparando { --aba-cor: var(--fila-preparando); }
-  .fila__aba--pronto     { --aba-cor: var(--fila-pronto); }
-  .fila__aba--entregue   { --aba-cor: var(--fila-entregue); }
-
-  .fila__aba--ativa {
-    background: var(--bg-surface-alt);
-    color: var(--text);
-    border-color: var(--aba-cor);
-    box-shadow: var(--sombra-card);
-  }
-
-  .fila__aba-contador {
-    min-width: 22px; height: 22px; line-height: 22px;
-    padding: 0 6px;
-    border-radius: 11px;
-    text-align: center;
-    font-size: 12px;
-    background: var(--bg-surface-alt);
-    color: var(--text);
-  }
-  .fila__aba--ativa .fila__aba-contador { background: var(--aba-cor); color: var(--on-status); }
-
-  /* ── Lista de pedidos vira cards ── */
-  .fila__tabela-container { padding: 14px; }
-  .fila__tabela-dica { display: none; }  /* o botão Avançar já está no card */
-
-  .fila__tabela,
-  .fila__tabela tbody { display: block; width: 100%; }
-
-  /* cabeçalho some da tela, mas continua para leitores de tela */
-  .fila__tabela thead {
-    position: absolute; width: 1px; height: 1px;
-    overflow: hidden; clip: rect(0 0 0 0);
-  }
-
-  .fila__tabela tbody tr.fila__linha-pedido {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    column-gap: 10px;
-    row-gap: 6px;
-    align-items: center;
-    margin-bottom: 10px;
-    padding: 12px;
-    background: var(--bg-surface-alt);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-  }
-  /* aqui não há "seleção": o botão Avançar age direto no card */
-  .fila__tabela tbody tr.fila__linha-pedido:hover,
-  .fila__tabela tbody tr.fila__linha-pedido--selecionado {
-    background: var(--bg-surface-alt);
-    border: 1px solid var(--border);
-  }
-  .fila__icone-check { display: none; }
-
-  .fila__tabela td.fila__td { display: block; padding: 0; }
-
-  .fila__tabela td.fila__td--numero  { grid-column: 1; grid-row: 1; display: flex; font-size: 16px; }
-  .fila__tabela td.fila__td--tempo   { grid-column: 2; grid-row: 1; display: flex; justify-content: flex-end; }
-  .fila__tabela td.fila__td--cliente { grid-column: 1; grid-row: 2; color: var(--text-muted); }
-  .fila__tabela td.fila__td--mesa    { grid-column: 2; grid-row: 2; display: flex; justify-content: flex-end; }
-  .fila__tabela td.fila__td--itens   { grid-column: 1 / -1; grid-row: 3; font-size: 13px; }
-  .fila__tabela td.fila__td--preco   { grid-column: 1 / -1; grid-row: 4; font-size: 16px; }
-
-  .fila__tabela td.fila__td--acao    { grid-column: 1 / -1; grid-row: 5; display: block; }
-  .fila__tabela td.fila__td--acao:empty { display: none; }  /* aba Entregue: sem botão */
-  .fila__td--acao .fila__btn-avancar { min-height: 44px; }
-
-  /* ── Modal ── */
-  .fila__modal { padding: 28px 20px 20px; }
-  .fila__modal-btn-cancelar,
-  .fila__modal-btn-confirmar { min-height: 44px; }
-}
-
 /* ── Integração com o Caixa / dados reais ── */
 .fila__btn-atualizar {
   display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 50px;
@@ -673,3 +552,237 @@ label.fila__item { cursor: pointer; }
 .fila__modal-lista li { margin: 2px 0; }
 .fila__modal-nota { margin: 10px 0 0; font-size: 13px; color: #8a5a00; }
 .fila__erro--modal { margin: 10px 0 0; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVO — cole no FINAL do Fila.css (depois de .fila__erro--modal),
+   para vencer as regras base. Substitui o bloco responsivo antigo.
+═══════════════════════════════════════════════════════════ */
+
+/* elementos que só existem no celular */
+.fila__abas,
+.fila__barra-acao { display: none; }
+
+/* a lista de itens do modal de confirmação pode ficar longa */
+.fila__modal-lista { max-height: 40vh; max-height: 40dvh; overflow-y: auto; }
+
+/* Correção: --cor-primaria e --cor-texto-fraco não existem no tema.
+   Estas linhas vencem as declarações antigas por virem depois. */
+.fila__item small { color: var(--text-faint); font-weight: 400; }
+.fila__link-todos { color: var(--accent); }
+
+/* ── Checkbox dos itens (visual próprio, segue o tema claro/escuro) ── */
+.fila__item input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  display: grid;
+  place-content: center;
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  border: 2px solid var(--border-strong);
+  border-radius: 6px;
+  background-color: var(--bg-surface);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+/* o "tique" é desenhado com clip-path e cresce ao marcar */
+.fila__item input[type="checkbox"]::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  background-color: var(--on-brand);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  transform: scale(0);
+  transition: transform 0.12s ease-in-out;
+}
+
+.fila__item input[type="checkbox"]:hover { border-color: var(--accent); }
+
+.fila__item input[type="checkbox"]:checked {
+  background-color: var(--brand);
+  border-color: var(--brand);
+  box-shadow: 0 1px 4px var(--shadow-color);
+}
+.fila__item input[type="checkbox"]:checked::before { transform: scale(1); }
+
+.fila__item input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* o texto do item marcado ganha destaque */
+.fila__item:has(input:checked) > span { font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fila__item input[type="checkbox"],
+  .fila__item input[type="checkbox"]::before { transition: none; }
+}
+
+/* Tablet: 4 colunas espremidas viram grade 2×2 */
+@media (max-width: 900px) {
+  .fila__kanban { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Celular */
+@media (max-width: 600px) {
+  .fila { gap: 14px; }
+  .fila--com-selecao { padding-bottom: 76px; } /* espaço para a barra de ação fixa */
+  .fila__titulo { font-size: 22px; }
+  .fila__resumo-badge { display: none; } /* as abas já mostram as contagens */
+
+  /* ── Kanban sai, abas entram ── */
+  .fila__kanban { display: none; }
+
+  /* abas em grade 2×2: as 4 etapas sempre visíveis, sem rolar */
+  .fila__abas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .fila__aba {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 56px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--aba-cor); /* a cor da etapa identifica o card */
+    background: var(--bg-surface);
+    color: var(--text-muted);
+    font-size: 15px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  }
+  .fila__aba:active { transform: scale(0.98); }
+
+  .fila__aba--recebido   { --aba-cor: var(--fila-recebido); }
+  .fila__aba--preparando { --aba-cor: var(--fila-preparando); }
+  .fila__aba--pronto     { --aba-cor: var(--fila-pronto); }
+  .fila__aba--entregue   { --aba-cor: var(--fila-entregue); }
+
+  /* etapa aberta: borda inteira na cor da etapa e fundo com um toque dela */
+  .fila__aba--ativa {
+    background: var(--bg-surface-alt);
+    background: color-mix(in srgb, var(--aba-cor) 14%, var(--bg-surface));
+    color: var(--text);
+    border-color: var(--aba-cor);
+    box-shadow: 0 2px 8px var(--shadow-color);
+  }
+
+  .fila__aba-contador {
+    min-width: 28px; height: 28px; line-height: 28px;
+    padding: 0 8px;
+    border-radius: 14px;
+    text-align: center;
+    font-size: 14px;
+    background: var(--bg-surface-alt);
+    color: var(--text);
+  }
+  .fila__aba--ativa .fila__aba-contador { background: var(--aba-cor); color: var(--on-status); }
+
+  /* ── Lista de pedidos vira cards ── */
+  .fila__tabela-container { padding: 14px; }
+  .fila__tabela-header { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .fila__tabela-dica { font-size: 12px; }
+
+  .fila__tabela-scroll { overflow: visible; }
+  .fila__tabela,
+  .fila__tabela tbody { display: block; width: 100%; }
+
+  /* cabeçalho some da tela, mas continua para leitores de tela */
+  .fila__tabela thead {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip: rect(0 0 0 0);
+  }
+
+  .fila__tabela tbody tr.fila__linha-pedido {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 10px;
+    row-gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 12px;
+    background: var(--bg-surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: default;
+  }
+  .fila__tabela tbody tr.fila__linha-pedido:hover { background: var(--bg-surface-alt); }
+
+  /* card com algum item marcado */
+  .fila__tabela tbody tr.fila__linha-pedido--selecionado,
+  .fila__tabela tbody tr.fila__linha-pedido--selecionado:hover {
+    background: var(--brand-soft);
+    border-color: var(--accent);
+  }
+
+  .fila__tabela td.fila__td { display: block; padding: 0; }
+
+  .fila__tabela td.fila__td--numero  { grid-column: 1; grid-row: 1; display: flex; font-size: 16px; }
+  .fila__tabela td.fila__td--tempo   { grid-column: 2; grid-row: 1; display: flex; justify-content: flex-end; }
+  .fila__tabela td.fila__td--cliente { grid-column: 1; grid-row: 2; color: var(--text-muted); overflow-wrap: anywhere; }
+  .fila__tabela td.fila__td--local   { grid-column: 2; grid-row: 2; display: flex; justify-content: flex-end; }
+  .fila__tabela td.fila__td--itens   { grid-column: 1 / -1; grid-row: 3; padding-top: 8px; border-top: 1px dashed var(--border); }
+  .fila__tabela td.fila__td--preco   { grid-column: 1 / -1; grid-row: 4; font-size: 16px; }
+
+  .fila__tabela td.fila__td--comanda {
+    grid-column: 1 / -1; grid-row: 5;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  }
+  .fila__tabela td.fila__td--comanda:empty { display: none; } /* pedido sem mesa: sem comanda */
+  .fila__td--comanda .fila__btn-avancar { min-height: 40px; }
+
+  /* itens com caixa de marcar: alvo de toque confortável */
+  .fila__item { display: flex; width: 100%; padding: 6px 0; }
+  .fila__item input[type="checkbox"] { width: 22px; height: 22px; margin-top: 0; }
+  .fila__item small { display: block; font-size: 12px; }
+  .fila__link-todos { min-height: 36px; font-size: 13px; }
+
+  /* ── Barra de ação fixa: aparece quando há itens marcados ── */
+  .fila__barra-acao {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(var(--bottom-nav-h, 64px) + 8px + env(safe-area-inset-bottom, 0px));
+    z-index: 90; /* abaixo dos modais (1100/1200) */
+    padding: 10px 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 6px 20px var(--shadow-color);
+    animation: fila-barra-sobe 0.18s ease-out;
+  }
+  @keyframes fila-barra-sobe {
+    from { transform: translateY(12px); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fila__barra-acao { animation: none; }
+  }
+
+  .fila__barra-acao-texto { flex: 1; min-width: 0; font-size: 14px; color: var(--text); }
+  .fila__barra-acao-limpar {
+    min-height: 44px;
+    padding: 0 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .fila__barra-acao .fila__btn-avancar { width: auto; min-height: 44px; padding: 0 18px; flex-shrink: 0; }
+}

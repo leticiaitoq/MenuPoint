@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar/Navbar';
 import Footer from './Footer/Footer';
+import ChamadosMesa from '../ChamadosMesa/ChamadosMesa';
 import RestaurantSidebar from './Sidebar/RestaurantSidebar';
 import { useEstabelecimento } from '../../contexts/Estabelecimentocontext';
 import './Restaurantelayout.css';
@@ -35,7 +36,7 @@ const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
 
   return (
     <div className="restaurant-layout">
-      <Navbar subtitle={nomeRestaurante ?? '(Restaurante)'} rightIcon={rightIcon} leftIcon={leftIcon} mostrarTema temaSoNoDesktop />
+      <Navbar subtitle={nomeRestaurante ?? '(Restaurante)'} rightIcon={rightIcon} leftIcon={leftIcon} mostrarTema homePath="/restaurante/home" />
 
       <div className="restaurant-layout__body">
         <RestaurantSidebar />
@@ -43,6 +44,9 @@ const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
       </div>
 
       <Footer />
+
+      {/* Chamados de garçom e pedidos de conta das mesas: aparece em qualquer tela do restaurante */}
+      <ChamadosMesa />
     </div>
   );
 };

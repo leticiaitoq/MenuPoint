@@ -246,3 +246,11 @@ input[type="password"]::-webkit-textfield-decoration-container {
   from { transform: scale(0.85); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+.login-page__toast-sub {
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+  margin: 0;
+  max-width: 280px;
+}

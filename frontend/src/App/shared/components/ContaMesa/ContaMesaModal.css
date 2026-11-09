@@ -1,0 +1,105 @@
+.contamesa__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background-color: var(--overlay);
+}
+
+.contamesa__dialogo {
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  box-sizing: border-box;
+  background: var(--bg-surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px var(--shadow-color);
+}
+
+.contamesa__topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.contamesa__titulo { margin: 0; font-size: 18px; font-weight: 600; }
+
+.contamesa__fechar {
+  display: flex;
+  padding: 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+}
+.contamesa__fechar:hover { background: var(--bg-surface-alt); color: var(--text); }
+
+.contamesa__aviso { margin: 8px 0; font-size: 14px; color: var(--text-muted); }
+.contamesa__aviso--erro { color: var(--danger); }
+
+.contamesa__link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.contamesa__pedidos { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; }
+
+.contamesa__pedido {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-surface-alt);
+}
+
+.contamesa__pedido-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.contamesa__status { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.contamesa__status--recebido,
+.contamesa__status--preparo  { background: var(--warning-soft); color: var(--warning-text); }
+.contamesa__status--pronto   { background: var(--info-soft); color: var(--info-text); }
+.contamesa__status--entregue { background: var(--success-soft); color: var(--success-text); }
+
+.contamesa__itens { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.contamesa__item { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--text); }
+.contamesa__pendente { font-style: normal; color: var(--text-muted); }
+
+.contamesa__totais { margin: 0; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+.contamesa__totais div { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.contamesa__totais dt { color: var(--text-muted); }
+.contamesa__totais dd { margin: 0; color: var(--text); }
+.contamesa__total { margin-top: 4px; padding-top: 8px; border-top: 1px dashed var(--border-strong); font-size: 16px !important; font-weight: 700; }
+.contamesa__total dt, .contamesa__total dd { color: var(--accent) !important; }
+
+.contamesa__nota { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--warning-soft); color: var(--warning-text); font-size: 13px; }
+
+.contamesa__ok {
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.contamesa__ok:hover { background: var(--brand-hover); }

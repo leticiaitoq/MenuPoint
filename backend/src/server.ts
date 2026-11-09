@@ -3,6 +3,7 @@ import { buildApp } from './app'
 import { env } from '@config/env'
 import { verificarConexaoEmail } from '@config/mailer'
  import prisma from '@config/prisma'
+import { iniciarCronAssinaturas } from '@modules/assinatura/Assinatura.cron'
 
 async function main() {
   const app = buildApp()
@@ -18,6 +19,8 @@ async function main() {
     console.log(`📦 Ambiente: ${env.NODE_ENV}`)
 
     await verificarConexaoEmail()
+
+    iniciarCronAssinaturas()
 
   } catch (err) {
     app.log.error(err)

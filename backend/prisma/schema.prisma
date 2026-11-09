@@ -75,6 +75,7 @@ model Estabelecimento {
   pagamentos_mesa    PagamentoMesa[]
   despesas           Despesa[]
   categorias_despesa CategoriaDespesa[]
+  chamados_mesa      ChamadoMesa[]
 
   @@map("estabelecimentos")
 }
@@ -105,6 +106,7 @@ model Usuario {
   reservas_confirmadas        Reserva[]                    @relation("ConfirmadaPor")
   pagamentos_confirmados      Pagamento[]                  @relation("ConfirmadoPor")
   pagamentos_mesa_registrados PagamentoMesa[]              @relation("RegistradoPor")
+  chamados_atendidos          ChamadoMesa[]                @relation("ChamadoAtendidoPor")
   tokens_recuperacao          TokenRecuperacaoSenha[]
   tokens_confirmacao_email    TokenConfirmacaoEmail[]
   tokens_alteracao_email      TokenAlteracaoEmailUsuario[]
@@ -261,6 +263,7 @@ model Mesa {
   reservas        Reserva[]
   pedidos         Pedido[]
   pagamentos_mesa PagamentoMesa[]
+  chamados        ChamadoMesa[]
 
   @@unique([estabelecimento_id, numero])
   @@map("mesas")
@@ -667,6 +670,43 @@ enum Escopo {
   LOCAL
 
   @@map("escopo")
+}
+
+// ============================================================
+// CHAMADOS DE MESA — "Chamar garçom" e "Fechar a conta" do cliente local (QR Code)
+// ============================================================
+model ChamadoMesa {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estabelecimento_id String            @db.Uuid
+  mesa_id            String            @db.Uuid
+  tipo               TipoChamadoMesa
+  status             StatusChamadoMesa @default(ABERTO)
+  forma_pagamento    FormaPagamento?   // só no pedido de conta: aviso do cliente para o caixa
+  criado_em          DateTime          @default(now()) @db.Timestamptz
+  atendido_em        DateTime?         @db.Timestamptz
+  atendido_por_id    String?           @db.Uuid
+
+  estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
+  mesa            Mesa            @relation(fields: [mesa_id], references: [id])
+  atendido_por    Usuario?        @relation("ChamadoAtendidoPor", fields: [atendido_por_id], references: [id])
+
+  @@index([estabelecimento_id, status, criado_em])
+  @@index([mesa_id, tipo, status])
+  @@map("chamados_mesa")
+}
+
+enum TipoChamadoMesa {
+  GARCOM
+  CONTA
+
+  @@map("tipo_chamado_mesa")
+}
+
+enum StatusChamadoMesa {
+  ABERTO
+  ATENDIDO
+
+  @@map("status_chamado_mesa")
 }
 
 enum StatusMesa {

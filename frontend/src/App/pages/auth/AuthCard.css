@@ -44,8 +44,9 @@
   font-size: 42px;
   line-height: 1;
   letter-spacing: 0.5px;
-  color: #ffbd59;
+  color: #ffa62b;                      /* era #ffbd59 — agora igual ao desktop */
   text-decoration: underline;
+  text-decoration-color: #ffa62b;      /* sublinhado continua laranja sob o "Point" */
   text-decoration-thickness: 2px;
   text-underline-offset: 6px;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
@@ -54,7 +55,7 @@
 /* O index.css aplica "* { font-family: Arimo }", que vence a herança: reforçamos aqui */
 .auth-brand__wordmark span {
   font-family: inherit;
-  color: inherit;
+  color: #ffffff; 
 }
 
 /* Detalhes que só existem na lateral do desktop */

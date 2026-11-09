@@ -3,6 +3,7 @@ import { HiCheckCircle, HiClipboardList } from 'react-icons/hi';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
 import MesaPublicaService, { PedidoMesaPublico } from '../../../services/mesaPublica.service';
+import ContaMesaModal from '../../../shared/components/ContaMesa/ContaMesaModal';
 import './Controlepedidolocal.css';
 
 
@@ -69,6 +70,7 @@ const ControlePedidoLocal: React.FC = () => {
   const [carregando, setCarregando]     = useState(true);
   const [erro, setErro]                 = useState<string | null>(null);
   const [mesaNumero, setMesaNumero]     = useState<number | null>(null);
+  const [contaAberta, setContaAberta]   = useState(false);
 
   const carregarPedidos = useCallback(async () => {
     if (!mesaToken) {
@@ -239,7 +241,11 @@ const ControlePedidoLocal: React.FC = () => {
                       )}
 
                       {pedido.status === 'finalizado' && (
-                        <button className="pedidos-local__btn pedidos-local__btn--conta">
+                        <button
+                          type="button"
+                          className="pedidos-local__btn pedidos-local__btn--conta"
+                          onClick={() => setContaAberta(true)}
+                        >
                           <HiClipboardList className="pedidos-local__btn-icon" />
                           Ver Conta
                         </button>
@@ -254,6 +260,7 @@ const ControlePedidoLocal: React.FC = () => {
         </div>
 
       </div>
+      <ContaMesaModal aberto={contaAberta} token={mesaToken} onFechar={() => setContaAberta(false)} />
     </CustomerLayout>
   );
 };

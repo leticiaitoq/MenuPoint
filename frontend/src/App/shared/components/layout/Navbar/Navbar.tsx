@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import ThemeToggle from '../ThemeToggle/ThemeToggle';
 import './Navbar.css';
 
@@ -26,10 +27,10 @@ interface NavbarProps {
   mostrarTema?: boolean;
 
   /**
-   * Esconde o botão de tema na navbar no celular/tablet (≤ 768px).
-   * Usado quando o tema fica dentro do menu ☰ da barra inferior.
+   * Rota da tela inicial. Quando informada, o logo "MenuPoint" vira um link
+   * clicável para ela. Sem ela (ex.: tela de boas-vindas), o logo fica só como texto.
    */
-  temaSoNoDesktop?: boolean;
+  homePath?: string;
 }
 
 /**
@@ -37,7 +38,7 @@ interface NavbarProps {
  * A diferença entre cliente e restaurante é resolvida via props,
  * evitando lógica condicional dentro do componente.
  */
-const Navbar: React.FC<NavbarProps> = ({ subtitle, rightIcon, leftIcon, mostrarTema = false, temaSoNoDesktop = false }) => {
+const Navbar: React.FC<NavbarProps> = ({ subtitle, rightIcon, leftIcon, mostrarTema = false, homePath }) => {
   return (
     <header className="navbar">
 
@@ -48,9 +49,15 @@ const Navbar: React.FC<NavbarProps> = ({ subtitle, rightIcon, leftIcon, mostrarT
 </div>
     )}
 
-    <span className="navbar__logo" aria-label="MenuPoint">
-      <span className="navbar__menu">Menu</span><span className="navbar__point">Point</span>
-    </span>
+    {homePath ? (
+      <Link to={homePath} className="navbar__logo navbar__logo--link" aria-label="MenuPoint — ir para o início">
+        <span className="navbar__menu">Menu</span><span className="navbar__point">Point</span>
+      </Link>
+    ) : (
+      <span className="navbar__logo" aria-label="MenuPoint">
+        <span className="navbar__menu">Menu</span><span className="navbar__point">Point</span>
+      </span>
+    )}
   </div>
 
   <div className="navbar__center">
@@ -58,11 +65,7 @@ const Navbar: React.FC<NavbarProps> = ({ subtitle, rightIcon, leftIcon, mostrarT
   </div>
 
   <div className="navbar__right">
-    {mostrarTema && (
-      <div className={temaSoNoDesktop ? 'navbar__tema navbar__tema--so-desktop' : 'navbar__tema'}>
-        <ThemeToggle />
-      </div>
-    )}
+    {mostrarTema && <ThemeToggle />}
     <div className="navbar__icon">
       {rightIcon}
     </div>

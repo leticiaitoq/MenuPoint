@@ -1,0 +1,135 @@
+.impmodal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background-color: var(--overlay);
+}
+
+.impmodal__dialogo {
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--bg-surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px var(--shadow-color);
+  box-sizing: border-box;
+}
+
+.impmodal__topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.impmodal__titulo { margin: 0; font-size: 18px; font-weight: 600; }
+.impmodal__sub    { margin: 2px 0 0; font-size: 13px; color: var(--text-muted); }
+
+.impmodal__fechar {
+  display: flex;
+  padding: 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+}
+.impmodal__fechar:hover { background: var(--bg-surface-alt); color: var(--text); }
+
+.impmodal__aviso { margin: 8px 0; font-size: 13px; color: var(--text-muted); }
+.impmodal__aviso--erro { color: var(--danger); }
+
+.impmodal__todos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.impmodal__lista-area {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.impmodal__secao {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.impmodal__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+
+.impmodal__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-surface-alt);
+  cursor: pointer;
+}
+.impmodal__item:hover:not(.impmodal__item--ja) { border-color: var(--accent); }
+.impmodal__item--ja { opacity: 0.65; cursor: default; }
+
+.impmodal__item-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; font-size: 12px; color: var(--text-muted); }
+.impmodal__item-texto strong { font-size: 14px; color: var(--text); }
+.impmodal__item-ok { color: var(--success); font-size: 18px; flex-shrink: 0; }
+
+.impmodal__item input,
+.impmodal__todos input { width: 18px; height: 18px; accent-color: var(--brand); flex-shrink: 0; }
+
+.impmodal__acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.impmodal__btn {
+  padding: 10px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.impmodal__btn:hover:not(:disabled) { background: var(--bg-surface-alt); }
+.impmodal__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.impmodal__btn--sec { border-color: var(--accent); color: var(--accent); }
+
+.impmodal__btn--primario { border-color: var(--brand); background: var(--brand); color: var(--on-brand); }
+.impmodal__btn--primario:hover:not(:disabled) { background: var(--brand-hover); }
+
+@media (max-width: 480px) {
+  .impmodal__dialogo { padding: 16px; }
+  .impmodal__acoes { flex-direction: column-reverse; }
+  .impmodal__btn { width: 100%; }
+}
