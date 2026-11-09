@@ -117,10 +117,16 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
 
   // Overrides de rota só se aplicam no modo guest
   const routeOverrides = mode === 'guest' ? GUEST_ROUTE_OVERRIDES : undefined;
+  
+// Rota da tela inicial conforme o modo (o logo "MenuPoint" da navbar leva para ela)
+const homePath =
+  mode === 'guest' ? '/menulocal'
+  : mode === 'logged' ? '/dwelcome'
+  : undefined;
 
   return (
     <div className="customer-layout">
-     <Navbar subtitle={subtitle} rightIcon={rightIcon} leftIcon={leftIcon} mostrarTema />
+     <Navbar subtitle={subtitle} rightIcon={rightIcon} leftIcon={leftIcon} mostrarTema homePath={homePath} />
 
       <div className="customer-layout__body">
         {showSidebar && (

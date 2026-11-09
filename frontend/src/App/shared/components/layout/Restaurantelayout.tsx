@@ -35,7 +35,7 @@ const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
 
   return (
     <div className="restaurant-layout">
-      <Navbar subtitle={nomeRestaurante ?? '(Restaurante)'} rightIcon={rightIcon} leftIcon={leftIcon} mostrarTema temaSoNoDesktop />
+      <Navbar subtitle={nomeRestaurante ?? '(Restaurante)'} rightIcon={rightIcon} leftIcon={leftIcon} mostrarTema homePath="/restaurante/home" />
 
       <div className="restaurant-layout__body">
         <RestaurantSidebar />

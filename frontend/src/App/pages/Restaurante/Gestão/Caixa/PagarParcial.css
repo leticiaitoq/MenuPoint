@@ -21,30 +21,30 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: #fff;
-  border: 1px solid #eee;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  color: #555;
+  color: var(--text-muted);
   font-size: 18px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
 
 .pagar-parcial__voltar:hover {
-  background: #fdecea;
-  color: #c0392b;
+  background: var(--brand-soft);
+  color: var(--accent);
 }
 
 .pagar-parcial__titulo-pagina {
   font-size: 22px;
   font-weight: 700;
-  color: #333;
+  color: var(--text);
   margin: 0;
 }
 
 .pagar-parcial__subtitulo-pagina {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   margin: 4px 0 0;
 }
 
@@ -58,10 +58,10 @@
 }
 
 .pagar-parcial__card {
-  background: #fff;
+  background: var(--bg-surface);
   border-radius: 14px;
   padding: 22px 24px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 4px var(--shadow-color);
 }
 
 .pagar-parcial__card--itens {
@@ -81,7 +81,7 @@
 .pagar-parcial__tabs {
   display: flex;
   gap: 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border);
   margin-bottom: 8px;
 }
 
@@ -89,12 +89,12 @@
   padding: 8px 2px 12px;
   font-size: 14px;
   font-weight: 600;
-  color: #999;
+  color: var(--text-faint);
 }
 
 .pagar-parcial__tab--ativa {
-  color: #c0392b;
-  border-bottom: 2px solid #c0392b;
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
 }
 
 .pagar-parcial__lista-itens {
@@ -109,7 +109,7 @@
   align-items: center;
   gap: 16px;
   padding: 12px 0;
-  border-bottom: 1px solid #f2f2f2;
+  border-bottom: 1px solid var(--border);
   font-size: 14px;
 }
 
@@ -127,20 +127,20 @@
 .pagar-parcial__checkbox {
   width: 17px;
   height: 17px;
-  accent-color: #c0392b;
+  accent-color: var(--brand);
   cursor: pointer;
 }
 
 .pagar-parcial__item-nome {
-  color: #333;
+  color: var(--text);
 }
 
 .pagar-parcial__item-qtd {
-  color: #999;
+  color: var(--text-faint);
 }
 
 .pagar-parcial__item-preco {
-  color: #333;
+  color: var(--text);
   font-weight: 600;
   min-width: 80px;
   text-align: right;
@@ -152,16 +152,16 @@
   justify-content: space-between;
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border);
   font-size: 14px;
-  color: #555;
+  color: var(--text-muted);
 }
 
 /* ── Coluna direita: divisão do pagamento ── */
 .pagar-parcial__titulo {
   font-size: 16px;
   font-weight: 700;
-  color: #333;
+  color: var(--text);
   margin: 0;
 }
 
@@ -170,21 +170,21 @@
   align-items: center;
   justify-content: space-between;
   font-size: 14px;
-  color: #555;
+  color: var(--text-muted);
 }
 
 .pagar-parcial__linha--destaque {
-  background: #fdecea;
+  background: var(--brand-soft);
   border-radius: 10px;
   padding: 12px 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--text);
 }
 
 .pagar-parcial__subtitulo {
   font-size: 13px;
   font-weight: 700;
-  color: #333;
+  color: var(--text);
   margin: 0 0 4px;
 }
 
@@ -199,7 +199,7 @@
   grid-template-columns: 1fr 1fr auto;
   align-items: end;
   gap: 10px;
-  border: 1px solid #eee;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px;
 }
@@ -210,23 +210,24 @@
   gap: 4px;
   font-size: 11px;
   font-weight: 600;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .pagar-parcial__campo select,
 .pagar-parcial__campo input {
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 13px;
-  color: #333;
+  color: var(--text);
+  background-color: var(--bg-surface);
   outline: none;
   transition: border 0.2s;
 }
 
 .pagar-parcial__campo select:focus,
 .pagar-parcial__campo input:focus {
-  border-color: #c0392b;
+  border-color: var(--brand);
 }
 
 .pagar-parcial__campo-valor {
@@ -256,7 +257,7 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 11px;
-  color: #999;
+  color: var(--text-faint);
   font-style: normal;
   pointer-events: none;
 }
@@ -267,17 +268,17 @@
   justify-content: center;
   width: 34px;
   height: 34px;
-  background: #fff;
-  border: 1px solid #eee;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  color: #c0392b;
+  color: var(--accent);
   font-size: 15px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .pagar-parcial__remover:hover {
-  background: #fdecea;
+  background: var(--brand-soft);
 }
 
 .pagar-parcial__adicionar {
@@ -287,7 +288,7 @@
   gap: 6px;
   background: none;
   border: none;
-  color: #c0392b;
+  color: var(--accent);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -300,10 +301,10 @@
 
 .pagar-parcial__linha--total {
   padding-top: 14px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border);
   font-size: 15px;
   font-weight: 700;
-  color: #333;
+  color: var(--text);
 }
 
 .pagar-parcial__total-valor {
@@ -315,7 +316,7 @@
 .pagar-parcial__total-valor em {
   font-size: 12px;
   font-weight: 600;
-  color: #999;
+  color: var(--text-faint);
   font-style: normal;
 }
 
@@ -323,15 +324,15 @@
   margin: 0;
   font-size: 12px;
   font-weight: 600;
-  color: #c0392b;
-  background: #fdecea;
+  color: var(--danger);
+  background: var(--danger-soft);
   border-radius: 8px;
   padding: 8px 10px;
 }
 
 .pagar-parcial__concluir {
-  background: #8f1f16;
-  color: #fff;
+  background: var(--brand);
+  color: var(--on-brand);
   border: none;
   border-radius: 10px;
   padding: 13px;
@@ -342,48 +343,49 @@
 }
 
 .pagar-parcial__concluir:hover:not(:disabled) {
-  background: #711509;
+  background: var(--brand-hover);
 }
 
 .pagar-parcial__concluir:disabled {
-  background: #e6b3ac;
+  background: var(--brand-soft-border);
   cursor: not-allowed;
 }
 
 /* ── Pagamento parcial real / Abater valor ── */
-.pagar-parcial__estado { margin: 24px 0; font-size: 14px; color: #666; text-align: center; }
-.pagar-parcial__estado--erro { color: #b3261e; }
+.pagar-parcial__estado { margin: 24px 0; font-size: 14px; color: var(--text-muted); text-align: center; }
+.pagar-parcial__estado--erro { color: var(--danger); }
 .pagar-parcial__estado-acoes { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-.pagar-parcial__item-nome small { display: block; color: #888; font-size: 12px; }
-.pagar-parcial__ordem { color: #c0392b; }
+.pagar-parcial__item-nome small { display: block; color: var(--text-muted); font-size: 12px; }
+.pagar-parcial__ordem { color: var(--accent); }
 .pagar-parcial__stepper { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
 .pagar-parcial__stepper button {
-  width: 26px; height: 26px; border-radius: 50%; border: 1px solid #c0392b;
-  background: #fff; color: #c0392b; font-weight: 700; cursor: pointer;
+  width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--accent);
+  background: var(--bg-surface); color: var(--accent); font-weight: 700; cursor: pointer;
 }
 .pagar-parcial__conta {
   display: flex; flex-direction: column; gap: 6px; margin: 12px 0;
-  padding: 12px; border-radius: 10px; background: #faf6f5; font-size: 14px;
+  padding: 12px; border-radius: 10px; background: var(--bg-surface-alt); font-size: 14px;
 }
 .pagar-parcial__conta > div { display: flex; justify-content: space-between; gap: 8px; }
-.pagar-parcial__conta-destaque { color: #1e8e4e; }
+.pagar-parcial__conta-destaque { color: var(--success-text); }
 .pagar-parcial__campo--recebido { grid-column: 1 / -1; }
-.pagar-parcial__troco { font-style: normal; font-size: 12px; color: #1e8e4e; }
+.pagar-parcial__troco { font-style: normal; font-size: 12px; color: var(--success-text); }
 .pagar-parcial__input-valor {
   width: 100%; box-sizing: border-box; padding: 12px; font-size: 20px; font-weight: 700;
-  border: 1px solid #ddd; border-radius: 10px;
+  border: 1px solid var(--border-strong); border-radius: 10px;
+  background-color: var(--bg-surface); color: var(--text);
 }
 .pagar-parcial__chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
 .pagar-parcial__chip {
-  padding: 8px 16px; border-radius: 50px; border: 1.5px solid #ddd;
-  background: #fff; color: #444; font-weight: 600; cursor: pointer;
+  padding: 8px 16px; border-radius: 50px; border: 1.5px solid var(--border-strong);
+  background: var(--bg-surface); color: var(--text); font-weight: 600; cursor: pointer;
 }
-.pagar-parcial__chip--ativo { border-color: #c0392b; background: #fdecea; color: #c0392b; }
+.pagar-parcial__chip--ativo { border-color: var(--accent); background: var(--brand-soft); color: var(--accent); }
 .pagar-parcial__badge { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 50px; white-space: nowrap; }
-.pagar-parcial__badge--ok { background: #e6f6ec; color: #1e8e4e; }
-.pagar-parcial__badge--parcial { background: #fff4d6; color: #8a5a00; }
-.pagar-parcial__badge--nao { background: #f2f2f2; color: #888; }
-.pagar-parcial__aviso--erro { color: #b3261e; }
+.pagar-parcial__badge--ok { background: var(--success-soft); color: var(--success-text); }
+.pagar-parcial__badge--parcial { background: var(--warning-soft); color: var(--warning-text); }
+.pagar-parcial__badge--nao { background: var(--bg-surface-alt); color: var(--text-muted); }
+.pagar-parcial__aviso--erro { color: var(--danger); }
 
 /* ═══════════════════════════════════════════════
    RESPONSIVIDADE
