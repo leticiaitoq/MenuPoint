@@ -1,16 +1,11 @@
 /* Tela de pagamento: reaproveita o layout do login e só organiza o conteúdo do lado direito */
 .pagamento {
-  font-family: 'Arimo', Arial, Helvetica, sans-serif;
   width: 100%;
   max-width: 420px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
-}
-
-.pagamento * {
-  font-family: inherit;
 }
 
 .pagamento__titulo {
