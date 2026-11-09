@@ -15,6 +15,8 @@ export class ReservaRepository {
       grupo_id?: string
       pessoas_total?: number
       falta_assentos?: number
+      status?: 'PENDENTE' | 'CONFIRMADA'
+      confirmada_por_id?: string
     },
     db: Db = prisma
   ) {
@@ -144,7 +146,7 @@ export class ReservaRepository {
       where: {
         estabelecimento_id,
         ativo: true,
-        status: { not: 'INATIVA' },
+        status: { notIn: ['INATIVA', 'RESERVADA'] }, // RESERVADA = reservada à mão no Caixa, sem horário: não oferece ao cliente
         ...(pessoas && { capacidade: { gte: pessoas } }),
         reservas: {
           none: {
@@ -166,7 +168,7 @@ export class ReservaRepository {
       where: {
         estabelecimento_id,
         ativo: true,
-        status: { not: 'INATIVA' },
+        status: { notIn: ['INATIVA', 'RESERVADA'] },
         ...(pessoas && { capacidade: { gte: pessoas } }),
       },
       select: {

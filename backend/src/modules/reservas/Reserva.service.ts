@@ -9,6 +9,7 @@ import {
   MesasDisponiveisQuery,
   DisponibilidadeQuery,
   MensagemReservaDTO,
+  CriarReservaCaixaDTO,
 } from './Reserva.schema'
 import {
   montarJanela,
@@ -38,14 +39,19 @@ export class ReservaService {
   // Com mesa: confere o conflito e grava na MESMA transação, sob um lock por mesa. Assim duas
   // pessoas reservando a mesma mesa no mesmo horário não passam as duas pela checagem.
 
-  async criar(data: CriarReservaDTO, estabelecimento_id: string, cliente_id?: string) {
+  async criar(
+    data: CriarReservaDTO,
+    estabelecimento_id: string,
+    cliente_id?: string,
+    extras?: { status?: 'PENDENTE' | 'CONFIRMADA'; confirmada_por_id?: string }
+  ) {
     const janela = montarJanela(data.data_reserva, data.hora_inicio, data.hora_fim)
 
     if (janela.fim <= janela.inicio) {
       throw new AppError('Hora fim deve ser posterior à hora início', 400)
     }
 
-    const dados = { ...data, estabelecimento_id, ...(cliente_id && { cliente_id }) }
+    const dados = { ...data, estabelecimento_id, ...(cliente_id && { cliente_id }), ...extras }
 
     if (!data.mesa_id) {
       return this.repository.create(dados)
@@ -75,6 +81,46 @@ export class ReservaService {
 
       return this.repository.create(dados, tx)
     })
+  }
+
+  // ── CAIXA: reservar uma mesa (dia, horário e descrição opcional) ─────────
+  // Nasce CONFIRMADA (quem reserva é o próprio restaurante). Mesma proteção contra conflito da criação.
+  async criarPeloCaixa(data: CriarReservaCaixaDTO, estabelecimento_id: string, usuario_id: string) {
+    const mesa = await prisma.mesa.findFirst({
+      where: { id: data.mesa_id, estabelecimento_id, ativo: true },
+      select: { capacidade: true, status: true },
+    })
+    if (!mesa || mesa.status === 'INATIVA') {
+      throw new AppError('Mesa não encontrada neste restaurante', 404)
+    }
+
+    // Não reserva no passado (horário de Brasília)
+    const agora = agoraNoBrasil()
+    const [h, m] = data.hora_inicio.split(':').map(Number)
+    if (data.data_reserva < agora.data || (data.data_reserva === agora.data && h * 60 + m < agora.minutos)) {
+      throw new AppError('Escolha um dia e horário que ainda não passaram', 400)
+    }
+
+    const inicioMin = h * 60 + m
+    const fimMin = Math.min(inicioMin + 120, 23 * 60 + 59)
+    const hora_fim =
+      data.hora_fim ?? `${String(Math.floor(fimMin / 60)).padStart(2, '0')}:${String(fimMin % 60).padStart(2, '0')}`
+
+    return this.criar(
+      {
+        mesa_id: data.mesa_id,
+        cliente_nome: 'Reserva do Caixa',
+        cliente_telefone: 'Caixa',
+        data_reserva: data.data_reserva,
+        hora_inicio: data.hora_inicio,
+        hora_fim,
+        num_pessoas: Math.min(Math.max(mesa.capacidade, 1), 50),
+        ...(data.descricao && { observacoes: data.descricao }),
+      },
+      estabelecimento_id,
+      undefined,
+      { status: 'CONFIRMADA', confirmada_por_id: usuario_id }
+    )
   }
 
   // ── CLIENTE: acha o restaurante pelo slug (o token do cliente não tem estabelecimento_id)
@@ -219,7 +265,7 @@ export class ReservaService {
         id: { in: mesas_ids },
         estabelecimento_id: estabelecimento.id,
         ativo: true,
-        status: { not: 'INATIVA' },
+        status: { notIn: ['INATIVA', 'RESERVADA'] },
       },
       select: { id: true, numero: true, capacidade: true },
     })

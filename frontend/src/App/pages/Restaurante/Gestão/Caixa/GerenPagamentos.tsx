@@ -148,7 +148,7 @@ const daApi = (m: MesaApi, pedidos: PedidoApi[] = []): MesaCaixa => {
 
 // A mesa aparece como "Reservada" no Caixa desde este tempo ANTES do horário da reserva até o fim dela.
 // Antes disso ela ainda pode atender quem chegar sem reserva (só mostra o chip "Reserva às HH:MM").
-const ANTECEDENCIA_RESERVA_MIN = 60;
+const ANTECEDENCIA_RESERVA_MIN = 30;
 
 const minutosAgora = (agora: number): number => {
   const d = new Date(agora);
@@ -222,6 +222,21 @@ const GerenPagamentos: React.FC = () => {
     acao: 'CONFIRMADA' | 'CANCELADA' | 'MENSAGEM';
   } | null>(null);
   const [textoDecisao, setTextoDecisao] = useState('');
+  // Modal "Reservar mesa" do Caixa: dia, horário e descrição (opcional)
+  const [reservandoMesa, setReservandoMesa] = useState<MesaCaixa | null>(null);
+  const [resDia, setResDia] = useState('');
+  const [resHora, setResHora] = useState('');
+  const [resDescricao, setResDescricao] = useState('');
+  const [resErro, setResErro] = useState('');
+  const [resEnviando, setResEnviando] = useState(false);
+  // Cancelamentos feitos pelo cliente que o Caixa já viu (guardado só neste navegador)
+  const [cancelamentosVistos, setCancelamentosVistos] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('@menupoint:caixa_cancelamentos_vistos') ?? '[]');
+    } catch {
+      return [];
+    }
+  });
   // Última atualização das mesas/reservas (automática ou pelo botão Atualizar)
   const [atualizadoEm, setAtualizadoEm]     = useState<number | null>(null);
   const [atualizando, setAtualizando]       = useState(false);
@@ -315,6 +330,31 @@ const GerenPagamentos: React.FC = () => {
     [gruposAtivos]
   );
 
+  // Cliente cancelou pelo app (últimas 24h): o Caixa é avisado até apertar OK
+  const cancelamentosDoCliente = useMemo(
+    () =>
+      agruparReservas(
+        reservas.filter(
+          (r) =>
+            r.status === 'CANCELADA' &&
+            r.cancelada_por === 'CLIENTE' &&
+            r.cliente_id &&
+            Date.now() - new Date(r.atualizado_em ?? 0).getTime() < 24 * 60 * 60 * 1000
+        )
+      ).filter((g) => !cancelamentosVistos.includes(`${g.base.grupo_id ?? g.base.id}:${g.base.atualizado_em}`)),
+    [reservas, cancelamentosVistos]
+  );
+
+  const dispensarCancelamento = (g: ReservaAgrupada) => {
+    const novos = [...cancelamentosVistos, `${g.base.grupo_id ?? g.base.id}:${g.base.atualizado_em}`].slice(-200);
+    setCancelamentosVistos(novos);
+    try {
+      localStorage.setItem('@menupoint:caixa_cancelamentos_vistos', JSON.stringify(novos));
+    } catch {
+      /* sem armazenamento: o aviso só volta ao recarregar */
+    }
+  };
+
   const totalReservasHoje = useMemo(
     () => gruposAtivos.filter((g) => dataDaReserva(g.base) === hojeLocal(agora)).length,
     [gruposAtivos, agora]
@@ -384,7 +424,7 @@ const GerenPagamentos: React.FC = () => {
   // (para não atrapalhar quem está operando)
   useEffect(() => {
     const atualizar = () => {
-      if (document.hidden || modalAberto || comandaMesa || qrMesa || cancelarMesa) return;
+      if (document.hidden || modalAberto || comandaMesa || qrMesa || cancelarMesa || decisao || reservandoMesa) return;
       void carregarMesas(true);
     };
     const timer = window.setInterval(atualizar, 15000);
@@ -393,7 +433,7 @@ const GerenPagamentos: React.FC = () => {
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', atualizar);
     };
-  }, [carregarMesas, modalAberto, comandaMesa, qrMesa, cancelarMesa]);
+  }, [carregarMesas, modalAberto, comandaMesa, qrMesa, cancelarMesa, decisao, reservandoMesa]);
 
   // Botão Atualizar: recarrega mesas, pedidos e reservas na hora
   const atualizarAgora = async () => {
@@ -530,6 +570,43 @@ const GerenPagamentos: React.FC = () => {
       editarPedido(pedidos[0].id);
     } else {
       abrirDetalheMesa(mesa);
+    }
+  };
+
+  // "Reservar mesa": abre o modal para escolher dia, horário e descrição
+  const abrirReservarMesa = (mesa: MesaCaixa, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const d = new Date(agora);
+    d.setMinutes(0, 0, 0);
+    d.setHours(d.getHours() + 1);
+    setResDia(hojeLocal(d.getTime()));
+    setResHora(`${String(d.getHours()).padStart(2, '0')}:00`);
+    setResDescricao('');
+    setResErro('');
+    setReservandoMesa(mesa);
+  };
+
+  const enviarReservaMesa = async () => {
+    if (!reservandoMesa || resEnviando) return;
+    if (!resDia || !resHora) {
+      setResErro('Informe o dia e o horário da reserva.');
+      return;
+    }
+    setResEnviando(true);
+    setResErro('');
+    try {
+      await ReservaRestauranteService.criarPeloCaixa({
+        mesa_id: reservandoMesa.id,
+        data_reserva: resDia,
+        hora_inicio: resHora,
+        ...(resDescricao.trim() && { descricao: resDescricao.trim() }),
+      });
+      setReservandoMesa(null);
+      await carregarMesas(true);
+    } catch (err: any) {
+      setResErro(mensagemDeErro(err, 'Não foi possível reservar a mesa.'));
+    } finally {
+      setResEnviando(false);
     }
   };
 
@@ -787,6 +864,23 @@ const GerenPagamentos: React.FC = () => {
           </div>
         </div>
 
+        {/* ── Aviso: o cliente cancelou a reserva pelo app ── */}
+        {cancelamentosDoCliente.length > 0 && (
+          <div className="caixa__aviso-cancelamento" role="alert">
+            {cancelamentosDoCliente.map((g) => (
+              <div key={g.base.grupo_id ?? g.base.id} className="caixa__aviso-cancelamento-linha">
+                <span>
+                  ❌ <strong>{g.base.cliente_nome}</strong> cancelou a reserva de{' '}
+                  {rotuloDia(dataDaReserva(g.base), hojeLocal(agora))} às {horaDaIso(g.base.hora_inicio)} ·{' '}
+                  {g.mesas.length > 1 ? 'Mesas' : 'Mesa'} {g.mesas.map((m) => String(m.numero).padStart(2, '0')).join(', ')}{' '}
+                  · {g.pessoas} {g.pessoas === 1 ? 'pessoa' : 'pessoas'}. A mesa já está livre nesse horário.
+                </span>
+                <button className="caixa__reserva-btn" onClick={() => dispensarCancelamento(g)}>OK</button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ── ALERTA: reserva sem assentos suficientes (o restaurante decide: aceitar ou recusar) ── */}
         {gruposSemAssentos.length > 0 && (
           <div className="caixa__alerta-assentos" role="alert">
@@ -886,12 +980,21 @@ const GerenPagamentos: React.FC = () => {
               {gruposAtivos.map((g) => {
                 const r = g.base;
                 const emConflito = g.linhas.some((l) => idsEmConflito.has(l.id));
+                // Perto do horário (30 min antes) ou já na janela da reserva: destaque na lista
+                const faltam =
+                  dataDaReserva(r) === hojeLocal(agora) ? horaParaMinutos(horaDaIso(r.hora_inicio)) - minutosAgora(agora) : null;
+                const iminente = faltam !== null && faltam <= ANTECEDENCIA_RESERVA_MIN;
                 return (
-                <div key={r.grupo_id ?? r.id} className={`caixa__reserva${g.falta > 0 ? ' caixa__reserva--sem-assentos' : ''}`}>
+                <div key={r.grupo_id ?? r.id} className={`caixa__reserva${g.falta > 0 ? ' caixa__reserva--sem-assentos' : ''}${iminente ? ' caixa__reserva--iminente' : ''}`}>
                   <div className="caixa__reserva-info">
                     <strong className="caixa__reserva-hora">
                       {rotuloDia(dataDaReserva(r), hojeLocal(agora))} · {faixaReserva(r)}
                     </strong>
+                    {iminente && faltam !== null && (
+                      <span className="caixa__reserva-agora">
+                        ⏰ {faltam > 0 ? `Começa em ${faltam} min` : 'Reserva em andamento'}
+                      </span>
+                    )}
                     <span className="caixa__reserva-nome">{r.cliente_nome}</span>
                     <span className="caixa__reserva-detalhe">
                       {g.mesas.length
@@ -1141,7 +1244,7 @@ const GerenPagamentos: React.FC = () => {
                         {/* Reserva do cliente: quem vem, que horas e quantas pessoas */}
                         {mesa.reservaAtual && (
                           <span className="caixa__card-reserva" title={mesa.reservaAtual.cliente_nome}>
-                            Hoje {faixaReserva(mesa.reservaAtual)} · {mesa.reservaAtual.cliente_nome} ({mesa.reservaAtual.pessoas_total ?? mesa.reservaAtual.num_pessoas})
+                            Reservada hoje às {horaDaIso(mesa.reservaAtual.hora_inicio)} ({faixaReserva(mesa.reservaAtual)}) · {mesa.reservaAtual.cliente_nome} ({mesa.reservaAtual.pessoas_total ?? mesa.reservaAtual.num_pessoas})
                           </span>
                         )}
                         {!mesa.reservaAtual && mesa.proximaReserva && (
@@ -1165,7 +1268,7 @@ const GerenPagamentos: React.FC = () => {
                         {(!mesa.reservaAtual || mesa.reservadaManual) && (
                           <button
                             className="caixa__card-btn-alternar"
-                            onClick={(e) => void alternarReserva(mesa, e)}
+                            onClick={(e) => (mesa.reservadaManual ? void alternarReserva(mesa, e) : abrirReservarMesa(mesa, e))}
                             disabled={alternandoId === mesa.id}
                           >
                             {alternandoId === mesa.id
@@ -1230,6 +1333,78 @@ const GerenPagamentos: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* ── Modal: reservar a mesa (dia, horário e descrição opcional) ── */}
+        {reservandoMesa && (
+          <div className="caixa__overlay" onClick={() => !resEnviando && setReservandoMesa(null)}>
+            <div
+              className="caixa__modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="caixa-reservar-titulo"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="caixa__modal-header">
+                <div>
+                  <h3 id="caixa-reservar-titulo" className="caixa__modal-titulo">
+                    Reservar Mesa {String(reservandoMesa.numero).padStart(2, '0')}
+                  </h3>
+                  <p className="caixa__modal-subtitulo">Informe o dia e o horário. A mesa fica segura por 2h.</p>
+                </div>
+                <button className="caixa__modal-fechar" onClick={() => setReservandoMesa(null)} aria-label="Fechar">
+                  <HiX />
+                </button>
+              </div>
+
+              <div className="caixa__modal-corpo">
+                <div className="caixa__campo-linha">
+                  <div className="caixa__campo">
+                    <label htmlFor="caixa-reservar-dia">Dia</label>
+                    <input
+                      id="caixa-reservar-dia"
+                      type="date"
+                      min={hojeLocal(agora)}
+                      value={resDia}
+                      onChange={(e) => setResDia(e.target.value)}
+                    />
+                  </div>
+                  <div className="caixa__campo">
+                    <label htmlFor="caixa-reservar-hora">Horário</label>
+                    <input
+                      id="caixa-reservar-hora"
+                      type="time"
+                      value={resHora}
+                      onChange={(e) => setResHora(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="caixa__campo">
+                  <label htmlFor="caixa-reservar-descricao">Descrição (opcional)</label>
+                  <textarea
+                    id="caixa-reservar-descricao"
+                    rows={3}
+                    maxLength={500}
+                    value={resDescricao}
+                    onChange={(e) => setResDescricao(e.target.value)}
+                    placeholder="Ex.: Aniversário da Maria, 6 pessoas"
+                  />
+                </div>
+
+                {resErro && <p className="caixa__alerta-inline" role="alert">{resErro}</p>}
+              </div>
+
+              <div className="caixa__modal-acoes">
+                <button className="caixa__btn-cancelar" onClick={() => setReservandoMesa(null)} disabled={resEnviando}>
+                  Voltar
+                </button>
+                <button className="caixa__btn-salvar" onClick={() => void enviarReservaMesa()} disabled={resEnviando}>
+                  {resEnviando ? 'Reservando...' : 'Reservar mesa'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Modal: aceitar / recusar reserva ou mandar mensagem ao cliente ── */}
         {decisao && (

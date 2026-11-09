@@ -69,6 +69,8 @@ test('o resumo desconta as mesas reservadas pelos clientes das disponíveis', as
 
   // a lista mostra a data de cada reserva (hoje) junto com o horário
   expect(screen.getAllByText(/Hoje · 12:30–14:30/).length).toBe(1);
+  // faltando 30 min (ou menos) a reserva ganha destaque na lista
+  expect(screen.getByText(/Começa em 30 min/)).toBeTruthy();
   const [inicio, fim] = (ReservaRestauranteService.listarPeriodo as jest.Mock).mock.calls[0];
   expect(inicio).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   expect(fim > inicio).toBe(true);

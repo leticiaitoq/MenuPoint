@@ -872,3 +872,9 @@
   .reserva__faixa-linha { flex-wrap: wrap; }
   .reserva__faixa-texto { flex-basis: 100%; order: 3; white-space: normal; }
 }
+
+
+/* Poucas mesas: uma coluna só (mais legível); com muitas, vale o grid de 2 colunas */
+.reserva__mesas.reserva__mesas--uma {
+  grid-template-columns: minmax(0, 1fr);
+}

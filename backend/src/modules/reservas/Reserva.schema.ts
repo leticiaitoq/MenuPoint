@@ -56,6 +56,18 @@ export const criarReservaClienteSchema = criarReservaSchema
 
 export type CriarReservaClienteDTO = z.infer<typeof criarReservaClienteSchema>
 
+// Reserva feita pelo CAIXA (restaurante) para uma mesa: dia, horário e descrição opcional.
+// Nasce CONFIRMADA. Sem hora_fim, a mesa fica segura por 2h; sem num_pessoas, usa a capacidade da mesa.
+export const criarReservaCaixaSchema = z.object({
+  mesa_id: z.string().uuid('ID de mesa inválido'),
+  data_reserva: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve estar no formato YYYY-MM-DD'),
+  hora_inicio: z.string().regex(HORA, 'Hora deve estar no formato HH:MM'),
+  hora_fim: z.string().regex(HORA, 'Hora deve estar no formato HH:MM').optional(),
+  descricao: z.string().trim().max(500).optional(),
+})
+
+export type CriarReservaCaixaDTO = z.infer<typeof criarReservaCaixaSchema>
+
 export const atualizarStatusReservaSchema = z.object({
   status: z.enum(['CONFIRMADA', 'CONCLUIDA', 'CANCELADA'], {
     message: 'Status deve ser CONFIRMADA, CONCLUIDA ou CANCELADA',

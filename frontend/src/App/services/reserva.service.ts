@@ -32,9 +32,22 @@ export interface Reserva {
   pessoas_total?: number | null
   /** Assentos que faltam: o restaurante decide se aceita (cadeiras extras) */
   falta_assentos?: number
+  /** Caixa reserva uma mesa para um dia e horário (descrição opcional). Nasce CONFIRMADA. */
+  async criarPeloCaixa(dados: {
+    mesa_id: string
+    data_reserva: string
+    hora_inicio: string
+    hora_fim?: string
+    descricao?: string
+  }): Promise<Reserva> {
+    const r = await api.post<Reserva>('reservas/caixa', dados)
+    return r.data
+  },
+
   /** Recado do restaurante ao cliente */
   mensagem_restaurante?: string | null
   mensagem_em?: string | null
+  criado_em?: string
   atualizado_em?: string
   /** Só na resposta de criar/atualizar: todas as linhas (mesas) da reserva */
   mesas_do_grupo?: Reserva[]

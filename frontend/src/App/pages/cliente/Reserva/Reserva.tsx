@@ -29,6 +29,12 @@ import './Reserva.css';
 // ── Constantes ─────────────────────────────────────────────────────
 const MAX_PESSOAS = 50;
 
+// Poucas mesas ficam numa coluna só; com mais que isto a lista passa para 2 colunas
+const LIMITE_UMA_COLUNA = 4;
+
+// Mesmo limite do servidor: reservas em aberto por cliente (avisamos antes, sem nem chamar a API)
+const MAX_RESERVAS_ABERTAS = 3;
+
 // Telas até esta largura (mobile) começam com a lista de mesas minimizada
 const LARGURA_MOBILE = 768;
 
@@ -372,6 +378,10 @@ const Reserva: React.FC = () => {
     }
     if (erroData) {
       setErro(erroData);
+      return;
+    }
+    if (reservasAtivas.length >= MAX_RESERVAS_ABERTAS) {
+      setErro(`Você já tem ${MAX_RESERVAS_ABERTAS} reservas em aberto neste restaurante. Cancele uma (no topo da tela) para fazer outra.`);
       return;
     }
     if (!horarioEscolhido) {
@@ -772,7 +782,11 @@ const Reserva: React.FC = () => {
             </p>
           )}
 
-          <div className="reserva__mesas" id="reserva-lista-mesas" hidden={!painelAberto}>
+          <div
+            className={`reserva__mesas${mesasVisiveis.length <= LIMITE_UMA_COLUNA ? ' reserva__mesas--uma' : ''}`}
+            id="reserva-lista-mesas"
+            hidden={!painelAberto}
+          >
             {!dataSelecionada ? (
               <p className="reserva__aviso">Escolha a data para ver os horários livres de cada mesa.</p>
             ) : erroData ? null : carregandoMesas ? (

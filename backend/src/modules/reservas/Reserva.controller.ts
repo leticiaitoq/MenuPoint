@@ -8,6 +8,7 @@ import {
   mesasDisponiveisQuerySchema,
   disponibilidadeQuerySchema,
   mensagemReservaSchema,
+  criarReservaCaixaSchema,
 } from './Reserva.schema'
 import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
@@ -87,6 +88,20 @@ export async function reservasRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // ── ROTAS DO RESTAURANTE ──────────────────────────────────────────────────
+
+  // POST /caixa — o Caixa reserva uma mesa (dia, horário e descrição opcional); nasce CONFIRMADA
+  app.post('/caixa', async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as JWTPayload
+
+    if (!user.estabelecimento_id) {
+      throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+    }
+
+    const data = criarReservaCaixaSchema.parse(request.body)
+    const reserva = await service.criarPeloCaixa(data, user.estabelecimento_id, user.sub)
+
+    return reply.status(201).send(reserva)
+  })
 
   app.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as JWTPayload
