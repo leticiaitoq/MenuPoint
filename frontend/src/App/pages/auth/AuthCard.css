@@ -1,20 +1,4 @@
-/* ============================================================
-   AuthCard.css — painel da marca (padrão do cadastro de restaurante)
-   Mobile-first: cabeçalho vermelho no topo. A partir de 769px vira
-   a lateral esquerda. Valores espelham o RegisterPage.css.
-   ============================================================ */
-
-@font-face {
-  font-family: 'Bukhari Script';
-  src: url('../../../assets/fonts/BukhariScript-lemD.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* --------------------------------------------------------------
-   MOBILE — cabeçalho no topo
--------------------------------------------------------------- */
+/* MOBILE — cabeçalho no topo */
 .auth-brand {
   position: relative;
   display: flex;
@@ -65,9 +49,7 @@
   display: none;
 }
 
-/* --------------------------------------------------------------
-   DESKTOP — lateral esquerda
--------------------------------------------------------------- */
+/* DESKTOP — lateral esquerda*/
 @media (min-width: 769px) {
   .auth-brand {
     flex: 0 0 38%;

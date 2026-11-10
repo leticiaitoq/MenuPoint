@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { HiUser, HiPhone, HiOfficeBuilding, HiCheckCircle, HiLocationMarker } from 'react-icons/hi';
+import React, { useState } from 'react';
+import { HiUser, HiPhone, HiCheckCircle } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
@@ -185,6 +187,11 @@ const handleTelefone = (e: React.ChangeEvent<HTMLInputElement>) =>
           <div className="retirada__modal" onClick={(e) => e.stopPropagation()}>
             <HiCheckCircle className="retirada__modal-icone" />
             <h2 className="retirada__modal-titulo">Pedido #{pedidoCriado.numero_pedido} confirmado!</h2>
+            {sucesso && (
+        <div className="retirada__overlay" onClick={() => setSucesso(false)}>
+            <div className="retirada__modal" onClick={(e) => e.stopPropagation()}>
+            <HiCheckCircle className="retirada__modal-emoji" />
+            <h2 className="retirada__modal-titulo">Pedido confirmado!</h2>
             <p className="retirada__modal-texto">
               Seu pedido está sendo preparado. Retire no balcão quando estiver pronto.
             </p>

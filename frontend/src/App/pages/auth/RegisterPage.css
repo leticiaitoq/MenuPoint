@@ -1,20 +1,4 @@
-/* ============================================================
-   RegisterPage.css — cadastro em 2 etapas
-   Mobile-first: o layout base segue o modelo mobile (faixa da marca
-   à esquerda + formulário). A partir de 769px vira o layout desktop.
-   ============================================================ */
-
-@font-face {
-  font-family: 'Bukhari Script';
-  src: url('../../../assets/fonts/BukhariScript-lemD.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* --------------------------------------------------------------
-   Página + cartão
--------------------------------------------------------------- */
+/* Página + cartão */
 .register-page {
   --rp-red: #a91e22;
   --rp-red-dark: #8c171b;

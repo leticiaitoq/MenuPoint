@@ -172,6 +172,25 @@
 .retirada__modal-icone  { font-size: 64px; color: var(--success); }
 .retirada__modal-titulo { font-size: 22px; font-weight: 800; color: var(--text); margin: 0; }
 .retirada__modal-texto  { font-size: 14px; color: var(--text-faint); margin: 0; }
+.retirada__modal-emoji {
+  display: block;
+  margin: 0 auto;
+  font-size: 52px;
+  color: var(--success);
+}
+
+.retirada__modal-titulo {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.retirada__modal-texto {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
 
 .retirada__modal-info {
   background-color: var(--bg-surface-alt);

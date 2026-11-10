@@ -5,10 +5,20 @@ import { MdPix } from 'react-icons/md';
 import RestaurantLayout from '../../../shared/components/layout/Restaurantelayout';
 import PedidoService, { Pedido as PedidoApi, StatusPedido } from '../../../services/pedido.service';
 import { mensagemDeErro } from '../../../services/cliente.service';
+import {
+  ReservaRestauranteService,
+  Reserva as ReservaApi,
+  ReservaAgrupada,
+  agruparReservas,
+  dataDaReserva,
+  horaDaIso,
+  hojeLocal,
+  somarDias,
+} from '../../../services/reserva.service';
 import './RestHistorico.css';
 
 // ── Tipos ──────────────────────────────────────────────
-type Aba = 'pedidos' | 'mesas';
+type Aba = 'pedidos' | 'mesas' | 'reservas';
 type Situacao = 'concluido' | 'cancelado' | 'andamento';
 type Forma = 'Pix' | 'Cartão' | 'Dinheiro' | 'Sem pagamento';
 
@@ -133,9 +143,28 @@ const agruparPorMesa = (pedidos: PedidoApi[]): SessaoMesa[] => {
     .sort((a, b) => b.ultimaHora - a.ultimaHora);
 };
 
+// ── Reservas (feitas pelo app ou pelo Caixa) ───────────
+const PERIODO_PADRAO_RESERVAS_DIAS = 90; // sem período escolhido: 90 dias para trás e para frente
+
+const situacaoDaReserva = (g: ReservaAgrupada): { rotulo: string; classe: string } => {
+  const r = g.base;
+  if (r.status === 'PENDENTE') return { rotulo: 'Aguardando confirmação', classe: 'hist__badge--amarelo' };
+  if (r.status === 'CONFIRMADA') return { rotulo: 'Confirmada', classe: 'hist__badge--verde' };
+  if (r.status === 'CONCLUIDA') return { rotulo: 'Cliente compareceu', classe: 'hist__badge--verde' };
+  if (r.cancelada_por === 'CLIENTE') return { rotulo: 'Cancelada pelo cliente', classe: 'hist__badge--vermelho' };
+  if (r.cancelada_por === 'RECUSADA') return { rotulo: 'Recusada pelo restaurante', classe: 'hist__badge--vermelho' };
+  return { rotulo: 'Cancelada pelo restaurante', classe: 'hist__badge--vermelho' };
+};
+
+const origemDaReserva = (r: ReservaApi) => (r.cliente_id ? 'App do cliente' : 'Caixa');
+const mesasDaReserva = (g: ReservaAgrupada) =>
+  g.mesas.length ? g.mesas.map((m) => pad(m.numero)).join(', ') : '-';
+
 const RestHistorico: React.FC = () => {
   // Dados reais
   const [pedidos, setPedidos] = useState<PedidoApi[]>([]);
+  const [reservas, setReservas] = useState<ReservaApi[]>([]);
+  const [erroReservas, setErroReservas] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -168,6 +197,19 @@ const RestHistorico: React.FC = () => {
         data_fim: dataFim ? new Date(`${dataFim}T23:59:59.999`).toISOString() : undefined,
       });
       setPedidos(lista);
+
+      // Reservas: se falharem, pedidos e mesas continuam funcionando
+      try {
+        setReservas(
+          await ReservaRestauranteService.listarPeriodo(
+            dataInicio || somarDias(hojeLocal(), -PERIODO_PADRAO_RESERVAS_DIAS),
+            dataFim || somarDias(hojeLocal(), PERIODO_PADRAO_RESERVAS_DIAS)
+          )
+        );
+        setErroReservas(null);
+      } catch (e: any) {
+        setErroReservas(mensagemDeErro(e, 'Não foi possível carregar as reservas.'));
+      }
     } catch (err: any) {
       setErro(mensagemDeErro(err, 'Não foi possível carregar o histórico.'));
     } finally {
@@ -210,7 +252,29 @@ const RestHistorico: React.FC = () => {
 
   const sessoesFiltradas = useMemo(() => agruparPorMesa(pedidosFiltrados), [pedidosFiltrados]);
 
-  const totalRegistros = aba === 'pedidos' ? pedidosFiltrados.length : sessoesFiltradas.length;
+  // Reservas (uma linha por reserva, mesmo em várias mesas): mais recentes primeiro; usa a busca e o filtro de mesa
+  const reservasFiltradas = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    return agruparReservas(reservas)
+      .filter((g) => {
+        if (mesaFiltro !== 'todas' && !g.mesas.some((m) => `Mesa ${pad(m.numero)}` === mesaFiltro)) return false;
+        if (termo) {
+          const alvo = [g.base.cliente_nome, g.base.observacoes ?? '', mesasDaReserva(g), situacaoDaReserva(g).rotulo]
+            .join(' ')
+            .toLowerCase();
+          if (!alvo.includes(termo)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) =>
+        (dataDaReserva(b.base) + horaDaIso(b.base.hora_inicio)).localeCompare(
+          dataDaReserva(a.base) + horaDaIso(a.base.hora_inicio)
+        )
+      );
+  }, [reservas, busca, mesaFiltro]);
+
+  const totalRegistros =
+    aba === 'pedidos' ? pedidosFiltrados.length : aba === 'mesas' ? sessoesFiltradas.length : reservasFiltradas.length;
 
   // Sempre que filtros/aba mudam, volta para a primeira página
   useEffect(() => {
@@ -221,6 +285,7 @@ const RestHistorico: React.FC = () => {
   const indiceInicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
   const pedidosDaPagina = pedidosFiltrados.slice(indiceInicio, indiceInicio + ITENS_POR_PAGINA);
   const sessoesDaPagina = sessoesFiltradas.slice(indiceInicio, indiceInicio + ITENS_POR_PAGINA);
+  const reservasDaPagina = reservasFiltradas.slice(indiceInicio, indiceInicio + ITENS_POR_PAGINA);
 
   const limparFiltros = () => {
     setDataInicio('');
@@ -253,11 +318,19 @@ const RestHistorico: React.FC = () => {
   // ── Exporta a lista da aba atual em CSV ──
   const exportarCsv = () => {
     const cabecalho =
-      aba === 'pedidos'
+      aba === 'reservas'
+        ? ['Data', 'Horário', 'Cliente', 'Mesas', 'Pessoas', 'Origem', 'Situação', 'Descrição', 'Recado do restaurante']
+        : aba === 'pedidos'
         ? ['Pedido', 'Data/Hora', 'Local', 'Itens', 'Cliente', 'Garçom', 'Total', 'Pagamento', 'Situação', 'Motivo do cancelamento']
         : ['Data', 'Mesa', 'Pedidos', 'Itens', 'Clientes', 'Total', 'Situação'];
     const linhas =
-      aba === 'pedidos'
+      aba === 'reservas'
+        ? reservasFiltradas.map((g) => [
+            formatarDia(dataDaReserva(g.base)), horaDaIso(g.base.hora_inicio), g.base.cliente_nome,
+            mesasDaReserva(g), String(g.pessoas), origemDaReserva(g.base), situacaoDaReserva(g).rotulo,
+            g.base.observacoes ?? '', g.base.mensagem_restaurante ?? '',
+          ])
+        : aba === 'pedidos'
         ? pedidosFiltrados.map((p) => [
             `#${p.numero_pedido}`, formatarDataHora(p.criado_em), rotuloLocal(p), String(totalItens(p)),
             p.cliente_nome || '-', p.atendido_por?.nome ?? '-', formatarMoeda(p.total), formaDoPedido(p),
@@ -287,6 +360,9 @@ const RestHistorico: React.FC = () => {
 
   const painelAberto = pedidoSelecionado !== null || sessaoSelecionada !== null;
   const colunas = aba === 'pedidos' ? 10 : 8;
+  const mesasDasReservas = Array.from(
+    new Set(reservas.flatMap((r) => (r.mesa ? [`Mesa ${pad(r.mesa.numero)}`] : [])))
+  ).sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
 
   return (
     <RestaurantLayout>
@@ -343,6 +419,14 @@ const RestHistorico: React.FC = () => {
           >
             Mesas ({sessoesFiltradas.length})
           </button>
+          <button
+            role="tab"
+            aria-selected={aba === 'reservas'}
+            className={`hist__aba${aba === 'reservas' ? ' hist__aba--ativa' : ''}`}
+            onClick={() => trocarAba('reservas')}
+          >
+            Reservas ({reservasFiltradas.length})
+          </button>
         </div>
 
         {/* ── Painel de filtros ── */}
@@ -351,7 +435,7 @@ const RestHistorico: React.FC = () => {
             <HiOutlineTable className="hist__select-icone" />
             <select value={mesaFiltro} onChange={(e) => setMesaFiltro(e.target.value)}>
               <option value="todas">Todas as mesas</option>
-              {locaisDisponiveis.map((local) => (
+              {(aba === 'reservas' ? mesasDasReservas : locaisDisponiveis).map((local) => (
                 <option key={local} value={local}>{local}</option>
               ))}
             </select>
@@ -397,7 +481,7 @@ const RestHistorico: React.FC = () => {
         <div className={`hist__conteudo ${painelAberto ? 'hist__conteudo--com-painel' : ''}`}>
 
           <div className="hist__tabela-wrapper">
-            <h3 className="hist__tabela-titulo">{aba === 'pedidos' ? 'Pedidos' : 'Histórico de mesas'}</h3>
+            <h3 className="hist__tabela-titulo">{aba === 'pedidos' ? 'Pedidos' : aba === 'mesas' ? 'Histórico de mesas' : 'Histórico de reservas'}</h3>
 
             {erro && (
               <p className="hist__aviso hist__aviso--erro" role="alert">
@@ -405,8 +489,58 @@ const RestHistorico: React.FC = () => {
               </p>
             )}
 
+            {aba === 'reservas' && erroReservas && (
+              <p className="hist__aviso hist__aviso--erro" role="alert">
+                {erroReservas} <button className="hist__aviso-btn" onClick={() => void carregar()}>Tentar novamente</button>
+              </p>
+            )}
+
             <div className="hist__tabela-scroll">
-              {aba === 'pedidos' ? (
+              {aba === 'reservas' ? (
+                <table className="hist__tabela hist__tabela--mesas">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Horário</th>
+                      <th>Cliente</th>
+                      <th>Mesas</th>
+                      <th>Pessoas</th>
+                      <th>Origem</th>
+                      <th>Situação</th>
+                      <th>Descrição</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {carregando && (
+                      <tr><td colSpan={colunas} className="hist__vazio">Carregando histórico…</td></tr>
+                    )}
+                    {!carregando && reservasDaPagina.length === 0 && (
+                      <tr>
+                        <td colSpan={colunas} className="hist__vazio">
+                          {erroReservas ? 'Não foi possível carregar as reservas.' : 'Nenhuma reserva encontrada para os filtros selecionados.'}
+                        </td>
+                      </tr>
+                    )}
+                    {!carregando && reservasDaPagina.map((g) => {
+                      const situacao = situacaoDaReserva(g);
+                      return (
+                        <tr key={g.base.grupo_id ?? g.base.id}>
+                          <td>{formatarDia(dataDaReserva(g.base))}</td>
+                          <td>{horaDaIso(g.base.hora_inicio)}</td>
+                          <td>{g.base.cliente_nome}</td>
+                          <td className="hist__id">{mesasDaReserva(g)}</td>
+                          <td>{g.pessoas}{g.falta > 0 ? ` (faltavam ${g.falta} lugares)` : ''}</td>
+                          <td>{origemDaReserva(g.base)}</td>
+                          <td><span className={`hist__badge ${situacao.classe}`}>{situacao.rotulo}</span></td>
+                          <td title={g.base.mensagem_restaurante ? `Recado: ${g.base.mensagem_restaurante}` : undefined}>
+                            {g.base.observacoes || '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : aba === 'pedidos' ? (
                 <table className="hist__tabela hist__tabela--pedidos">
                   <thead>
                     <tr>
@@ -532,7 +666,7 @@ const RestHistorico: React.FC = () => {
                 <span className="hist__paginacao-info">
                   Mostrando {totalRegistros === 0 ? 0 : indiceInicio + 1} a{' '}
                   {Math.min(indiceInicio + ITENS_POR_PAGINA, totalRegistros)} de {totalRegistros}{' '}
-                  {aba === 'pedidos' ? 'pedidos' : 'mesas'}
+                  {aba === 'pedidos' ? 'pedidos' : aba === 'mesas' ? 'mesas' : 'reservas'}
                 </span>
                 <div className="hist__paginacao-botoes">
                   <button onClick={() => setPaginaAtual((p) => Math.max(1, p - 1))} disabled={paginaAtual === 1}>‹</button>
