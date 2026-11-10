@@ -152,7 +152,12 @@
   text-align: center;
 }
 
-.retirada__modal-emoji { font-size: 52px; }
+.retirada__modal-emoji {
+  display: block;
+  margin: 0 auto;
+  font-size: 52px;
+  color: var(--success);
+}
 
 .retirada__modal-titulo {
   font-size: 20px;

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { HiUser, HiClipboardList, HiTrash, HiPlus, HiMinus, HiX, HiSearch } from 'react-icons/hi';
+import { HiUser, HiClipboardList, HiTrash, HiPlus, HiMinus, HiX, HiSearch, HiCheckCircle } from 'react-icons/hi';
 import { MdTableRestaurant } from 'react-icons/md';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
 import MesaService, { Mesa } from '../../../../services/mesa.service';
@@ -602,7 +602,7 @@ const Pedido: React.FC = () => {
       {sucesso && (
         <div className="pedido__popup-overlay" onClick={concluir}>
           <div className="pedido__popup" onClick={(e) => e.stopPropagation()}>
-            <span className="pedido__popup-icon">✅</span>
+            <HiCheckCircle className="pedido__popup-icon" />
             <h3>{editando ? 'Pedido atualizado com sucesso!' : 'Pedido efetuado com sucesso!'}</h3>
             <p>
               {editando

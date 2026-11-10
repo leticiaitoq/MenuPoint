@@ -598,9 +598,53 @@
     grid-template-columns: 1fr;
   }
 }
-/* ── Botões desabilitados enquanto salva ── */
-.cadd__btn-primario:disabled,
-.cadd__btn-secundario:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVO (celular) — fica no FINAL do arquivo para vencer as regras base
+═══════════════════════════════════════════════════════════ */
+
+/* Quando a coluna lateral desce para baixo do formulário (≤1000px):
+   escolher a categoria vem antes do resumo da despesa. */
+@media (max-width: 1000px) {
+  .cadd__card--categorias { order: 1; }
+  .cadd__card--resumo     { order: 2; }
+}
+
+@media (max-width: 600px) {
+  .cadd { gap: 14px; }
+  .cadd__titulo { font-size: 22px; }
+
+  /* stepper: sem estourar; só a etapa atual mostra o nome */
+  .cadd__stepper { padding: 14px 16px; }
+  .cadd__step { min-width: 0; }
+  .cadd__step:not(.cadd__step--ativo) .cadd__step-label { display: none; }
+  .cadd__step-linha { margin: 0 10px; min-width: 16px; }
+
+  .cadd__card { padding: 16px; }
+
+  /* campos em coluna única, com toque confortável */
+  .cadd__form-linha { grid-template-columns: 1fr; gap: 14px; }
+  .cadd__campo--valor .cadd__campo-input-wrap { max-width: none; }
+  .cadd__campo-input-wrap { min-height: 44px; }
+  .cadd__campo-input-wrap input,
+  .cadd__campo-input-wrap select,
+  .cadd__campo-input-wrap textarea { font-size: 16px; } /* evita o zoom automático do iOS */
+
+  /* nova categoria */
+  .cadd__nova-categoria input { font-size: 16px; min-height: 44px; }
+  .cadd__nova-categoria button { width: 44px; min-height: 44px; }
+  .cadd__btn-nova-categoria { min-height: 44px; }
+
+  /* passo 2: revisão */
+  .cadd__revisao { grid-template-columns: 1fr; }
+  .cadd__revisao-valor { overflow-wrap: anywhere; }
+  .cadd__total-valor { font-size: 26px; }
+
+  /* botões do rodapé: um embaixo do outro, o principal em cima */
+  .cadd__acoes { flex-direction: column-reverse; }
+  .cadd__btn-secundario,
+  .cadd__btn-primario { width: 100%; justify-content: center; min-height: 48px; }
+
+  /* popup de sucesso */
+  .cadd__popup { width: 100%; padding: 28px 20px; }
 }

@@ -1,18 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HiUpload, HiPlus, HiExclamationCircle, HiX } from 'react-icons/hi';
+import { HiUpload, HiExclamationCircle, HiX, HiCheckCircle } from 'react-icons/hi';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
 import CategoriaService, { Categoria } from '../../../../services/categoria.service';
 import ProdutoService from '../../../../services/produto.service';
-import SeletorCategoria from '../../../../shared/components/SeletorCategoria/SeletorCategoria';
 import ContadorCaracteres, { DicaLimite } from '../../../../shared/components/ContadorCaracteres/ContadorCaracteres';
-import {
-  SELECAO_VAZIA, SelecaoCategoria, resolverSelecao, validarSelecao,
-} from '../../../../shared/constants/categoriasPadrao';
 import RecortadorImagem from '../../../../shared/components/RecortadorImagem/RecortadorImagem';
-import IngredientesEditor, { LinhaIngrediente, linhasDaCategoria, linhasParaPayload, mesclarLinhas } from '../../../../shared/components/IngredientesEditor/IngredientesEditor';
-import AdicionalCategoriaService, { AdicionalCategoria } from '../../../../services/adicionalCategoria.service';
-import ImportarPadraoModal from '../../../../shared/components/IngredientesEditor/ImportarPadraoModal';
 import './CadProdutos.css';
 
 // ── Tipos
@@ -49,19 +42,8 @@ const CadProdutos: React.FC = () => {
 
   const [form, setForm] = useState<FormProduto>(FORM_INICIAL);
   const [fotoParaAjustar, setFotoParaAjustar] = useState<File | null>(null);
-  const [ingredientes, setIngredientes] = useState<LinhaIngrediente[]>([]);
-  const [modalImportar, setModalImportar] = useState(false);
-  const [msgIngredientes, setMsgIngredientes] = useState('');
-  // true depois que o restaurante mexe nos ingredientes: aí trocar de categoria não apaga o que ele fez
-  const ingredientesEditados = useRef(false);
-  const [erroIng, setErroIng] = useState('');
-  const ingredientesRef = useRef<LinhaIngrediente[]>([]);
-  ingredientesRef.current = ingredientes;
 
   const [categorias, setCategorias]         = useState<Categoria[]>([]);
-  const [novaCategoria, setNovaCategoria]   = useState<SelecaoCategoria>(SELECAO_VAZIA);
-  const [adicionandoCat, setAdicionandoCat] = useState(false);
-  const [criandoCategoria, setCriandoCategoria] = useState(false);
 
   const [sucesso, setSucesso] = useState(false);
   const [erro, setErro]       = useState('');
@@ -121,73 +103,6 @@ const CadProdutos: React.FC = () => {
     });
   };
 
-  // ── Ingredientes padrão da categoria: já vêm preenchidos (com as quantidades) ao escolher a categoria
-  const aoEditarIngredientes = (linhas: LinhaIngrediente[]) => {
-    ingredientesEditados.current = true;
-    setMsgIngredientes('');
-    setErroIng('');
-    setIngredientes(linhas);
-  };
-
-  // Escolher a categoria NÃO importa nada sozinho: só avisa que existe um padrão para escolher.
-  // Quem decide o que entra no produto é o restaurante, pelo botão "Importar padrão da categoria".
-  const mudarCategoria = async (categoria_id: string) => {
-    atualizarForm({ categoria_id });
-    if (!categoria_id || ingredientesEditados.current) return;
-    try {
-      const qtd = (await AdicionalCategoriaService.listar(categoria_id)).filter((a) => a.ativo).length;
-      if (!ingredientesEditados.current) {
-        setMsgIngredientes(
-          qtd > 0
-            ? `Esta categoria tem ${qtd} ingrediente(s) padrão. Use "Importar padrão da categoria" para escolher quais trazer.`
-            : ''
-        );
-      }
-    } catch {
-      /* sem padrão para esta categoria: o editor segue como está */
-    }
-  };
-
-  // Abre o modal onde o restaurante escolhe o que trazer do padrão da categoria
-  const importarPadrao = () => {
-    if (!form.categoria_id) { setMsgIngredientes('Escolha a categoria primeiro.'); return; }
-    setModalImportar(true);
-  };
-
-  // Recebe só o que foi escolhido no modal (ou tudo, em "Importar todos")
-  const aoImportarDoModal = (escolhidos: AdicionalCategoria[]) => {
-    // usa o valor MAIS RECENTE da lista (o usuário pode ter editado com o modal aberto)
-    const { linhas, adicionadas } = mesclarLinhas(ingredientesRef.current, linhasDaCategoria(escolhidos));
-    ingredientesEditados.current = true;
-    setIngredientes(linhas);
-    setMsgIngredientes(
-      adicionadas > 0 ? `${adicionadas} ingrediente(s) importado(s).` : 'Nada novo para importar.'
-    );
-    setErroIng('');
-    setModalImportar(false);
-  };
-
-  // ── Cria uma nova categoria de verdade no backend
-  const handleNovaCategoria = async () => {
-    const erroNome = validarSelecao(novaCategoria, categorias.map((c) => c.nome));
-    if (erroNome) { setErro(erroNome); return; }
-    const { nome, icone } = resolverSelecao(novaCategoria);
-
-    setCriandoCategoria(true);
-    setErro('');
-    try {
-      const categoria = await CategoriaService.criar({ nome, ...(icone ? { icone } : {}) });
-      setCategorias((prev) => [...prev, categoria]);
-      atualizarForm({ categoria_id: categoria.id });
-      setNovaCategoria(SELECAO_VAZIA);
-      setAdicionandoCat(false);
-    } catch (err: any) {
-      setErro(err?.response?.data?.message ?? 'Não foi possível criar a categoria.');
-    } finally {
-      setCriandoCategoria(false);
-    }
-  };
-
   // ── Validação e envio
   const handleSalvar = async () => {
     if (!form.nome.trim())        { setErro('Informe o nome do produto.'); return; }
@@ -195,14 +110,6 @@ const CadProdutos: React.FC = () => {
 
     const preco = precoParaNumero(form.preco);
     if (!form.preco || !(preco > 0)) { setErro('Informe um preço válido.'); return; }
-
-    const ing = linhasParaPayload(ingredientes);
-    if (!ing.ok) {
-      setErroIng(ing.erro);
-      document.querySelector('.ing')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
-    setErroIng('');
 
     setErro('');
     setSalvando(true);
@@ -222,7 +129,6 @@ const CadProdutos: React.FC = () => {
         disponivel: form.disponivel,
         destaque: form.destaque,
         ...(imagem_url && { imagem_url }),
-        ...(ing.lista.length ? { ingredientes: ing.lista } : {}),
       });
 
       setSucesso(true);
@@ -318,7 +224,7 @@ const CadProdutos: React.FC = () => {
                 <select
                   className="cadprod__select"
                   value={form.categoria_id}
-                  onChange={(e) => mudarCategoria(e.target.value)}
+                  onChange={(e) => atualizarForm({ categoria_id: e.target.value })}
                   disabled={carregandoCategorias}
                 >
                   <option value="">
@@ -371,25 +277,6 @@ const CadProdutos: React.FC = () => {
               </label>
             </div>
 
-            {/* Ingredientes e adicionais (estilo totem) */}
-            <IngredientesEditor
-              linhas={ingredientes}
-              onChange={aoEditarIngredientes}
-              disabled={salvando}
-              onImportar={importarPadrao}
-              mensagem={msgIngredientes}
-              erro={erroIng}
-            />
-
-            <ImportarPadraoModal
-              aberto={modalImportar}
-              categoriaId={form.categoria_id}
-              categoriaNome={categorias.find((c) => c.id === form.categoria_id)?.nome}
-              nomesNoProduto={ingredientes.map((l) => l.nome)}
-              onImportar={aoImportarDoModal}
-              onFechar={() => setModalImportar(false)}
-            />
-
 
           </div>
 
@@ -425,56 +312,13 @@ const CadProdutos: React.FC = () => {
               </button>
             </div>
 
-            {/* Chips de categorias */}
-            <div className="cadprod__campo">
-              <label className="cadprod__label">Categorias</label>
-              <div className="cadprod__chips">
-                {categorias.map((c) => (
-                  <span
-                    key={c.id}
-                    className={`cadprod__chip${form.categoria_id === c.id ? ' cadprod__chip--ativo' : ''}`}
-                    onClick={() => mudarCategoria(c.id)}
-                  >
-                    {c.nome}
-                  </span>
-                ))}
-
-                {adicionandoCat ? (
-                  <div className="cadprod__nova-cat">
-                    <SeletorCategoria
-                      id="cadprod-nova-cat"
-                      valor={novaCategoria}
-                      onChange={setNovaCategoria}
-                      jaUsadas={categorias.map((c) => c.nome)}
-                      desabilitado={criandoCategoria}
-                      selectClassName="cadprod__select cadprod__select--mini"
-                      inputClassName="cadprod__input cadprod__input--mini cadprod__input--larga"
-                      onEnter={handleNovaCategoria}
-                      autoFocus
-                    />
-                    <button className="cadprod__chip-confirmar" onClick={handleNovaCategoria} disabled={criandoCategoria}>✔</button>
-                    <button
-                      className="cadprod__chip-cancelar"
-                      onClick={() => { setAdicionandoCat(false); setNovaCategoria(SELECAO_VAZIA); }}
-                      disabled={criandoCategoria}
-                      aria-label="Cancelar"
-                    >✕</button>
-                  </div>
-                ) : (
-                  <button className="cadprod__chip-novo" onClick={() => setAdicionandoCat(true)}>
-                    <HiPlus /> Nova categoria
-                  </button>
-                )}
-              </div>
-            </div>
-
           </div>
         </div>
       </div>
         {sucesso && (
-        <div className="cadprod__popup-overlay" onClick={() => navigate('/restaurante/produtos')}>
+        <div className="cadprod__popup-overlay" onClick={() => setSucesso(false)}>
         <div className="cadprod__popup" onClick={(e) => e.stopPropagation()}>
-        <span className="cadprod__popup-icon">✅</span>
+        <HiCheckCircle className="cadprod__popup-icon" />
         <h3>Produto salvo com sucesso!</h3>
         <p>O produto foi adicionado ao cardápio.</p>
         <button
