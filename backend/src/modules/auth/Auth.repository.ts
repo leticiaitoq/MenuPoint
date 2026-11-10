@@ -79,7 +79,7 @@ export class AuthRepository {
   }
 
   // ── PERFIL DO USUÁRIO LOGADO ──────────────────────────────────────────────
-  // Usuário + empresa + estabelecimento lidos do BANCO (não do token).
+  // Usuário + empresa + estabelecimento lidos do BANCO.
   // É o que a tela de perfil exibe logo após o login.
   async findPerfilPorId(id: string) {
     return prisma.usuario.findUnique({
@@ -113,7 +113,7 @@ export class AuthRepository {
     })
   }
 
-  // ── CNPJ já usado? (empresa ou estabelecimento) ───────────────────────────
+  // ── CNPJ já usado?
   async cnpjEmUso(cnpj: string): Promise<boolean> {
     const [empresa, estabelecimento] = await Promise.all([
       prisma.empresa.findUnique({ where: { cnpj }, select: { id: true } }),
@@ -127,8 +127,7 @@ export class AuthRepository {
     return Boolean(usuario)
   }
 
-  // ── Slug único para a URL do cardápio ─────────────────────────────────────
-  // "sabor-da-vila", "sabor-da-vila-2", "sabor-da-vila-3"...
+  // ── Slug único para a URL do cardápio
   private async gerarSlugUnico(
     tx: Prisma.TransactionClient,
     nome: string,
@@ -152,10 +151,8 @@ export class AuthRepository {
     return `${base}-${crypto.randomBytes(3).toString('hex')}`
   }
 
-  // ── REGISTRO: Empresa + Estabelecimento + Usuário (tudo ou nada) ───────────
+  // ── REGISTRO: Empresa + Estabelecimento + Usuário
   async registrar(data: RegistrarInput) {
-    // Se dois cadastros com o mesmo nome acontecerem no mesmo instante, o slug pode
-    // colidir mesmo depois da checagem: nesse caso tentamos de novo com sufixo aleatório.
     for (let tentativa = 0; tentativa < 3; tentativa++) {
       try {
         return await this.registrarEmTransacao(data, tentativa > 0)
@@ -203,7 +200,7 @@ export class AuthRepository {
         assinaturaId = assinatura.id
       }
 
-      // 1) Empresa (pessoa jurídica: nome fantasia, razão social e CNPJ)
+      // 1) Empresa (pessoa jurídica: nome, razão social e CNPJ)
       const empresa = await tx.empresa.create({
         data: {
           nome: data.nome_empresa,
@@ -220,8 +217,7 @@ export class AuthRepository {
         })
       }
 
-      // Plano escolhido no site (sem token do Mercado Pago): a empresa nasce aguardando
-      // a confirmação do pagamento (ver Pagamento.temporario.ts)
+      // Plano escolhido no site
       // Sem plano (cadastro direto): fica Starter provisório e a pessoa escolhe o plano
       // na tela /planos antes de pagar. A conta só é liberada depois do pagamento.
       const exigePagamento = !data.token_pagamento
@@ -229,8 +225,7 @@ export class AuthRepository {
         await criarCobrancaPendente(tx, empresa.id, planoEscolhido ?? Plano.STARTER)
       }
 
-      // 2) Estabelecimento — criado SEMPRE junto com a empresa.
-      //    Telefone, WhatsApp, horários etc. ficam para o "completar perfil".
+      // Estabelecimento — criado SEMPRE junto com a empresa.
       const slug = await this.gerarSlugUnico(tx, data.nome_empresa, forcarSufixoAleatorio)
 
       const estabelecimento = await tx.estabelecimento.create({
@@ -239,12 +234,12 @@ export class AuthRepository {
           nome: data.nome_empresa,
           slug,
           cnpj: data.cnpj,
-          endereco: data.endereco, // mesmo formato do enderecoSchema de Estabelecimento
+          endereco: data.endereco,
           perfil_completo: false,
         },
       })
 
-      // 3) Usuário dono — já vinculado à empresa E ao estabelecimento.
+      // Usuário dono — já vinculado à empresa E ao estabelecimento.
       //    Escopo LOCAL: ele administra o próprio estabelecimento, sem acesso
       //    às rotas de plataforma (listar todas as empresas etc.).
       const usuario = await tx.usuario.create({
@@ -264,7 +259,7 @@ export class AuthRepository {
     })
   }
 
-  // ── ALTERAR DADOS SENSÍVEIS: usuário + empresa numa transação ──────────────
+  // ALTERAR DADOS SENSÍVEIS: usuário + empresa numa transação ──────────────
   async atualizarDadosSensiveis(
     usuario_id: string,
     empresa_id: string | null,
@@ -328,8 +323,7 @@ export class AuthRepository {
     }
   }
 
-  // ── Alteração de e-mail (logado) ───────────────────────────────────────────
-  /** Guarda o e-mail novo junto do código. O e-mail atual só muda em aplicarAlteracaoEmail. */
+  // Alteração de e-mail (logado)
   async criarTokenAlteracaoEmail(
     usuario_id: string,
     novo_email: string,
@@ -344,7 +338,6 @@ export class AuthRepository {
 
     const expira_em = new Date(Date.now() + expiracaoMinutos * 60_000)
 
-    // Só 1 milhão de combinações e o token é UNIQUE: colisão tratada com retry
     for (let tentativa = 0; tentativa < 5; tentativa++) {
       const codigo = this.gerarCodigo6Digitos()
       try {
@@ -411,7 +404,7 @@ export class AuthRepository {
     })
   }
 
-  /** Gera um código numérico de 6 dígitos (ex: "042817") */
+  /** Gera um código numérico de 6 dígitos */
   private gerarCodigo6Digitos(): string {
     return crypto.randomInt(0, 1_000_000).toString().padStart(6, '0')
   }
@@ -433,7 +426,6 @@ export class AuthRepository {
     expira_em.setMinutes(expira_em.getMinutes() + expiracaoMinutos)
 
     // Códigos de 6 dígitos podem colidir entre usuários diferentes
-    // (só 1 milhão de combinações) — tenta algumas vezes em caso de conflito.
     for (let tentativa = 0; tentativa < 5; tentativa++) {
       const codigo = this.gerarCodigo6Digitos()
       try {
@@ -451,7 +443,7 @@ export class AuthRepository {
     throw new AppError('Não foi possível gerar o código. Tente novamente.', 500)
   }
 
-  /** Data do último código de confirmação enviado (para limitar reenvios seguidos) */
+  /** Data do último código de confirmação enviado */
   async ultimoTokenConfirmacao(usuario_id: string) {
     return prisma.tokenConfirmacaoEmail.findFirst({
       where: { usuario_id },

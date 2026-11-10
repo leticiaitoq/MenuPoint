@@ -12,7 +12,6 @@ import { createHmac, timingSafeEqual } from 'crypto'
 const service = new AssinaturaService()
 
 // Confere a assinatura (x-signature) da notificação do Mercado Pago com a chave secreta do webhook.
-// Sem MP_WEBHOOK_SECRET configurada, aceita (o status real é sempre consultado na API do MP).
 function assinaturaDoWebhookValida(request: FastifyRequest, dataId: string): boolean {
   const secret = env.MP_WEBHOOK_SECRET
   if (!secret) return true
@@ -37,14 +36,7 @@ function assinaturaDoWebhookValida(request: FastifyRequest, dataId: string): boo
 export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
 
   /**
-   * POST /api/v1/assinatura/criar
-   *
    * Chamado pelo botão "Assinar" do site.
-   * Requer autenticação — usa o empresa_id do token JWT.
-   * Body: { plan_id, email }
-   * Retorna: { init_point, assinatura_id, status }
-   *
-   * O frontend faz: window.location.href = data.init_point
    */
   app.post(
     '/criar',
@@ -66,11 +58,8 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
   )
 
   /**
-   * POST /api/v1/assinatura/checkout
-   *
    * Pagamento real (Mercado Pago) logo após o cadastro: cria a assinatura no MP
    * para a cobrança pendente da empresa e devolve { init_point }.
-   * O frontend faz: window.location.href = init_point
    */
   app.post(
     '/checkout',
@@ -91,9 +80,7 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
 
   /**
    * POST /api/v1/assinatura/plano
-   *
    * Tela /planos: define (ou troca) o plano da cobrança pendente antes do pagamento.
-   * Body: { plano: 'starter' | 'pro', periodo?: 'mensal' | 'anual' }
    */
   app.post(
     '/plano',
@@ -116,10 +103,7 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
   )
 
   /**
-   * POST /api/v1/assinatura/sincronizar
-   *
    * Consulta o Mercado Pago e atualiza o status da assinatura da empresa na hora.
-   * Usada pela tela /assinatura/sucesso enquanto espera a aprovação.
    */
   app.post(
     '/sincronizar',
@@ -139,16 +123,8 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
   )
 
   /**
-   * POST /api/v1/assinatura/webhook
-   *
    * Endpoint PÚBLICO — o Mercado Pago chama automaticamente quando
    * o status de uma assinatura muda (pagamento aprovado, cancelado, etc.).
-   *
-   * ⚠️  Registre esta URL no painel do MP em:
-   *     Configurações → Notificações IPN/Webhooks
-   *
-   * Em desenvolvimento, use ngrok e atualize API_URL no .env:
-   *     API_URL=https://xxxx.ngrok-free.app
    */
   app.post(
     '/webhook',
@@ -177,11 +153,7 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
   )
 
   /**
-   * GET /api/v1/assinatura/planos
-   *
    * Retorna os planos disponíveis com os IDs reais do MP.
-   * O frontend usa isso para montar os cards de plano dinamicamente,
-   * sem ter nenhum ID hardcoded no código.
    */
   app.get(
     '/planos',
@@ -194,10 +166,7 @@ export async function assinaturaRoutes(app: FastifyInstance): Promise<void> {
   )
 
   /**
-   * GET /api/v1/assinatura/minha
-   *
    * Retorna a assinatura ativa (ou mais recente) da empresa autenticada.
-   * Útil para o painel do cliente exibir o status da assinatura.
    */
   app.get(
     '/minha',

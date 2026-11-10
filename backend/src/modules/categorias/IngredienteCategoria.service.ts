@@ -89,7 +89,6 @@ export class IngredienteCategoriaService {
 
   async deletar(id: string, estabelecimento_id: string) {
     await this.doEstabelecimento(id, estabelecimento_id)
-    // É só um modelo: produtos que já importaram este ingrediente têm a própria cópia e não mudam
     await prisma.ingredienteCategoria.delete({ where: { id } })
   }
 }

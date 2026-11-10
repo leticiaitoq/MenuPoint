@@ -1,6 +1,3 @@
-/* Cadastro de endereço — cores vêm dos tokens de tema (styles/tema.css).
-   Para mudar uma cor, mude o token, não este arquivo. */
-
 .cad-end {
   display: flex;
   gap: 20px;
@@ -302,34 +299,6 @@
   cursor: pointer;
 }
 
-/* Campo telefone com botão + */
-.cad-end__tel-wrap {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.cad-end__tel-wrap .cad-end__input { flex: 1; }
-
-.cad-end__tel-btn {
-  width: 38px;
-  height: 38px;
-  flex-shrink: 0;
-  border-radius: 8px;
-  border: none;
-  background-color: var(--brand);
-  color: var(--on-brand);
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.15s, transform 0.1s;
-}
-
-.cad-end__tel-btn:hover  { background-color: var(--brand-hover); }
-.cad-end__tel-btn:active { transform: scale(0.95); }
-
 /* Rodapé do formulário */
 .cad-end__rodape {
   display: flex;
@@ -409,6 +378,27 @@
 .cad-end__salvo-icone  { font-size: 20px; color: var(--accent); flex-shrink: 0; margin-top: 2px; }
 .cad-end__salvo-tipo  { font-size: 15px; font-weight: 700; color: var(--text); margin: 0; }
 .cad-end__salvo-rua   { font-size: 13px; color: var(--text-muted); margin: 2px 0 0 0; line-height: 1.4; }
+
+/* Telefone salvo: número + origem (Cadastro / nome do endereço) + botão de editar */
+.cad-end__salvo--tel     { align-items: center; }
+.cad-end__salvo--tel .cad-end__salvo-icone { margin-top: 0; }
+.cad-end__salvo-corpo    { flex: 1; min-width: 0; }
+.cad-end__origens { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.cad-end__origem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--bg-surface-alt);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.cad-end__origem:hover { border-color: var(--accent); color: var(--accent); }
 
 /*
    Modal de sucesso
@@ -510,7 +500,6 @@
   .cad-end__novo-tipo-input { font-size: 16px; min-height: 40px; }
   .cad-end__tipo-btn,
   .cad-end__add-tipo-btn { min-height: 40px; }
-  .cad-end__tel-btn { width: 44px; height: 44px; }
 
   /* rodapé: toggle em cima, botões embaixo ocupando a largura */
   .cad-end__rodape { flex-direction: column; align-items: stretch; gap: 14px; }

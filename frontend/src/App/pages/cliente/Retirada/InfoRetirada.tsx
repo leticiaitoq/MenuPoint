@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
-import { HiUser, HiPhone, HiCheckCircle } from 'react-icons/hi';
+import React, { useEffect, useState } from 'react';
+import { HiUser, HiPhone, HiOfficeBuilding, HiCheckCircle, HiLocationMarker } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
+import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
+import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
+import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
+import { formatarTelefone, telefoneValido } from '../../../shared/utils/enderecoValidacao';
+import PagamentoPedido, { trocoParaNumero } from '../../../shared/components/PagamentoPedido/PagamentoPedido';
+import PedidoClienteService, { FormaPagamentoOnline, PedidoCriado, itensDoCarrinho } from '../../../services/pedidoCliente.service';
+import '../../../shared/components/PagamentoPedido/PagamentoPedido.css';
 import './InfoRetirada.css';
 
 // ── Tipos
@@ -10,22 +17,36 @@ interface FormRetirada {
   telefone: string;
 }
 
-// ── Helper — máscara de telefone (mesmo padrão do CadastroEndereco)
-const formatarTelefone = (valor: string): string => {
-  const digitos = valor.replace(/\D/g, '').slice(0, 11);
-  if (digitos.length <= 2)  return `(${digitos}`;
-  if (digitos.length <= 7)  return `(${digitos.slice(0, 2)}) ${digitos.slice(2)}`;
-  return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`;
+/** "Rua XV de Novembro, 1000, Sala 2 — Centro, Taquaritinga/SP" (ou '' se o restaurante não informou) */
+const formatarEnderecoRestaurante = (e?: { rua?: string; numero?: string; complemento?: string; bairro?: string; cidade?: string; estado?: string } | null): string => {
+  if (!e?.rua) return '';
+  const rua = [e.rua, e.numero, e.complemento].filter(Boolean).join(', ');
+  const cidade = [e.cidade, e.estado].filter(Boolean).join('/');
+  const resto = [e.bairro, cidade].filter(Boolean).join(', ');
+  return resto ? `${rua} — ${resto}` : rua;
 };
 
 const InfoRetirada: React.FC = () => {
   const navigate = useNavigate();
+  const { cliente } = useClienteAuth();
+  const { slug, restaurante } = useRestauranteCliente();
+  const { itens: itensCarrinho, limparCarrinho } = useCarrinho();
 
+  // Nome e telefone já vêm da conta do cliente (dá para trocar neste pedido)
   const [form, setForm] = useState<FormRetirada>({
-    nome:     '',
-    telefone: '',
+    nome:     cliente?.nome ?? '',
+    telefone: cliente?.telefone ? formatarTelefone(cliente.telefone) : '',
   });
   const [erro, setErro] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [pedidoCriado, setPedidoCriado] = useState<PedidoCriado | null>(null);
+  const [forma, setForma] = useState<FormaPagamentoOnline | null>(null);
+  const [troco, setTroco] = useState('');
+
+  // Carrinho vazio não tem o que retirar: volta para o cardápio (menos logo depois de pedir)
+  useEffect(() => {
+    if (itensCarrinho.length === 0 && !pedidoCriado) navigate('/menu', { replace: true });
+  }, [itensCarrinho.length, pedidoCriado, navigate]);
 
   const atualizarForm = (campo: Partial<FormRetirada>) =>
     setForm((prev) => ({ ...prev, ...campo }));
@@ -33,103 +54,150 @@ const InfoRetirada: React.FC = () => {
 const handleTelefone = (e: React.ChangeEvent<HTMLInputElement>) =>
     atualizarForm({ telefone: formatarTelefone(e.target.value) });
 
- const handleContinuar = () => {
-  if (!form.nome.trim()) { setErro('Informe seu nome.'); return; }
-  if (!form.telefone || form.telefone.length < 14) { setErro('Informe um telefone válido.'); return; }
+  const handleContinuar = async () => {
+    const nome = form.nome.trim();
+    if (nome.length < 3 || !/^[A-Za-zÀ-ÿ' -]+$/.test(nome)) {
+      setErro('Informe seu nome (só letras, com pelo menos 3 caracteres).');
+      return;
+    }
+    if (!telefoneValido(form.telefone)) {
+      setErro('Informe um telefone válido com DDD, ex.: (16) 99999-9999.');
+      return;
+    }
+    if (!forma) { setErro('Escolha como você vai pagar.'); return; }
+    if (!slug) return;
 
-  setErro('');
-  console.log(form); // substituir por chamada à API
-  setSucesso(true);  // abre o modal
-};
+    setErro('');
+    setEnviando(true);
+    try {
+      const pedido = await PedidoClienteService.criar(slug, {
+        modalidade: 'RETIRADA',
+        cliente_nome: nome,
+        cliente_telefone: form.telefone,
+        forma_pagamento: forma,
+        ...(forma === 'DINHEIRO' && trocoParaNumero(troco) ? { troco_para: trocoParaNumero(troco) } : {}),
+        itens: itensDoCarrinho(itensCarrinho),
+      });
+      setPedidoCriado(pedido);
+      limparCarrinho();
+    } catch (e: any) {
+      setErro(e.message);
+    } finally {
+      setEnviando(false);
+    }
+  };
 
-  const [sucesso, setSucesso] = useState(false);
+  const enderecoRestaurante = formatarEnderecoRestaurante(restaurante?.endereco);
 
   return (
     <CustomerLayout mode="logged">
-      
       <div className="retirada">
+
+        {/* ── Card principal */}
         <div className="retirada__card">
-
-
-          <span className="retirada__emoji">🛍️</span>
-
-          {/* Título */}
-          <h1 className="retirada__titulo">Informações para Retirada</h1>
+          <h1 className="retirada__titulo">Retirada no restaurante</h1>
           <p className="retirada__subtitulo">
-            Preencha seus dados para retirar o pedido no restaurante
+            Confirme seus dados e retire o pedido no balcão quando estiver pronto.
           </p>
 
-          {/* Campos */}
-          <div className="retirada__campos">
-
-            {/* Nome */}
-            <div className="retirada__campo">
-              <div className="retirada__campo-label">
-                <HiUser className="retirada__campo-icone" />
-                <span>Nome</span>
-              </div>
-              <input
-                className="retirada__input"
-                type="text"
-                placeholder="Seu nome completo"
-                value={form.nome}
-                onChange={(e) => atualizarForm({ nome: e.target.value })}
-              />
-            </div>
-
-            {/* Telefone */}
-            <div className="retirada__campo">
-              <div className="retirada__campo-label">
-                <HiPhone className="retirada__campo-icone" />
-                <span>Telefone para contato</span>
-              </div>
-              <input
-                className="retirada__input"
-                type="text"
-                placeholder="(11) 98765-4321"
-                value={form.telefone}
-                onChange={handleTelefone}
-              />
-            </div>
-
+          <div className="retirada__campo">
+            <label className="retirada__label" htmlFor="retiradaNome">
+              <HiUser className="retirada__label-icone" /> Nome
+            </label>
+            <input
+              id="retiradaNome"
+              className="retirada__input"
+              type="text"
+              placeholder="Seu nome completo"
+              value={form.nome}
+              onChange={(e) => atualizarForm({ nome: e.target.value })}
+            />
           </div>
 
-          {/* Erro */}
-          {erro && <p className="retirada__erro">{erro}</p>}
+          <div className="retirada__campo">
+            <label className="retirada__label" htmlFor="retiradaTelefone">
+              <HiPhone className="retirada__label-icone" /> Telefone para contato
+            </label>
+            <input
+              id="retiradaTelefone"
+              className="retirada__input"
+              type="text"
+              inputMode="tel"
+              placeholder="(16) 99999-9999"
+              value={form.telefone}
+              onChange={handleTelefone}
+            />
+          </div>
 
-          {/* Ações */}
-          <button className="retirada__btn-continuar" onClick={handleContinuar}>
-            Continuar
-          </button>
+          <PagamentoPedido
+            itens={itensCarrinho}
+            taxaEntrega={0}
+            momento="na retirada"
+            forma={forma}
+            onForma={setForma}
+            troco={troco}
+            onTroco={setTroco}
+          />
 
-          <button className="retirada__btn-voltar" onClick={() => navigate(-1)}>
-            Voltar
-          </button>
+          {erro && <p className="pgp__erro">{erro}</p>}
 
+          <div className="retirada__acoes">
+            <button className="retirada__btn-voltar" onClick={() => navigate(-1)}>
+              Voltar
+            </button>
+            <button
+              className="retirada__btn-confirmar"
+              onClick={handleContinuar}
+              disabled={enviando || !forma}
+            >
+              {enviando ? 'Enviando...' : 'Confirmar pedido'}
+            </button>
+          </div>
         </div>
+
+        {/* ── Painel lateral: onde retirar */}
+        <aside className="retirada__painel">
+          <section className="retirada__secao">
+            <h2 className="retirada__secao-titulo">Local de retirada</h2>
+            <div className="retirada__local">
+              <span className="retirada__local-icone"><HiOfficeBuilding /></span>
+              <div className="retirada__local-info">
+                <p className="retirada__local-nome">{restaurante?.nome ?? 'Restaurante'}</p>
+                {enderecoRestaurante && (
+                  <p className="retirada__local-linha">
+                    <HiLocationMarker /> <span>{enderecoRestaurante}</span>
+                  </p>
+                )}
+                {restaurante?.telefone && (
+                  <p className="retirada__local-linha">
+                    <HiPhone /> <span>{formatarTelefone(restaurante.telefone)}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        </aside>
       </div>
 
-            {sucesso && (
-        <div className="retirada__overlay" onClick={() => setSucesso(false)}>
-            <div className="retirada__modal" onClick={(e) => e.stopPropagation()}>
-            <HiCheckCircle className="retirada__modal-emoji" />
-            <h2 className="retirada__modal-titulo">Pedido confirmado!</h2>
+      {/* ── Modal de sucesso */}
+      {pedidoCriado && (
+        <div className="retirada__overlay" onClick={() => navigate('/historico')}>
+          <div className="retirada__modal" onClick={(e) => e.stopPropagation()}>
+            <HiCheckCircle className="retirada__modal-icone" />
+            <h2 className="retirada__modal-titulo">Pedido #{pedidoCriado.numero_pedido} confirmado!</h2>
             <p className="retirada__modal-texto">
-                Seu pedido está sendo preparado. Retire no balcão quando estiver pronto.
+              Seu pedido está sendo preparado. Retire no balcão quando estiver pronto.
             </p>
             <div className="retirada__modal-info">
-                <p><strong>Nome:</strong> {form.nome}</p>
-                <p><strong>Telefone:</strong> {form.telefone}</p>
+              <p><strong>Nome:</strong> {form.nome}</p>
+              <p><strong>Telefone:</strong> {form.telefone}</p>
             </div>
-            <button
-                className="retirada__btn-continuar"
-                onClick={() => navigate('/historico')}
-            >
-                Fechar
+            <button className="retirada__btn-confirmar" onClick={() => navigate('/historico')}>
+              Acompanhar pedido
             </button>
-            </div>
+          </div>
         </div>
-        )}
+      )}
     </CustomerLayout>
   );
 };

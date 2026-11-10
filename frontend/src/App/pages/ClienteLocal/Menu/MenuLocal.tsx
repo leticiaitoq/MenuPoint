@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
-import Carrinho from '../../../shared/components/Carrinho/Carrinho';
+import Carrinho, { ItemCarrinho } from '../../../shared/components/Carrinho/Carrinho';
 import ChamarGarcom from '../../../shared/components/ChamarGarcom/Chamargarcom';
 import FecharConta from '../../../shared/components/FecharConta/FecharConta';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
@@ -11,7 +11,7 @@ import RestaurantePublicoService from '../../../services/restaurantePublico.serv
 import MesaPublicaService from '../../../services/mesaPublica.service';
 import './MenuLocal.css';
 
-// ── Tipos
+// Tipos
 interface Categoria {
   id: string;
   label: string;
@@ -49,14 +49,26 @@ const compararProdutos = (idsCategorias: string[]) => (a: Produto, b: Produto) =
 const MenuLocal: React.FC = () => {
   // ── Estados
   const navigate = useNavigate();
+  const location = useLocation();
   const { itens: itensCarrinho, removerItem, limparCarrinho } = useCarrinho();
   const { mesa, nome: nomeConvidado, mesaToken, estabelecimentoId } = useConvidado();
   const [busca, setBusca]                     = useState('');
   const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
-  const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
+  // Voltando da edição de um item, o carrinho já abre
+  const [carrinhoAberto, setCarrinhoAberto]   = useState(
+    () => Boolean((location.state as { abrirCarrinho?: boolean } | null)?.abrirCarrinho)
+  );
   const [contaAberta, setContaAberta]         = useState(false);
   const [contaPedida, setContaPedida]         = useState(false);
   const timerConta = useRef<number | undefined>(undefined);
+
+  // Consome o aviso "abrir o carrinho": sem isso o carrinho reabriria toda vez que o cliente voltasse a esta tela
+  useEffect(() => {
+    if ((location.state as { abrirCarrinho?: boolean } | null)?.abrirCarrinho) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Limpa o temporizador ao sair da tela
   useEffect(() => () => window.clearTimeout(timerConta.current), []);
@@ -68,8 +80,7 @@ const MenuLocal: React.FC = () => {
   const [enviando, setEnviando]     = useState(false);
   const [erroEnvio, setErroEnvio]   = useState('');
 
-  // Cardápio real do restaurante da mesa (o id vem do QR Code escaneado).
-  // Recarrega sozinho a cada 15s e ao voltar para a aba, sem piscar a tela.
+  // Cardápio real do restaurante da mesa
   useEffect(() => {
     if (!estabelecimentoId) { setCarregando(false); return; }
     let cancelado = false;
@@ -136,7 +147,7 @@ const MenuLocal: React.FC = () => {
     };
   }, [estabelecimentoId]);
 
-  // ── Filtro
+  // Filtro
   const produtosFiltrados = produtos.filter((p) => {
     const naCategoria = categoriaAtiva === 'todos' || p.categoriaId === categoriaAtiva;
     const naBusca = p.nome.toLowerCase().includes(busca.toLowerCase());
@@ -145,12 +156,21 @@ const MenuLocal: React.FC = () => {
 
   const totalCarrinho = itensCarrinho.reduce((acc, i) => acc + i.quantidade, 0);
 
-  // ── Handlers
+  // Handlers
   const abrirPersonalizacao = (produto: Produto) => {
     navigate('/personaliza', { state: { produto, modoCliente: 'guest' } });
   };
 
-  // Depois de pedir a conta, o botão fica bloqueado por 2 minutos (evita pedidos repetidos)
+  // Volta para a tela do pedido com o item já preenchido
+  const editarItem = (item: ItemCarrinho) => {
+    if (!item.produtoOrigem) return;
+    setCarrinhoAberto(false);
+    navigate('/personaliza', {
+      state: { produto: item.produtoOrigem, modoCliente: 'guest', editarItemId: item.id },
+    });
+  };
+
+  // Depois de pedir a conta, o botão fica bloqueado por 2 minutos
   const aoPedirConta = () => {
     setContaPedida(true);
     window.clearTimeout(timerConta.current);
@@ -167,7 +187,7 @@ const MenuLocal: React.FC = () => {
       return;
     }
 
-    // Itens sem id de produto (carrinho antigo, de antes da integração) não dá para enviar
+    // Itens sem id de produto não dá para enviar
     if (itensCarrinho.some((i) => !i.produtoId)) {
       limparCarrinho();
       setCarrinhoAberto(false);
@@ -199,7 +219,7 @@ const MenuLocal: React.FC = () => {
     }
   };
 
-  // ── Render
+  // Render
   return (
     <CustomerLayout
       mode="guest"
@@ -304,6 +324,7 @@ const MenuLocal: React.FC = () => {
         onFechar={() => setCarrinhoAberto(false)}
         itens={itensCarrinho}
         onRemover={removerItem}
+        onEditar={editarItem}
         onFinalizar={finalizarPedido}
         onFecharConta={mesaToken ? () => setContaAberta(true) : undefined}
         contaPedida={contaPedida}

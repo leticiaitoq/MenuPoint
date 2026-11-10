@@ -22,7 +22,6 @@ export const criarCategoriaSchema = z.object({
     .optional(),
 
   // A ordem NÃO vem do cliente: é calculada automaticamente pelo service
-  // (nova categoria vai para o fim da lista). Para mudar depois, use PATCH /reordenar.
 
   ativo: z.boolean().default(true),
 
@@ -47,7 +46,7 @@ export const atualizarCategoriaSchema = z.object({
     .max(255)
     .optional(),
 
-  // null limpa o ícone (ex.: trocou uma categoria pronta por uma personalizada)
+  // null limpa o ícone
   icone: z
     .string()
     .max(10)

@@ -16,7 +16,7 @@ const MARGEM_REAPROVEITAR_MS = 2 * 60_000
 
 export class ClienteRepository {
 
-  // ── Consultas ──────────────────────────────────────────────────────────────
+  // Consultas 
   findByEmail(email: string) {
     return prisma.cliente.findUnique({ where: { email } })
   }
@@ -29,7 +29,7 @@ export class ClienteRepository {
     return prisma.cliente.findUnique({ where: { id } })
   }
 
-  // ── Cadastro ───────────────────────────────────────────────────────────────
+  // Cadastro
   async criar(data: CriarClienteInput) {
     try {
       return await prisma.cliente.create({
@@ -67,14 +67,13 @@ export class ClienteRepository {
   }
 
   // ── Códigos de 6 dígitos ───────────────────────────────────────────────────
-  /** "042817". Só 1 milhão de combinações: o token é UNIQUE, então a colisão é tratada com retry. */
   private gerarCodigo6Digitos(): string {
     return crypto.randomInt(0, 1_000_000).toString().padStart(6, '0')
   }
 
   async criarTokenConfirmacaoEmail(cliente_id: string, expiracaoMinutos = 15): Promise<string> {
-    // Já existe um código válido? Reaproveita. Gerar outro a cada tentativa de login invalidava
-    // o código do e-mail que o cliente acabou de receber (e ele só via "Código inválido").
+    // Já existe um código válido? Reaproveita.
+
     const ativo = await prisma.tokenConfirmacaoEmailCliente.findFirst({
       where: {
         cliente_id,
@@ -85,7 +84,7 @@ export class ClienteRepository {
     })
     if (ativo) return ativo.token
 
-    // Limpa os códigos do cliente + os vencidos/usados de todos (libera combinações do UNIQUE)
+    // Limpa os códigos do cliente + os vencidos/usados de todos
     await prisma.tokenConfirmacaoEmailCliente.deleteMany({
       where: {
         OR: [{ cliente_id }, { usado: true }, { expira_em: { lt: new Date() } }],
@@ -132,7 +131,7 @@ export class ClienteRepository {
   }
 
   async criarTokenRecuperacao(cliente_id: string, expiracaoMinutos = 15): Promise<string> {
-    // Mesmo motivo do código de confirmação: não invalida um código que ainda vale
+    // não invalida um código que ainda vale
     const ativo = await prisma.tokenRecuperacaoSenhaCliente.findFirst({
       where: {
         cliente_id,
@@ -189,7 +188,7 @@ export class ClienteRepository {
     ])
   }
 
-  // ── Alteração de e-mail (logado) ───────────────────────────────────────────
+  // Alteração de e-mail (logado)
   /** Guarda o e-mail novo junto do código. O e-mail atual só muda em aplicarAlteracaoEmail. */
   async criarTokenAlteracaoEmail(
     cliente_id: string,
@@ -233,7 +232,6 @@ export class ClienteRepository {
 
   /**
    * Troca o e-mail, consome o código e derruba as sessões abertas (refresh tokens).
-   * O e-mail novo já foi confirmado pelo código, então continua verificado.
    */
   async aplicarAlteracaoEmail(tokenId: string, cliente_id: string, novo_email: string) {
     try {
@@ -255,7 +253,7 @@ export class ClienteRepository {
     }
   }
 
-  // ── Refresh tokens (coluna cliente_id) ─────────────────────────────────────
+  // Refresh tokens (coluna cliente_id) 
   async salvarRefreshToken(cliente_id: string, token: string, expira_em: Date): Promise<void> {
     await prisma.refreshToken.create({ data: { cliente_id, token, expira_em } })
   }

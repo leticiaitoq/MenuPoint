@@ -1,13 +1,10 @@
 import prisma from '@config/prisma'
 import { AssinaturaService, ehOrderId } from './Assinatura.service'
 
-// CRON da assinatura (roda dentro do próprio servidor, sem dependência extra). Faz duas coisas:
-//  1) Reconciliação: reconsulta no Mercado Pago as cobranças PENDENTES recentes. Cobre o webhook
-//     que não chegou (servidor fora do ar, falha de rede) e o cliente que pagou e fechou a aba.
-//  2) Vencimento: assinatura paga por ORDER (pagamento único) dura o período pago (1 mês ou
-//     1 ano). Passou da data, vira EXPIRADA e a empresa volta a ficar pendente de pagamento:
-//     no próximo login o sistema leva à tela de pagamento para renovar.
-// Assinaturas antigas (PreApproval, recorrentes) NÃO são mexidas aqui: o Mercado Pago cobra e avisa.
+
+// reconsulta no Mercado Pago as cobranças PENDENTES recentes. Cobre o webhook que não chegou (servidor fora do ar, falha de rede) e o cliente que pagou e fechou a aba.
+// Vencimento: assinatura paga por ORDER (pagamento único) dura o período pago (1 mês ou 1 ano). Passou da data, vira EXPIRADA e a empresa volta a ficar pendente de pagamento:
+// no próximo login o sistema leva à tela de pagamento para renovar.
 
 const INTERVALO_MS = 10 * 60 * 1000
 const JANELA_RECONCILIAR_MS = 48 * 60 * 60 * 1000
@@ -15,7 +12,7 @@ const JANELA_RECONCILIAR_MS = 48 * 60 * 60 * 1000
 const service = new AssinaturaService()
 
 export async function executarCronAssinaturas(): Promise<void> {
-  // 1) Reconciliação
+  // Reconciliação
   try {
     const pendentes = await prisma.assinatura.findMany({
       where: {
@@ -38,7 +35,7 @@ export async function executarCronAssinaturas(): Promise<void> {
     console.error(`[cron-assinatura] reconciliação falhou: ${err?.message ?? err}`)
   }
 
-  // 2) Vencimento
+  //Vencimento
   try {
     const vencidas = await prisma.assinatura.findMany({
       where: { status: 'ATIVA', gateway_id: { startsWith: 'ORD' }, expira_em: { lt: new Date() } },

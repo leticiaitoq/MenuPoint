@@ -1,10 +1,7 @@
 import { env } from './env'
 
 // Envio de e-mails via Resend (https://resend.com/docs/api-reference/emails/send-email).
-// Configuração: RESEND_API_KEY, MAIL_FROM e MAIL_REPLY_TO no .env (nada fica no código).
-//
-// `transporter.sendMail(...)` mantém o mesmo formato que o antigo nodemailer, então os
-// serviços que já enviam e-mail continuam funcionando sem mudança.
+// Configuração: RESEND_API_KEY, MAIL_FROM e MAIL_REPLY_TO no .env .
 
 const RESEND_URL = 'https://api.resend.com/emails'
 
@@ -18,8 +15,7 @@ interface EnvioEmail {
   replyTo?: string
 }
 
-// Versão em texto puro do e-mail. Mensagens só com HTML pontuam pior nos filtros de spam;
-// enviar HTML + texto é uma das práticas que mais ajudam a chegar na caixa de entrada.
+// Versão em texto puro do e-mail. 
 function htmlParaTexto(html: string): string {
   return html
     .replace(/<(style|title)[\s\S]*?<\/\1>/gi, '')

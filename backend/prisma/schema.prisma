@@ -495,6 +495,7 @@ model Cliente {
   criado_em        DateTime  @default(now()) @db.Timestamptz
 
   pedidos                Pedido[]
+  enderecos              EnderecoCliente[]
   refresh_tokens         RefreshToken[]
   reservas               Reserva[]
   tokens_recuperacao     TokenRecuperacaoSenhaCliente[]
@@ -502,6 +503,30 @@ model Cliente {
   tokens_alteracao_email TokenAlteracaoEmailCliente[]
 
   @@map("clientes")
+}
+
+
+// Endereços de entrega salvos pelo cliente
+model EnderecoCliente {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cliente_id  String   @db.Uuid
+  tipo        String   @db.VarChar(40) // Casa, Trabalho ou um nome criado pelo cliente
+  cep         String   @db.VarChar(9)
+  rua         String   @db.VarChar(150)
+  numero      String   @db.VarChar(20)
+  complemento String?  @db.VarChar(100)
+  bairro      String   @db.VarChar(100)
+  cidade      String   @db.VarChar(100)
+  estado      String   @db.VarChar(2)
+  referencia  String?  @db.VarChar(200)
+  telefone    String?  @db.VarChar(20)
+  principal   Boolean  @default(false)
+  criado_em   DateTime @default(now()) @db.Timestamptz
+
+  cliente Cliente @relation(fields: [cliente_id], references: [id], onDelete: Cascade)
+
+  @@index([cliente_id])
+  @@map("enderecos_cliente")
 }
 
 model TokenConfirmacaoEmailCliente {

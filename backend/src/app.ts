@@ -26,6 +26,7 @@ import { despesasRoutes } from '@modules/despesas/Despesa.controller'
 import { relatoriosRoutes } from '@modules/relatorios/Relatorio.controller'
 import { empresasRoutes } from '@modules/empresas/Empresa.controller'
 import { clientesRoutes } from '@modules/clientes/Cliente.controller'
+import { clienteEnderecosRoutes } from '@modules/clientes/ClienteEndereco.controller'
 import { assinaturaRoutes } from '@modules/assinatura/Assinatura.controller'
 import { contatoRoutes } from '@modules/contato/Contato.controller'
 // import { uploadRoutes } from '@modules/upload/Upload.controller'
@@ -36,6 +37,9 @@ const ROTAS_PUBLICAS_GET = /^\/api\/v1\/(estabelecimentos|categorias)\/publico\/
 // Reservas feitas pelo próprio cliente: só estas rotas (GET mesas livres e POST criar) aceitam token CLIENTE.
 // As demais rotas de /reservas continuam só do restaurante.
 const ROTAS_CLIENTE_RESERVA = /^\/api\/v1\/reservas\/publico\//
+
+// Pedidos de entrega/retirada feitos pelo próprio cliente (GET meus pedidos e POST criar)
+const ROTAS_CLIENTE_PEDIDO = /^\/api\/v1\/pedidos\/publico\//
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({
@@ -119,6 +123,12 @@ app.register(fastifySwaggerUi, {
         ROTAS_CLIENTE_RESERVA.test(request.url)
       ) return
 
+      // Cliente fazendo pedido (a própria rota confere se o perfil é CLIENTE)
+      if (
+        (request.method === 'GET' || request.method === 'POST') &&
+        ROTAS_CLIENTE_PEDIDO.test(request.url)
+      ) return
+
       const authorization = request.headers.authorization
       if (!authorization?.startsWith('Bearer ')) return
 
@@ -133,6 +143,7 @@ app.register(fastifySwaggerUi, {
 
     api.register(authRoutes,            { prefix: '/auth' })
     api.register(clientesRoutes,        { prefix: '/auth/cliente' })
+     api.register(clienteEnderecosRoutes,{ prefix: '/auth/cliente/enderecos' })
     api.register(usuariosRoutes,        { prefix: '/usuarios' })
     api.register(estabelecimentosRoutes,{ prefix: '/estabelecimentos' })
     api.register(categoriasRoutes,      { prefix: '/categorias' })

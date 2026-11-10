@@ -1,0 +1,45 @@
+.pgp { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.pgp__titulo { margin: 8px 0 0; font-size: 15px; font-weight: 700; color: var(--text); }
+.pgp__itens { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pgp__item, .pgp__linha { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--text); }
+.pgp__linha { color: var(--text-faint); }
+.pgp__linha--total { color: var(--text); font-weight: 700; font-size: 16px; padding-top: 6px; border-top: 1px solid var(--border); }
+
+.pgp__formas { display: flex; flex-direction: column; gap: 8px; }
+.pgp__forma { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 12px 14px; text-align: left; cursor: pointer; border-radius: 10px; border: 2px solid var(--border); background: var(--bg-surface-alt); color: var(--text); }
+.pgp__forma--ativa { border-color: var(--accent); }
+.pgp__forma-info { display: flex; flex-direction: column; gap: 2px; }
+.pgp__forma-info small { color: var(--text-faint); font-size: 12px; }
+.pgp__radio { width: 18px; height: 18px; flex: none; border-radius: 50%; border: 2px solid var(--border-strong); display: flex; align-items: center; justify-content: center; }
+.pgp__forma--ativa .pgp__radio { border-color: var(--accent); }
+.pgp__radio-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+.pgp__troco { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-faint); }
+.pgp__troco-campo { position: relative; display: flex; align-items: center; }
+.pgp__troco-prefixo { position: absolute; left: 12px; font-size: 14px; font-weight: 600; color: var(--text-muted); pointer-events: none; }
+.pgp__troco-campo .pgp__troco-input { width: 100%; box-sizing: border-box; padding-left: 40px; }
+.pgp__troco-input { padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--border-strong); background: var(--bg-surface-alt); color: var(--text); font-size: 14px; }
+.pgp__troco-input:focus { outline: none; border-color: var(--accent); }
+
+.pgp__erro { margin: 4px 0 0; padding: 10px 12px; border-radius: 8px; font-size: 13px; background: #fdecea; color: #a93226; border: 1px solid #f5c6c1; }
+
+/* Erro por campo nos formulários do cliente (endereço) */
+.cad-end__erro-campo { display: block; margin-top: 4px; font-size: 12px; color: #c0392b; }
+.cad-end__input.cad-end__input--erro { border-color: #c0392b; }
+.cad-end__buscando { margin-left: 6px; font-size: 11px; font-weight: 400; color: var(--text-faint); }
+
+/* Campo Estado (lista de UFs): largura para caber o texto e a setinha */
+.cad-end__linha .cad-end__campo--estado { width: 88px; }
+select.cad-end__input--estado { padding: 10px 6px 10px 12px; text-align-last: center; letter-spacing: 0; cursor: pointer; }
+
+/* Endereços salvos: editar e excluir */
+.cad-end__item-linha { display: flex; align-items: stretch; gap: 8px; }
+.cad-end__item-linha > .cad-end__item-selecao { flex: 1; min-width: 0; width: auto; }
+.cad-end__item-acoes, .cad-end__item-confirma { display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.cad-end__item-confirma { align-items: stretch; font-size: 12px; text-align: center; color: var(--text); }
+.cad-end__item-acao { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; padding: 0 8px; border-radius: 8px; border: 1.5px solid var(--border-strong); background: var(--bg-surface-alt); color: var(--text); cursor: pointer; font-size: 13px; }
+.cad-end__item-acao:hover { border-color: var(--accent); }
+.cad-end__item-acao--perigo { color: #c0392b; }
+.cad-end__item-acao--perigo:hover { border-color: #c0392b; }
+.cad-end__item-acao:disabled { opacity: .6; cursor: not-allowed; }
+.cad-end__item-principal { margin-left: 8px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--brand-soft); color: var(--accent); }

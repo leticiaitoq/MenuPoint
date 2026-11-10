@@ -10,14 +10,59 @@ import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
 import { z } from 'zod'
 import { parsePeriodo } from '@shared/utils/periodo'
+import { criarPedidoClienteSchema } from './Pedido.cliente.schema'
+import { PedidoClienteService } from './Pedido.cliente'
 
 const repository = new PedidoRepository()
 const service = new PedidoService(repository)
+const pedidosCliente = new PedidoClienteService()
 
 export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
 
   app.addHook('onRequest', async (request, reply) => {
     await request.jwtVerify()
+  })
+
+    const exigirCliente = (request: FastifyRequest): JWTPayload => {
+    const user = request.user as JWTPayload
+    if (user.perfil !== 'CLIENTE') {
+      throw new AppError('Esta rota é exclusiva para clientes', 403)
+    }
+    return user
+  }
+
+   // POST /publico/:slug — cliente envia o pedido
+  app.post(
+    '/publico/:slug',
+    {
+      config: {
+        rateLimit: {
+          max: 10,
+          timeWindow: '1 minute',
+          errorResponseBuilder: () => ({
+            statusCode: 429,
+            status: 'error',
+            message: 'Muitos pedidos em pouco tempo. Aguarde um momento e tente de novo.',
+          }),
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = exigirCliente(request)
+      const { slug } = request.params as { slug: string }
+      const data = criarPedidoClienteSchema.parse(request.body)
+
+      const pedido = await pedidosCliente.criar(slug, data, user.sub)
+      return reply.status(201).send(pedido)
+    }
+  )
+
+  // GET /publico/:slug/meus — pedidos de entrega e retirada do cliente neste restaurante
+  app.get('/publico/:slug/meus', async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = exigirCliente(request)
+    const { slug } = request.params as { slug: string }
+
+    return reply.send(await pedidosCliente.listar(slug, user.sub))
   })
 
   // POST / — cria pedido
@@ -137,7 +182,6 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
   )
 
   // PATCH /:id/itens/status — Fila: avança UM OU MAIS itens do pedido para a próxima etapa
-  // (a comida é entregue assim que fica pronta, sem esperar o pedido inteiro)
   app.patch(
     '/:id/itens/status',
     async (request: FastifyRequest, reply: FastifyReply) => {
