@@ -12,7 +12,6 @@ GET {{host}}/assinatura/planos
 
 
 ### 2 — Criar assinatura Básico
-# Retorna um "init_point" — abre a URL no navegador para ver o checkout
 POST {{host}}/assinatura/criar
 Content-Type: application/json
 
@@ -39,7 +38,6 @@ Content-Type: application/json
 
 
 ### 4 — Simular webhook do Mercado Pago (assinatura aprovada)
-# Troque @assinatura_id pelo id retornado na criação acima
 POST {{host}}/assinatura/webhook
 Content-Type: application/json
 

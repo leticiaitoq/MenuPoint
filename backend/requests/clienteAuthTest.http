@@ -1,6 +1,6 @@
 @host = http://localhost:3333/api/v1/auth/cliente
 
-### 1) Cadastro (envia código de 6 dígitos por e-mail; NÃO devolve token)
+### 1) Cadastro envia código de 6 dígitos por e-mail;
 POST {{host}}/register
 Content-Type: application/json
 

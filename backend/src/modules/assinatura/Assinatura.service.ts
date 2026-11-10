@@ -18,14 +18,14 @@ const mpClient = new MercadoPagoConfig({
 
 const preApprovalClient = new PreApproval(mpClient)
 
-// Checkout Pro com ORDER (Orders API): pagamento único, com retorno automático ao site
+// pagamento único, com retorno automático ao site
 const mpApi = axios.create({
   baseURL: 'https://api.mercadopago.com',
   headers: { Authorization: `Bearer ${env.MP_ACCESS_TOKEN}` },
   timeout: 15000,
 })
 
-/** Id de order do Mercado Pago (ORD... em produção, ORDTST... em teste). */
+/** Id de order do Mercado Pago*/
 export const ehOrderId = (id?: string | null) => Boolean(id && id.startsWith('ORD'))
 
 /** Traduz o status da order do Mercado Pago para o status da assinatura. */
@@ -113,8 +113,8 @@ export class AssinaturaService {
   }
 
   /**
-   * ESCOLHA DO PLANO (tela /planos): define ou troca o plano da cobrança pendente antes do
-   * pagamento. Trocar o plano descarta o link de checkout antigo (o valor mudou).
+   * define ou troca o plano da cobrança pendente antes do
+   * pagamento.
    */
   async escolherPlano(empresa_id: string, slug: string, periodoTexto?: string) {
     const plano = planoDoSlug(slug)
@@ -153,7 +153,7 @@ export class AssinaturaService {
   }
 
   /**
-   * CHECKOUT (Checkout Pro com ORDER): cria uma order no Mercado Pago para a cobrança PENDENTE
+   * cria uma order no Mercado Pago para a cobrança PENDENTE
    * da empresa (mensal ou anual) e devolve o link de pagamento. Ao pagar, o Mercado Pago devolve
    * o cliente sozinho para /assinatura/sucesso (auto_return) e avisa o backend pelo webhook.
    */
@@ -200,7 +200,6 @@ export class AssinaturaService {
       }
     }
 
-    // Modo teste: MP_PAYER_EMAIL_TESTE substitui o e-mail do cadastro (comprador de teste do MP)
     const emailPagador = (env.MP_PAYER_EMAIL_TESTE?.trim() || email).toLowerCase()
     const valor = Number(pendente.valor).toFixed(2)
     const nomePlano = PLANOS[pendente.plano as 'STARTER' | 'PRO']?.nome ?? pendente.plano
@@ -356,16 +355,14 @@ export class AssinaturaService {
       }
       let atual = await prisma.assinatura.findUnique({ where: { id: ultima.id } })
 
-      // Ainda pendente: a pessoa pode ter pago por um link gerado antes (outra assinatura do MP
-      // da mesma empresa). Procura uma assinatura autorizada com o mesmo external_reference.
+      // Ainda pendente: Procura uma assinatura autorizada com o mesmo external_reference.
       if (atual?.status === 'PENDENTE') {
         try {
           const busca: any = await (preApprovalClient as any).search({
             options: { external_reference: empresa_id, status: 'authorized' },
           })
           // Só vale uma assinatura autorizada que seja MESMO desta empresa (external_reference) e
-          // que ainda não esteja ligada a outra assinatura do banco. Sem essa conferência, uma
-          // assinatura paga de outra conta de teste poderia liberar esta empresa por engano.
+          // que ainda não esteja ligada a outra assinatura do banco.
           const candidatas: any[] = Array.isArray(busca?.results) ? busca.results : []
           const autorizada = candidatas.find(
             (r) => r?.status === 'authorized' && String(r?.external_reference ?? '') === empresa_id

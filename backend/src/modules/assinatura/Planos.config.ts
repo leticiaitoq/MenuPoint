@@ -5,8 +5,7 @@ export const PLANOS = {
 
 export type PeriodoCobranca = 'MENSAL' | 'ANUAL'
 
-// PREÇO DO ANUAL: hoje é 12 x o valor mensal (sem desconto). Para dar desconto no plano anual,
-// mude o percentual abaixo (ex.: 20 = paga 80% de 12 meses).
+//preço anual
 export const DESCONTO_ANUAL_PERCENTUAL = 0
 
 /** Valor cobrado de uma vez no checkout, conforme o plano e o período (mensal ou anual). */

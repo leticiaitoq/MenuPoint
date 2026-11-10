@@ -19,8 +19,8 @@ export interface JWTPayload {
   sub: string
   nome: string
   email: string
-  perfil: string                 // ADMIN | ATENDENTE | CAIXA | CLIENTE
-  escopo: string                 // GLOBAL | LOCAL | CLIENTE
+  perfil: string                 
+  escopo: string                 
   estabelecimento_id: string | null
   empresa_id: string | null
 }
@@ -51,7 +51,7 @@ export const esqueciSenhaSchema = z.object({
 
 export type EsqueciSenhaDTO = z.infer<typeof esqueciSenhaSchema>
 
-// ── CONFIRMAR E-MAIL / CÓDIGO ──────────────────────────────────────────────────
+// CONFIRMAR E-MAIL / CÓDIGO
 
 export const verificarCodigoSchema = z.object({
   email: z
@@ -79,7 +79,7 @@ export const reenviarCodigoSchema = z.object({
 
 export type ReenviarCodigoDTO = z.infer<typeof reenviarCodigoSchema>
 
-// ── REDEFINIR SENHA ──────────────────────────────────────────────────────────
+// REDEFINIR SENHA 
 export const redefinirSenhaSchema = z.object({
   email: z
     .string()
@@ -104,18 +104,15 @@ export const redefinirSenhaSchema = z.object({
 
 export type RedefinirSenhaDTO = z.infer<typeof redefinirSenhaSchema>
 
-// ── REGISTRO ─────────────────────────────────────────────────────────────────
-// Cadastro em 2 etapas (o front envia tudo de uma vez no final):
-//   Etapa 1 — restaurante: nome, CNPJ, razão social e endereço
-//   Etapa 2 — responsável: nome, CPF, e-mail e senha
-// Cria Empresa + Estabelecimento + Usuário (ADMIN) na mesma transação.
+// REGISTRO 
+// Cadastro em 2 etapas : restaurante e responsável
 const UFS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA',
   'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
 ]
 
 export const registrarSchema = z.object({
-  // ── Etapa 1: restaurante ──
+  // Etapa 1: restaurante
   nome_restaurante: z
     .string()
     .trim()
@@ -149,7 +146,7 @@ export const registrarSchema = z.object({
   numero: z.string().trim().min(1, 'Número é obrigatório').max(10),
   bairro: z.string().trim().min(1, 'Bairro é obrigatório').max(80),
 
-  // ── Etapa 2: responsável (dono) ──
+  // Etapa 2: responsável (dono)
   nome_responsavel: z
     .string()
     .trim()
@@ -175,7 +172,7 @@ export const registrarSchema = z.object({
     .regex(/[0-9]/, 'Senha deve ter ao menos um número'),
   confirmar_senha: z.string().min(1, 'Confirmação de senha é obrigatória'),
 
-  // Plano escolhido no site (?plano=starter|pro). Sem ele, o cadastro segue o fluxo antigo.
+  // Plano escolhido no site (?plano=starter|pro).
   plano: z.string().trim().max(30).optional(),
 
   // Gerado pelo webhook após pagamento da assinatura ser confirmado
@@ -206,14 +203,14 @@ export interface RegistrarResponseDTO {
   }
 }
 
-// ── VERIFICAR SENHA (passo 1 do fluxo "alterar dados sensíveis") ──────────────
+// VERIFICAR SENHA 
 export const verificarSenhaSchema = z.object({
   senha: z.string().min(1, 'Informe sua senha'),
 })
 
 export type VerificarSenhaDTO = z.infer<typeof verificarSenhaSchema>
 
-// ── ALTERAR DADOS SENSÍVEIS (exige a senha atual) ─────────────────────────────
+// ALTERAR DADOS SENSÍVEIS (exige a senha atual) 
 export const atualizarDadosSensiveisSchema = z
   .object({
     senha_atual: z.string().min(1, 'Informe sua senha para confirmar'),
@@ -246,9 +243,8 @@ export const atualizarDadosSensiveisSchema = z
 
 export type AtualizarDadosSensiveisDTO = z.infer<typeof atualizarDadosSensiveisSchema>
 
-// ── ALTERAR E-MAIL (logado, em 2 passos) ──────────────────────────────────────
-// O e-mail NÃO entra em atualizarDadosSensiveisSchema de propósito: ele só muda
-// depois que o código enviado ao endereço novo é confirmado.
+// ALTERAR E-MAIL 
+// só muda dps que o novo e-mail for verificado
 export const solicitarAlteracaoEmailSchema = z.object({
   novo_email: z
     .string()
@@ -270,14 +266,14 @@ export const confirmarAlteracaoEmailSchema = z.object({
 
 export type ConfirmarAlteracaoEmailDTO = z.infer<typeof confirmarAlteracaoEmailSchema>
 
-// ── REFRESH TOKEN ─────────────────────────────────────────────────────────────
+// REFRESH TOKEN
 export const refreshTokenSchema = z.object({
   refresh_token: z.string().min(1, 'Refresh token é obrigatório'),
 })
 
 export type RefreshTokenDTO = z.infer<typeof refreshTokenSchema>
 
-// ── VERIFICAR CNPJ (etapa 1 do cadastro do restaurante) ───────────────────────
+// VERIFICAR CNPJ (etapa 1 do cadastro do restaurante)
 export const verificarCnpjSchema = z.object({
   cnpj: z
     .string()

@@ -33,7 +33,7 @@ const EXPIRACAO_CODIGO_MINUTOS = 15
 const REFRESH_DIAS = 7
 
 // Usado quando o e-mail não existe, para o tempo de resposta ser parecido
-// com o de um e-mail existente (não revela quem tem conta).
+// com o de um e-mail existente
 const HASH_FALSO = bcrypt.hashSync('senha-inexistente', 10)
 
 type JwtSign = (payload: ClienteJWTPayload) => string
@@ -44,7 +44,7 @@ export class ClienteService {
 
   constructor(private readonly repository: ClienteRepository) {}
 
-  // ── helpers ────────────────────────────────────────────────────────────────
+  //  helpers 
   private resumo(c: ClienteBanco): ClienteResumoDTO {
     return {
       id: c.id,
@@ -89,7 +89,7 @@ export class ClienteService {
 
     const refresh_token = jwt.sign(payload, env.JWT_REFRESH_SECRET, {
       expiresIn: `${REFRESH_DIAS}d`,
-      jwtid: crypto.randomUUID(), // evita dois refresh idênticos no mesmo segundo (token é UNIQUE)
+      jwtid: crypto.randomUUID(), // evita dois refresh idênticos no mesmo segundo
     })
 
     await this.repository.salvarRefreshToken(
@@ -101,8 +101,8 @@ export class ClienteService {
     return { token: jwtSign(payload), refresh_token, cliente: this.resumo(c) }
   }
 
-  // ── CADASTRO ───────────────────────────────────────────────────────────────
-  // Não devolve token: o cliente só entra depois de confirmar o e-mail.
+  // CADASTRO 
+  // o cliente só entra depois de confirmar o e-mail.
   async registrar(data: RegistrarClienteDTO): Promise<{ email: string }> {
     const existente = await this.repository.findByEmail(data.email)
     if (existente) {
@@ -133,7 +133,7 @@ export class ClienteService {
     return { email: data.email }
   }
 
-  // ── LOGIN ──────────────────────────────────────────────────────────────────
+  // LOGIN 
   async login(data: LoginClienteDTO, jwtSign: JwtSign): Promise<ClienteSessaoDTO> {
     const cliente = await this.repository.findByEmail(data.email)
 
@@ -165,9 +165,9 @@ export class ClienteService {
     return this.abrirSessao(cliente, jwtSign)
   }
 
-  // ── VERIFICAR CÓDIGO ───────────────────────────────────────────────────────
-  // registro    → confirma o e-mail e já devolve a sessão (cliente cai logado)
-  // recuperacao → só valida; o código é consumido em redefinirSenha
+  // VERIFICAR CÓDIGO 
+  // registro    → confirma o e-mail e já devolve a sessão 
+  // recuperacao → só valida;
   async verificarCodigo(
     data: VerificarCodigoClienteDTO,
     jwtSign: JwtSign
@@ -179,7 +179,7 @@ export class ClienteService {
       if (!registro.cliente.ativo) throw new AppError('Conta inativa.', 401)
 
       // Cria a sessão primeiro: se algo falhar aqui, o código continua válido e o
-      // cliente pode tentar de novo. Só depois confirma o e-mail e consome o código.
+      // cliente pode tentar de novo.
       const sessao = await this.abrirSessao(
         { ...registro.cliente, email_verificado: true },
         jwtSign
@@ -194,8 +194,8 @@ export class ClienteService {
     return null
   }
 
-  // ── REENVIAR CÓDIGO ────────────────────────────────────────────────────────
-  // Resposta sempre igual: não revela se o e-mail existe.
+  // REENVIAR CÓDIGO
+  // não revela se o e-mail existe.
   async reenviarCodigo(data: ReenviarCodigoClienteDTO): Promise<void> {
     const cliente = await this.repository.findByEmail(data.email)
     if (!cliente || !cliente.ativo) return
@@ -213,19 +213,19 @@ export class ClienteService {
     const codigo = await this.repository.criarTokenRecuperacao(c.id, EXPIRACAO_CODIGO_MINUTOS)
     this.enviarEmail(
       c.email as string,
-      '🔐 Recuperação de senha — Menupoint',
+      ' Recuperação de senha — Menupoint',
       templateRecuperacaoSenha(c.nome, codigo, EXPIRACAO_CODIGO_MINUTOS)
     )
   }
 
-  // ── ESQUECI A SENHA ────────────────────────────────────────────────────────
+  // ESQUECI A SENHA 
   async esqueciSenha(data: EsqueciSenhaClienteDTO): Promise<void> {
     const cliente = await this.repository.findByEmail(data.email)
     if (!cliente || !cliente.ativo) return
     await this.enviarCodigoRecuperacao(cliente)
   }
 
-  // ── REDEFINIR SENHA ────────────────────────────────────────────────────────
+  // REDEFINIR SENHA 
   async redefinirSenha(data: RedefinirSenhaClienteDTO): Promise<void> {
     const registro = await this.repository.findTokenRecuperacao(data.email, data.codigo)
 
@@ -240,12 +240,12 @@ export class ClienteService {
 
     this.enviarEmail(
       registro.cliente.email as string,
-      '✅ Senha redefinida com sucesso — Menupoint',
+      ' Senha redefinida com sucesso — Menupoint',
       templateSenhaRedefinida(registro.cliente.nome)
     )
   }
 
-  // ── REFRESH TOKEN (rotação) ────────────────────────────────────────────────
+  //  REFRESH TOKEN (rotação)
   async refreshToken(refresh_token: string, jwtSign: JwtSign): Promise<ClienteSessaoDTO> {
     const invalido = () => new AppError('Refresh token inválido, expirado ou já utilizado', 401)
 
@@ -260,19 +260,19 @@ export class ClienteService {
 
     if (!(await this.repository.consumirRefreshToken(refresh_token))) throw invalido()
 
-    // Dados atuais do banco (nome/e-mail podem ter mudado; conta pode ter sido desativada)
+    // Dados atuais do banco
     const cliente = await this.repository.findById(decoded.sub)
     if (!cliente || !cliente.ativo || !cliente.email_verificado) throw invalido()
 
     return this.abrirSessao(cliente, jwtSign)
   }
 
-  // ── LOGOUT ─────────────────────────────────────────────────────────────────
+  // LOGOUT 
   async logout(refresh_token: string): Promise<void> {
     await this.repository.revogarRefreshToken(refresh_token)
   }
 
-  // ── ME / PERFIL ────────────────────────────────────────────────────────────
+  // ME / PERFIL 
   private perfil(c: ClienteBanco): ClientePerfilDTO {
     return { ...this.resumo(c), cpf: c.cpf, criado_em: c.criado_em }
   }
@@ -294,7 +294,7 @@ export class ClienteService {
   }
 
   // Envia a foto para o Storage e grava a URL no cadastro do cliente.
-  // Como a URL fica no banco, a foto aparece em qualquer dispositivo em que a conta entrar.
+  // a foto aparece em qualquer dispositivo em que a conta entrar.
   async atualizarFoto(id: string, arquivo: { buffer: Buffer; mimetype: string }): Promise<ClientePerfilDTO> {
     const atual = await this.buscarAtivo(id)
 
@@ -305,7 +305,7 @@ export class ClienteService {
     const url = await enviarImagemPublica(`clientes/${id}/foto-${Date.now()}.${ext}`, arquivo.buffer, arquivo.mimetype)
     const atualizado = await this.repository.atualizarFoto(id, url)
 
-    // Apaga a foto anterior do Storage (se falhar, só deixa um arquivo órfão)
+    // Apaga a foto anterior do Storage
     if (atual.foto_url) await removerImagemPublica(atual.foto_url)
 
     return this.perfil(atualizado)
@@ -319,9 +319,9 @@ export class ClienteService {
     return this.perfil(atualizado)
   }
 
-  // ── ALTERAR E-MAIL (logado) ────────────────────────────────────────────────
-  // 1) solicitar: confere a senha e manda um código para o NOVO e-mail (o atual segue valendo)
-  // 2) confirmar: com o código certo o e-mail muda e uma sessão nova é devolvida
+  //  ALTERAR E-MAIL (logado) 
+  // confere a senha e manda um código para o NOVO e-mail
+  //  com o código certo o e-mail muda e uma sessão nova é devolvida
   // Erros de senha/código são 400 (não 401) de propósito: o front trata 401 como "sessão expirada".
   async solicitarAlteracaoEmail(
     id: string,
@@ -384,9 +384,8 @@ export class ClienteService {
     return this.abrirSessao(atualizado, jwtSign)
   }
 
-  // ── ALTERAR SENHA (logado) ─────────────────────────────────────────────────
-  // Exige a senha atual. Erro de senha atual é 400 (não 401) de propósito: o front
-  // trata 401 como "sessão expirada" e deslogaria o cliente.
+  // ALTERAR SENHA (logado) 
+  // Exige a senha atual.
   // Devolve uma sessão nova: as outras sessões abertas (refresh tokens) são encerradas.
   async alterarSenha(
     id: string,
@@ -405,7 +404,7 @@ export class ClienteService {
 
     this.enviarEmail(
       cliente.email as string,
-      '✅ Senha alterada com sucesso — Menupoint',
+      'Senha alterada com sucesso — Menupoint',
       templateSenhaRedefinida(cliente.nome)
     )
 

@@ -32,12 +32,11 @@ const limite = (max: number, timeWindow: string, mensagem: string) => ({
 
 /**
  * Rotas de autenticação do CLIENTE do restaurante.
- * Registradas em /api/v1/auth/cliente (veja app.ts).
  */
 export async function clientesRoutes(app: FastifyInstance): Promise<void> {
   const jwtSign = (p: ClienteJWTPayload) => app.jwt.sign(p)
 
-  // ── ROTAS PÚBLICAS ─────────────────────────────────────────────────────────
+  // ROTAS PÚBLICAS
   app.register(async (pub) => {
 
     // POST /auth/cliente/register — 5 cadastros por hora por IP
@@ -138,7 +137,7 @@ export async function clientesRoutes(app: FastifyInstance): Promise<void> {
     })
   })
 
-  // ── ROTAS PRIVADAS (token de cliente) ──────────────────────────────────────
+  // ROTAS PRIVADAS (token de cliente)
   app.register(async (priv) => {
     priv.addHook('onRequest', async (request) => {
       await request.jwtVerify()
@@ -212,7 +211,7 @@ export async function clientesRoutes(app: FastifyInstance): Promise<void> {
       }
     )
 
-    // POST /auth/cliente/me/email/confirmar — confirma o código e troca o e-mail; devolve sessão nova
+    // POST /auth/cliente/me/email/confirmar — confirma o código e troca o e-mail;
     priv.post(
       '/me/email/confirmar',
       limite(8, '15 minutes', 'Muitas tentativas de confirmação. Aguarde alguns minutos.'),
@@ -224,7 +223,7 @@ export async function clientesRoutes(app: FastifyInstance): Promise<void> {
       }
     )
 
-    // POST /auth/cliente/alterar-senha — exige a senha atual; devolve sessão nova
+    // POST /auth/cliente/alterar-senha — exige a senha atual;
     priv.post(
       '/alterar-senha',
       limite(5, '15 minutes', 'Muitas tentativas de alterar a senha. Aguarde alguns minutos.'),

@@ -2,31 +2,6 @@
  * Diagnostica (e corrige, se pedir) o vínculo entre um usuário e seu
  * estabelecimento — usado pra resolver de vez o erro
  * "Usuário não vinculado a um estabelecimento" numa conta específica.
- *
- * POR QUE ISSO PODE ACONTECER:
- * A rota que cria funcionários (POST /usuarios) era pública e confiava
- * no `estabelecimento_id` que o próprio navegador mandava no corpo da
- * requisição. Se em algum teste essa rota foi chamada sem esse campo
- * (ou por um cliente HTTP direto, tipo Insomnia/Postman), o usuário
- * ficou criado no banco com `estabelecimento_id = NULL` — e por mais
- * que você deslogue e logue de novo, o token sempre vai carregar esse
- * mesmo `null`, porque é isso que está salvo no banco. Já corrigi a
- * rota (patch anterior), mas ela não "conserta" contas que já foram
- * criadas erradas antes da correção — por isso este script.
- *
- * COMO USAR:
- *
- *   node scripts/diagnosticar-vinculo.js seu-email@exemplo.com
- *
- *   Só mostra o diagnóstico, não muda nada no banco.
- *
- *   node scripts/diagnosticar-vinculo.js seu-email@exemplo.com --corrigir
- *
- *   Se o usuário estiver sem `estabelecimento_id` mas existir algum
- *   estabelecimento vinculado à mesma empresa dele, vincula
- *   automaticamente ao mais recente. Se não existir estabelecimento
- *   nenhum pra essa empresa, avisa que não há nada pra vincular
- *   (nesse caso o problema é outro — fale comigo).
  */
 
 const { PrismaClient } = require('@prisma/client')

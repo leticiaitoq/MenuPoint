@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { cpfValido } from '@shared/utils/documentos'
 import { telefoneValido, formatarTelefone } from '@shared/utils/telefone'
 
-// ── Campos reutilizados ──────────────────────────────────────────────────────
+//  Campos reutilizados 
 const email = z
   .string()
   .trim()
@@ -10,7 +10,7 @@ const email = z
   .email('Formato de e-mail inválido')
   .toLowerCase()
 
-// Mesma regra de senha do restaurante (o front mostra essas 4 regras)
+// Mesma regra de senha do restaurante
 const senhaForte = z
   .string()
   .min(8, 'Senha deve ter no mínimo 8 caracteres')
@@ -23,7 +23,7 @@ const codigo6 = z
   .length(6, 'Código deve ter 6 dígitos')
   .regex(/^\d{6}$/, 'Código deve conter apenas números')
 
-// ── JWT do cliente ───────────────────────────────────────────────────────────
+// JWT do cliente
 // Mesmo formato do JWTPayload do restaurante, para o @fastify/jwt aceitar os dois.
 // perfil/escopo = 'CLIENTE' é o que separa um do outro nas rotas.
 export interface ClienteJWTPayload {
@@ -36,7 +36,7 @@ export interface ClienteJWTPayload {
   empresa_id: null
 }
 
-// ── Cadastro ─────────────────────────────────────────────────────────────────
+// Cadastro
 export const registrarClienteSchema = z
   .object({
     nome: z
@@ -67,7 +67,7 @@ export const registrarClienteSchema = z
 
 export type RegistrarClienteDTO = z.infer<typeof registrarClienteSchema>
 
-// ── Login ────────────────────────────────────────────────────────────────────
+// Login 
 export const loginClienteSchema = z.object({
   email,
   senha: z.string().min(1, 'Senha é obrigatória'),
@@ -75,7 +75,7 @@ export const loginClienteSchema = z.object({
 
 export type LoginClienteDTO = z.infer<typeof loginClienteSchema>
 
-// ── Código por e-mail (confirmar cadastro / recuperar senha) ─────────────────
+// Código por e-mail (confirmar cadastro / recuperar senha) 
 export const verificarCodigoClienteSchema = z.object({
   email,
   codigo: codigo6,
@@ -91,7 +91,7 @@ export const reenviarCodigoClienteSchema = z.object({
 
 export type ReenviarCodigoClienteDTO = z.infer<typeof reenviarCodigoClienteSchema>
 
-// ── Recuperação de senha ─────────────────────────────────────────────────────
+//  Recuperação de senha 
 export const esqueciSenhaClienteSchema = z.object({ email })
 
 export type EsqueciSenhaClienteDTO = z.infer<typeof esqueciSenhaClienteSchema>
@@ -110,14 +110,13 @@ export const redefinirSenhaClienteSchema = z
 
 export type RedefinirSenhaClienteDTO = z.infer<typeof redefinirSenhaClienteSchema>
 
-// ── Refresh / logout ─────────────────────────────────────────────────────────
+// Refresh / logout 
 export const refreshTokenClienteSchema = z.object({
   refresh_token: z.string().min(1, 'Refresh token é obrigatório'),
 })
 
-// ── Perfil (área logada) ─────────────────────────────────────────────────────
-// Aqui só nome e telefone. O CPF não muda. O e-mail (que é o login) tem fluxo próprio:
-// /me/email/solicitar + /me/email/confirmar, com código enviado ao novo endereço.
+// Perfil (área logada) 
+// Aqui só nome e telefone. O CPF não muda. O e-mail (que é o login) tem fluxo próprio
 export const atualizarPerfilClienteSchema = z.object({
   nome: z
     .string()
@@ -134,7 +133,7 @@ export const atualizarPerfilClienteSchema = z.object({
 
 export type AtualizarPerfilClienteDTO = z.infer<typeof atualizarPerfilClienteSchema>
 
-// ── Alterar e-mail (logado) ──────────────────────────────────────────────────
+// Alterar e-mail (logado)
 export const solicitarAlteracaoEmailClienteSchema = z.object({
   novo_email: email,
   senha: z.string().min(1, 'Senha é obrigatória'),
@@ -165,8 +164,7 @@ export const alterarSenhaClienteSchema = z
 
 export type AlterarSenhaClienteDTO = z.infer<typeof alterarSenhaClienteSchema>
 
-// ── Respostas ────────────────────────────────────────────────────────────────
-// O que vai para o front (nunca senha_hash). O CPF só sai em GET /me.
+// Respostas 
 export interface ClienteResumoDTO {
   id: string
   nome: string

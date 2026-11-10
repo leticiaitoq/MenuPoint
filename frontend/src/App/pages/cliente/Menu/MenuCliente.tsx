@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
-import Carrinho from '../../../shared/components/Carrinho/Carrinho';
+import Carrinho, { ItemCarrinho } from '../../../shared/components/Carrinho/Carrinho';
 import ChamarGarcom from '../../../shared/components/ChamarGarcom/Chamargarcom';
 import FecharConta from '../../../shared/components/FecharConta/FecharConta';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
@@ -12,11 +12,11 @@ import RestaurantePublicoService from '../../../services/restaurantePublico.serv
 import MesaPublicaService from '../../../services/mesaPublica.service';
 import './MenuCliente.css';
 
-// ── Tipos ──────────────────────────────────────────────────────────────────────
+// Tipos
 interface Categoria {
   id: string;
   label: string;
-  icon: string; // caminho de imagem (começa com "/") ou emoji vindo do banco
+  icon: string; 
 }
 
 interface Produto {
@@ -31,7 +31,7 @@ interface Produto {
   ordem: number;
 }
 
-// "Todos" usa o PNG novo; as demais categorias vêm da API (ícone = emoji)
+// "Todos" usa o PNG novo; as demais categorias vêm da API
 const CATEGORIA_TODOS: Categoria = {
   id: 'todos',
   label: 'Todos',
@@ -41,17 +41,15 @@ const CATEGORIA_TODOS: Categoria = {
 // Ícone pode ser imagem (caminho/URL) ou emoji
 const ehImagem = (icon: string) => icon.startsWith('/') || icon.startsWith('http');
 
-// Mesma hierarquia do painel do restaurante: destaques primeiro; depois a ordem
-// definida por ele; empate (ex.: produtos novos, todos com ordem 0) cai na ordem das categorias.
-// Array.sort é estável, então o que empatar continua na ordem em que o backend enviou.
 const compararProdutos = (idsCategorias: string[]) => (a: Produto, b: Produto) =>
   Number(b.destaque) - Number(a.destaque)
   || a.ordem - b.ordem
   || idsCategorias.indexOf(a.categoriaId) - idsCategorias.indexOf(b.categoriaId);
 
-// ── Componente ─────────────────────────────────────────────────────────────────
+//  Componente
 const MenuCliente: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { restaurante } = useRestauranteCliente();
   const { mesa, mesaToken } = useConvidado();
 
@@ -62,8 +60,6 @@ const MenuCliente: React.FC = () => {
   const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
 
   // Cardápio real do restaurante escolhido pelo link /r/:slug.
-  // Recarrega sozinho (sem piscar a tela) quando o restaurante muda algo em
-  // categorias ou produtos: a cada 15s, ao voltar para a aba e ao recuperar a conexão.
   useEffect(() => {
     if (!restaurante) { setCarregando(false); return; }
     let cancelado = false;
@@ -134,8 +130,11 @@ const MenuCliente: React.FC = () => {
   }, [restaurante]);
 
   const [busca, setBusca]                     = useState('');
-  const { itens: itensCarrinho, removerItem } = useCarrinho();
-  const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
+  const { itens: itensCarrinho, removerItem, alterarQuantidade } = useCarrinho();
+  // Voltando da edição de um item, o carrinho já abre
+  const [carrinhoAberto, setCarrinhoAberto]   = useState(
+    () => Boolean((location.state as { abrirCarrinho?: boolean } | null)?.abrirCarrinho)
+  );
   const [modalTipoAberto, setModalTipoAberto] = useState(false);
   const [contaAberta, setContaAberta]         = useState(false);
   const [contaPedida, setContaPedida]         = useState(false);
@@ -143,6 +142,14 @@ const MenuCliente: React.FC = () => {
 
   // Limpa o temporizador ao sair da tela
   useEffect(() => () => window.clearTimeout(timerConta.current), []);
+
+  // Consome o aviso "abrir o carrinho": sem isso o carrinho reabriria toda vez que o cliente voltasse a esta tela
+  useEffect(() => {
+    if ((location.state as { abrirCarrinho?: boolean } | null)?.abrirCarrinho) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Filtro ──────────────────────────────────────────────────────────────────
   const produtosFiltrados = produtos.filter((p) => {
@@ -165,11 +172,20 @@ const MenuCliente: React.FC = () => {
     timerConta.current = window.setTimeout(() => setContaPedida(false), 120_000);
   };
 
+  // Volta para a tela do pedido com o item já preenchido
+  const editarItem = (item: ItemCarrinho) => {
+    if (!item.produtoOrigem) return;
+    setCarrinhoAberto(false);
+    navigate('/personaliza', {
+      state: { produto: item.produtoOrigem, modoCliente: 'logged', editarItemId: item.id },
+    });
+  };
+
   const escolherTipo = (rota: string) => {
     navigate(rota);
   };
 
-  // ── Render
+  // Render
   return (
     <CustomerLayout
       mode="logged"
@@ -271,6 +287,8 @@ const MenuCliente: React.FC = () => {
         onFechar={() => setCarrinhoAberto(false)}
         itens={itensCarrinho}
         onRemover={removerItem}
+        onAlterarQuantidade={alterarQuantidade}
+        onEditar={editarItem}
         onFinalizar={() => {
           setCarrinhoAberto(false);
           setModalTipoAberto(true);
@@ -297,11 +315,11 @@ const MenuCliente: React.FC = () => {
           <div className="mtp__modal">
             <button className="mtp__card" onClick={() => escolherTipo('/endereço')}>
               <span className="mtp__card-label">Para entrega</span>
-              <img src="/images/delivery.png" alt="Para entrega" className="mtp__card-img" />
+              <img src="/images/Delivery.png" alt="Para entrega" className="mtp__card-img" />
             </button>
             <button className="mtp__card" onClick={() => escolherTipo('/retirada')}>
               <span className="mtp__card-label">Para Retirada</span>
-              <img src="/images/retirada.png" alt="Para retirada" className="mtp__card-img" />
+              <img src="/images/Retirada.png" alt="Para retirada" className="mtp__card-img" />
             </button>
           </div>
         </>

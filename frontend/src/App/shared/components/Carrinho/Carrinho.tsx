@@ -1,12 +1,14 @@
 import React from 'react';
 import { FaShoppingCart } from 'react-icons/fa';
+import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { HiChevronRight } from 'react-icons/hi';
+import QuantidadeStepper from '../QuantidadeStepper/QuantidadeStepper';
+import type { ProdutoPersonalizavel } from '../PersonalizaPedido/Persopedido';
 import './Carrinho.css';
 
 // ── Tipos 
 export interface ItemCarrinho {
   id: string;
-  /** Id real do produto na API (necessário para enviar o pedido) */
   produtoId?: string;
   nome: string;
   preco: number;
@@ -20,6 +22,8 @@ export interface ItemCarrinho {
   paraLevar?: boolean;
   /** Resumo legível do que foi tirado/acrescentado, para o cliente conferir (ex.: "Sem: cebola | Extra: bacon x1") */
   detalhes?: string;
+  /** Produto como estava na tela de personalização: permite voltar e editar o item depois de adicionado */
+  produtoOrigem?: ProdutoPersonalizavel;
 }
 
 interface CarrinhoProps {
@@ -28,9 +32,9 @@ interface CarrinhoProps {
   itens: ItemCarrinho[];
   onFinalizar: () => void;
   onRemover: (id: string) => void;
-  /** Mostra o botão "Fechar a conta" abaixo do enviar. Só passe no cardápio da mesa (QR Code). */
+  onAlterarQuantidade?: (id: string, quantidade: number) => void;
+  onEditar?: (item: ItemCarrinho) => void;
   onFecharConta?: () => void;
-  /** Bloqueia o botão depois que a conta já foi pedida */
   contaPedida?: boolean;
 }
 
@@ -41,6 +45,8 @@ const Carrinho: React.FC<CarrinhoProps> = ({
   itens,
   onFinalizar,
   onRemover,
+  onAlterarQuantidade,
+  onEditar,
   onFecharConta,
   contaPedida = false,
 }) => {
@@ -85,25 +91,56 @@ const Carrinho: React.FC<CarrinhoProps> = ({
                 <img src={item.imagem} alt={item.nome} className="carrinho__item-img" />
                 <div className="carrinho__item-info">
                   <span className="carrinho__item-nome">{item.nome}</span>
-                  <div className="carrinho__item-meta">
-                  <span className="carrinho__item-qtd">{item.quantidade}x</span>
                   {(item.detalhes || item.observacao) && (
-                    <span className="carrinho__item-obs" tabIndex={0}>
-                      {item.detalhes ? 'Detalhes' : 'Observação'}
-                      <span className="carrinho__item-obs-tooltip">
-                        {': ' + [item.detalhes, item.observacao].filter(Boolean).join(' | ')}
+                    <div className="carrinho__item-meta">
+                      <span className="carrinho__item-obs" tabIndex={0}>
+                        {item.detalhes ? 'Detalhes' : 'Observação'}
+                        <span className="carrinho__item-obs-tooltip">
+                          {': ' + [item.detalhes, item.observacao].filter(Boolean).join(' | ')}
+                        </span>
                       </span>
-                    </span>
+                    </div>
                   )}
-                </div>
                 </div>
                 <span className="carrinho__item-preco">
                   R${(item.preco * item.quantidade).toFixed(2).replace('.', ',')}
+                  {item.quantidade > 1 && (
+                    <small className="carrinho__item-unit">
+                      R${item.preco.toFixed(2).replace('.', ',')} cada
+                    </small>
+                  )}
                 </span>
-                <button className="carrinho__item-del" onClick={() => onRemover(item.id)}
-                     aria-label={`Remover ${item.nome}`}>
-                       🗑️
-                 </button>
+                {onAlterarQuantidade && (
+                  <div className="carrinho__item-qtd-controle">
+                    <QuantidadeStepper
+                      valor={item.quantidade}
+                      min={1}
+                      max={20}
+                      rotulo={item.nome}
+                      onChange={(nova) => onAlterarQuantidade(item.id, nova)}
+                    />
+                  </div>
+                )}
+                <div className="carrinho__item-acoes">
+                  {onEditar && item.produtoOrigem && (
+                    <button
+                      className="carrinho__item-edit"
+                      onClick={() => onEditar(item)}
+                      aria-label={`Editar ${item.nome}`}
+                      title="Editar pedido"
+                    >
+                      <FiEdit2 />
+                    </button>
+                  )}
+                  <button
+                    className="carrinho__item-del"
+                    onClick={() => onRemover(item.id)}
+                    aria-label={`Remover ${item.nome}`}
+                    title="Remover"
+                  >
+                    <FiTrash2 />
+                  </button>
+                </div>
               </div>
             ))
           )}

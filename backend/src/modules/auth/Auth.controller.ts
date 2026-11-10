@@ -79,7 +79,6 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     )
 
     // POST /auth/verificar-cnpj
-    // Chamada ao avançar da etapa 1 do cadastro: o CNPJ já existe? Responde só sim/não.
     // Limite: 20 por minuto por IP (evita usar a rota para varrer CNPJs cadastrados).
     pub.post(
       '/verificar-cnpj',
@@ -264,11 +263,9 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     })
 
     // GET /auth/me
-    // Perfil do usuário logado — usuário, empresa e estabelecimento — lido do
-    // BANCO (não do JWT). Assim a tela de perfil mostra o que realmente foi
+    // Perfil do usuário logado — usuário, empresa e estabelecimento.
+    //  Assim a tela de perfil mostra o que realmente foi
     // cadastrado e dá para conferir o vínculo usuário → estabelecimento → empresa.
-    // Também devolve um token novo com os dados atuais: sessões antigas (sem
-    // estabelecimento_id, por exemplo) se "curam" sem exigir novo login.
     priv.get('/me', async (request: FastifyRequest, reply: FastifyReply) => {
       const { sub } = request.user as JWTPayload
 
@@ -309,9 +306,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       })
     })
     // POST /auth/verificar-senha
-    // Só confirma a senha atual (não altera nada). Usado antes de abrir a edição
-    // de dados sensíveis, para o usuário não preencher tudo e só então descobrir
-    // que errou a senha. Mesmo limite de tentativas da rota que altera de fato.
+    // Só confirma a senha atual (não altera nada).
     priv.post(
       '/verificar-senha',
       {
@@ -336,7 +331,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     )
 
     // POST /auth/me/email/solicitar
-    // Passo 1 da troca de e-mail: exige a senha e manda um código para o e-mail NOVO.
+    // Troca de email : Exige a senha e manda um código para o e-mail NOVO.
     // O e-mail atual continua valendo até o código ser confirmado.
     priv.post(
       '/me/email/solicitar',
@@ -365,7 +360,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     )
 
     // POST /auth/me/email/confirmar
-    // Passo 2: confirma o código, troca o e-mail e devolve uma sessão nova.
+    // confirma o código, troca o e-mail e devolve uma sessão nova.
     priv.post(
       '/me/email/confirmar',
       {
@@ -390,9 +385,8 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     )
 
     // PUT /auth/me/dados
-    // Altera nome do responsável, razão social e nome da empresa (o e-mail tem fluxo próprio:
-    // /me/email/solicitar e /me/email/confirmar).
-    // Exige a senha atual. Limite: 5 tentativas a cada 15 minutos (evita adivinhar a senha).
+    // Altera nome do responsável, razão social e nome da empresa
+    // Exige a senha atual. Limite: 5 tentativas a cada 15 minutos.
     priv.put(
       '/me/dados',
       {

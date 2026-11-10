@@ -26,7 +26,7 @@ import {
   templateEmailAlterado,
 } from '@shared/emails/templates'
 
-// Validade do código (configurável: CODIGO_EXPIRA_MINUTOS no .env)
+// Validade do código
 const EXPIRACAO_CODIGO_MINUTOS = env.CODIGO_EXPIRA_MINUTOS
 
 export class AuthService {
@@ -55,7 +55,7 @@ export class AuthService {
     return token
   }
 
-  // ── LOGIN ────────────────────────────────────────────────────────────────
+  // LOGIN
   async login(
     data: LoginDTO,
     jwtSign: (payload: JWTPayload) => string
@@ -117,7 +117,7 @@ export class AuthService {
     }
   }
 
-  // ── REGISTRO ─────────────────────────────────────────────────────────────
+  // REGISTRO
   async registrar(
     data: import('./Auth.schema').RegistrarDTO,
     jwtSign: (payload: JWTPayload) => string
@@ -139,8 +139,6 @@ export class AuthService {
     const senha_hash = await bcrypt.hash(data.senha, 10)
 
     // Cria Empresa + Estabelecimento + Usuário numa única transação:
-    // o usuário já nasce com estabelecimento_id (as rotas de produtos, mesas,
-    // reservas etc. dependem dele).
     const { usuario, pagamento_pendente } = await this.repository.registrar({
       nome_empresa: data.nome_restaurante,
       razao_social: data.razao_social,
@@ -162,8 +160,7 @@ export class AuthService {
     })
 
     // E-mail de confirmação em SEGUNDO PLANO: se o SMTP estiver lento ou fora do ar,
-    // o cadastro não trava (antes a resposta esperava o envio e o front estourava o
-    // timeout mesmo com a conta já criada). Quem não receber usa "reenviar código".
+    // o cadastro não trava. Quem não receber usa "reenviar código".
     void (async () => {
       try {
         const codigo = await this.repository.criarTokenConfirmacaoEmail(
@@ -271,10 +268,7 @@ export class AuthService {
     return { token }
   }
 
-  // ── ALTERAR E-MAIL, passo 1: pede o código ─────────────────────────────────
-  // Exige a senha. O e-mail atual continua valendo até o código ser confirmado, então
-  // um e-mail digitado errado não trava a conta. Erros de senha são 403 (não 401) de
-  // propósito: o front trata 401 como "sessão expirada" e deslogaria o usuário.
+  // ALTERAR E-MAIL, pede o código 
   async solicitarAlteracaoEmail(
     usuario_id: string,
     data: SolicitarAlteracaoEmailDTO
@@ -304,7 +298,7 @@ export class AuthService {
       EXPIRACAO_CODIGO_MINUTOS
     )
 
-    // Aguarda o envio: se falhar, o usuário precisa saber (senão espera um código que não vem)
+    // Aguarda o envio: se falhar, o usuário precisa saber
     try {
       await transporter.sendMail({
         from: env.MAIL_FROM,
@@ -320,8 +314,8 @@ export class AuthService {
     return { email: data.novo_email }
   }
 
-  // ── ALTERAR E-MAIL, passo 2: confirma o código ─────────────────────────────
-  // Troca o e-mail, encerra as outras sessões e devolve uma sessão nova (o JWT leva o e-mail).
+  // ALTERAR E-MAIL, confirma o código 
+  // Troca o e-mail, encerra as outras sessões e devolve uma sessão nova
   async confirmarAlteracaoEmail(
     usuario_id: string,
     data: ConfirmarAlteracaoEmailDTO,
@@ -384,7 +378,7 @@ export class AuthService {
     }
   }
 
-  // ── VERIFICAR CÓDIGO (cadastro ou recuperação) ─────────────────────────────
+  // VERIFICAR CÓDIGO (cadastro ou recuperação)
   async verificarCodigo(data: VerificarCodigoDTO): Promise<void> {
     if (data.tipo === 'registro') {
       const registro = await this.repository.findTokenConfirmacaoPorCodigo(
@@ -401,7 +395,6 @@ export class AuthService {
     }
 
     // tipo === 'recuperacao': só valida a existência do código aqui.
-    // Ele é consumido de fato no passo de redefinirSenha, junto com a nova senha.
     const registro = await this.repository.findTokenRecuperacaoPorCodigo(
       data.email,
       data.codigo
@@ -412,7 +405,7 @@ export class AuthService {
     }
   }
 
-  // ── REENVIAR CÓDIGO (cadastro ou recuperação) ──────────────────────────────
+  // REENVIAR CÓDIGO (cadastro ou recuperação)
   async reenviarCodigo(data: ReenviarCodigoDTO): Promise<void> {
     const usuario = await this.repository.findByEmail(data.email)
 
@@ -457,12 +450,12 @@ export class AuthService {
     await transporter.sendMail({
       from: env.MAIL_FROM,
       to: usuario.email,
-      subject: '🔐 Recuperação de senha — Menupoint',
+      subject: 'Recuperação de senha — Menupoint',
       html: templateRecuperacaoSenha(usuario.nome, codigo, EXPIRACAO_CODIGO_MINUTOS),
     })
   }
 
-  // ── ESQUECI MINHA SENHA ──────────────────────────────────────────────────
+  // ESQUECI MINHA SENHA 
   async esqueciSenha(data: EsqueciSenhaDTO): Promise<void> {
 
     const usuario = await this.repository.findByEmail(data.email)
@@ -479,7 +472,7 @@ export class AuthService {
     await transporter.sendMail({
       from: env.MAIL_FROM,
       to: usuario.email,
-      subject: '🔐 Recuperação de senha — Menupoint',
+      subject: 'Recuperação de senha — Menupoint',
       html: templateRecuperacaoSenha(
         usuario.nome,
         codigo,
@@ -488,7 +481,7 @@ export class AuthService {
     })
   }
 
-  // ── REDEFINIR SENHA ──────────────────────────────────────────────────────
+  // REDEFINIR SENHA 
   async redefinirSenha(data: RedefinirSenhaDTO): Promise<void> {
 
     const tokenRegistro = await this.repository.findTokenRecuperacaoPorCodigo(
@@ -520,12 +513,12 @@ export class AuthService {
     transporter.sendMail({
       from: env.MAIL_FROM,
       to: usuario.email,
-      subject: '✅ Senha redefinida com sucesso — Menupoint',
+      subject: 'Senha redefinida com sucesso — Menupoint',
       html: templateSenhaRedefinida(usuario.nome),
     }).catch(console.error)
   }
 
-  // ── REFRESH TOKEN ────────────────────────────────────────────────────────
+  // REFRESH TOKEN
   async refreshToken(
     data: { refresh_token: string },
     jwtSign: (payload: JWTPayload) => string
@@ -553,7 +546,7 @@ export class AuthService {
         throw new AppError('Refresh token inválido, expirado ou já utilizado', 401)
       }
 
-      // Marca o token atual como usado (rotação de tokens)
+      // Marca o token atual como usado
       await prisma.refreshToken.update({
         where: { id: tokenNoBanco.id },
         data: { usado: true },
@@ -583,7 +576,7 @@ export class AuthService {
     }
   }
 
-  // ── LOGOUT ───────────────────────────────────────────────────────────────
+  // LOGOUT 
   async logout(refresh_token: string): Promise<void> {
     await prisma.refreshToken.updateMany({
       where: { token: refresh_token },

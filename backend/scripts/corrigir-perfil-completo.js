@@ -1,22 +1,7 @@
 /**
  * Corrige retroativamente `perfil_completo` de estabelecimentos que já
  * têm todos os dados mínimos preenchidos (telefone, whatsapp e endereço
- * completo), mas ficaram travados em `false` por causa de um bug: nem
- * `criar` nem `atualizar` estabelecimento jamais setavam esse campo —
- * era só o valor padrão da coluna, nunca mudado em lugar nenhum. Isso já
- * foi corrigido no código (Estabelecimento.service.ts calcula sozinho a
- * partir de agora), mas não conserta os registros que já existiam antes
- * da correção — é isso que este script faz, uma vez.
- *
- * COMO USAR:
- *
- *   node scripts/corrigir-perfil-completo.js
- *
- *   Só mostra quais estabelecimentos seriam corrigidos, não muda nada.
- *
- *   node scripts/corrigir-perfil-completo.js --corrigir
- *
- *   Aplica a correção de fato.
+ * completo)
  */
 
 const { PrismaClient } = require('@prisma/client')

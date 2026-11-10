@@ -13,7 +13,7 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY é obrigatório'),
   // Remetente: precisa ser de um domínio verificado no Resend (SPF/DKIM) para não cair no spam
   MAIL_FROM: z.string().default('Menupoint <noreply@menupoint.com>'),
-  // Opcional: para onde vão as respostas dos usuários (ex.: suporte@seudominio.com)
+  // Opcional: para onde vão as respostas dos usuários
   MAIL_REPLY_TO: z.string().optional(),
   CONTATO_EMAIL: z.string().email('CONTATO_EMAIL deve ser um e-mail válido').optional(),
 
@@ -38,13 +38,7 @@ const envSchema = z.object({
   MP_PUBLIC_KEY:    z.string().min(1, 'MP_PUBLIC_KEY é obrigatório'),
   MP_PLAN_ID_BASICO: z.string().min(1, 'MP_PLAN_ID_BASICO é obrigatório'),
   MP_PLAN_ID_PRO:    z.string().min(1, 'MP_PLAN_ID_PRO é obrigatório'),
-  // SÓ PARA TESTES: e-mail da conta de COMPRADOR de teste do Mercado Pago. Quando preenchido, é enviado
-  // ao MP como pagador no lugar do e-mail do cadastro. Em produção, deixe vazio/apague.
   MP_PAYER_EMAIL_TESTE: z.string().optional(),
-  // EXPERIMENTO: com "true", o checkout da assinatura também envia auto_return=approved ao MP, para
-  // ele devolver o cliente ao site sozinho (sem o botão "Ir para site do vendedor"). Esse parâmetro
-  // está documentado só para o Checkout Pro, não para assinaturas: se o MP recusar ou ignorar,
-  // apague a variável.
   MP_AUTO_RETURN: z.string().optional(),
 
   // Chave secreta do webhook (Mercado Pago > Suas integrações > Webhooks). Com ela o backend confere

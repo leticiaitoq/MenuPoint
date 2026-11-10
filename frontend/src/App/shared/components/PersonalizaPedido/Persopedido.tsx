@@ -15,23 +15,11 @@ import {
 import './Persopedido.css';
 
 /**
- * PersoPedido é a tela de ajuste do pedido: o cliente chega aqui a partir
- * de um produto do Menu, escolhe ingredientes/adicionais e escreve uma
- * observação antes de mandar o item para o carrinho.
- *
- * Funciona no estilo dos totens de lanchonete:
- *  - o que já vem no produto (quantidade inclusa) está dentro do preço;
- *  - tirar um ingrediente NÃO desconta;
- *  - só aumenta o preço quem pedir MAIS do que vem incluso (ou um adicional).
- * Os ingredientes e seus preços são cadastrados pelo restaurante (vêm da API junto
- * com o produto). O servidor refaz a conta no pedido: aqui é só a prévia.
- *
- * Fica em shared/components porque é reaproveitada tanto pelo Menu do cliente
- * local (QR code) quanto pelo Menu do cliente delivery — igual ao Carrinho.
+ * tela de ajuste do pedido
  */
 
 // ── Tipos
-interface ProdutoPersonalizavel {
+export interface ProdutoPersonalizavel {
   id: string;
   nome: string;
   descricao: string;
@@ -43,29 +31,41 @@ interface ProdutoPersonalizavel {
 interface PersoPedidoRouteState {
   produto?: ProdutoPersonalizavel;
   modoCliente?: 'guest' | 'logged';
+  /** Quando vem preenchido, a tela edita essa linha do carrinho em vez de adicionar uma nova */
+  editarItemId?: string;
 }
 
 // ── Componente
 const PersoPedido: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { adicionarItem } = useCarrinho();
+  const { itens: itensCarrinho, adicionarItem, atualizarItem } = useCarrinho();
 
   /**
-   * Produto e modo do cliente vêm pelo state da navegação (o card do Menu
-   * leva pra cá passando o produto clicado e o próprio modo).
+   * Produto e modo do cliente vêm pelo state da navegação.
    */
   const state = location.state as PersoPedidoRouteState | null;
   const produto = state?.produto;
   const modoLayout = state?.modoCliente ?? 'guest';
   const ingredientes = produto?.ingredientes ?? [];
 
+  // Item do carrinho que está sendo editado.
+  const itemEmEdicao = state?.editarItemId
+    ? itensCarrinho.find((i) => i.id === state.editarItemId)
+    : undefined;
+
   // Quantidade escolhida de cada ingrediente; começa na quantidade que já vem inclusa
-  const [quantidades, setQuantidades] = useState<Record<string, number>>(() =>
-    Object.fromEntries(ingredientes.map((i) => [i.id, i.quantidadeInclusa]))
-  );
-  const [observacao, setObservacao] = useState('');
-  const [paraLevar, setParaLevar] = useState(false);
+  const [quantidades, setQuantidades] = useState<Record<string, number>>(() => {
+    const base: Record<string, number> = Object.fromEntries(
+      ingredientes.map((i) => [i.id, i.quantidadeInclusa])
+    );
+    itemEmEdicao?.ingredientes?.forEach((a) => {
+      if (a.adicional_id in base) base[a.adicional_id] = a.quantidade;
+    });
+    return base;
+  });
+  const [observacao, setObservacao] = useState(itemEmEdicao?.observacao ?? '');
+  const [paraLevar, setParaLevar] = useState(itemEmEdicao?.paraLevar ?? false);
 
   const quantidadeDe = (ing: IngredienteProduto) => quantidades[ing.id] ?? ing.quantidadeInclusa;
 
@@ -75,7 +75,7 @@ const PersoPedido: React.FC = () => {
       [ing.id]: Math.min(ing.quantidadeMaxima, Math.max(quantidadeMinima(ing), valor)),
     }));
 
-  // Sem state (refresh ou acesso direto pela URL) não há produto para personalizar
+  // Sem state não há produto para personalizar
   if (!produto) {
     return (
       <CustomerLayout mode={modoLayout}>
@@ -120,22 +120,35 @@ const PersoPedido: React.FC = () => {
       .filter(Boolean)
       .join(' | ');
 
-    const item: ItemCarrinho = {
-      // Id próprio da linha do carrinho (não o id do produto): assim dá pra
-      // adicionar o mesmo produto mais de uma vez com customizações diferentes.
-      id: `${produto.id}-${Date.now()}`,
+    const dados: Omit<ItemCarrinho, 'id' | 'quantidade'> = {
       produtoId: produto.id,
       nome: produto.nome,
       preco: totalFinal,
-      quantidade: 1,
       imagem: produto.imagem,
       ingredientes: ajustes.length ? ajustes : undefined,
       paraLevar: paraLevar || undefined,
       detalhes: detalhes || undefined,
       observacao: observacao.trim() || undefined,
+      produtoOrigem: produto, // guardado para o cliente poder editar o item depois
     };
 
-    adicionarItem(item);
+    if (itemEmEdicao) {
+      // Edição: troca os dados da mesma linha (mantém id e quantidade) e reabre o carrinho
+      atualizarItem(itemEmEdicao.id, dados);
+      navigate(modoLayout === 'logged' ? '/menu' : '/menulocal', {
+        replace: true,
+        state: { abrirCarrinho: true },
+      });
+      return;
+    }
+
+    adicionarItem({
+      // Id próprio da linha do carrinho (não o id do produto): assim dá pra
+      // adicionar o mesmo produto mais de uma vez com customizações diferentes.
+      id: `${produto.id}-${Date.now()}`,
+      quantidade: 1,
+      ...dados,
+    });
 
     // Volta para o menu que trouxe o cliente até aqui (local ou delivery)
     navigate(-1);
@@ -162,7 +175,7 @@ const PersoPedido: React.FC = () => {
     };
   };
 
-  // ── Uma seção da tela (O que vem no produto / Adicionais)
+  // ── Uma seção da tela
   const renderSecao = (titulo: string, subtitulo: string, lista: IngredienteProduto[]) => (
     <section className="perso-pedido__secao">
       <header className="perso-pedido__secao-cab">
@@ -233,21 +246,23 @@ const PersoPedido: React.FC = () => {
         {adicionais.length > 0 &&
           renderSecao('Quer adicionar mais?', 'Cada adicional é somado ao valor do pedido.', adicionais)}
 
-        {/* Para levar */}
-        <label className="perso-pedido__levar">
-          <span className="perso-pedido__levar-info">
-            <strong>Para levar</strong>
-            <small>Embalar este item para viagem</small>
-          </span>
-          <input
-            type="checkbox"
-            role="switch"
-            className="perso-pedido__switch"
-            checked={paraLevar}
-            onChange={(e) => setParaLevar(e.target.checked)}
-            aria-label="Para levar"
-          />
-        </label>
+        {/* Para levar: só no cliente local (o online pede entrega ou retirada) */}
+        {modoLayout === 'guest' && (
+          <label className="perso-pedido__levar">
+            <span className="perso-pedido__levar-info">
+              <strong>Para levar</strong>
+              <small>Embalar este item para viagem</small>
+            </span>
+            <input
+              type="checkbox"
+              role="switch"
+              className="perso-pedido__switch"
+              checked={paraLevar}
+              onChange={(e) => setParaLevar(e.target.checked)}
+              aria-label="Para levar"
+            />
+          </label>
+        )}
 
         {/* Observação */}
         <div className="perso-pedido__observacao">
@@ -273,7 +288,7 @@ const PersoPedido: React.FC = () => {
             className="perso-pedido__botao-confirmar"
             onClick={handleAdicionarAoCarrinho}
           >
-            Adicionar ao carrinho
+            {itemEmEdicao ? 'Salvar alterações' : 'Adicionar ao carrinho'}
           </button>
         </div>
 
