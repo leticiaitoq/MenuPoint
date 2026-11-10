@@ -11,12 +11,13 @@ import PedidoClienteService, { FormaPagamentoOnline, PedidoCriado, itensDoCarrin
 import '../../../shared/components/PagamentoPedido/PagamentoPedido.css';
 import './InfoRetirada.css';
 
-// Tipos
+// ── Tipos
 interface FormRetirada {
   nome: string;
   telefone: string;
 }
 
+/** "Rua XV de Novembro, 1000, Sala 2 — Centro, Taquaritinga/SP" (ou '' se o restaurante não informou) */
 const formatarEnderecoRestaurante = (e?: { rua?: string; numero?: string; complemento?: string; bairro?: string; cidade?: string; estado?: string } | null): string => {
   if (!e?.rua) return '';
   const rua = [e.rua, e.numero, e.complemento].filter(Boolean).join(', ');
@@ -31,7 +32,7 @@ const InfoRetirada: React.FC = () => {
   const { slug, restaurante } = useRestauranteCliente();
   const { itens: itensCarrinho, limparCarrinho } = useCarrinho();
 
-  // Nome e telefone já vêm da conta do cliente
+  // Nome e telefone já vêm da conta do cliente (dá para trocar neste pedido)
   const [form, setForm] = useState<FormRetirada>({
     nome:     cliente?.nome ?? '',
     telefone: cliente?.telefone ? formatarTelefone(cliente.telefone) : '',
@@ -42,7 +43,7 @@ const InfoRetirada: React.FC = () => {
   const [forma, setForma] = useState<FormaPagamentoOnline | null>(null);
   const [troco, setTroco] = useState('');
 
-  // Carrinho vazio não tem o que retirar: volta para o cardápio
+  // Carrinho vazio não tem o que retirar: volta para o cardápio (menos logo depois de pedir)
   useEffect(() => {
     if (itensCarrinho.length === 0 && !pedidoCriado) navigate('/menu', { replace: true });
   }, [itensCarrinho.length, pedidoCriado, navigate]);
