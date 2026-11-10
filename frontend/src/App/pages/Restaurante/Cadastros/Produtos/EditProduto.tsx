@@ -1,14 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { HiUpload } from 'react-icons/hi';
+import { HiUpload, HiCheckCircle } from 'react-icons/hi';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
 import CategoriaService, { Categoria } from '../../../../services/categoria.service';
 import ProdutoService from '../../../../services/produto.service';
 import ContadorCaracteres, { DicaLimite } from '../../../../shared/components/ContadorCaracteres/ContadorCaracteres';
 import RecortadorImagem from '../../../../shared/components/RecortadorImagem/RecortadorImagem';
-import IngredientesEditor, { LinhaIngrediente, linhasDaCategoria, linhasDoProduto, linhasParaPayload, mesclarLinhas } from '../../../../shared/components/IngredientesEditor/IngredientesEditor';
-import { AdicionalCategoria } from '../../../../services/adicionalCategoria.service';
-import ImportarPadraoModal from '../../../../shared/components/IngredientesEditor/ImportarPadraoModal';
 import './EditProduto.css';
 
 // ── Tipos
@@ -47,36 +44,12 @@ const EditProduto: React.FC = () => {
 
   const [form, setForm]     = useState<FormEdicao>(FORM_VAZIO);
   const [fotoParaAjustar, setFotoParaAjustar] = useState<File | null>(null);
-  const [ingredientes, setIngredientes] = useState<LinhaIngrediente[]>([]);
-  const [modalImportar, setModalImportar] = useState(false);
-  const [msgIngredientes, setMsgIngredientes] = useState('');
-  const [erroIng, setErroIng] = useState('');
-  const ingredientesRef = useRef<LinhaIngrediente[]>([]);
-  ingredientesRef.current = ingredientes;
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [erro, setErro]       = useState('');
   const [sucesso, setSucesso] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [falhaCarregar, setFalhaCarregar] = useState(false);
   const [salvando, setSalvando]     = useState(false);
-
-  // Abre o modal onde o restaurante escolhe o que trazer do padrão da categoria
-  const importarPadrao = () => {
-    if (!form.categoria_id) { setMsgIngredientes('Escolha a categoria primeiro.'); return; }
-    setModalImportar(true);
-  };
-
-  // Recebe só o que foi escolhido no modal (ou tudo, em "Importar todos")
-  const aoImportarDoModal = (escolhidos: AdicionalCategoria[]) => {
-    // usa o valor MAIS RECENTE da lista (o usuário pode ter editado com o modal aberto)
-    const { linhas, adicionadas } = mesclarLinhas(ingredientesRef.current, linhasDaCategoria(escolhidos));
-    setIngredientes(linhas);
-    setMsgIngredientes(
-      adicionadas > 0 ? `${adicionadas} ingrediente(s) importado(s).` : 'Nada novo para importar.'
-    );
-    setErroIng('');
-    setModalImportar(false);
-  };
 
   // ── Carrega o produto real e as categorias do estabelecimento
   useEffect(() => {
@@ -105,7 +78,6 @@ const EditProduto: React.FC = () => {
           imagemPreview: produto.imagem_url ?? '',
           imagem:        null,
         });
-        setIngredientes(linhasDoProduto(produto));
       } catch (err: any) {
         setErro(err?.response?.data?.message ?? 'Não foi possível carregar o produto.');
         setFalhaCarregar(true);
@@ -162,14 +134,6 @@ const EditProduto: React.FC = () => {
     const preco = precoParaNumero(form.preco);
     if (!form.preco || !(preco > 0)) { setErro('Informe um preço válido.'); return; }
 
-    const ing = linhasParaPayload(ingredientes);
-    if (!ing.ok) {
-      setErroIng(ing.erro);
-      document.querySelector('.ing')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
-    setErroIng('');
-
     setErro('');
     setSalvando(true);
 
@@ -180,7 +144,7 @@ const EditProduto: React.FC = () => {
         imagem_url = await ProdutoService.uploadImagem(form.imagem);
       }
 
-      const salvo = await ProdutoService.atualizar(id, {
+      await ProdutoService.atualizar(id, {
         nome: form.nome.trim(),
         descricao: form.descricao.trim() || null, // null limpa a descrição no banco
         categoria_id: form.categoria_id,
@@ -188,11 +152,8 @@ const EditProduto: React.FC = () => {
         disponivel: form.disponivel,
         destaque: form.destaque,
         ...(imagem_url && { imagem_url }),
-        ingredientes: ing.lista, // lista completa: o que saiu dela é removido
       });
 
-      // Recarrega a lista com o que o servidor gravou (ids reais): o que está na tela é o que foi salvo
-      setIngredientes(linhasDoProduto(salvo));
       setSucesso(true);
     } catch (err: any) {
       setErro(err?.response?.data?.message ?? 'Não foi possível salvar as alterações.');
@@ -362,27 +323,6 @@ const EditProduto: React.FC = () => {
             </label>
           </div>
 
-          {/* Ingredientes e adicionais (estilo totem) */}
-          <div className="editprod__campo">
-            <IngredientesEditor
-              linhas={ingredientes}
-              onChange={(l) => { setMsgIngredientes(''); setErroIng(''); setIngredientes(l); }}
-              disabled={salvando}
-              onImportar={importarPadrao}
-              mensagem={msgIngredientes}
-              erro={erroIng}
-            />
-
-            <ImportarPadraoModal
-              aberto={modalImportar}
-              categoriaId={form.categoria_id}
-              categoriaNome={categorias.find((c) => c.id === form.categoria_id)?.nome}
-              nomesNoProduto={ingredientes.map((l) => l.nome)}
-              onImportar={aoImportarDoModal}
-              onFechar={() => setModalImportar(false)}
-            />
-          </div>
-
           {/* Erro */}
           {erro && <p className="editprod__erro">{erro}</p>}
 
@@ -401,9 +341,9 @@ const EditProduto: React.FC = () => {
 
       {/* ── Popup de sucesso ── */}
       {sucesso && (
-        <div className="editprod__popup-overlay" onClick={() => navigate('/restaurante/produtos')}>
+        <div className="editprod__popup-overlay" onClick={() => setSucesso(false)}>
           <div className="editprod__popup" onClick={(e) => e.stopPropagation()}>
-            <span className="editprod__popup-icon">✅</span>
+            <HiCheckCircle className="editprod__popup-icon" />
             <h3>Produto atualizado com sucesso!</h3>
             <p>As alterações foram salvas no cardápio.</p>
             <button

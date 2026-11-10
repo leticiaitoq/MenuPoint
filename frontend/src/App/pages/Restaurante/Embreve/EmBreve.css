@@ -1,13 +1,3 @@
-/* EmBreve.css */
-
-@font-face {
-  font-family: "BukhariScript";
-  src: url("../../../../assets/fonts/BukhariScript-lemD.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
 .em-breve {
   /* Cores desta tela. No claro mantém o vinho original; no escuro trocam para tokens do tema. */
   --em-destaque: #6e1f1f;       /* "Estamos" */
@@ -58,7 +48,7 @@
 .em-breve__titulo,
 .em-breve__titulo .destaque,
 .em-breve__titulo .laranja {
-  font-family: "BukhariScript", cursive !important;
+ font-family: var(--font-brand);
 }
 
 .em-breve__titulo {
