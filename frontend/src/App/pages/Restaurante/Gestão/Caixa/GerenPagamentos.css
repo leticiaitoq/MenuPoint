@@ -1023,3 +1023,135 @@
   /* menus ⋮ nunca passam da borda da tela */
   .caixa__card-menu { max-width: calc(100vw - 32px); }
 }
+
+/* ── Alerta de reservas em conflito ── */
+.caixa__alerta-conflito {
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: var(--danger);
+  border: 2px solid #7f1d1d;
+  color: #fff;
+  font-size: 15px;
+  line-height: 1.5;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.25);
+  animation: caixa-alerta-pulso 1.8s ease-in-out infinite;
+}
+
+.caixa__alerta-conflito strong { font-size: 17px; }
+
+@keyframes caixa-alerta-pulso {
+  50% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caixa__alerta-conflito { animation: none; }
+}
+
+.caixa__alerta-conflito ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.caixa__reserva-status--conflito {
+  background: var(--danger);
+  color: var(--on-brand);
+}
+
+/* ── Botão Atualizar ── */
+.caixa__btn-atualizar { display: inline-flex; align-items: center; gap: 6px; }
+.caixa__atualizado { font-size: 11px; font-weight: 500; color: var(--text-muted); }
+
+
+/* ── Reserva sem assentos suficientes: alerta bem chamativo ── */
+.caixa__alerta-assentos {
+  margin-bottom: 16px;
+  padding: 18px 22px;
+  border-radius: 14px;
+  background: #b91c1c;
+  border: 3px solid #fde047;
+  color: #fff;
+  font-size: 15px;
+  line-height: 1.5;
+  box-shadow: 0 0 0 5px rgba(250, 204, 21, 0.35);
+  animation: caixa-alerta-assentos-pulso 1.4s ease-in-out infinite;
+}
+.caixa__alerta-assentos > strong { font-size: 18px; display: block; }
+.caixa__alerta-assentos ul { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.caixa__alerta-assentos li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.caixa__alerta-assentos-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+
+@keyframes caixa-alerta-assentos-pulso {
+  50% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .caixa__alerta-assentos { animation: none; }
+}
+
+.caixa__reserva--sem-assentos { border-left: 4px solid var(--danger); }
+.caixa__reserva-falta { color: var(--danger); font-weight: 700; font-size: 13px; }
+
+#caixa-decisao-texto {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #d1d5db);
+  background: var(--bg-surface);
+  color: inherit;
+}
+
+
+/* ── Cliente cancelou a reserva: aviso no Caixa ── */
+.caixa__aviso-cancelamento {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.caixa__aviso-cancelamento-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--warning-soft, #fff4e5);
+  border: 2px solid var(--warning);
+  border-left-width: 6px;
+  font-size: 14px;
+}
+
+.caixa__campo input[type='date'],
+.caixa__campo input[type='time'],
+#caixa-reservar-descricao {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #d1d5db);
+  background: var(--bg-surface);
+  color: inherit;
+}
+.caixa__alerta-inline { margin: 0; color: var(--danger); font-weight: 600; font-size: 13px; }
+
+
+/* Reserva prestes a começar (30 min antes) ou em andamento: destaque na lista */
+.caixa__reserva--iminente {
+  border: 2px solid var(--warning);
+  background: var(--warning-soft, #fff4e5);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+.caixa__reserva-agora { font-weight: 700; font-size: 13px; color: var(--warning-text, #92400e); }
