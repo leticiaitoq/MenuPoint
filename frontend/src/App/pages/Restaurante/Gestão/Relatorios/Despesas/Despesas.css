@@ -663,20 +663,138 @@
     grid-template-columns: 1fr;
   }
 }
-/* ── Erro e estados desabilitados (integração com a API) ── */
-.despesas__erro {
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--danger-soft);
-  color: var(--danger);
-  font-size: 13px;
-  font-weight: 500;
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVO — fica no FINAL do arquivo para vencer as regras base
+   Sem rolagem lateral: abaixo de 1100px cada despesa vira um card.
+═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 1100px) {
+  .despesas__tabela-scroll { overflow: visible; }
+  .despesas__tabela { min-width: 0; }
+  .despesas__tabela,
+  .despesas__tabela tbody { display: block; width: 100%; }
+
+  /* os cabeçalhos viram botões de "Ordenar por" (a ordenação continua funcionando) */
+  .despesas__tabela thead { display: block; padding: 4px 16px 12px; }
+  .despesas__tabela thead tr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .despesas__tabela thead tr::before {
+    content: 'Ordenar por';
+    flex-basis: 100%;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .despesas__tabela thead th {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 36px;
+    padding: 6px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-surface);
+    font-size: 13px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .despesas__tabela thead th:has(.despesas__icone-ordenar--ativo) { border-color: var(--accent); color: var(--text); }
+  /* "Pagamento" e "Ações" não ordenam */
+  .despesas__tabela thead th:nth-child(5),
+  .despesas__tabela thead th:nth-child(7) { display: none; }
+
+  /* cada linha vira um card */
+  .despesas__tabela tbody { display: grid; grid-template-columns: 1fr; gap: 10px; padding: 0 16px 4px; }
+
+  .despesas__tabela tbody tr,
+  .despesas__tabela tbody tr:hover {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 12px;
+    row-gap: 8px;
+    align-items: center;
+    padding: 14px;
+    background: var(--bg-surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .despesas__tabela tbody td {
+    display: block;
+    padding: 0;
+    border: none;
+    white-space: normal;
+    font-size: 14px;
+  }
+
+  .despesas__tabela tbody td:nth-child(2) { grid-column: 1; grid-row: 1; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; } /* descrição */
+  .despesas__tabela tbody td:nth-child(6) { grid-column: 2; grid-row: 1; font-size: 16px; color: var(--accent); white-space: nowrap; } /* valor */
+  .despesas__tabela tbody td:nth-child(3) { grid-column: 1; grid-row: 2; }                                                                /* categoria */
+  .despesas__tabela tbody td:nth-child(1) { grid-column: 2; grid-row: 2; text-align: right; font-size: 13px; color: var(--text-muted); }  /* data */
+  .despesas__tabela tbody td:nth-child(4) { grid-column: 1; grid-row: 3; font-size: 13px; color: var(--text-muted); overflow-wrap: anywhere; } /* fornecedor */
+  .despesas__tabela tbody td:nth-child(4)::before { content: 'Fornecedor: '; color: var(--text-faint); }
+  .despesas__tabela tbody td:nth-child(4):empty { display: none; }
+  .despesas__tabela tbody td:nth-child(5) { grid-column: 2; grid-row: 3; justify-self: end; }                                             /* pagamento */
+  .despesas__tabela tbody td:nth-child(7) { grid-column: 1 / -1; grid-row: 4; padding-top: 10px; border-top: 1px dashed var(--border); } /* ações */
+
+  .despesas__acoes { justify-content: flex-end; gap: 8px; }
+  .despesas__btn-acao { width: 40px; height: 40px; font-size: 18px; }
+
+  /* "Nenhuma despesa encontrada": mensagem simples, sem virar card */
+  .despesas__tabela tbody tr:has(> td.despesas__vazio),
+  .despesas__tabela tbody tr:has(> td.despesas__vazio):hover {
+    display: block;
+    padding: 0;
+    background: none;
+    border: none;
+  }
 }
 
-.despesas__form-salvar:disabled,
-.despesas__form-excluir:disabled,
-.despesas__form-cancelar:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+/* Tablet largo: 2 cards por linha */
+@media (min-width: 900px) and (max-width: 1100px) {
+  .despesas__tabela tbody { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .despesas__tabela tbody tr:has(> td.despesas__vazio) { grid-column: 1 / -1; }
+}
+
+@media (max-width: 768px) {
+  .despesas__btn-nova { min-height: 44px; }
+
+  /* filtros: 2 por linha em vez de 4 empilhados */
+  .despesas__filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+
+  .despesas__paginacao-botoes button { min-width: 38px; height: 38px; }
+
+  /* modais */
+  .despesas__modal { max-height: 90vh; max-height: 90dvh; }
+  .despesas__form-campo input,
+  .despesas__form-campo select,
+  .despesas__periodo-campo input { font-size: 16px; min-height: 44px; } /* 16px evita o zoom automático do iOS */
+}
+
+@media (max-width: 480px) {
+  .despesas { gap: 12px; }
+  .despesas__titulo { font-size: 20px; }
+
+  .despesas__filtros { gap: 8px; }
+  .despesas__filtro-caixa { padding: 10px 12px; gap: 8px; }
+  .despesas__filtro-icone { display: none; } /* ganha espaço para o valor do filtro */
+  .despesas__periodo-painel { min-width: 0; width: calc(100vw - 24px); max-width: 320px; }
+
+  .despesas__resumo { padding: 14px 16px; }
+  .despesas__resumo-valor { font-size: 20px; }
+
+  .despesas__tabela thead,
+  .despesas__tabela tbody { padding-left: 12px; padding-right: 12px; }
+
+  .despesas__paginacao { flex-direction: column; align-items: center; text-align: center; }
+  .despesas__paginacao-botoes { flex-wrap: wrap; justify-content: center; }
+
+  .despesas__modal { padding: 20px 16px; }
+  .despesas__modal-fechar { width: 36px; height: 36px; }
+  .despesas__form-acoes { flex-direction: column-reverse; }
+  .despesas__form-cancelar,
+  .despesas__form-salvar,
+  .despesas__form-excluir { width: 100%; min-height: 44px; }
 }

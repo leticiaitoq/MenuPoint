@@ -548,9 +548,9 @@ label.fila__item { cursor: pointer; }
 
 /* ── Modal de confirmação (conteúdo dentro do ModalAlerta) ── */
 .fila__modal-texto { margin: 0; }
-.fila__modal-lista { margin: 8px 0 0; padding-left: 18px; color: #333; font-size: 13px; }
+.fila__modal-lista { margin: 8px 0 0; padding-left: 18px; color: var(--text); font-size: 13px; }
 .fila__modal-lista li { margin: 2px 0; }
-.fila__modal-nota { margin: 10px 0 0; font-size: 13px; color: #8a5a00; }
+.fila__modal-nota { margin: 10px 0 0; font-size: 13px; color: var(--warning-text); }
 .fila__erro--modal { margin: 10px 0 0; }
 
 

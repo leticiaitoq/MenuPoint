@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HiUser, HiPhone } from 'react-icons/hi';
+import { HiUser, HiPhone, HiCheckCircle } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import './InfoRetirada.css';
@@ -112,7 +112,7 @@ const handleTelefone = (e: React.ChangeEvent<HTMLInputElement>) =>
             {sucesso && (
         <div className="retirada__overlay" onClick={() => setSucesso(false)}>
             <div className="retirada__modal" onClick={(e) => e.stopPropagation()}>
-            <span className="retirada__modal-emoji">✅</span>
+            <HiCheckCircle className="retirada__modal-emoji" />
             <h2 className="retirada__modal-titulo">Pedido confirmado!</h2>
             <p className="retirada__modal-texto">
                 Seu pedido está sendo preparado. Retire no balcão quando estiver pronto.

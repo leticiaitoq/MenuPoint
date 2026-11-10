@@ -287,24 +287,17 @@ const RegisterCliente: React.FC = () => {
 
       {/* Modal de sucesso */}
       {mostrarSucesso && (
-        <div
-          className="register-cliente__overlay"
-          onClick={() => setMostrarSucesso(false)}
-        >
-          <div
-            className="register-cliente__modal-sucesso"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="register-cliente__sucesso-titulo">Cadastro realizado!</h2>
-            <p className="register-cliente__sucesso-texto">
-              Enviamos um e-mail para você confirmar sua conta.
-            </p>
-            <button
-              className="register-cliente__btn"
-              onClick={handleIrParaConfirmacaoCliente}
-            >
-              Confirmar e-mail
-            </button>
+        <div className="register-cliente__overlay" onClick={() => setMostrarSucesso(false)}>
+          <div className="register-cliente__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="register-cliente__modal-inner">
+              <h2 className="register-cliente__modal-titulo">Cadastro realizado!</h2>
+              <p className="register-cliente__modal-texto">
+                Enviamos um e-mail para você confirmar sua conta.
+              </p>
+              <button className="register-cliente__modal-button" onClick={handleIrParaConfirmacaoCliente}>
+                CONFIRMAR E-MAIL
+              </button>
+            </div>
           </div>
         </div>
       )}
