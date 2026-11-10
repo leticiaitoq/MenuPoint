@@ -93,18 +93,22 @@ const AppRoutes: React.FC = () => {
          <Route path="/termos" element={<Termospage />} />
 
 
-        {/* Rotas do cliente cadastrado: exigem login do cliente (/login/cliente) */}
-        <Route element={<RotaProtegidaCliente />}>
-          {/* Dependem do restaurante escolhido pelo link /r/:slug (entrada direta é barrada) */}
-          <Route element={<RotaComRestaurante />}>
+        {/*
+          SISTEMA DELIVERY (fora do restaurante) — só abre quem entrou pelo link /r/:slug.
+          O guarda de sistema vem ANTES do login: quem está na mesa (QR Code) é devolvido ao cardápio
+          da mesa e nunca entra aqui, mesmo logado. Dentro dele, as telas exigem login (/login/cliente).
+          O cliente local usa /menulocal, /historicolocal e /perfilLocal (acima).
+        */}
+        <Route element={<RotaComRestaurante />}>
+          <Route element={<RotaProtegidaCliente />}>
             <Route path="/dwelcome" element={<DWelcomePage />} />
             <Route path="/menu" element={<MenuCliente />} />
             <Route path="/reserva" element={<Reserva />} />
             <Route path="/endereço" element={<CadastroEndereco />} />
             <Route path="/retirada" element={<InfoRetirada />} />
+            <Route path="/historico" element={<ControlePedido />} />
+            <Route path="/perfil" element={<PerfilCliente />} />
           </Route>
-          <Route path="/historico" element={<ControlePedido />} />
-          <Route path="/perfil" element={<PerfilCliente />} />
         </Route>
 
         {/* Rotas do restaurante: exigem login */}

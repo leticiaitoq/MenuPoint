@@ -1,15 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import Carrinho from '../../../shared/components/Carrinho/Carrinho';
-import ChamarGarcom from '../../../shared/components/ChamarGarcom/Chamargarcom';
-import FecharConta from '../../../shared/components/FecharConta/FecharConta';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
-import { useConvidado } from '../../../shared/contexts/Convidadocontext';
 import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
 import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/ingredientes';
 import RestaurantePublicoService from '../../../services/restaurantePublico.service';
-import MesaPublicaService from '../../../services/mesaPublica.service';
 import './MenuCliente.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -53,7 +49,7 @@ const compararProdutos = (idsCategorias: string[]) => (a: Produto, b: Produto) =
 const MenuCliente: React.FC = () => {
   const navigate = useNavigate();
   const { restaurante } = useRestauranteCliente();
-  const { mesa, mesaToken } = useConvidado();
+  // Delivery é FORA do restaurante: aqui não existe mesa, garçom nem fechar conta (isso é do sistema local)
 
   const [categorias, setCategorias] = useState<Categoria[]>([CATEGORIA_TODOS]);
   const [produtos, setProdutos]     = useState<Produto[]>([]);
@@ -137,12 +133,6 @@ const MenuCliente: React.FC = () => {
   const { itens: itensCarrinho, removerItem } = useCarrinho();
   const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
   const [modalTipoAberto, setModalTipoAberto] = useState(false);
-  const [contaAberta, setContaAberta]         = useState(false);
-  const [contaPedida, setContaPedida]         = useState(false);
-  const timerConta = useRef<number | undefined>(undefined);
-
-  // Limpa o temporizador ao sair da tela
-  useEffect(() => () => window.clearTimeout(timerConta.current), []);
 
   // ── Filtro ──────────────────────────────────────────────────────────────────
   const produtosFiltrados = produtos.filter((p) => {
@@ -156,13 +146,6 @@ const MenuCliente: React.FC = () => {
   // ── Handlers
   const abrirPersonalizacao = (produto: Produto) => {
     navigate('/personaliza', { state: { produto, modoCliente: 'logged' } });
-  };
-
-  // Depois de pedir a conta, o botão fica bloqueado por 2 minutos (evita pedidos repetidos)
-  const aoPedirConta = () => {
-    setContaPedida(true);
-    window.clearTimeout(timerConta.current);
-    timerConta.current = window.setTimeout(() => setContaPedida(false), 120_000);
   };
 
   const escolherTipo = (rota: string) => {
@@ -181,7 +164,7 @@ const MenuCliente: React.FC = () => {
   style={{ '--bg-arte': 'url(/images/Fundo-menu.png)' } as React.CSSProperties}
 >
 
-        {/* Busca + botão Chamar garçom (o botão só aparece quando entrou pelo QR da mesa) */}
+        {/* Busca */}
         <div className="menu__topo">
           <div className="menu__busca-wrap">
             <img src="/icons/lupa.png" alt="" className="menu__busca-icon" />
@@ -193,9 +176,6 @@ const MenuCliente: React.FC = () => {
               onChange={(e) => setBusca(e.target.value)}
             />
           </div>
-          {mesaToken && (
-            <ChamarGarcom mesa={mesa} onChamar={() => MesaPublicaService.chamarGarcom(mesaToken)} />
-          )}
         </div>
 
         {/* Categorias */}
@@ -275,34 +255,26 @@ const MenuCliente: React.FC = () => {
           setCarrinhoAberto(false);
           setModalTipoAberto(true);
         }}
-        onFecharConta={mesaToken ? () => setContaAberta(true) : undefined}
-        contaPedida={contaPedida}
       />
-
-      {mesaToken && (
-        <FecharConta
-          aberto={contaAberta}
-          mesa={mesa}
-          itensNoCarrinho={totalCarrinho}
-          onPedir={(forma) => MesaPublicaService.pedirConta(mesaToken, forma)}
-          onConcluido={aoPedirConta}
-          onFechar={() => setContaAberta(false)}
-        />
-      )}
 
       {/* Modal de tipo de pedido — entrega ou retirada */}
       {modalTipoAberto && (
         <>
           <div className="mtp__overlay" onClick={() => setModalTipoAberto(false)} />
           <div className="mtp__modal">
-            <button className="mtp__card" onClick={() => escolherTipo('/endereço')}>
-              <span className="mtp__card-label">Para entrega</span>
-              <img src="/images/delivery.png" alt="Para entrega" className="mtp__card-img" />
-            </button>
-            <button className="mtp__card" onClick={() => escolherTipo('/retirada')}>
-              <span className="mtp__card-label">Para Retirada</span>
-              <img src="/images/retirada.png" alt="Para retirada" className="mtp__card-img" />
-            </button>
+            {/* Só oferece o que o restaurante aceita (cadastro do restaurante) */}
+            {restaurante?.aceita_entrega !== false && (
+              <button className="mtp__card" onClick={() => escolherTipo('/endereço')}>
+                <span className="mtp__card-label">Para entrega</span>
+                <img src="/images/delivery.png" alt="Para entrega" className="mtp__card-img" />
+              </button>
+            )}
+            {restaurante?.aceita_retirada !== false && (
+              <button className="mtp__card" onClick={() => escolherTipo('/retirada')}>
+                <span className="mtp__card-label">Para Retirada</span>
+                <img src="/images/retirada.png" alt="Para retirada" className="mtp__card-img" />
+              </button>
+            )}
           </div>
         </>
       )}

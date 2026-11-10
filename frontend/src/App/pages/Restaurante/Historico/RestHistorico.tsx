@@ -3,7 +3,7 @@ import { FiSearch, FiDownload, FiX, FiChevronRight, FiCreditCard, FiUsers, FiCal
 import { HiOutlineTable, HiOutlineCash } from 'react-icons/hi';
 import { MdPix } from 'react-icons/md';
 import RestaurantLayout from '../../../shared/components/layout/Restaurantelayout';
-import PedidoService, { Pedido as PedidoApi, StatusPedido } from '../../../services/pedido.service';
+import PedidoService, { Pedido as PedidoApi, StatusPedido, OrigemPedido, origemDoPedido } from '../../../services/pedido.service';
 import { mensagemDeErro } from '../../../services/cliente.service';
 import {
   ReservaRestauranteService,
@@ -37,6 +37,9 @@ interface SessaoMesa {
 }
 
 const ITENS_POR_PAGINA = 10;
+
+type FiltroOrigem = 'todas' | OrigemPedido;
+const ROTULO_ORIGEM: Record<OrigemPedido, string> = { LOCAL: 'Restaurante local', DELIVERY: 'Delivery' };
 
 // ── Helpers ────────────────────────────────────────────
 const formatarMoeda = (valor: number) =>
@@ -176,6 +179,8 @@ const RestHistorico: React.FC = () => {
   const [mesaFiltro, setMesaFiltro] = useState('todas');
   const [situacaoFiltro, setSituacaoFiltro] = useState<'todos' | Situacao>('todos');
   const [pagamentoFiltro, setPagamentoFiltro] = useState<'todas' | Forma>('todas');
+  // Origem do pedido: restaurante local (mesa) × delivery (entrega/retirada) — o histórico é um só
+  const [origemFiltro, setOrigemFiltro] = useState<FiltroOrigem>('todas');
   const [busca, setBusca] = useState('');
   const [periodoAberto, setPeriodoAberto] = useState(false);
 
@@ -228,12 +233,13 @@ const RestHistorico: React.FC = () => {
 
   const filtrosAtivos =
     !!dataInicio || !!dataFim || mesaFiltro !== 'todas' ||
-    situacaoFiltro !== 'todos' || pagamentoFiltro !== 'todas' || !!busca;
+    situacaoFiltro !== 'todos' || pagamentoFiltro !== 'todas' || origemFiltro !== 'todas' || !!busca;
 
   // ── Aplica os filtros ──
   const pedidosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return pedidos.filter((p) => {
+      if (origemFiltro !== 'todas' && origemDoPedido(p) !== origemFiltro) return false;
       if (mesaFiltro !== 'todas' && rotuloLocal(p) !== mesaFiltro) return false;
       if (situacaoFiltro !== 'todos' && situacaoDoPedido(p.status) !== situacaoFiltro) return false;
       if (pagamentoFiltro !== 'todas' && formaDoPedido(p) !== pagamentoFiltro) return false;
@@ -248,7 +254,17 @@ const RestHistorico: React.FC = () => {
       }
       return true;
     });
-  }, [pedidos, mesaFiltro, situacaoFiltro, pagamentoFiltro, busca]);
+  }, [pedidos, origemFiltro, mesaFiltro, situacaoFiltro, pagamentoFiltro, busca]);
+
+  // Contagem por origem (sobre todos os pedidos carregados do período)
+  const contagemOrigem = useMemo(
+    () => ({
+      todas: pedidos.length,
+      LOCAL: pedidos.filter((p) => origemDoPedido(p) === 'LOCAL').length,
+      DELIVERY: pedidos.filter((p) => origemDoPedido(p) === 'DELIVERY').length,
+    }),
+    [pedidos]
+  );
 
   const sessoesFiltradas = useMemo(() => agruparPorMesa(pedidosFiltrados), [pedidosFiltrados]);
 
@@ -279,7 +295,7 @@ const RestHistorico: React.FC = () => {
   // Sempre que filtros/aba mudam, volta para a primeira página
   useEffect(() => {
     setPaginaAtual(1);
-  }, [dataInicio, dataFim, mesaFiltro, situacaoFiltro, pagamentoFiltro, busca, aba]);
+  }, [dataInicio, dataFim, origemFiltro, mesaFiltro, situacaoFiltro, pagamentoFiltro, busca, aba]);
 
   const totalPaginas = Math.max(1, Math.ceil(totalRegistros / ITENS_POR_PAGINA));
   const indiceInicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
@@ -293,6 +309,7 @@ const RestHistorico: React.FC = () => {
     setMesaFiltro('todas');
     setSituacaoFiltro('todos');
     setPagamentoFiltro('todas');
+    setOrigemFiltro('todas');
     setBusca('');
   };
 
@@ -321,7 +338,7 @@ const RestHistorico: React.FC = () => {
       aba === 'reservas'
         ? ['Data', 'Horário', 'Cliente', 'Mesas', 'Pessoas', 'Origem', 'Situação', 'Descrição', 'Recado do restaurante']
         : aba === 'pedidos'
-        ? ['Pedido', 'Data/Hora', 'Local', 'Itens', 'Cliente', 'Garçom', 'Total', 'Pagamento', 'Situação', 'Motivo do cancelamento']
+        ? ['Pedido', 'Data/Hora', 'Origem', 'Local', 'Itens', 'Cliente', 'Garçom', 'Total', 'Pagamento', 'Situação', 'Motivo do cancelamento']
         : ['Data', 'Mesa', 'Pedidos', 'Itens', 'Clientes', 'Total', 'Situação'];
     const linhas =
       aba === 'reservas'
@@ -332,7 +349,7 @@ const RestHistorico: React.FC = () => {
           ])
         : aba === 'pedidos'
         ? pedidosFiltrados.map((p) => [
-            `#${p.numero_pedido}`, formatarDataHora(p.criado_em), rotuloLocal(p), String(totalItens(p)),
+            `#${p.numero_pedido}`, formatarDataHora(p.criado_em), ROTULO_ORIGEM[origemDoPedido(p)], rotuloLocal(p), String(totalItens(p)),
             p.cliente_nome || '-', p.atendido_por?.nome ?? '-', formatarMoeda(p.total), formaDoPedido(p),
             ROTULO_SITUACAO[situacaoDoPedido(p.status)], p.cancelamento_motivo ?? '',
           ])
@@ -363,6 +380,7 @@ const RestHistorico: React.FC = () => {
   const mesasDasReservas = Array.from(
     new Set(reservas.flatMap((r) => (r.mesa ? [`Mesa ${pad(r.mesa.numero)}`] : [])))
   ).sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+  // A aba Mesas só tem pedidos de mesa: o filtro de origem vale para a aba Pedidos
 
   return (
     <RestaurantLayout>
@@ -427,6 +445,22 @@ const RestHistorico: React.FC = () => {
           >
             Reservas ({reservasFiltradas.length})
           </button>
+        </div>
+
+        {/* ── Origem: de onde veio o pedido (restaurante local × delivery) ── */}
+        <div className="hist__origens" role="tablist" aria-label="Origem do pedido">
+          {(['todas', 'LOCAL', 'DELIVERY'] as FiltroOrigem[]).map((o) => (
+            <button
+              key={o}
+              role="tab"
+              aria-selected={origemFiltro === o}
+              className={`hist__origem${origemFiltro === o ? ' hist__origem--ativa' : ''}`}
+              onClick={() => setOrigemFiltro(o)}
+            >
+              {o === 'todas' ? 'Todas as origens' : ROTULO_ORIGEM[o]}
+              <span className="hist__origem-num">{contagemOrigem[o]}</span>
+            </button>
+          ))}
         </div>
 
         {/* ── Painel de filtros ── */}
@@ -701,6 +735,28 @@ const RestHistorico: React.FC = () => {
                   <span><FiUsers /> {rotuloLocal(pedidoSelecionado)}{pedidoSelecionado.cliente_nome ? ` · ${pedidoSelecionado.cliente_nome}` : ''}</span>
                   <span><FiCalendar /> {formatarDataHora(pedidoSelecionado.criado_em)}</span>
                 </div>
+
+                {/* Delivery: o cliente informou telefone e (na entrega) o endereço */}
+                {origemDoPedido(pedidoSelecionado) === 'DELIVERY' && (
+                  <div className="hist__painel-secao">
+                    <h4>{pedidoSelecionado.modalidade === 'ENTREGA' ? 'Entrega' : 'Retirada no balcão'}</h4>
+                    {pedidoSelecionado.cliente_telefone && (
+                      <p className="hist__painel-observacoes-texto">Telefone: {pedidoSelecionado.cliente_telefone}</p>
+                    )}
+                    {pedidoSelecionado.endereco_entrega && (
+                      <p className="hist__painel-observacoes-texto">
+                        {pedidoSelecionado.endereco_entrega.rua}, {pedidoSelecionado.endereco_entrega.numero}
+                        {pedidoSelecionado.endereco_entrega.complemento ? `, ${pedidoSelecionado.endereco_entrega.complemento}` : ''}
+                        {' — '}{pedidoSelecionado.endereco_entrega.bairro}, {pedidoSelecionado.endereco_entrega.cidade}/{pedidoSelecionado.endereco_entrega.estado}
+                        {' · CEP '}{pedidoSelecionado.endereco_entrega.cep}
+                        {pedidoSelecionado.endereco_entrega.referencia ? ` · Ref.: ${pedidoSelecionado.endereco_entrega.referencia}` : ''}
+                      </p>
+                    )}
+                    {pedidoSelecionado.cliente_id && (
+                      <p className="hist__painel-observacoes-texto">Cliente com conta cadastrada</p>
+                    )}
+                  </div>
+                )}
 
                 <div className="hist__painel-secao">
                   <h4>Situação</h4>

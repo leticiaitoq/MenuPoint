@@ -37,6 +37,14 @@ const ROTAS_PUBLICAS_GET = /^\/api\/v1\/(estabelecimentos|categorias)\/publico\/
 // As demais rotas de /reservas continuam só do restaurante.
 const ROTAS_CLIENTE_RESERVA = /^\/api\/v1\/reservas\/publico\//
 
+// Pedidos do próprio cliente: delivery (/pedidos/publico/:slug) e histórico fixo (/pedidos/cliente/*).
+// As rotas conferem sozinhas se o perfil é CLIENTE; o resto de /pedidos continua só do restaurante.
+const ROTAS_CLIENTE_PEDIDO = /^\/api\/v1\/pedidos\/(publico|cliente)\//
+
+// Rotas públicas da mesa (QR Code). O convidado não tem token; o cliente logado manda o dele só
+// para o pedido ficar ligado à conta (token inválido/expirado vira convidado, nunca erro).
+const ROTAS_MESA_PUBLICA = /^\/api\/v1\/mesas\/qrcode\//
+
 export function buildApp(): FastifyInstance {
   const app = Fastify({
 
@@ -112,6 +120,9 @@ app.register(fastifySwaggerUi, {
 
       // Rotas públicas de leitura (cardápio por slug) também servem o cliente logado
       if (request.method === 'GET' && ROTAS_PUBLICAS_GET.test(request.url)) return
+
+      // Cliente pedindo no delivery / vendo o próprio histórico, e pedido da mesa pelo QR Code
+      if (ROTAS_CLIENTE_PEDIDO.test(request.url) || ROTAS_MESA_PUBLICA.test(request.url)) return
 
       // Cliente reservando (a própria rota confere se o perfil é CLIENTE)
       if (

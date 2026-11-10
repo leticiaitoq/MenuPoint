@@ -6,6 +6,7 @@ import ChamarGarcom from '../../../shared/components/ChamarGarcom/Chamargarcom';
 import FecharConta from '../../../shared/components/FecharConta/FecharConta';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
+import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
 import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/ingredientes';
 import RestaurantePublicoService from '../../../services/restaurantePublico.service';
 import MesaPublicaService from '../../../services/mesaPublica.service';
@@ -51,6 +52,8 @@ const MenuLocal: React.FC = () => {
   const navigate = useNavigate();
   const { itens: itensCarrinho, removerItem, limparCarrinho } = useCarrinho();
   const { mesa, nome: nomeConvidado, mesaToken, estabelecimentoId } = useConvidado();
+  // Logado na mesa: o pedido leva o nome da conta e (no backend) fica ligado a ela → histórico fixo
+  const { cliente } = useClienteAuth();
   const [busca, setBusca]                     = useState('');
   const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
   const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
@@ -179,7 +182,7 @@ const MenuLocal: React.FC = () => {
     setErroEnvio('');
     try {
       await MesaPublicaService.criarPedido(mesaToken, {
-        cliente_nome: nomeConvidado?.trim() || 'Cliente da mesa',
+        cliente_nome: (cliente?.nome || nomeConvidado)?.trim() || 'Cliente da mesa',
         itens: itensCarrinho.map((i) => ({
           produto_id: i.produtoId as string,
           quantidade: i.quantidade,

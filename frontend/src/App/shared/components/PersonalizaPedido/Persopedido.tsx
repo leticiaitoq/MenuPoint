@@ -4,6 +4,7 @@ import { HiLockClosed } from 'react-icons/hi';
 import CustomerLayout from '../layout/Customerlayout';
 import { ItemCarrinho } from '../Carrinho/Carrinho';
 import { useCarrinho } from '../../contexts/CarrinhoContext';
+import { useSistemaCliente } from '../../contexts/SistemaClienteContext';
 import ContadorCaracteres from '../ContadorCaracteres/ContadorCaracteres';
 import QuantidadeStepper from '../QuantidadeStepper/QuantidadeStepper';
 import {
@@ -50,6 +51,7 @@ const PersoPedido: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { adicionarItem } = useCarrinho();
+  const { sistema } = useSistemaCliente();
 
   /**
    * Produto e modo do cliente vêm pelo state da navegação (o card do Menu
@@ -57,7 +59,8 @@ const PersoPedido: React.FC = () => {
    */
   const state = location.state as PersoPedidoRouteState | null;
   const produto = state?.produto;
-  const modoLayout = state?.modoCliente ?? 'guest';
+  // O modo vem do SISTEMA em que a aba entrou (mesa ou link do restaurante), não de quem navegou
+  const modoLayout: 'guest' | 'logged' = sistema === 'delivery' ? 'logged' : sistema === 'local' ? 'guest' : state?.modoCliente ?? 'guest';
   const ingredientes = produto?.ingredientes ?? [];
 
   // Quantidade escolhida de cada ingrediente; começa na quantidade que já vem inclusa

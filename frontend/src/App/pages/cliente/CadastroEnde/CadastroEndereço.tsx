@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { HiHome, HiOfficeBuilding, HiCheckCircle } from 'react-icons/hi';
 import { MdDiamond } from 'react-icons/md';
 import { FiPhone, FiPlus } from 'react-icons/fi';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
+import PagamentoDelivery, { itensParaPedido } from '../../../shared/components/PagamentoDelivery/PagamentoDelivery';
+import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
+import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
+import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
+import PedidoClienteService, { FormaPagamentoDelivery } from '../../../services/pedidoCliente.service';
+import { mensagemDeErro } from '../../../services/cliente.service';
 import './CadastroEndereço.css';
 
 // 
@@ -52,39 +59,21 @@ const FORM_VAZIO: Omit<Endereco, 'id'> = {
   principal: false,
 };
 
-// ── Dados mockados — futuramente via API ───────────────
-const ENDERECOS_MOCK: Endereco[] = [
-  {
-    id: 'end-1',
-    tipo: 'Casa',
-    cep: '15900-000',
-    rua: 'Avenida Paulo Roberto',
-    numero: '245',
-    complemento: '',
-    bairro: 'Centro',
-    cidade: 'Taquaritinga',
-    estado: 'SP',
-    referencia: 'Próximo ao mercado',
-    telefone: '(16) 99999-9999',
-    principal: true,
-  },
-  {
-    id: 'end-2',
-    tipo: 'Trabalho',
-    cep: '15900-100',
-    rua: 'Rua XV de Novembro',
-    numero: '1000',
-    complemento: '10º andar, Centro',
-    bairro: 'Centro',
-    cidade: 'Taquaritinga',
-    estado: 'SP',
-    referencia: '',
-    telefone: '(16) 99999-9999',
-    principal: false,
-  },
-];
+// ── Endereços salvos ────────────────────────────────────
+// Ainda não existe tabela de endereços no backend: ficam guardados neste aparelho, por conta
+// (localStorage). O pedido sempre leva o endereço escolhido junto, então o restaurante recebe tudo.
+const chaveEnderecos = (clienteId?: string) => `@menupoint:enderecos:${clienteId ?? 'anonimo'}`;
 
-const TELEFONES_MOCK: string[] = ['(16) 99999-9999'];
+const lerEnderecos = (clienteId?: string): Endereco[] => {
+  try {
+    const bruto = localStorage.getItem(chaveEnderecos(clienteId));
+    return bruto ? (JSON.parse(bruto) as Endereco[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const CEP_VALIDO = /^\d{5}-?\d{3}$/;
 
 // 
 // Helpers
@@ -175,13 +164,35 @@ const PainelLateral: React.FC<PainelLateralProps> = ({
 
 const CadastroEndereco: React.FC = () => {
   // ── Estado geral
-  const [enderecos, setEnderecos]   = useState<Endereco[]>(ENDERECOS_MOCK);
-  const [telefones, setTelefones]   = useState<string[]>(TELEFONES_MOCK);
-  const [modo, setModo]             = useState<Modo>('selecionar');
+  const navigate = useNavigate();
+  const { cliente } = useClienteAuth();
+  const { slug, restaurante } = useRestauranteCliente();
+  const { itens, limparCarrinho } = useCarrinho();
+
+  const [enderecos, setEnderecos]   = useState<Endereco[]>(() => lerEnderecos(cliente?.id));
+  const [telefones, setTelefones]   = useState<string[]>(() => (cliente?.telefone ? [cliente.telefone] : []));
+  // Sem endereço salvo, já abre o cadastro
+  const [modo, setModo]             = useState<Modo>(() => (lerEnderecos(cliente?.id).length ? 'selecionar' : 'cadastrar'));
   const [showSucesso, setShowSucesso] = useState(false);
-  const [enderecoSelecionadoId, setEnderecoSelecionadoId] = useState<string | null>(
-    ENDERECOS_MOCK.find((e) => e.principal)?.id ?? null
-  );
+  const [enderecoSelecionadoId, setEnderecoSelecionadoId] = useState<string | null>(() => {
+    const salvos = lerEnderecos(cliente?.id);
+    return (salvos.find((e) => e.principal) ?? salvos[0])?.id ?? null;
+  });
+  const [forma, setForma]           = useState<FormaPagamentoDelivery>('PIX_PRESENCIAL');
+  const [enviando, setEnviando]     = useState(false);
+  const [erroPedido, setErroPedido] = useState('');
+  const [numeroPedido, setNumeroPedido] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(chaveEnderecos(cliente?.id), JSON.stringify(enderecos));
+    } catch {
+      /* storage indisponível: segue só em memória */
+    }
+  }, [enderecos, cliente?.id]);
+
+  const subtotal = itens.reduce((acc, i) => acc + i.preco * i.quantidade, 0);
+  const taxa = Number(restaurante?.taxa_entrega ?? 0);
 
   // ── Estado do formulário de novo endereço
   const [form, setForm]               = useState({ ...FORM_VAZIO });
@@ -219,9 +230,12 @@ const CadastroEndereco: React.FC = () => {
    * Futuramente: POST /enderecos com o payload do form.
    */
   const handleSalvarEndereco = () => {
-    if (!form.rua || !form.numero || !form.cidade) return;
+    if (!form.rua || !form.numero || !form.cidade || !form.bairro) { setErroPedido('Preencha rua, número, bairro e cidade.'); return; }
+    if (!CEP_VALIDO.test(form.cep)) { setErroPedido('Informe um CEP válido (00000-000).'); return; }
+    if (form.estado.length !== 2) { setErroPedido('Informe o estado com 2 letras (ex.: SP).'); return; }
+    setErroPedido('');
     const novo: Endereco = { ...form, id: `end-${Date.now()}` };
-    setEnderecos((prev) => [...prev, novo]);
+    setEnderecos((prev) => [...prev.map((e) => (form.principal ? { ...e, principal: false } : e)), novo]);
     setEnderecoSelecionadoId(novo.id);
     setForm({ ...FORM_VAZIO });
     setModo('selecionar');
@@ -231,14 +245,45 @@ const CadastroEndereco: React.FC = () => {
    * Confirma entrega com o endereço selecionado e abre modal de sucesso.
    * Futuramente: POST /pedidos com { enderecoId: enderecoSelecionadoId }.
    */
-  const handleConfirmar = () => {
-    if (!enderecoSelecionadoId) return;
-    setShowSucesso(true);
+  const handleConfirmar = async () => {
+    if (!enderecoConfirmado || enviando) return;
+    if (!slug) { setErroPedido('Abra o link do restaurante para pedir.'); return; }
+    if (itens.length === 0) { setErroPedido('Seu carrinho está vazio. Escolha algo no cardápio.'); return; }
+    if (itens.some((i) => !i.produtoId)) { limparCarrinho(); setErroPedido('Seu carrinho estava desatualizado. Adicione os itens novamente.'); return; }
+
+    setErroPedido('');
+    setEnviando(true);
+    try {
+      const pedido = await PedidoClienteService.criarDelivery(slug, {
+        modalidade: 'ENTREGA',
+        cliente_nome: cliente?.nome ?? '',
+        cliente_telefone: enderecoConfirmado.telefone || cliente?.telefone || telefones[0] || '',
+        forma_pagamento: forma,
+        endereco_entrega: {
+          rua: enderecoConfirmado.rua,
+          numero: enderecoConfirmado.numero,
+          ...(enderecoConfirmado.complemento ? { complemento: enderecoConfirmado.complemento } : {}),
+          bairro: enderecoConfirmado.bairro,
+          cidade: enderecoConfirmado.cidade,
+          estado: enderecoConfirmado.estado,
+          cep: enderecoConfirmado.cep,
+          ...(enderecoConfirmado.referencia ? { referencia: enderecoConfirmado.referencia } : {}),
+        },
+        itens: itensParaPedido(itens),
+      });
+      limparCarrinho();
+      setNumeroPedido(pedido.numero_pedido);
+      setShowSucesso(true);
+    } catch (err) {
+      setErroPedido(mensagemDeErro(err, 'Não foi possível enviar o pedido. Tente novamente.'));
+    } finally {
+      setEnviando(false);
+    }
   };
 
   const handleFecharSucesso = () => {
     setShowSucesso(false);
-    // Futuramente: navigate('/customer/orders')
+    navigate('/historico');
   };
 
   // ── Render
@@ -285,13 +330,16 @@ const CadastroEndereco: React.FC = () => {
                 <FiPlus /> Novo endereço
               </button>
 
+              <PagamentoDelivery forma={forma} onChange={setForma} momento="na entrega" subtotal={subtotal} taxa={taxa} />
+              {erroPedido && <p style={{ color: 'red', fontSize: 14 }}>{erroPedido}</p>}
+
               <div className="cad-end__acoes cad-end__acoes--direita">
                 <button
                   className="cad-end__btn-salvar"
                   onClick={handleConfirmar}
-                  disabled={!enderecoSelecionadoId}
+                  disabled={!enderecoSelecionadoId || enviando}
                 >
-                  Confirmar entrega
+                  {enviando ? 'Enviando...' : 'Confirmar entrega'}
                 </button>
               </div>
             </div>
@@ -425,6 +473,8 @@ const CadastroEndereco: React.FC = () => {
                 </div>
               </div>
 
+              {erroPedido && <p style={{ color: 'red', fontSize: 14 }}>{erroPedido}</p>}
+
               {/* Toggle + ações */}
               <div className="cad-end__rodape">
                 <label className="cad-end__toggle">
@@ -460,7 +510,7 @@ const CadastroEndereco: React.FC = () => {
         <div className="cad-end__overlay" onClick={handleFecharSucesso}>
           <div className="cad-end__modal-sucesso" onClick={(e) => e.stopPropagation()}>
             <HiCheckCircle className="cad-end__sucesso-icone" />
-            <h2 className="cad-end__sucesso-titulo">Pedido confirmado!</h2>
+            <h2 className="cad-end__sucesso-titulo">Pedido {numeroPedido ? `#${numeroPedido} ` : ''}confirmado!</h2>
             <p className="cad-end__sucesso-texto">Seu pedido será entregue em:</p>
             <div className="cad-end__sucesso-endereco">
               <span className="cad-end__sucesso-tipo">

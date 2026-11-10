@@ -1,6 +1,9 @@
 import React, { useState, useRef } from 'react';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
+import { useNavigate } from 'react-router-dom';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
+import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
+import { FOTO_PADRAO_CLIENTE } from '../../../services/cliente.service';
 import './PerfilLocal.css';
 
 // ── Tipos
@@ -29,12 +32,26 @@ const formatarTelefone = (valor: string): string => {
 
 const PerfilLocal: React.FC = () => {
   const fotoRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   const { nome: nomeConvidado, mesa, definirConvidado } = useConvidado();
+  // Conta logada (a mesma do delivery): aqui o cliente só vê os dados dela e pode sair.
+  // Editar a conta (nome, telefone, endereços) é no perfil do delivery, que o cliente da mesa não acessa.
+  const { cliente: conta, isAuthenticated, sair } = useClienteAuth();
 
   const [cliente, setCliente]       = useState<Cliente>({
     ...CLIENTE_MOCK,
-    nome: nomeConvidado || 'Convidado',
+    nome: conta?.nome || nomeConvidado || 'Convidado',
+    telefone: conta?.telefone ?? '',
+    email: conta?.email ?? CLIENTE_MOCK.email,
+    foto: conta?.foto_url || FOTO_PADRAO_CLIENTE,
   });
+
+  // Sair da conta NÃO tira o cliente da mesa: ele continua como convidado no cardápio da mesa
+  const handleSair = () => {
+    sair();
+    definirConvidado({ nome: '', mesa });
+    navigate('/welcomepage', { replace: true });
+  };
   const [editando, setEditando]     = useState(false);
   const [temaEscuro, setTemaEscuro] = useState(false);
 
@@ -142,9 +159,15 @@ const PerfilLocal: React.FC = () => {
                     </label>
                   </div>
 
-                  <button className="perfil__btn-editar" onClick={() => setEditando(true)}>
-                    EDITAR
-                  </button>
+                  {isAuthenticated ? (
+                    <button className="perfil__btn-editar" onClick={handleSair}>
+                      SAIR DA CONTA
+                    </button>
+                  ) : (
+                    <button className="perfil__btn-editar" onClick={() => setEditando(true)}>
+                      EDITAR
+                    </button>
+                  )}
                 </>
               )}
             </div>

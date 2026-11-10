@@ -416,10 +416,10 @@ model Pagamento {
   @@map("pagamentos")
 }
 
-// ------------------------------------------------------------
+// 
 // Pagamentos PARCIAIS da mesa (Caixa): pagar só alguns itens ou abater um valor da conta.
 // Ficam "abertos" (liquidado_em = null) até a conta da mesa ser fechada; aí são liquidados.
-// ------------------------------------------------------------
+// 
 
 model PagamentoMesa {
   id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid

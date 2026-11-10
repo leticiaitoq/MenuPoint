@@ -1,6 +1,6 @@
 import { AppError } from '@shared/errors/AppError'
 import { PedidoRepository } from './Pedido.repository'
-import { CriarPedidoDTO, AtualizarStatusPedidoDTO, AtualizarPedidoDTO } from './Pedido.schema'
+import { CriarPedidoDTO, AtualizarStatusPedidoDTO, AtualizarPedidoDTO, criarPedidoSchema } from './Pedido.schema'
 import prisma from '@config/prisma'
 import { enviarMensagemWhatsApp } from '@config/whatsapp'
 import { templateNovoPedido, templateStatusPedido } from '@shared/whatsapp/template'
@@ -13,6 +13,13 @@ import {
   r2,
 } from '@modules/pagamentos/conta'
 import { etapasAntesDe, proximaEtapa, statusDoPedido } from './itemStatus'
+import {
+  CriarPedidoDeliveryDTO,
+  MODALIDADES_POR_ORIGEM,
+  OrigemPedido,
+  montarItensPublicos,
+  origemDoPedido,
+} from './Pedido.publico'
 
 export class PedidoService {
   constructor(private readonly repository: PedidoRepository) {}
@@ -845,5 +852,142 @@ export class PedidoService {
   ) {
     await this.findById(id, estabelecimento_id)
     return this.repository.update(id, { atendido_por_id })
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // CLIENTE (conta logada) — delivery e histórico fixo
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Pedido de DELIVERY (entrega ou retirada) feito pelo cliente logado, pelo link do restaurante.
+   * Tudo que vale dinheiro vem do banco: preço dos produtos, taxa de entrega e pedido mínimo.
+   * O pedido nasce ligado à conta (cliente_id), então entra no histórico fixo do cliente.
+   */
+  async criarDeliveryDoCliente(slug: string, dados: CriarPedidoDeliveryDTO, cliente_id: string) {
+    const estabelecimento = await prisma.estabelecimento.findFirst({
+      where: { slug: slug.trim().toLowerCase(), ativo: true },
+      select: {
+        id: true,
+        nome: true,
+        aceita_entrega: true,
+        aceita_retirada: true,
+        taxa_entrega: true,
+        pedido_minimo: true,
+      },
+    })
+    if (!estabelecimento) throw new AppError('Restaurante não encontrado', 404)
+
+    if (dados.modalidade === 'ENTREGA' && !estabelecimento.aceita_entrega) {
+      throw new AppError(`${estabelecimento.nome} não está aceitando entregas no momento`, 400)
+    }
+    if (dados.modalidade === 'RETIRADA' && !estabelecimento.aceita_retirada) {
+      throw new AppError(`${estabelecimento.nome} não está aceitando retiradas no momento`, 400)
+    }
+
+    const conta = await prisma.cliente.findFirst({
+      where: { id: cliente_id, ativo: true },
+      select: { id: true },
+    })
+    if (!conta) throw new AppError('Conta de cliente não encontrada', 404)
+
+    const itens = await montarItensPublicos(estabelecimento.id, dados.itens)
+
+    // Pedido mínimo: confere com os preços do banco (o front só mostra o aviso)
+    const minimo = Number(estabelecimento.pedido_minimo)
+    if (minimo > 0) {
+      const produtos = await prisma.produto.findMany({
+        where: { id: { in: itens.map((i) => i.produto_id) }, estabelecimento_id: estabelecimento.id },
+        select: { id: true, preco: true, preco_promocional: true },
+      })
+      const precoPorId = new Map(produtos.map((p) => [p.id, Number(p.preco_promocional ?? p.preco)]))
+      const subtotal = itens.reduce((acc, i) => {
+        const extras = i.itens_adicionais.reduce((s, a) => s + a.preco_extra, 0)
+        return acc + ((precoPorId.get(i.produto_id) ?? 0) + extras) * i.quantidade
+      }, 0)
+      if (subtotal < minimo) {
+        throw new AppError(
+          `O pedido mínimo deste restaurante é R$ ${minimo.toFixed(2).replace('.', ',')}`,
+          400
+        )
+      }
+    }
+
+    const dto = criarPedidoSchema.parse({
+      modalidade: dados.modalidade,
+      cliente_id,
+      cliente_nome: dados.cliente_nome,
+      cliente_telefone: dados.cliente_telefone,
+      ...(dados.modalidade === 'ENTREGA' && dados.endereco_entrega
+        ? { endereco_entrega: dados.endereco_entrega }
+        : {}),
+      ...(dados.observacoes ? { observacoes: dados.observacoes } : {}),
+      // Taxa só existe na entrega e sempre é a do cadastro do restaurante
+      taxa_entrega: dados.modalidade === 'ENTREGA' ? Number(estabelecimento.taxa_entrega) : 0,
+      forma_pagamento: dados.forma_pagamento,
+      ...(dados.troco_para !== undefined && dados.forma_pagamento === 'DINHEIRO'
+        ? { troco_para: dados.troco_para }
+        : {}),
+      itens,
+    })
+
+    const pedido = await this.criar(dto, estabelecimento.id)
+
+    return {
+      id: pedido.id,
+      numero_pedido: pedido.numero_pedido,
+      status: pedido.status,
+      modalidade: pedido.modalidade,
+      total: pedido.total,
+    }
+  }
+
+  /**
+   * Histórico FIXO do cliente logado: todos os pedidos ligados à conta, dos dois sistemas
+   * (mesa/QR Code e delivery) juntos. Não some quando a conta da mesa é fechada.
+   * `origem` separa os dois (LOCAL = restaurante, DELIVERY = link do restaurante).
+   */
+  async historicoDoCliente(
+    cliente_id: string,
+    filtros: { origem?: OrigemPedido; slug?: string } = {}
+  ) {
+    const pedidos = await prisma.pedido.findMany({
+      where: {
+        cliente_id,
+        ...(filtros.origem && { modalidade: { in: MODALIDADES_POR_ORIGEM[filtros.origem] } }),
+        ...(filtros.slug && { estabelecimento: { slug: filtros.slug.trim().toLowerCase() } }),
+      },
+      orderBy: { criado_em: 'desc' },
+      take: 200,
+      select: {
+        id: true,
+        numero_pedido: true,
+        modalidade: true,
+        status: true,
+        criado_em: true,
+        entregue_em: true,
+        subtotal: true,
+        taxa_entrega: true,
+        desconto: true,
+        total: true,
+        forma_pagamento: true,
+        endereco_entrega: true,
+        cancelamento_motivo: true,
+        mesa: { select: { numero: true } },
+        estabelecimento: { select: { nome: true, slug: true, logo_url: true } },
+        itens: {
+          select: {
+            id: true,
+            quantidade: true,
+            preco_unitario: true,
+            preco_total: true,
+            observacoes: true,
+            itens_adicionais: { select: { preco_extra: true } },
+            produto: { select: { nome: true, imagem_url: true } },
+          },
+        },
+      },
+    })
+
+    return pedidos.map((p) => ({ ...p, origem: origemDoPedido(p.modalidade) }))
   }
 }

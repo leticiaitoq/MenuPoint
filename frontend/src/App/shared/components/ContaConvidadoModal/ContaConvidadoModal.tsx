@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiX } from 'react-icons/hi';
-import { ROTA_APOS_LOGIN_CLIENTE } from '../../contexts/ClienteAuthContext';
+import { ROTA_INICIAL_SISTEMA } from '../../contexts/SistemaClienteContext';
 import './ContaConvidadoModal.css';
 
 interface Props {
@@ -14,8 +14,8 @@ interface Props {
 /**
  * Convidado (QR Code da mesa) não tem perfil: aqui ele escolhe entrar numa conta,
  * criar uma, ou seguir como convidado. A mesa fica guardada no ConvidadoContext, então
- * depois do login/cadastro ele continua vinculado à mesa, já com as telas de cliente
- * cadastrado (dwelcome, cardápio, reservas, histórico, perfil...).
+ * depois do login/cadastro ele continua na mesa, no cardápio da mesa (/menulocal) — com
+ * perfil e histórico fixo, mas SEM acesso ao sistema de delivery.
  */
 const ContaConvidadoModal: React.FC<Props> = ({ aberto, mesa, onFechar }) => {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ const ContaConvidadoModal: React.FC<Props> = ({ aberto, mesa, onFechar }) => {
 
   const ir = (rota: string) => {
     onFechar();
-    navigate(rota, { state: { from: ROTA_APOS_LOGIN_CLIENTE } });
+    navigate(rota, { state: { from: ROTA_INICIAL_SISTEMA.local } });
   };
 
   return (

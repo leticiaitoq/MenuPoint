@@ -4,7 +4,8 @@ import { MdEmail } from 'react-icons/md';
 import { HiCheckCircle } from 'react-icons/hi';
 import AuthCard from '../auth/AuthCard';
 import ClienteService, { mensagemDeErro } from '../../services/cliente.service';
-import { useClienteAuth, ROTA_APOS_LOGIN_CLIENTE } from '../../shared/contexts/ClienteAuthContext';
+import { useClienteAuth } from '../../shared/contexts/ClienteAuthContext';
+import { useSistemaCliente, destinoDoSistema } from '../../shared/contexts/SistemaClienteContext';
 import './VerifyCodeCliente.css';
 
 interface LocationStateCliente {
@@ -18,6 +19,7 @@ const VerifyCodeCliente: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { entrar } = useClienteAuth();
+  const { sistema } = useSistemaCliente();
   const stateCliente = (location.state as LocationStateCliente) || {};
 
   const emailCliente = stateCliente.email ?? '';
@@ -45,9 +47,10 @@ const VerifyCodeCliente: React.FC = () => {
   /* ── Toast de sucesso: mostra a confirmação e só navega depois de um tempinho ── */
   useEffect(() => {
     if (!showSucesso) return;
-    const timer = setTimeout(() => navigate(ROTA_APOS_LOGIN_CLIENTE, { replace: true }), 1800);
+    // Cadastro confirmado: continua no sistema de onde a pessoa veio (mesa ou delivery)
+    const timer = setTimeout(() => navigate(destinoDoSistema(sistema), { replace: true }), 1800);
     return () => clearTimeout(timer);
-  }, [showSucesso, navigate]);
+  }, [showSucesso, navigate, sistema]);
 
   /* ── Foca no primeiro campo ao montar ── */
   useEffect(() => {

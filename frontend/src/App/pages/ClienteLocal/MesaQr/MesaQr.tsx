@@ -2,31 +2,39 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import MesaPublicaService from '../../../services/mesaPublica.service';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
-import { useClienteAuth, ROTA_APOS_LOGIN_CLIENTE } from '../../../shared/contexts/ClienteAuthContext';
-import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
+import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
+import { useSistemaCliente, ROTA_INICIAL_SISTEMA } from '../../../shared/contexts/SistemaClienteContext';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
 import './MesaQr.css';
 
 /**
  * Destino do link/QR Code da mesa: /mesa/:token
  *
- * Descobre a qual mesa (e a qual restaurante) o token pertence, guarda isso na
- * sessão do cliente local e manda direto para a WelcomePage — que já mostra a
- * mesa certa. Se o token for inválido, a mesa estiver inativa ou o restaurante
- * não aceitar pedidos em mesa, mostra o motivo.
+ * É a ÚNICA porta de entrada do sistema LOCAL (cliente dentro do restaurante).
+ * Descobre a qual mesa (e a qual restaurante) o token pertence, marca esta aba como "local"
+ * e guarda a mesa na sessão do convidado.
+ *
+ *  - Sem login  → /welcomepage (digita o nome)
+ *  - Com login  → direto para o cardápio da mesa (/menulocal). NUNCA vai para o delivery:
+ *                 a conta é a mesma, mas o sistema é outro.
+ *
+ * Esta tela NÃO grava o restaurante do delivery (RestauranteClienteContext): é isso que
+ * impediria o cliente da mesa de abrir as telas de delivery.
+ * Se o token for inválido, a mesa estiver inativa ou o restaurante não aceitar pedidos em
+ * mesa, mostra o motivo.
  */
 const MesaQr: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { definirConvidado } = useConvidado();
-  const { isAuthenticated, cliente, sair } = useClienteAuth();
-  const { slug: slugAtual, selecionar } = useRestauranteCliente();
+  const { isAuthenticated, cliente } = useClienteAuth();
+  const { entrarNoLocal } = useSistemaCliente();
   const { limparCarrinho } = useCarrinho();
+  const { estabelecimentoId: restauranteAnteriorId } = useConvidado();
 
-  // Lidos pelo efeito sem entrar nas dependências (sair() muda isAuthenticated e
-  // refaria a busca da mesa)
-  const contexto = useRef({ isAuthenticated, cliente, sair, slugAtual, selecionar, limparCarrinho });
-  contexto.current = { isAuthenticated, cliente, sair, slugAtual, selecionar, limparCarrinho };
+  // Lidos pelo efeito sem entrar nas dependências (não refazer a busca da mesa a cada mudança)
+  const contexto = useRef({ isAuthenticated, cliente, entrarNoLocal, limparCarrinho, restauranteAnteriorId });
+  contexto.current = { isAuthenticated, cliente, entrarNoLocal, limparCarrinho, restauranteAnteriorId };
 
   const [erro, setErro] = useState<string | null>(null);
   const [tentativa, setTentativa] = useState(0);
@@ -44,35 +52,29 @@ const MesaQr: React.FC = () => {
       .then((mesa) => {
         if (cancelado) return;
         const ctx = contexto.current;
-        const slugDaMesa = mesa.estabelecimento?.slug?.trim().toLowerCase();
+        // Mesa de OUTRO restaurante: o carrinho do anterior não vai junto
+        const trocouDeRestaurante =
+          Boolean(ctx.restauranteAnteriorId) && ctx.restauranteAnteriorId !== mesa.estabelecimento?.id;
+        if (trocouDeRestaurante) ctx.limparCarrinho();
 
-        // Mesmo critério do link /r/:slug: o login do cliente vale para um restaurante só.
-        // Escaneou a mesa de OUTRO restaurante → encerra a sessão e limpa o carrinho.
-        const trocouDeRestaurante = Boolean(ctx.slugAtual) && Boolean(slugDaMesa) && ctx.slugAtual !== slugDaMesa;
-        if (trocouDeRestaurante) {
-          ctx.limparCarrinho();
-          if (ctx.isAuthenticated) ctx.sair();
-        }
-        const continuaLogado = ctx.isAuthenticated && !trocouDeRestaurante;
-
-        // Guarda o restaurante da mesa: é o que libera as telas de cliente cadastrado
-        // (dwelcome, cardápio, reservas...) depois do login/cadastro
-        if (slugDaMesa) ctx.selecionar(slugDaMesa);
+        // Esta aba passa a ser do sistema LOCAL (mesa). O delivery fica intocado.
+        ctx.entrarNoLocal();
 
         // Sem nome digitado: quem escaneia agora não herda o nome de outro cliente.
         // Já logado → o nome é o da conta.
         definirConvidado({
-          nome: continuaLogado ? ctx.cliente?.nome ?? '' : '',
+          nome: ctx.isAuthenticated ? ctx.cliente?.nome ?? '' : '',
           mesa: String(mesa.numero).padStart(2, '0'),
           mesaId: mesa.id,
           mesaToken: token,
           estabelecimentoId: mesa.estabelecimento?.id,
+          restauranteSlug: mesa.estabelecimento?.slug?.trim().toLowerCase(),
           restauranteNome: mesa.estabelecimento?.nome,
           restauranteLogo: mesa.estabelecimento?.logo_url ?? null,
         });
 
-        // Cliente já logado pula a tela de convidado e vai direto para a dwelcome, na mesa
-        navigate(continuaLogado ? ROTA_APOS_LOGIN_CLIENTE : '/welcomepage', { replace: true });
+        // Logado pula a tela de convidado e vai direto ao cardápio DA MESA (nunca ao delivery)
+        navigate(ctx.isAuthenticated ? ROTA_INICIAL_SISTEMA.local : '/welcomepage', { replace: true });
       })
       .catch((err: any) => {
         if (cancelado) return;

@@ -4,13 +4,17 @@ import { MdEmail } from 'react-icons/md';
 import { HiEye, HiEyeOff, HiCheckCircle } from 'react-icons/hi';
 import AuthCard from '../auth/AuthCard';
 import ClienteService, { mensagemDeErro } from '../../services/cliente.service';
-import { useClienteAuth, ROTA_APOS_LOGIN_CLIENTE } from '../../shared/contexts/ClienteAuthContext';
+import { useClienteAuth } from '../../shared/contexts/ClienteAuthContext';
+import { useSistemaCliente, destinoDoSistema } from '../../shared/contexts/SistemaClienteContext';
 import './LoginCliente.css';
 
 const LoginCliente: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { entrar, isAuthenticated } = useClienteAuth();
+  // Mesma conta nos dois sistemas, mas o login NUNCA troca a pessoa de sistema:
+  // quem veio da mesa volta para a mesa, quem veio do link do restaurante volta para o delivery.
+  const { sistema } = useSistemaCliente();
 
   const [emailCliente, setEmailCliente] = useState('');
   const [senhaCliente, setSenhaCliente] = useState('');
@@ -27,12 +31,12 @@ const LoginCliente: React.FC = () => {
   useEffect(() => {
     if (!showSucesso) return;
     const timer = setTimeout(() => {
-      // Se foi barrado numa tela protegida, volta para ela; senão vai para a dwelcome
+      // Volta para a tela de onde veio, se ela for do MESMO sistema; senão, para a primeira tela dele
       const destino = (location.state as { from?: string } | null)?.from;
-      navigate(destino ?? ROTA_APOS_LOGIN_CLIENTE, { replace: true });
+      navigate(destinoDoSistema(sistema, destino), { replace: true });
     }, 1200);
     return () => clearTimeout(timer);
-  }, [showSucesso, navigate, location.state]);
+  }, [showSucesso, navigate, location.state, sistema]);
 
   const handleSubmitCliente = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +73,7 @@ const LoginCliente: React.FC = () => {
 
   // Já está logado: não precisa ver a tela de login (exceto durante o toast de sucesso)
   if (isAuthenticated && !showSucesso) {
-    return <Navigate to={ROTA_APOS_LOGIN_CLIENTE} replace />;
+    return <Navigate to={destinoDoSistema(sistema)} replace />;
   }
 
   return (

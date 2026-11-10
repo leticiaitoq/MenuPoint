@@ -4,9 +4,12 @@ import { useClienteAuth, ROTA_APOS_LOGIN_CLIENTE } from '../../../shared/context
 import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext'
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext'
 import { useConvidado } from '../../../shared/contexts/Convidadocontext'
+import { useSistemaCliente } from '../../../shared/contexts/SistemaClienteContext'
 
 /**
- * Entrada pelo link do restaurante: /r/:slug
+ * Entrada pelo link do restaurante: /r/:slug — a ÚNICA porta do sistema DELIVERY.
+ *  0. marca esta aba como "delivery" e descarta qualquer mesa (QR Code) que estivesse guardada:
+ *     o cliente de fora do restaurante nunca carrega a sessão de quem está na mesa
  *  1. valida o slug na API e guarda o restaurante escolhido
  *  2. logado → /dwelcome | não logado → /login/cliente (e volta para /dwelcome)
  *
@@ -21,6 +24,7 @@ const RestauranteLink: React.FC = () => {
   const { slug, restaurante, erro, selecionar } = useRestauranteCliente()
   const { limparCarrinho } = useCarrinho()
   const { limparConvidado } = useConvidado()
+  const { entrarNoDelivery } = useSistemaCliente()
 
   const slugNormalizado = slugDaUrl.trim().toLowerCase()
   const slugAnterior = useRef(slug)
@@ -35,12 +39,14 @@ const RestauranteLink: React.FC = () => {
   useEffect(() => {
     if (!slugNormalizado) return
 
+    // Delivery não herda a mesa do sistema local
+    entrarNoDelivery()
+    limparConvidado()
+
     const trocouDeRestaurante = Boolean(slugAnterior.current) && slugAnterior.current !== slugNormalizado
     if (trocouDeRestaurante) {
       // O carrinho do restaurante anterior não pode ir junto...
       limparCarrinho()
-      // ...a mesa (QR Code) do restaurante anterior também não vale mais aqui...
-      limparConvidado()
       // ...e o cliente precisa entrar de novo neste restaurante
       if (sessao.current.isAuthenticated) {
         encerrouPorTroca.current = true
@@ -50,7 +56,7 @@ const RestauranteLink: React.FC = () => {
 
     slugAnterior.current = slugNormalizado
     selecionar(slugNormalizado)
-  }, [slugNormalizado, selecionar, limparCarrinho, limparConvidado])
+  }, [slugNormalizado, selecionar, limparCarrinho, limparConvidado, entrarNoDelivery])
 
   const pronto = restaurante?.slug === slugNormalizado && restaurante.aceita_entrega
 

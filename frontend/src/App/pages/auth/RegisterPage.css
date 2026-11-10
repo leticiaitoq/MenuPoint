@@ -12,9 +12,7 @@
   font-display: swap;
 }
 
-/* --------------------------------------------------------------
-   Página + cartão
--------------------------------------------------------------- */
+/*   Página + cartão */
 .register-page {
   --rp-red: #a91e22;
   --rp-red-dark: #8c171b;
@@ -48,10 +46,8 @@
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
 
-/* --------------------------------------------------------------
-   Marca — MOBILE: cabeçalho vermelho no topo (mesmo estilo do AuthCard antigo)
-   Desktop: vira a lateral (ver bloco @media (min-width: 769px))
--------------------------------------------------------------- */
+/*    Marca — MOBILE: cabeçalho vermelho no topo (mesmo estilo do AuthCard antigo)
+   Desktop: vira a lateral (ver bloco @media (min-width: 769px)) */
 .register-page__brand {
   position: relative;
   display: flex;
@@ -99,9 +95,7 @@
   display: none;
 }
 
-/* --------------------------------------------------------------
-   Conteúdo
--------------------------------------------------------------- */
+/*    Conteúdo */
 .register-page__content {
   flex: 1;
   min-width: 0;
@@ -234,11 +228,9 @@ button.register-page__step-dot.is-done:hover {
   margin-top: 1px;
 }
 
-/* --------------------------------------------------------------
-   Formulário (grade de 12 colunas)
+/*    Formulário (grade de 12 colunas)
    Cada campo define --span-d (desktop), --span-m (mobile) e,
-   opcionalmente, --span-xs (telas ≤ 480px) via inline style.
--------------------------------------------------------------- */
+   opcionalmente, --span-xs (telas ≤ 480px) via inline style. */
 .register-page__form {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -404,9 +396,7 @@ input[type='password']::-webkit-textfield-decoration-container {
   to { transform: rotate(360deg); }
 }
 
-/* --------------------------------------------------------------
-   Dica de senha + termos
--------------------------------------------------------------- */
+/*  Dica de senha + termos */
 .register-page__hint {
   grid-column: 1 / -1;
   display: flex;
@@ -527,9 +517,7 @@ input[type='password']::-webkit-textfield-decoration-container {
   text-decoration: underline;
 }
 
-/* --------------------------------------------------------------
-   Botões
--------------------------------------------------------------- */
+/* Botões */
 .register-page__actions {
   grid-column: 1 / -1;
   display: flex;
@@ -625,9 +613,7 @@ button.register-page__step-dot:focus-visible {
   outline-offset: 2px;
 }
 
-/* --------------------------------------------------------------
-   Modal de sucesso (mesmo modelo do WelcomePage)
--------------------------------------------------------------- */
+/*  Modal de sucesso (mesmo modelo do WelcomePage)  */
 .register-page__overlay {
   position: fixed;
   inset: 0;
@@ -691,11 +677,9 @@ button.register-page__step-dot:focus-visible {
   background: #8c171b;
 }
 
-/* --------------------------------------------------------------
-   Mobile ≥ 481px: mantém colunas lado a lado da grade
+/*    Mobile ≥ 481px: mantém colunas lado a lado da grade
    Telas muito estreitas (≤ 480px): campos marcados com --span-xs
-   passam a ocupar a linha inteira (ex.: Estado/Cidade, Bairro/Número, Senhas).
--------------------------------------------------------------- */
+   passam a ocupar a linha inteira (ex.: Estado/Cidade, Bairro/Número, Senhas). */
 @media (max-width: 480px) {
   .register-page__brand {
     padding: 24px 20px 20px;
@@ -715,9 +699,7 @@ button.register-page__step-dot:focus-visible {
   }
 }
 
-/* --------------------------------------------------------------
-   Tablet pequeno (421–768px): dá mais respiro ao conteúdo
--------------------------------------------------------------- */
+/* Tablet pequeno (421–768px): dá mais respiro ao conteúdo */
 @media (min-width: 560px) and (max-width: 768px) {
   .register-page {
     padding: 24px;
@@ -736,9 +718,7 @@ button.register-page__step-dot:focus-visible {
   }
 }
 
-/* --------------------------------------------------------------
-   DESKTOP (≥ 769px)
--------------------------------------------------------------- */
+/* DESKTOP (≥ 769px) */
 @media (min-width: 769px) {
   .register-page {
     padding: 32px 24px;
