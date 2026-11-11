@@ -22,6 +22,20 @@ export interface Pedido {
   modalidade: ModalidadePedido
   status: StatusPedido
   cliente_nome: string
+  /** Delivery: telefone e endereço que o cliente informou (pedido de mesa não tem) */
+  cliente_telefone?: string
+  endereco_entrega?: {
+    rua: string
+    numero: string
+    complemento?: string
+    bairro: string
+    cidade: string
+    estado: string
+    cep: string
+    referencia?: string
+  } | null
+  /** Preenchido quando o cliente pediu com a conta logada */
+  cliente_id?: string | null
   observacoes: string | null
   subtotal: number
   total: number
@@ -88,6 +102,15 @@ export interface ResultadoJuncao {
   unidos: number[]
   status: StatusPedido
 }
+
+/**
+ * De onde o pedido veio. Não existe coluna: é derivado da modalidade.
+ *   LOCAL    = MESA (salão / QR Code)
+ *   DELIVERY = ENTREGA ou RETIRADA (link do restaurante)
+ */
+export type OrigemPedido = 'LOCAL' | 'DELIVERY'
+export const origemDoPedido = (p: Pick<Pedido, 'modalidade'>): OrigemPedido =>
+  p.modalidade === 'MESA' ? 'LOCAL' : 'DELIVERY'
 
 export interface FiltrosPedido {
   status?: StatusPedido[]

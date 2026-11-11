@@ -7,6 +7,7 @@ import CustomerSidebar, { CustomerSidebarItem } from './Sidebar/CustomerSidebar'
 import { useClienteAuth } from '../../contexts/ClienteAuthContext';
 import { FOTO_PADRAO_CLIENTE } from '../../../services/cliente.service';
 import { useConvidado } from '../../contexts/Convidadocontext';
+import { useLoginObrigatorio } from '../../contexts/LoginObrigatorioContext';
 import ContaConvidadoModal from '../ContaConvidadoModal/ContaConvidadoModal';
 import './Customerlayout.css';
 
@@ -14,10 +15,11 @@ import './Customerlayout.css';
 interface CustomerLayoutProps {
   children: React.ReactNode;
   /**
-   * Define o modo do layout:
+   * Define o modo do layout (um por SISTEMA do cliente — ver SistemaClienteContext):
    * - 'welcome' → tela de entrada, só navbar e footer, sem sidebar
-   * - 'guest'   → cliente local (QR code), carrinho na navbar, sidebar reduzida
-   * - 'logged'  → cliente delivery logado, avatar na navbar, sidebar completa
+   * - 'guest'   → sistema LOCAL (QR code da mesa): convidado OU cliente logado na mesa.
+   *               Sidebar reduzida, tudo aponta para as telas da mesa (/menulocal, /historicolocal, /perfilLocal)
+   * - 'logged'  → sistema DELIVERY (link do restaurante): navegação livre (com ou sem conta), sidebar completa
    */
   mode?: 'welcome' | 'guest' | 'logged';
   cartCount?: number;
@@ -56,6 +58,7 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
 }) => {
   // ── cliente logado (nome na navbar)
   const { cliente, isAuthenticated } = useClienteAuth();
+  const { exigirLogin } = useLoginObrigatorio();
 
   // Nome digitado na WelcomePage (só existe no fluxo do cliente local)
   // e a mesa em que ele está (vem do QR Code; continua valendo depois de entrar na conta)
@@ -73,10 +76,13 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
     if (location.key !== 'default') navigate(-1);
     else navigate(mode === 'guest' ? '/menulocal' : '/menu', { replace: true });
   };
-  // Convidado não tem perfil: o ícone oferece entrar/criar conta. Logado vai para o perfil.
+  // Convidado não tem perfil: o ícone oferece entrar/criar conta.
+  // Logado vai para o perfil DO SEU SISTEMA: na mesa é o /perfilLocal, no delivery é o /perfil.
   const [mostrarConta, setMostrarConta] = useState(false);
   const handleClick = () => {
-    if (isAuthenticated) navigate('/perfil');
+    if (isAuthenticated) navigate(mode === 'guest' ? '/perfilLocal' : '/perfil');
+    // Delivery sem conta: o aviso de login leva ao perfil depois de entrar
+    else if (mode === 'logged') exigirLogin({ motivo: 'perfil', retorno: '/perfil' });
     else setMostrarConta(true);
   };
 
@@ -105,8 +111,8 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
     mode === 'guest'
       ? (nomeConvidado || primeiroNome || 'MenuPoint')
       : mode === 'logged' && primeiroNome
-        // Cliente logado que entrou pela mesa continua identificado com a mesa
-        ? `Olá, ${primeiroNome}${mesaConvidado ? ` · Mesa ${mesaConvidado}` : ''}`
+        // Delivery é fora do restaurante: não existe mesa aqui
+        ? `Olá, ${primeiroNome}`
         : '(Cliente)';
 
   const showSidebar = mode !== 'welcome';
@@ -117,16 +123,10 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
 
   // Overrides de rota só se aplicam no modo guest
   const routeOverrides = mode === 'guest' ? GUEST_ROUTE_OVERRIDES : undefined;
-  
-// Rota da tela inicial conforme o modo (o logo "MenuPoint" da navbar leva para ela)
-const homePath =
-  mode === 'guest' ? '/menulocal'
-  : mode === 'logged' ? '/dwelcome'
-  : undefined;
 
   return (
     <div className="customer-layout">
-     <Navbar subtitle={subtitle} rightIcon={rightIcon} leftIcon={leftIcon} mostrarTema homePath={homePath} />
+     <Navbar subtitle={subtitle} rightIcon={rightIcon} leftIcon={leftIcon} mostrarTema />
 
       <div className="customer-layout__body">
         {showSidebar && (
@@ -149,7 +149,7 @@ const homePath =
       <Footer />
 
       <ContaConvidadoModal
-        aberto={mostrarConta}
+        aberto={mostrarConta && mode === 'guest'}
         mesa={mesaConvidado || undefined}
         onFechar={() => setMostrarConta(false)}
       />

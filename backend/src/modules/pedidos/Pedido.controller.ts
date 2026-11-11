@@ -10,14 +10,81 @@ import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
 import { z } from 'zod'
 import { parsePeriodo } from '@shared/utils/periodo'
-import { criarPedidoClienteSchema } from './Pedido.cliente.schema'
-import { PedidoClienteService } from './Pedido.cliente'
+import { criarPedidoDeliverySchema } from './Pedido.publico'
 
 const repository = new PedidoRepository()
 const service = new PedidoService(repository)
 const pedidosCliente = new PedidoClienteService()
 
+/**
+ * Rotas do CLIENTE logado (token com perfil CLIENTE). Ficam em um plugin à parte para que o
+ * hook de login do restaurante (abaixo) não se aplique a elas, e vice-versa.
+ * O app.ts libera só /pedidos/cliente/* e /pedidos/publico/* para token de cliente.
+ */
+async function pedidosClienteRoutes(app: FastifyInstance): Promise<void> {
+  app.addHook('onRequest', async (request) => {
+    await request.jwtVerify()
+    const user = request.user as JWTPayload
+    if (user.perfil !== 'CLIENTE') {
+      throw new AppError('Esta rota é exclusiva para clientes', 403)
+    }
+  })
+
+  // POST /pedidos/publico/:slug — delivery (entrega ou retirada) pelo link do restaurante.
+  // Só cliente logado pode pedir: o pedido fica ligado à conta e entra no histórico fixo.
+  app.post(
+    '/publico/:slug',
+    {
+      config: {
+        rateLimit: {
+          max: 6,
+          timeWindow: '1 minute',
+          errorResponseBuilder: () => ({
+            statusCode: 429,
+            status: 'error',
+            message: 'Muitos pedidos em pouco tempo. Aguarde um momento e tente de novo.',
+          }),
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = request.user as JWTPayload
+      const { slug } = z.object({ slug: z.string().trim().min(1).max(100) }).parse(request.params)
+
+      const parsed = criarPedidoDeliverySchema.safeParse(request.body)
+      if (!parsed.success) {
+        throw new AppError(parsed.error.issues[0]?.message ?? 'Dados do pedido inválidos', 400)
+      }
+
+      const pedido = await service.criarDeliveryDoCliente(slug, parsed.data, user.sub)
+      return reply.status(201).send({ pedido })
+    }
+  )
+
+  // GET /pedidos/cliente/historico?origem=LOCAL|DELIVERY&slug=meu-restaurante
+  // Histórico fixo do cliente: mesa (LOCAL) e delivery juntos; `origem` separa os dois.
+  app.get('/cliente/historico', async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as JWTPayload
+
+    const { origem, slug } = z
+      .object({
+        origem: z.enum(['LOCAL', 'DELIVERY']).optional(),
+        slug: z.string().trim().min(1).max(100).optional(),
+      })
+      .parse(request.query)
+
+    const pedidos = await service.historicoDoCliente(user.sub, { origem, slug })
+    return reply.send(pedidos)
+  })
+}
+
 export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
+  app.register(pedidosClienteRoutes)
+  app.register(pedidosRestauranteRoutes)
+}
+
+/** Rotas do RESTAURANTE (token de usuário: ADMIN, ATENDENTE ou CAIXA) */
+async function pedidosRestauranteRoutes(app: FastifyInstance): Promise<void> {
 
   app.addHook('onRequest', async (request, reply) => {
     await request.jwtVerify()
@@ -94,7 +161,7 @@ export async function pedidosRoutes(app: FastifyInstance): Promise<void> {
 
       const { status, modalidade, mesa_id, data_inicio, data_fim, conta_aberta } = request.query as {
         status?: string // um ou vários separados por vírgula: RECEBIDO,PREPARO,PRONTO
-        modalidade?: string
+        modalidade?: string // MESA | ENTREGA | RETIRADA (a origem LOCAL/DELIVERY é derivada no front)
         mesa_id?: string
         data_inicio?: string
         data_fim?: string

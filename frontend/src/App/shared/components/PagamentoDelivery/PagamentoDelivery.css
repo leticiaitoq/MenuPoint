@@ -1,0 +1,11 @@
+.pag-deliv { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; text-align: left; }
+.pag-deliv__titulo { margin: 0; font-size: 14px; font-weight: 600; color: var(--text); }
+.pag-deliv__formas { display: flex; gap: 8px; }
+.pag-deliv__forma {
+  flex: 1; padding: 9px 10px; border-radius: 10px; cursor: pointer;
+  border: 1.5px solid var(--border); background: var(--bg-surface);
+  color: var(--text-muted); font-size: 14px; font-weight: 600;
+}
+.pag-deliv__forma--ativa { background: var(--accent); border-color: var(--brand); color: var(--on-brand); }
+.pag-deliv__resumo { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted); }
+.pag-deliv__resumo--total { font-weight: 700; color: var(--text); font-size: 16px; }

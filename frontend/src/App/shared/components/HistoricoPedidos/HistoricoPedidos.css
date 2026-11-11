@@ -1,0 +1,363 @@
+/* ── Container principal*/
+.hist-cli {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 32px;
+}
+
+/* ── Filtros */
+.hist-cli__filtros {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hist-cli__filtro-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: 50px;
+  border: 1.5px solid var(--border);
+  background-color: var(--bg-surface);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hist-cli__filtro-btn:hover {
+  border-color: var(--brand);
+  color: var(--text-muted);
+}
+
+/* Aba ativa — fundo vermelho */
+.hist-cli__filtro-btn--ativo {
+  background-color:  var(--accent);
+  border-color:  var(--brand);
+  color:  var(--on-brand);
+}
+
+/* Badge numérico dentro do botão */
+.hist-cli__filtro-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 700;
+  background-color: var(--bg-card-glass);
+  color: inherit;
+}
+
+/* ── Lista de cards */
+.hist-cli__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hist-cli__vazio {
+  color: var(--text-faint);
+  font-size: 15px;
+  text-align: center;
+  margin-top: 32px;
+}
+
+/* ── Card de pedido */
+.hist-cli__card {
+  background-color: var(--bg-surface);
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Cabeçalho do card */
+.hist-cli__card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hist-cli__card-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hist-cli__card-numero {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+/* ── Badge de status */
+.hist-cli__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 50px;
+}
+
+.hist-cli__status--pendente {
+  background-color: var(--info-soft);
+  color: var(--info-text);
+}
+
+.hist-cli__status--pronto {
+  background-color: var(--warning-soft);
+  color: var(--warning-text);
+}
+
+.hist-cli__status--cancelado {
+  background-color: var(--danger-soft, #fde8e8);
+  color: var(--danger-text, #b42318);
+}
+
+.hist-cli__status--finalizado {
+  background-color: var(--success-soft);
+  color: var(--success-text);
+}
+
+.hist-cli__status-icon {
+  font-size: 14px;
+}
+
+.hist-cli__card-meta {
+  font-size: 13px;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+/* ── Corpo do card: itens + rodapé*/
+.hist-cli__card-body {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+/* ── Lista de itens */
+.hist-cli__itens {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: var(--bg-surface-alt);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.hist-cli__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hist-cli__item-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.hist-cli__item-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hist-cli__item-nome {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.hist-cli__item-preco {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* ── Rodapé do card: totais + botão*/
+.hist-cli__card-rodape {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+  min-width: 130px;
+}
+
+.hist-cli__totais {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.hist-cli__total-label {
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.hist-cli__total-destaque {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ── Botões de ação */
+.hist-cli__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.hist-cli__btn:active {
+  transform: scale(0.97);
+}
+
+.hist-cli__btn-icon {
+  font-size: 16px;
+}
+
+/* Aguardando — pedido pendente, só informativo */
+.hist-cli__btn--aguardando {
+  background-color: var(--info-soft);
+  color: var(--info-text);
+  cursor: default;
+  pointer-events: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+}
+
+/* Finalizar — fundo dourado */
+.hist-cli__btn--finalizar {
+  background-color: var(--warning);
+  color: var(--on-brand);
+}
+
+.hist-cli__btn--finalizar:hover {
+  background-color: var(--warning);
+}
+
+/* Ver Conta — fundo cinza claro */
+.hist-cli__btn--conta {
+  background-color: var(--bg-surface-alt);
+  color: var(--text);
+}
+
+.hist-cli__btn--conta:hover {
+  background-color: var(--border);
+}
+@media (max-width: 460px) {
+  .hist-cli__card-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hist-cli__card-rodape {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+/* ── Resumo da mesa (mesa, quantidade de pedidos e total) ── */
+.hist-cli__resumo {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background-color: var(--bg-surface);
+  box-shadow: 0 1px 4px var(--shadow-color);
+}
+.hist-cli__resumo-item { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hist-cli__resumo-item span { font-size: 12px; color: var(--text-faint); }
+.hist-cli__resumo-item strong { font-size: 18px; color: var(--text); }
+
+
+/* ── Filtro de ORIGEM (restaurante local × delivery) ── */
+.hist-cli__origens {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background-color: var(--bg-surface-alt);
+  overflow-x: auto;
+}
+.hist-cli__origem-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s, color 0.2s;
+}
+.hist-cli__origem-btn:hover { color: var(--text); }
+.hist-cli__origem-btn--ativo {
+  background-color: var(--bg-surface);
+  color: var(--text);
+  box-shadow: 0 1px 4px var(--shadow-color);
+}
+
+/* Etiqueta de origem no card */
+.hist-cli__origem-tag {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 10px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.hist-cli__origem-tag--local { background-color: var(--info-soft); color: var(--info-text); }
+.hist-cli__origem-tag--delivery { background-color: var(--warning-soft); color: var(--warning-text); }
+
+.hist-cli__motivo { font-size: 12px; color: var(--text-faint); max-width: 220px; text-align: right; }
+
+/* Aviso do convidado (histórico some ao fechar a conta) */
+.hist-cli__aviso {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background-color: var(--info-soft);
+  color: var(--info-text);
+  font-size: 13px;
+}

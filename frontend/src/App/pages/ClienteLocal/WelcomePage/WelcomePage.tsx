@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
-import { useClienteAuth, ROTA_APOS_LOGIN_CLIENTE } from '../../../shared/contexts/ClienteAuthContext';
+import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
+import { ROTA_INICIAL_SISTEMA } from '../../../shared/contexts/SistemaClienteContext';
 import './WelcomePage.css';
 
 /**
@@ -74,14 +75,14 @@ const WelcomePage: React.FC = () => {
 
   /**
    * Quem já tem (ou quer criar) conta segue para o login/cadastro de cliente.
-   * A mesa fica guardada no ConvidadoContext e, depois de entrar, o cliente cai na
-   * dwelcome ainda vinculado a ela.
+   * A mesa fica guardada no ConvidadoContext e, depois de entrar, o cliente volta para o
+   * cardápio DA MESA (/menulocal). A conta é a mesma do delivery, mas o acesso não é.
    */
   const irParaConta = (rota: '/login/cliente' | '/register/cliente') =>
-    navigate(rota, { state: { from: ROTA_APOS_LOGIN_CLIENTE } });
+    navigate(rota, { state: { from: ROTA_INICIAL_SISTEMA.local } });
 
   // Já está logado: não precisa digitar nome nem ver a tela de convidado
-  if (isAuthenticated) return <Navigate to={ROTA_APOS_LOGIN_CLIENTE} replace />;
+  if (isAuthenticated) return <Navigate to={ROTA_INICIAL_SISTEMA.local} replace />;
 
   /**
    * Fecha o modal ao clicar no overlay (fora do card).

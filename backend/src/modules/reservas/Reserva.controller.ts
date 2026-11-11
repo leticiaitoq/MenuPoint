@@ -11,6 +11,7 @@ import {
   criarReservaCaixaSchema,
 } from './Reserva.schema'
 import { AppError } from '@shared/errors/AppError'
+import { chegadaPeloCaixa } from './Reserva.chegada'
 import { JWTPayload } from '@modules/auth/Auth.schema'
 
 const repository = new ReservaRepository()
@@ -171,6 +172,17 @@ export async function reservasRoutes(app: FastifyInstance): Promise<void> {
     )
 
     return reply.send(reserva)
+  })
+
+  // POST /:id/chegada — o Caixa marcou "Cliente chegou": a reserva é concluída e a mesa fica
+  // ocupada em nome de quem reservou (mesmo que ainda não tenha feito pedido)
+  app.post('/:id/chegada', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string }
+    const user = request.user as JWTPayload
+    if (!user.estabelecimento_id) {
+      throw new AppError('Usuário não vinculado a um estabelecimento', 400)
+    }
+    return reply.send(await chegadaPeloCaixa(id, user.estabelecimento_id))
   })
 
   // POST /:id/mensagem — recado do restaurante ao cliente (e-mail + aviso no app)
