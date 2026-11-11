@@ -175,6 +175,7 @@ export class MesaService {
     /** Preenchido só quando quem pede está com a conta de cliente logada: é o que guarda o pedido no histórico fixo dele */
     cliente_id?: string
   ) {
+    const { convidado_ref } = dados
     const mesa = await this.findByToken(token) // 404 se QR inválido, 400 se mesa inativa/sem mesa
 
     // Mesa reservada para este horário: só o dono da reserva senta nela. Logado na conta que
@@ -202,7 +203,9 @@ export class MesaService {
       mesa_id: mesa.id,
       cliente_nome: dados.cliente_nome,
       cliente_telefone: '',
-      ...(cliente_id ? { cliente_id } : {}),
+      // Logado: o pedido já nasce na conta. Visitante: guarda o código do aparelho para poder
+      // ligar o pedido à conta se ele entrar antes de a conta da mesa fechar.
+      ...(cliente_id ? { cliente_id } : convidado_ref ? { convidado_ref } : {}),
       itens: itensMontados,
     })
 
@@ -216,6 +219,30 @@ export class MesaService {
       status: pedido.status,
       total: pedido.total,
     }
+  }
+
+  /**
+   * Liga à conta do cliente os pedidos que ele fez como VISITANTE nesta mesa.
+   * Só vale enquanto a conta da mesa está aberta: pedido já liquidado/pago não é ligado
+   * (o histórico do visitante some quando a conta fecha). O código do visitante é aleatório e só
+   * o aparelho que fez os pedidos o conhece, então ninguém consegue puxar pedidos de outra pessoa.
+   */
+  async vincularPedidosConvidado(token: string, convidado_ref: string, cliente_id: string) {
+    const mesa = await this.findByToken(token)
+
+    const { count } = await prisma.pedido.updateMany({
+      where: {
+        mesa_id: mesa.id,
+        estabelecimento_id: mesa.estabelecimento_id,
+        convidado_ref,
+        cliente_id: null,
+        liquidado_em: null,
+        NOT: { pagamento: { is: { status: 'CONFIRMADO' as const } } },
+      },
+      data: { cliente_id, convidado_ref: null },
+    })
+
+    return { vinculados: count }
   }
 
   async listar(

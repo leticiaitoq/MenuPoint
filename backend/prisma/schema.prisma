@@ -341,6 +341,10 @@ model Pedido {
   entregue_em         DateTime?       @db.Timestamptz
   // Quando o pedido saiu da conta aberta da mesa (conta paga/encerrada). Nulo = ainda faz parte da conta.
   liquidado_em        DateTime?       @db.Timestamptz
+  // Identificador aleatório do visitante (gerado no aparelho dele) que fez o pedido SEM login.
+  // Se ele entrar na conta antes de a conta da mesa fechar, os pedidos com este código são ligados a ele
+  // (cliente_id) e passam a valer no histórico fixo. Depois de ligar, volta a nulo.
+  convidado_ref       String?         @db.Uuid
 
   estabelecimento Estabelecimento @relation(fields: [estabelecimento_id], references: [id])
   mesa            Mesa?           @relation(fields: [mesa_id], references: [id])
@@ -351,6 +355,7 @@ model Pedido {
   pagamento       Pagamento?
 
   @@index([mesa_id, liquidado_em])
+  @@index([mesa_id, convidado_ref])
   @@map("pedidos")
 }
 

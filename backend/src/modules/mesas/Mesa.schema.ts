@@ -127,6 +127,13 @@ export const criarPedidoPublicoMesaSchema = z.object({
     )
     .min(1, 'O pedido deve ter ao menos 1 item')
     .max(PEDIDO_PUBLICO_MAX_ITENS, `Máximo de ${PEDIDO_PUBLICO_MAX_ITENS} itens por pedido`),
+  // Código aleatório do aparelho do visitante (ver Pedido.convidado_ref). Só é guardado sem login.
+  convidado_ref: z.string().uuid('Código de visitante inválido').optional(),
 })
 
 export type CriarPedidoPublicoMesaDTO = z.infer<typeof criarPedidoPublicoMesaSchema>
+
+// Cliente que entrou na conta depois de pedir como visitante: pede para ligar esses pedidos a ele
+export const vincularPedidosConvidadoSchema = z.object({
+  convidado_ref: z.string().uuid('Código de visitante inválido'),
+})

@@ -32,6 +32,8 @@ const enderecoEntregaSchema = z.object({
 
 export const criarPedidoSchema = z.object({
   cliente_id: z.string().uuid().optional(),
+  // Visitante da mesa sem login: permite ligar o pedido à conta se ele entrar antes de a conta fechar
+  convidado_ref: z.string().uuid().optional(),
   mesa_id: z.string().uuid().optional(),
   reserva_id: z.string().uuid().optional(),
 

@@ -6,6 +6,7 @@ import {
   atualizarMesaSchema,
   atualizarStatusMesaSchema,
   criarPedidoPublicoMesaSchema,
+  vincularPedidosConvidadoSchema,
 } from './Mesa.schema'
 import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
@@ -93,6 +94,41 @@ export async function mesasRoutes(app: FastifyInstance): Promise<void> {
         const clienteId = await clienteIdOpcional(request)
         const pedido = await service.criarPedidoPublico(token, parsed.data, clienteId)
         return reply.status(201).send({ pedido })
+      }
+    )
+
+    // POST /mesas/qrcode/:token/vincular-pedidos — quem pediu como visitante e depois entrou na conta
+    // liga esses pedidos a ela, desde que a conta da mesa ainda não tenha fechado.
+    // Aqui o login é necessário (não há conta para ligar sem ele), mas é só desta ação:
+    // pedir, ver o cardápio e acompanhar a mesa continuam sem login.
+    publicRoutes.post(
+      '/qrcode/:token/vincular-pedidos',
+      {
+        config: {
+          rateLimit: {
+            max: 20,
+            timeWindow: '1 minute',
+            errorResponseBuilder: () => ({
+              statusCode: 429,
+              status: 'error',
+              message: 'Muitas tentativas. Aguarde um momento e tente de novo.',
+            }),
+          },
+        },
+      },
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { token } = request.params as { token: string }
+
+        const parsed = vincularPedidosConvidadoSchema.safeParse(request.body)
+        if (!parsed.success) {
+          throw new AppError(parsed.error.issues[0]?.message ?? 'Dados inválidos', 400)
+        }
+
+        const clienteId = await clienteIdOpcional(request)
+        if (!clienteId) throw new AppError('Entre na sua conta para guardar estes pedidos', 401)
+
+        const resultado = await service.vincularPedidosConvidado(token, parsed.data.convidado_ref, clienteId)
+        return reply.send(resultado)
       }
     )
 
