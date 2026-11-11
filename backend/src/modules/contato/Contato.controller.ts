@@ -4,8 +4,6 @@ import { contatoEspecialistaSchema } from './Contato.schema'
 
 const service = new ContatoService()
 
-// Atrás do proxy do Azure o request.ip é o do próprio proxy (todo mundo "parece" o mesmo IP),
-// então o limite usa o último IP do X-Forwarded-For (o que o proxy anexou).
 const ipDoCliente = (request: FastifyRequest): string => {
   const encaminhado = request.headers['x-forwarded-for']
   const lista = (Array.isArray(encaminhado) ? encaminhado.join(',') : encaminhado ?? '')

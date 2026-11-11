@@ -47,8 +47,7 @@ const filtroPeriodo = (f: Pick<FiltroDespesa, 'data_inicio' | 'data_fim'>) => {
 }
 
 export class DespesaService {
-  // ── Categorias ─────────────────────────────────────────────────────────────
-
+  //  Categorias
   /** Padrão + as criadas pelo restaurante (sem repetir nome, ignorando maiúsculas). */
   async listarCategorias(estabelecimento_id: string) {
     const proprias = await prisma.categoriaDespesa.findMany({
@@ -79,7 +78,7 @@ export class DespesaService {
     return igual.nome // grava com a grafia oficial
   }
 
-  // ── Despesas ───────────────────────────────────────────────────────────────
+  // Despesas
 
   async listar(estabelecimento_id: string, filtro: FiltroDespesa) {
     const despesas = await prisma.despesa.findMany({
@@ -141,7 +140,7 @@ export class DespesaService {
     await prisma.despesa.delete({ where: { id } })
   }
 
-  // ── Resumo (painel "Despesas do Estabelecimento" do Relatórios) ─────────────
+  // (painel "Despesas do Estabelecimento" do Relatórios)
 
   async resumo(estabelecimento_id: string, periodo: Pick<FiltroDespesa, 'data_inicio' | 'data_fim'>) {
     const grupos = await prisma.despesa.groupBy({

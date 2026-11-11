@@ -1,10 +1,3 @@
-/* ─────────────────────────────────────────────────────────────
-   Perfil do restaurante
-   Mesma linguagem do resto do sistema: fundo cinza, cards brancos,
-   terracota para ação principal, vermelho para erro/alerta.
-   As variáveis --cfg-* abaixo só APONTAM para os tokens do tema (tema.css).
-   Para mudar uma cor, mude o token, não este bloco.
-   ───────────────────────────────────────────────────────────── */
 :root {
   --cfg-texto: var(--text);
   --cfg-suave: var(--text-muted);
@@ -736,8 +729,9 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
 }
 
 .config__painel > .config__card {
-  padding: 0;
-  border-radius: 0;
+  padding: 28px 32px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
 }
 
 /* ── Diálogos (senha / salvar ao sair) ── */
@@ -1019,6 +1013,8 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   .config__card,
   .config__subcard { padding: 20px 18px; }
 
+  .config__painel > .config__card { padding: 22px 18px; }
+
   .config__cabecalho { flex-direction: column; }
   .config__cabecalho-perfil { flex-direction: column; align-items: flex-start; }
   .config__avatar-col { width: 100%; flex-direction: row; }
@@ -1200,6 +1196,7 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   .config { gap: 14px; }
   .config__titulo { font-size: 20px; }
   .config__subcard { padding: 16px 14px; }
+  .config__painel > .config__card { padding: 18px 14px; }
 
   /* campos: 16px evita o zoom automático do iOS; altura boa para o toque */
   .config__input { font-size: 16px; min-height: 44px; }
@@ -1247,4 +1244,16 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   .config__aba--ativa { border-color: var(--accent); }
   .config__aba--ativa::after { display: none; }
   .config__aba-ponto { margin-left: auto; flex-shrink: 0; }
+}
+
+/* Botões de editar logo */
+.config__avatar-col .config__btn--pequeno {
+  min-width: 128px;
+  white-space: nowrap;
+}
+
+@media (min-width: 769px) {
+  .config__avatar-col .config__btn--pequeno {
+    width: 100%;
+  }
 }

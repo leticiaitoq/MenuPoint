@@ -163,7 +163,7 @@ export async function clientesRoutes(app: FastifyInstance): Promise<void> {
     })
 
     // POST /auth/cliente/me/foto — multipart (campo "arquivo"), JPG/PNG até 5MB.
-    // Grava no Storage e salva a URL no cadastro: a foto acompanha a conta em qualquer dispositivo.
+    // Grava no Storage e salva a URL no cadastro
     priv.post(
       '/me/foto',
       limite(10, '1 minute', 'Muitos envios de foto. Aguarde um momento.'),
@@ -195,8 +195,7 @@ export async function clientesRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(200).send({ cliente })
     })
 
-    // POST /auth/cliente/me/email/solicitar — exige a senha; manda um código para o NOVO e-mail.
-    // O e-mail atual continua valendo até o código ser confirmado.
+    // POST /auth/cliente/me/email/solicitar
     priv.post(
       '/me/email/solicitar',
       limite(5, '15 minutes', 'Muitas tentativas de alterar o e-mail. Aguarde alguns minutos.'),

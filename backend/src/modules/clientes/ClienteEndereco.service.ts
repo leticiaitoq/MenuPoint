@@ -6,7 +6,7 @@ import { UFS_BR, numeroEnderecoValido } from '@shared/utils/endereco'
 
 const MAX_ENDERECOS = 10
 
-// Campo de texto opcional: vazio vira null
+// Campo de texto vazio vira null
 const opcional = (max: number) =>
   z
     .string()
@@ -15,7 +15,7 @@ const opcional = (max: number) =>
     .optional()
     .transform((v) => (v ? v : null))
 
-// Telefone de contato (opcional): se vier, precisa ser um telefone brasileiro válido
+// Telefone de contato precisa ser um telefone brasileiro válido
 const telefoneOpcional = z
   .string()
   .trim()
@@ -80,7 +80,7 @@ export class ClienteEnderecoService {
     })
   }
 
-  /** Troca todos os dados do endereço (o cliente edita o formulário inteiro) */
+  /** Troca todos os dados do endereço */
   async atualizar(cliente_id: string, id: string, data: CriarEnderecoClienteDTO) {
     const atual = await this.buscarDoCliente(cliente_id, id)
 
@@ -119,7 +119,7 @@ export class ClienteEnderecoService {
     }
   }
 
-  /** Só devolve se o endereço for MESMO deste cliente (nunca confiar só no id da URL) */
+  /** Só devolve se o endereço for MESMO deste cliente */
   async buscarDoCliente(cliente_id: string, id: string) {
     const endereco = await prisma.enderecoCliente.findFirst({ where: { id, cliente_id } })
     if (!endereco) throw new AppError('Endereço não encontrado', 404)

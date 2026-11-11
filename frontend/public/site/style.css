@@ -1,4 +1,4 @@
-/* ── RESET & VARIABLES ─────────────────────────── */
+/* RESET & VARIABLES  */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --red:      #ac0000;
@@ -15,15 +15,16 @@
       --orange-light:   #faf4ea;
       --radius:   12px;
       --shadow:   0 4px 24px rgba(0,0,0,.08);
-      --font-head: 'Syne', sans-serif;
-      --font-body: 'DM Sans', sans-serif;
+      --font-head: 'Roboto', Arial, Helvetica, sans-serif;
+      --font-brand: 'Syne', sans-serif;
+      --font-body: 'Roboto', Arial, Helvetica, sans-serif;
     }
     html { scroll-behavior: smooth; }
     body { font-family: var(--font-body); color: var(--black); background: var(--white); line-height: 1.6; }
     img  { display: block; max-width: 100%; }
     a    { text-decoration: none; color: inherit; }
 
-    /* ── UTILITIES ─────────────────────────────────── */
+    /* UTILITIES */
     .container { width: 100%; max-width: 1160px; margin: 0 auto; padding: 0 24px; }
     .btn-red {
       display: inline-flex; align-items: center; gap: 8px;
@@ -51,7 +52,7 @@
       color: var(--red); margin-bottom: 8px;
     }
 
-    /* ── NAVBAR ────────────────────────────────────── */
+    /* NAVBAR */
     nav {
       position: sticky; top: 0; z-index: 100;
       background: rgba(30, 6, 15, 0.92);
@@ -89,7 +90,7 @@
       .nav-cta { display: none; }
     }
 
-    /* ── HERO ──────────────────────────────────────── */
+    /* HERO  */
     .hero {
       padding: 80px 0 60px;
       background: linear-gradient(135deg, #fff 55%, #FEF2F2 100%);
@@ -111,7 +112,7 @@
     .hero-checks .check { color: var(--red); font-size: 1rem; }
     @media(max-width:768px){ .hero { padding: 48px 0 40px; } .hero-inner { grid-template-columns: 1fr; } }
 
-    /* ── PROBLEM / SOLUTION ────────────────────────── */
+    /* PROBLEM / SOLUTION  */
     .problem-solution {
       padding: 72px 0;
       background: var(--gray-100);
@@ -131,7 +132,7 @@
     .chef-img { text-align: center; font-size: 6rem; }
     @media(max-width:768px){ .ps-grid { grid-template-columns: 1fr; } }
 
-    /* ── FEATURES ──────────────────────────────────── */
+    /*  FEATURES */
     .features { padding: 80px 0; }
     .features-grid {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 24px;
@@ -145,7 +146,7 @@
     .feature-card h4 { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
     .feature-card p { font-size: .84rem; color: var(--gray-700); line-height: 1.5; margin-bottom: 0; }
 
-    /* ── SCREENSHOTS ───────────────────────────────── */
+    /* SCREENSHOTS */
     .screenshots { padding: 64px 0; background: var(--gray-100); }
     .screens-row {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 16px;
@@ -162,7 +163,7 @@
     .screen-thumb .screen-name { font-family: var(--font-head); font-size: .7rem; font-weight: 700; color: rgba(255,255,255,.7); letter-spacing: .06em; text-transform: uppercase; }
     .screen-item > span { font-size: .8rem; color: var(--gray-700); font-weight: 500; }
 
-    /* ── HOW IT WORKS ──────────────────────────────── */
+    /* HOW IT WORKS */
     .how { padding: 80px 0; }
     .steps-row {
       display: flex; align-items: flex-start; justify-content: center;
@@ -181,7 +182,7 @@
     .step-arrow { font-size: 1.5rem; color: #ccc; align-self: flex-start; margin-top: 20px; padding-top: 20px; }
     @media(max-width:600px){ .step-arrow { display: none; } }
 
-    /* ── WHY + TESTIMONIAL ─────────────────────────── */
+    /* WHY + TESTIMONIAL */
     .why-section { padding: 72px 0; background: var(--gray-100); }
     .why-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 36px; align-items: stretch; }
     .why-list h3 { font-family: var(--font-head); font-size: 1.3rem; font-weight: 800; color: var(--red); margin-bottom: 24px; }
@@ -209,7 +210,7 @@
     .restaurant-img .ri-text { font-family: var(--font-head); font-size: .85rem; font-weight: 700; color: rgba(255,255,255,.7); text-align: center; line-height: 1.5; text-transform: uppercase; letter-spacing: .06em; }
     @media(max-width:900px){ .why-grid { grid-template-columns: 1fr; } }
 
-    /* ── CTA BAND ──────────────────────────────────── */
+    /*  CTA BAND */
     .cta-band {
       background: var(--red);
       padding: 72px 0; text-align: center;
@@ -225,7 +226,7 @@
     }
     .btn-white:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,.2); }
 
-    /* ── FOOTER ────────────────────────────────────── */
+    /*  FOOTER  */
     footer {
       background: var(--gray-900); color: var(--white);
       padding: 56px 0 24px;
@@ -249,7 +250,7 @@
     @media(max-width:768px){ .footer-grid { grid-template-columns: 1fr 1fr; } }
     @media(max-width:480px){ .footer-grid { grid-template-columns: 1fr; } }
 
-    /* ── PRICING ───────────────────────────────────── */
+    /*  PRICING */
     .pricing { padding: 88px 0; background: var(--white); }
     .pricing-toggle {
       display: flex; align-items: center; justify-content: center;
@@ -322,7 +323,7 @@
     @media(max-width:860px){ .pricing-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; gap: 16px; } }
 
     .texto-img { display: block; max-width: 120px; }
-/* ── ABOUT ─────────────────────────────────────── */
+/* ABOUT  */
 .about-section { padding: 96px 0; background: var(--gray-100); }
 .about-grid {
   display: grid;
@@ -383,10 +384,7 @@
   .stat-num { font-size: 1.9rem; }
 }
 
-/* ══════════════════════════════════════════════════════════════
-   AJUSTES DE RESPONSIVIDADE + CONTATO (Enterprise)
-   Fica no fim do arquivo para sobrescrever as regras acima.
-   ══════════════════════════════════════════════════════════════ */
+
 [hidden] { display: none !important; }
 
 /* A navbar fixa não pode cobrir o título da seção quando se clica em "Planos", "Sobre"... */
@@ -394,7 +392,7 @@ html { scroll-padding-top: 72px; }
 section[id] { scroll-margin-top: 72px; }
 body.modal-open { overflow: hidden; }
 
-/* ── Enterprise: preço "a combinar" ───────────────── */
+/* Enterprise: preço "a combinar" */
 .plan-price { min-height: 2.6rem; }
 .plan-price--custom {
   display: flex; align-items: center;
@@ -427,7 +425,7 @@ body.modal-open { overflow: hidden; }
   .plan-card.popular:hover { box-shadow: 0 8px 32px rgba(224,32,32,.15); }
 }
 
-/* ── Tablets e celulares grandes ──────────────────── */
+/*  Tablets e celulares grandes  */
 @media (max-width: 768px) {
   .footer-brand { grid-column: 1 / -1; }
   .hero-inner { gap: 32px; }
@@ -436,7 +434,7 @@ body.modal-open { overflow: hidden; }
   .pricing { padding: 72px 0; }
 }
 
-/* ── Celulares ────────────────────────────────────── */
+/* Celulares  */
 @media (max-width: 600px) {
   .container { padding: 0 20px; }
   nav { padding: 0 16px; }
@@ -518,7 +516,7 @@ body.modal-open { overflow: hidden; }
   .hero h1 { font-size: 1.65rem; }
 }
 
-/* ── Modal "Falar com especialista" ───────────────── */
+/*  Modal "Falar com especialista" */
 .modal { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .modal-backdrop { position: absolute; inset: 0; background: rgba(20, 5, 12, .62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
 .modal-box {
@@ -565,9 +563,6 @@ body.modal-open { overflow: hidden; }
 @keyframes modal-up { from { transform: translateY(100%); } to { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .modal-box { animation: none; } html { scroll-behavior: auto; } }
 
-/* ══════════════════════════════════════════════════════════════
-   REFINAMENTO VISUAL
-   ══════════════════════════════════════════════════════════════ */
 body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 ::selection { background: var(--red); color: #fff; }
 h1, h2, h3, h4 { letter-spacing: -.015em; text-wrap: balance; }
@@ -692,3 +687,63 @@ nav.scrolled { box-shadow: 0 6px 24px rgba(0,0,0,.25); background: rgba(30, 6, 1
 .chef-img { max-width: 260px; }
 .nav-cta, nav .btn-red { box-shadow: none; }
 @media (max-width: 600px) { .chef-img { max-width: 170px; } }
+
+button, input, select, textarea { font-family: inherit; }
+
+/* Só o título do hero mantém a fonte da marca (Syne) */
+.hero h1 { font-family: var(--font-brand); }
+
+/* Roboto */
+h2, h3, h4, .btn-red, .btn-outline, .btn-white, .plan-btn { font-family: var(--font-head); }
+
+.hero-inner { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 40px; }
+@media (min-width: 1100px) {
+  .home-img { width: 118%; max-width: none; }   /* ultrapassa um pouco a coluna, em direção à borda */
+}
+@media (max-width: 980px) {
+  .hero-inner { grid-template-columns: 1fr; gap: 36px; }
+  .home-img { width: 100%; }
+}
+
+.ps-grid {
+  display: grid; grid-template-columns: minmax(0, 1fr) clamp(150px, 16vw, 210px) minmax(0, 1fr);
+  gap: 28px; align-items: stretch;
+}
+.ps-box { display: flex; flex-direction: column; }
+.ps-box h3 { font-size: 1.3rem; }
+.ps-sub { font-size: .85rem; color: var(--gray-700); margin-bottom: 12px; }
+.ps-solution { border-top: 4px solid var(--green); }
+.ps-problem  { border-top: 4px solid var(--red); }
+.chef-img {
+  align-self: center; justify-self: center;
+  width: 100%; max-width: none; height: auto; margin: 0;
+  filter: drop-shadow(0 14px 20px rgba(73,14,36,.18));
+}
+@media (max-width: 980px) {
+  .ps-grid { grid-template-columns: 1fr 1fr; gap: 20px; }
+  .chef-img { grid-column: 1 / -1; grid-row: 1; width: 150px; margin: 0 auto 4px; }
+}
+@media (max-width: 640px) {
+  .ps-grid { grid-template-columns: 1fr; }
+  .chef-img { width: 130px; }
+}
+
+/* Botão "Começar agora" */
+.btn-red, .btn-outline, .btn-white { white-space: nowrap; text-align: center; justify-content: center; }
+.nav-cta { flex-shrink: 0; padding: 10px 22px; font-size: .9rem; line-height: 1.2; }
+.nav-links { gap: clamp(14px, 2.2vw, 32px); }
+.nav-links a { white-space: nowrap; }
+.nav-inner { gap: 16px; }
+
+@media (max-width: 1020px) and (min-width: 769px) {
+  .nav-links a { font-size: .82rem; }
+  .nav-cta { padding: 9px 16px; font-size: .84rem; }
+  .texto-img { max-width: 96px; }
+}
+
+@media (max-width: 600px) {
+  .btn-red, .btn-outline { min-height: 48px; }
+  .cta-band .btn-white { min-height: 52px; }
+}
+
+.solution-list { flex: 1; justify-content: space-evenly; gap: 10px; }

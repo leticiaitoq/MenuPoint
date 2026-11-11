@@ -98,8 +98,7 @@ export async function estabelecimentosRoutes(app: FastifyInstance) {
     }
   )
 
-  // PATCH /:id/pix — chave PIX é dado sensível: exige senha atual e só o
-  // dono da empresa (ADMIN + escopo GLOBAL) pode alterar.
+  // PATCH /:id/pix — chave PIX é dado sensível
   app.patch(
     '/:id/pix',
     { preHandler: [authenticate] },
@@ -122,7 +121,7 @@ export async function estabelecimentosRoutes(app: FastifyInstance) {
     }
   )
 
-  // POST /estabelecimentos/:id/logo — multipart (campo "arquivo"), JPG/PNG até 5MB
+  // POST /estabelecimentos/:id/logo
   app.post(
     '/:id/logo',
     { preHandler: [authenticate] },
@@ -155,6 +154,27 @@ export async function estabelecimentosRoutes(app: FastifyInstance) {
 
       const logo_url = await service.atualizarLogo(id, { buffer, mimetype: arquivo.mimetype })
       return reply.send({ logo_url })
+    }
+  )
+
+    // DELETE /estabelecimentos/:id/logo — volta para a logo padrão
+  app.delete(
+    '/:id/logo',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string }
+      const user = request.user as JWTPayload
+
+      if (user.escopo === 'LOCAL' && user.estabelecimento_id !== id) {
+        throw new AppError('Acesso não autorizado', 403)
+      }
+
+      if (user.perfil !== 'ADMIN') {
+        throw new AppError('Apenas administradores podem alterar a logo', 403)
+      }
+
+      await service.removerLogo(id)
+      return reply.send({ logo_url: null })
     }
   )
 

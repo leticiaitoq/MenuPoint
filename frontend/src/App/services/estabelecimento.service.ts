@@ -1,8 +1,6 @@
 import api from './api'
 import { prepararImagem } from './imagem'
 
-// ── Tipos que espelham o que o backend devolve (GET /auth/me e /estabelecimentos) ──
-
 export type DiaSemana =
   | 'segunda'
   | 'terca'
@@ -61,9 +59,6 @@ export interface Estabelecimento {
   criado_em: string
 }
 
-// O que o PUT /estabelecimentos/:id aceita (tudo opcional). chave_pix e
-// tipo_chave_pix NÃO entram aqui — são dado sensível e vão só pelo
-// atualizarPix(), que exige senha e checa permissão no backend.
 export interface AtualizarEstabelecimentoDTO {
   nome?: string
   telefone?: string // "" apaga o valor
@@ -100,8 +95,6 @@ const EstabelecimentoService = {
     return response.data
   },
 
-  // Altera a chave PIX — dado sensível, sempre exige a senha atual do
-  // usuário (verificada no backend) e só é aceita por quem tem permissão.
   async atualizarPix(id: string, data: AtualizarPixDTO): Promise<Estabelecimento> {
     const response = await api.patch<Estabelecimento>(`/estabelecimentos/${id}/pix`, data)
     return response.data
@@ -119,6 +112,13 @@ const EstabelecimentoService = {
     })
     return response.data.logo_url
   },
+
+    // Volta para a logo padrão
+  async removerLogo(id: string): Promise<void> {
+    await api.delete(`/estabelecimentos/${id}/logo`)
+  },
 }
+
+
 
 export default EstabelecimentoService

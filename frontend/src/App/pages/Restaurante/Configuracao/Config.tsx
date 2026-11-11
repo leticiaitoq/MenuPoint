@@ -17,6 +17,7 @@ import {
   HiPencil,
   HiPhone,
   HiShoppingBag,
+  HiTrash,
   HiTruck,
   HiUpload,
   HiUserGroup,
@@ -39,9 +40,8 @@ import EstabelecimentoService, {
 import RecortadorImagem from '../../../shared/components/RecortadorImagem/RecortadorImagem';
 import './Config.css';
 
-// ────────────────────────────────────────────────────────────────────────────
 // Constantes
-// ────────────────────────────────────────────────────────────────────────────
+
 
 const DIAS: { chave: DiaSemana; nome: string }[] = [
   { chave: 'segunda', nome: 'Segunda-feira' },
@@ -71,7 +71,7 @@ const TAMANHO_MAX_LOGO = 20 * 1024 * 1024; // original; é reduzida antes do env
 
 type Erros = Partial<Record<string, string>>;
 
-// ── Utilitários de máscara / conversão ──────────────────────────────────────
+// Utilitários de máscara / conversão 
 
 const soDigitos = (v: string) => v.replace(/\D/g, '');
 
@@ -122,7 +122,7 @@ function mensagemDeErro(err: any, padrao: string): string {
   return primeiro ?? dados?.message ?? padrao;
 }
 
-// ── Horários: todos os dias sempre existem; o padrão é "fechado" ────────────
+//  Horários: todos os dias sempre existem; o padrão é "fechado" 
 
 function horarioTodoFechado(): HorarioFuncionamento {
   const base = {} as HorarioFuncionamento;
@@ -149,15 +149,7 @@ function normalizarHorario(bruto: unknown): HorarioFuncionamento {
   return horario;
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Seções — cada uma tem seu próprio pedaço do formulário, sua validação e
-// o que ela manda pro backend. É isso que permite salvar cada uma sozinha.
-// A antiga seção "Identidade" (nome livre do estabelecimento) foi removida:
-// o nome exibido no cabeçalho agora vem da empresa e só muda pelo fluxo de
-// "Alterar dados" (senha), dentro da aba "Dados da empresa".
-// ────────────────────────────────────────────────────────────────────────────
-
-// ── Contato ──────────────────────────────────────────────────────────────────
+// Contato 
 
 interface ContatoForm {
   telefone: string;
@@ -193,7 +185,7 @@ const payloadContato = (v: ContatoForm): AtualizarEstabelecimentoDTO => ({
   email: v.email.trim(),
 });
 
-// ── Endereço ─────────────────────────────────────────────────────────────────
+// Endereço 
 
 interface EnderecoForm {
   rua: string;
@@ -248,7 +240,7 @@ const payloadEndereco = (v: EnderecoForm): AtualizarEstabelecimentoDTO => {
   };
 };
 
-// ── Horário de funcionamento ─────────────────────────────────────────────────
+//  Horário de funcionamento 
 
 interface HorarioForm {
   horario: HorarioFuncionamento;
@@ -282,7 +274,7 @@ const payloadHorario = (v: HorarioForm): AtualizarEstabelecimentoDTO => {
   return { horario_funcionamento: horario };
 };
 
-// ── Atendimento e entrega ─────────────────────────────────────────────────────
+//  Atendimento e entrega 
 
 interface AtendimentoForm {
   aceita_entrega: boolean;
@@ -339,10 +331,8 @@ const payloadAtendimento = (v: AtendimentoForm): AtualizarEstabelecimentoDTO => 
   pedido_minimo: paraNumero(v.pedido_minimo),
 });
 
-// ── Divulgação (tipo de cozinha + link do cardápio) ──────────────────────────
+// Divulgação (tipo de cozinha + link do cardápio) 
 
-// Opções prontas do dropdown. O valor salvo no banco é o próprio texto;
-// "Outros" libera um campo para o restaurante digitar o tipo dele.
 const TIPOS_COZINHA = [
   'Pizzaria',
   'Hamburgueria',
@@ -394,7 +384,7 @@ const payloadDivulgacao = (v: DivulgacaoForm): AtualizarEstabelecimentoDTO => ({
   tipo_cozinha: v.tipo_cozinha === OUTROS ? v.tipo_cozinha_outro.trim() : v.tipo_cozinha,
 });
 
-// ── PIX ──────────────────────────────────────────────────────────────────────
+// PIX 
 
 interface PixForm {
   tipo_chave_pix: TipoChavePix | '';
@@ -414,13 +404,8 @@ function validarPix(v: PixForm): Erros {
   return erros;
 }
 
-// PIX tem endpoint e DTO próprios (PATCH /estabelecimentos/:id/pix, que exige
-// senha_atual) — por isso não usa o useSecao genérico nem o
-// AtualizarEstabelecimentoDTO. Ver usePix logo abaixo.
-
-// ────────────────────────────────────────────────────────────────────────────
 // Hook: uma seção completa (valor, validação, salvar, descartar)
-// ────────────────────────────────────────────────────────────────────────────
+
 
 interface Secao<T> {
   valor: T;
@@ -512,11 +497,7 @@ function useSecao<T>(
   return { valor, definir, erros, limparErro, alterado, salvando, salvoRecente, erroGeral, salvar, descartar };
 }
 
-// ── PIX: hook dedicado, sem salvar automático ───────────────────────────────
-// Diferente do useSecao, não chama EstabelecimentoService.atualizar. Ele só
-// guarda o valor e valida; quem efetivamente salva é confirmarComSenha,
-// chamada depois que o usuário confirma a senha no modal (o endpoint de PIX
-// exige senha_atual a cada alteração).
+// PIX: hook dedicado, sem salvar automático
 
 interface ResultadoPix {
   ok: boolean;
@@ -598,9 +579,7 @@ function usePix(estab: Estabelecimento | null) {
   return { valor, definir, erros, alterado, salvando, salvoRecente, erroGeral, validar, confirmarComSenha, descartar };
 }
 
-// ────────────────────────────────────────────────────────────────────────────
 // Peças de interface
-// ────────────────────────────────────────────────────────────────────────────
 
 interface CampoProps {
   id: string;
@@ -644,8 +623,8 @@ const Bloqueado: React.FC<{ id: string; rotulo: string; valor: string | null | u
   </Campo>
 );
 
-// Cartão de opção clicável usado em "Entrega / Retirada / Pedido na mesa".
-// Substitui o antigo switch: mostra o ícone, o rótulo e uma pill de estado.
+// Cartão de opção clicável
+
 const CartaoOpcao: React.FC<{
   id: string;
   rotulo: string;
@@ -696,7 +675,6 @@ const SecaoStatus: React.FC<{ alterado: boolean; salvando: boolean; salvoRecente
   return null;
 };
 
-// Cabeçalho padrão de cada (sub)seção: título à esquerda, selo + botões à direita.
 const SecaoCabecalho: React.FC<{
   titulo: string;
   id: string;
@@ -742,8 +720,6 @@ const SecaoCabecalho: React.FC<{
   </div>
 );
 
-// ── Diálogo genérico (acessível: Esc fecha, foco entra no diálogo) ──────────
-
 const Dialogo: React.FC<{
   titulo: string;
   onFechar: () => void;
@@ -777,10 +753,7 @@ const Dialogo: React.FC<{
   );
 };
 
-// ── Alterar dados sensíveis (exige a senha) ─────────────────────────────────
-// Este é o ÚNICO fluxo de edição do nome exibido no cabeçalho: não existe
-// mais um botão "Editar perfil" separado — ele cumpriria a mesma função
-// deste modal, então foi removido.
+// Alterar dados sensíveis (exige a senha)
 
 interface DadosSensiveis {
   nome_empresa: string;
@@ -949,8 +922,6 @@ const PassoEditar: React.FC<{
       return;
     }
 
-    // O e-mail NÃO é gravado aqui: pede-se um código para o endereço novo (passo seguinte).
-    // Ele vem primeiro de propósito: se falhar (e-mail já em uso, por ex.), nada foi salvo.
     const { email: emailNovo, ...outros } = mudou;
     const temOutros = Object.keys(outros).length > 0;
 
@@ -1080,7 +1051,7 @@ const PassoEditar: React.FC<{
   );
 };
 
-// ── Passo 3: confirmar o e-mail novo com o código ───────────────────────────
+// confirmar o e-mail novo com o código 
 const ESPERA_REENVIO_SEGUNDOS = 30;
 const TAMANHO_CODIGO = 6;
 
@@ -1124,7 +1095,7 @@ const PassoCodigo: React.FC<{
     window.setTimeout(() => setChacoalhar(false), 400);
   };
 
-  // Preenche a partir da caixa `inicio` (serve para digitar, colar e o autofill do celular)
+  // Preenche a partir da caixa `inicio`
   const preencher = (texto: string, inicio: number) => {
     const novos = texto.replace(/\D/g, '').slice(0, TAMANHO_CODIGO - inicio).split('');
     if (novos.length === 0) return;
@@ -1367,9 +1338,7 @@ const ModalDadosSensiveis: React.FC<{
   );
 };
 
-// ── Confirmação de senha para salvar o PIX ──────────────────────────────────
-// O endpoint de PIX exige senha_atual em toda alteração (diferente do fluxo
-// de dados sensíveis, que confirma a senha uma vez e libera a edição).
+// Confirmação de senha para salvar o PIX 
 
 const ModalSenhaPix: React.FC<{
   onConfirmar: (senha: string) => Promise<ResultadoPix>;
@@ -1448,9 +1417,7 @@ const ModalSenhaPix: React.FC<{
   );
 };
 
-// ────────────────────────────────────────────────────────────────────────────
 // Tela
-// ────────────────────────────────────────────────────────────────────────────
 
 type AbaId = 'dados-empresa' | 'contato-endereco' | 'horario' | 'atendimento';
 
@@ -1486,7 +1453,7 @@ const Config: React.FC = () => {
   const pix = usePix(estab);
   const [pixModalAberto, setPixModalAberto] = useState(false);
 
-  // Link que o restaurante divulga: o cliente cai direto no cardápio dele
+  // Link que o restaurante divulga
   const linkCardapio = estab?.slug ? `${window.location.origin}/r/${estab.slug}` : '';
   const [linkCopiado, setLinkCopiado] = useState(false);
 
@@ -1495,7 +1462,7 @@ const Config: React.FC = () => {
     try {
       await navigator.clipboard.writeText(linkCardapio);
     } catch {
-      // Navegador sem permissão de área de transferência: seleciona o campo
+      // Navegador sem permissão de área de transferência
       (document.getElementById('link-cardapio') as HTMLInputElement | null)?.select();
       return;
     }
@@ -1503,8 +1470,6 @@ const Config: React.FC = () => {
     window.setTimeout(() => setLinkCopiado(false), 2500);
   };
 
-  // PIX fica fora da lista de seções "auto-salváveis": ele exige senha a
-  // cada alteração, então não pode ser salvo sozinho no fluxo de saída.
   const secoesAutoSalvaveis = useMemo(
     () => [contato, endereco, horario, atendimento, divulgacao],
     [contato, endereco, horario, atendimento, divulgacao]
@@ -1522,7 +1487,7 @@ const Config: React.FC = () => {
     return pix.confirmarComSenha(estab.id, senha);
   };
 
-  // ── Abas ─────────────────────────────────────────────────────────────────
+  // Abas 
   const ABAS: { id: AbaId; titulo: string; icone: React.ReactNode; alterado: boolean }[] = [
     { id: 'dados-empresa', titulo: 'Dados da empresa', icone: <HiOfficeBuilding />, alterado: divulgacao.alterado },
     { id: 'contato-endereco', titulo: 'Contato e Endereço', icone: <HiLocationMarker />, alterado: contato.alterado || endereco.alterado },
@@ -1615,6 +1580,21 @@ const Config: React.FC = () => {
     }
   };
 
+    const removerLogo = async () => {
+    if (!estab) return;
+    setEnviandoLogo(true);
+    setLogoAviso(null);
+    try {
+      await EstabelecimentoService.removerLogo(estab.id);
+      mesclarEstabelecimento({ logo_url: null });
+      setLogoAviso({ tipo: 'ok', texto: 'Logo removida.' });
+    } catch (err: any) {
+      setLogoAviso({ tipo: 'erro', texto: mensagemDeErro(err, 'Não foi possível remover a logo.') });
+    } finally {
+      setEnviandoLogo(false);
+    }
+  };
+
   const executarSaida = () => {
     sair();
     navigate('/login');
@@ -1675,8 +1655,6 @@ const Config: React.FC = () => {
     setModalSensivel(true);
   };
 
-  // Dados salvos (nome, razão social...). O e-mail NÃO passa por aqui: ele só muda depois
-  // de confirmar o código (aoConfirmarEmail). fechar=false = o modal segue aberto no passo do código.
   const aoAlterarDadosSensiveis = (novos: DadosSensiveis, token: string, fechar: boolean) => {
     if (fechar) setModalSensivel(false);
     if (usuario) {
@@ -1698,7 +1676,6 @@ const Config: React.FC = () => {
   };
 
   // Código confirmado: o e-mail já foi trocado e as outras sessões foram encerradas.
-  // A resposta traz a sessão nova (token + refresh token) — é ela que passa a valer.
   const aoConfirmarEmail = (sessao: LoginResponse) => {
     setModalSensivel(false);
     entrar(sessao);
@@ -1709,7 +1686,7 @@ const Config: React.FC = () => {
     });
   };
 
-  // ── Estados de carregamento / erro ────────────────────────────────────────
+  //  Estados de carregamento / erro 
 
   if (!perfil && carregando) {
     return (
@@ -1748,12 +1725,8 @@ const Config: React.FC = () => {
     );
   }
 
-  // Nome exibido no cabeçalho: vem da empresa (dado protegido) — não existe
-  // mais um campo de "nome do restaurante" livre, editável fora do fluxo de
-  // senha. Ver ModalDadosSensiveis / PassoEditar.
+  // Nome exibido no cabeçalho: vem da empresa
   const nomeExibido = empresa?.nome ?? estab.nome ?? 'Restaurante';
-  // `ativo` ainda não existe no tipo Estabelecimento — adicionar no service
-  // quando o backend expuser esse campo. Até lá, assume true.
   const estabAtivo = (estab as unknown as { ativo?: boolean }).ativo ?? true;
 
   return (
@@ -1781,6 +1754,16 @@ const Config: React.FC = () => {
                   <HiUpload /> {enviandoLogo ? 'Enviando…' : 'Alterar logo'}
                 </button>
               )}
+                {podeEditar && estab.logo_url && (
+                  <button
+                    className="config__btn config__btn--pequeno"
+                    type="button"
+                    onClick={removerLogo}
+                    disabled={enviandoLogo}
+                  >
+                    <HiTrash /> Remover logo
+                  </button>
+                )}
               <input
                 ref={inputLogoRef}
                 type="file"

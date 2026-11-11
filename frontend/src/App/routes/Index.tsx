@@ -25,6 +25,7 @@ import EditProduto from '../pages/Restaurante/Cadastros/Produtos/EditProduto';
 import GestaoCate from '../pages/Restaurante/Produtos/Categoria/GestaoCate';
 import InfoRetirada from "../pages/cliente/Retirada/InfoRetirada";
 import PerfilCliente from "../pages/cliente/Perfil/PerfilCliente";
+import EnderecosPerfil from "../pages/cliente/Perfil/EnderecosPerfil";
 import PerfilLocal from "../pages/ClienteLocal/Perfil/PerfilLocal";
 import Fila from "../pages/Restaurante/Gestão/Fila/Fila";
 import Relatorios from "../pages/Restaurante/Gestão/Relatorios/Relatorios";
@@ -103,8 +104,10 @@ const AppRoutes: React.FC = () => {
             <Route path="/endereço" element={<CadastroEndereco />} />
             <Route path="/retirada" element={<InfoRetirada />} />
           </Route>
-          <Route path="/historico" element={<ControlePedido />} />
-          <Route path="/perfil" element={<PerfilCliente />} />
+             <Route path="/historico" element={<ControlePedido />} />
+             <Route path="/perfil" element={<PerfilCliente />} />
+            <Route path="/perfil/enderecos" element={<EnderecosPerfil />} />
+          
         </Route>
 
         {/* Rotas do restaurante: exigem login */}

@@ -7,10 +7,6 @@ import { ClienteEnderecoService, criarEnderecoClienteSchema } from './ClienteEnd
 const service = new ClienteEnderecoService()
 const idSchema = z.object({ id: z.string().uuid('Endereço inválido') })
 
-/**
- * Endereços de entrega do cliente logado.
- * Registrado em /api/v1/auth/cliente/enderecos (veja app.ts).
- */
 export async function clienteEnderecosRoutes(app: FastifyInstance): Promise<void> {
   app.addHook('onRequest', async (request) => {
     await request.jwtVerify()

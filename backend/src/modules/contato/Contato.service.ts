@@ -5,7 +5,6 @@ import { AppError } from '@shared/errors/AppError'
 import { templateContatoEspecialista } from '@shared/emails/templates'
 import { ContatoEspecialistaDTO } from './Contato.schema'
 
-// Quebras de linha no assunto/mensagem permitiriam injetar cabeçalhos: vira uma linha só.
 const umaLinha = (texto: string): string => texto.replace(/[\r\n]+/g, ' ').trim()
 
 export class ContatoService {
@@ -36,7 +35,7 @@ export class ContatoService {
       }
     }
 
-    // Alerta extra no WhatsApp da equipe (só se a Z-API estiver configurada). Nunca derruba o envio.
+    // Alerta extra no WhatsApp da equipe.
     if (whatsappAtivo) {
       const linhas = [
         '*Novo contato Enterprise (site)*',

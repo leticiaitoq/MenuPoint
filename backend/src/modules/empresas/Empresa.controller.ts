@@ -16,7 +16,7 @@ export async function empresasRoutes(app: FastifyInstance): Promise<void> {
     await request.jwtVerify()
   })
 
-  // POST / — cria uma empresa (apenas ADMINs com escopo GLOBAL)
+  // POST / — cria uma empresa 
   app.post(
     '/',
     async (request: FastifyRequest, reply: FastifyReply) => {
