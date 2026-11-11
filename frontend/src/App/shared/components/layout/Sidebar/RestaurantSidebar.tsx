@@ -34,7 +34,9 @@ const NAV_ITEMS: NavItem[] = [
     icon: <HiClipboardList />,
     label: 'Pedidos',
     to: '/restaurante/pedido',
-    subitems: [{ to: '/restaurante/historico', label: 'Histórico' }],
+    subitems: [
+      { to: '/restaurante/historico', label: 'Histórico' },
+    ],
   },
   {
     icon: <HiViewList />,

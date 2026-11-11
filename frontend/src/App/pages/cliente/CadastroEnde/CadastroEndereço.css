@@ -464,6 +464,10 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVO (celular) — fica no FINAL do arquivo para vencer as regras base
+   Não precisa mexer no TSX: usa só as classes que já existem.
+═══════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
   /* column-reverse + align-items: flex-start deixava o card/painel com largura do conteúdo */
   .cad-end { align-items: stretch; }

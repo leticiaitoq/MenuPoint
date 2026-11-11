@@ -21,6 +21,8 @@ export interface Convidado {
   mesaId?: string
   mesaToken?: string
   estabelecimentoId?: string
+  /** Slug do restaurante da mesa (usado só para filtrar o histórico da conta; NÃO libera o delivery) */
+  restauranteSlug?: string
   restauranteNome?: string
   restauranteLogo?: string | null
 }

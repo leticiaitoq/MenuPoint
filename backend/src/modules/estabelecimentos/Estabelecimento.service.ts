@@ -121,7 +121,7 @@ export class EstabelecimentoService extends BaseService <
     return this.repository.update(id, { ativo: true } as any)
   }
 
-  // ── Chave PIX: dado sensível. Só o dono da empresa altera, e só depois de confirmar a senha atual
+  // Chave PIX: dado sensível.
   async atualizarPix(
     id: string,
     usuario: { id: string; perfil: string; escopo: string },
@@ -141,7 +141,6 @@ export class EstabelecimentoService extends BaseService <
       throw new AppError('Usuário não encontrado', 404)
     }
 
-    // 403 (e não 401) de propósito: o front trata 401 como sessão expirada.
     const senhaCorreta = await bcrypt.compare(data.senha_atual, atual.senha_hash)
     if (!senhaCorreta) {
       throw new AppError('Senha incorreta', 403)

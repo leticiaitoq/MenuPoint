@@ -6,11 +6,14 @@ import {
   atualizarMesaSchema,
   atualizarStatusMesaSchema,
   criarPedidoPublicoMesaSchema,
+  vincularPedidosConvidadoSchema,
 } from './Mesa.schema'
 import { z } from 'zod'
 import { AppError } from '@shared/errors/AppError'
 import { ChamadoMesaService } from './ChamadoMesa.service'
 import { JWTPayload } from '@modules/auth/Auth.schema'
+import { clienteIdOpcional } from '@modules/pedidos/Pedido.publico'
+import { chegadaPeloCliente } from '@modules/reservas/Reserva.chegada'
 
 const repository = new MesaRepository()
 const service = new MesaService(repository)
@@ -43,8 +46,34 @@ export async function mesasRoutes(app: FastifyInstance): Promise<void> {
       '/qrcode/:token',
       async (request: FastifyRequest, reply: FastifyReply) => {
         const { token } = request.params as { token: string }
-        const mesa = await service.findByToken(token)
+        const mesa = await service.infoPublica(token)
         return reply.send(mesa)
+      }
+    )
+
+    // POST /mesas/qrcode/:token/chegada — o cliente confirma que chegou à mesa reservada (sem login).
+    // Valida pelo telefone da reserva (ou pela conta logada). Limite por IP: ninguém testa telefones em série.
+    publicRoutes.post(
+      '/qrcode/:token/chegada',
+      {
+        config: {
+          rateLimit: {
+            max: 5,
+            timeWindow: '1 minute',
+            errorResponseBuilder: () => ({
+              statusCode: 429,
+              status: 'error',
+              message: 'Muitas tentativas. Aguarde um minuto e tente de novo.',
+            }),
+          },
+        },
+      },
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { token } = request.params as { token: string }
+        const { telefone } = (request.body ?? {}) as { telefone?: string }
+        const mesa = await service.findByToken(token)
+        const clienteId = await clienteIdOpcional(request)
+        return reply.send(await chegadaPeloCliente(mesa, telefone, clienteId))
       }
     )
 
@@ -83,8 +112,45 @@ export async function mesasRoutes(app: FastifyInstance): Promise<void> {
           throw new AppError(parsed.error.issues[0]?.message ?? 'Dados do pedido inválidos', 400)
         }
 
-        const pedido = await service.criarPedidoPublico(token, parsed.data)
+        // Convidado (sem login) pede normalmente; logado tem o pedido ligado à conta (histórico fixo)
+        const clienteId = await clienteIdOpcional(request)
+        const pedido = await service.criarPedidoPublico(token, parsed.data, clienteId)
         return reply.status(201).send({ pedido })
+      }
+    )
+
+    // POST /mesas/qrcode/:token/vincular-pedidos — quem pediu como visitante e depois entrou na conta
+    // liga esses pedidos a ela, desde que a conta da mesa ainda não tenha fechado.
+    // Aqui o login é necessário (não há conta para ligar sem ele), mas é só desta ação:
+    // pedir, ver o cardápio e acompanhar a mesa continuam sem login.
+    publicRoutes.post(
+      '/qrcode/:token/vincular-pedidos',
+      {
+        config: {
+          rateLimit: {
+            max: 20,
+            timeWindow: '1 minute',
+            errorResponseBuilder: () => ({
+              statusCode: 429,
+              status: 'error',
+              message: 'Muitas tentativas. Aguarde um momento e tente de novo.',
+            }),
+          },
+        },
+      },
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { token } = request.params as { token: string }
+
+        const parsed = vincularPedidosConvidadoSchema.safeParse(request.body)
+        if (!parsed.success) {
+          throw new AppError(parsed.error.issues[0]?.message ?? 'Dados inválidos', 400)
+        }
+
+        const clienteId = await clienteIdOpcional(request)
+        if (!clienteId) throw new AppError('Entre na sua conta para guardar estes pedidos', 401)
+
+        const resultado = await service.vincularPedidosConvidado(token, parsed.data.convidado_ref, clienteId)
+        return reply.send(resultado)
       }
     )
 
@@ -187,7 +253,7 @@ export async function mesasRoutes(app: FastifyInstance): Promise<void> {
       }
     )
 
-    // GET /mesas/chamados — chamados de garçom e pedidos de conta em aberto (tela de Mesas)
+    // GET /mesas/chamados — chamados de garçom e pedidos de conta em aberto (aviso do painel do restaurante)
     privateRoutes.get(
       '/chamados',
       async (request: FastifyRequest, reply: FastifyReply) => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { HiHome, HiOfficeBuilding, HiCheckCircle } from 'react-icons/hi';
 import { MdDiamond } from 'react-icons/md';
 import { FiEdit2, FiPhone, FiPlus, FiTrash2 } from 'react-icons/fi';
@@ -7,12 +7,14 @@ import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
 import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
-import PagamentoPedido, { AcoesPedido, trocoParaNumero } from '../../../shared/components/PagamentoPedido/PagamentoPedido';
+import PagamentoPedido, { trocoParaNumero } from '../../../shared/components/PagamentoPedido/PagamentoPedido';
 import {
   UFS_BR, buscarCepViaCep, cepValido, formatarCep, formatarTelefone, numeroValido, telefoneValido,
 } from '../../../shared/utils/enderecoValidacao';
 import EnderecoClienteService from '../../../services/enderecoCliente.service';
-import PedidoClienteService, { FormaPagamentoOnline, PedidoCriado, itensDoCarrinho } from '../../../services/pedidoCliente.service';
+import PedidoClienteService, { FormaPagamentoDelivery, PedidoDeliveryCriado } from '../../../services/pedidoCliente.service';
+import { itensParaPedido } from '../../../shared/components/PagamentoDelivery/PagamentoDelivery';
+import { mensagemDeErro } from '../../../services/cliente.service';
 import '../../../shared/components/PagamentoPedido/PagamentoPedido.css';
 import './CadastroEndereço.css';
 
@@ -39,7 +41,7 @@ interface Endereco {
   principal: boolean;
 }
 
-/** Telefone vem do cadastro da conta ou de um endereço. */
+/** De onde um telefone veio: do cadastro da conta ou de um endereço. */
 interface OrigemTelefone {
   tipo: 'cadastro' | 'endereco';
   /** "Cadastro" ou o nome do endereço (Casa, Trabalho...) */
@@ -180,14 +182,15 @@ const PainelLateral: React.FC<PainelLateralProps> = ({
 const CadastroEndereco: React.FC = () => {
   // ── Estado geral
   const navigate = useNavigate();
-  const { cliente } = useClienteAuth();
+  const location = useLocation();
+  const { cliente, isAuthenticated } = useClienteAuth();
   const { slug, restaurante } = useRestauranteCliente();
   const { itens: itensCarrinho, limparCarrinho } = useCarrinho();
 
   const [enderecos, setEnderecos]   = useState<Endereco[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [modo, setModo]             = useState<Modo>('selecionar');
-  const [pedidoCriado, setPedidoCriado] = useState<PedidoCriado | null>(null);
+  const [pedidoCriado, setPedidoCriado] = useState<PedidoDeliveryCriado | null>(null);
   const [enviando, setEnviando]     = useState(false);
   const [erro, setErro]             = useState('');
   const [erros, setErros]           = useState<ErrosForm>({});
@@ -199,7 +202,7 @@ const CadastroEndereco: React.FC = () => {
   const [enderecoSelecionadoId, setEnderecoSelecionadoId] = useState<string | null>(null);
 
   // ── Pagamento (acertado na entrega)
-  const [forma, setForma] = useState<FormaPagamentoOnline | null>(null);
+  const [forma, setForma] = useState<FormaPagamentoDelivery | null>(null);
   const [troco, setTroco] = useState('');
 
   const taxaEntrega = Number(restaurante?.taxa_entrega ?? 0);
@@ -460,8 +463,18 @@ const CadastroEndereco: React.FC = () => {
 
   /** Confirma a entrega: envia o pedido */
   const handleConfirmar = async () => {
-    if (!enderecoConfirmado || !slug || !cliente) return;
+    if (!enderecoConfirmado || enviando) return;
+    // Delivery: pode navegar sem conta, mas para ENVIAR o pedido precisa entrar (o carrinho é mantido)
+    if (!isAuthenticated) {
+      navigate('/login/cliente', {
+        state: { from: location.pathname, aviso: 'Entre na sua conta para enviar o pedido ao restaurante.' },
+      });
+      return;
+    }
+    if (!slug || !cliente) { setErro('Abra o link do restaurante para pedir.'); return; }
     if (!forma) { setErro('Escolha como você vai pagar.'); return; }
+    if (itensCarrinho.length === 0) { setErro('Seu carrinho está vazio. Escolha algo no cardápio.'); return; }
+    if (itensCarrinho.some((i) => !i.produtoId)) { limparCarrinho(); setErro('Seu carrinho estava desatualizado. Adicione os itens novamente.'); return; }
 
     const telefone = enderecoConfirmado.telefone || cliente.telefone;
     if (!telefone) { setErro('Informe um telefone para contato no endereço.'); return; }
@@ -469,19 +482,28 @@ const CadastroEndereco: React.FC = () => {
     setErro('');
     setEnviando(true);
     try {
-      const pedido = await PedidoClienteService.criar(slug, {
+      const pedido = await PedidoClienteService.criarDelivery(slug, {
         modalidade: 'ENTREGA',
         cliente_nome: cliente.nome,
         cliente_telefone: telefone,
-        endereco_id: enderecoConfirmado.id,
         forma_pagamento: forma,
         ...(forma === 'DINHEIRO' && trocoParaNumero(troco) ? { troco_para: trocoParaNumero(troco) } : {}),
-        itens: itensDoCarrinho(itensCarrinho),
+        endereco_entrega: {
+          rua: enderecoConfirmado.rua,
+          numero: enderecoConfirmado.numero,
+          ...(enderecoConfirmado.complemento ? { complemento: enderecoConfirmado.complemento } : {}),
+          bairro: enderecoConfirmado.bairro,
+          cidade: enderecoConfirmado.cidade,
+          estado: enderecoConfirmado.estado,
+          cep: enderecoConfirmado.cep,
+          ...(enderecoConfirmado.referencia ? { referencia: enderecoConfirmado.referencia } : {}),
+        },
+        itens: itensParaPedido(itensCarrinho),
       });
       setPedidoCriado(pedido);
       limparCarrinho();
-    } catch (e: any) {
-      setErro(e.message);
+    } catch (e) {
+      setErro(mensagemDeErro(e, 'Não foi possível enviar o pedido. Tente novamente.'));
     } finally {
       setEnviando(false);
     }
@@ -592,12 +614,15 @@ const CadastroEndereco: React.FC = () => {
 
               {erro && <p className="pgp__erro">{erro}</p>}
 
-              <AcoesPedido
-                rotulo="Confirmar entrega"
-                enviando={enviando}
-                desabilitado={!enderecoSelecionadoId || !forma}
-                onConfirmar={handleConfirmar}
-              />
+              <div className="cad-end__acoes cad-end__acoes--direita">
+                <button
+                  className="cad-end__btn-salvar"
+                  onClick={handleConfirmar}
+                  disabled={!enderecoSelecionadoId || !forma || enviando}
+                >
+                  {enviando ? 'Enviando...' : 'Confirmar entrega'}
+                </button>
+              </div>
             </div>
 
             <PainelLateral enderecos={enderecos} telefones={telefones} onEditarTelefone={handleEditarTelefone} />

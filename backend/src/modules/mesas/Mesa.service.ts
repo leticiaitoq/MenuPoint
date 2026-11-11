@@ -1,6 +1,7 @@
 import prisma from '@config/prisma'
 import { Mesa, StatusMesa } from '@prisma/client'
 import { AppError } from '@shared/errors/AppError'
+import { reservaSegurandoMesa, registrarChegada } from '@modules/reservas/Reserva.chegada'
 import { MesaRepository } from './Mesa.repository'
 import {
   CriarMesaDTO,
@@ -12,6 +13,7 @@ import { env } from '@config/env'
 import { PedidoService } from '@modules/pedidos/Pedido.service'
 import { PedidoRepository } from '@modules/pedidos/Pedido.repository'
 import { criarPedidoSchema } from '@modules/pedidos/Pedido.schema'
+import { montarItensPublicos } from '@modules/pedidos/Pedido.publico'
 import crypto from 'crypto'
 
 // Só pedidos dos últimos N horas aparecem no histórico público da mesa
@@ -81,6 +83,13 @@ export class MesaService {
     return mesa
   }
 
+  /** Dados públicos da mesa (QR Code) + se ela está reservada para quem ainda não confirmou a chegada */
+  async infoPublica(token: string) {
+    const mesa = await this.findByToken(token)
+    const segurando = mesa.status === 'OCUPADA' ? null : await reservaSegurandoMesa(mesa.id, mesa.estabelecimento_id)
+    return { ...mesa, reserva_agora: segurando ? { hora_inicio: segurando.hora_inicio } : null }
+  }
+
   async findByToken(token: string) {
     const mesa = await this.repository.findByToken(token)
 
@@ -90,6 +99,14 @@ export class MesaService {
 
     if (!mesa.ativo) {
       throw new AppError('Esta mesa está inativa', 400)
+    }
+
+    const estab = (mesa as any).estabelecimento
+    if (estab && !estab.aceita_mesa) {
+      throw new AppError(
+        'Este estabelecimento não aceita pedidos em mesa no momento',
+        400
+      )
     }
 
     return mesa
@@ -109,6 +126,11 @@ export class MesaService {
     const pedidos = await prisma.pedido.findMany({
       where: {
         mesa_id: mesa.id,
+        // Só a conta ABERTA: quando o caixa fecha a conta (pedidos liquidados/pagos) o histórico
+        // do convidado some. Quem quer guardar o histórico precisa estar logado (ver
+        // PedidoService.historicoDoCliente, que usa cliente_id e nunca expira).
+        liquidado_em: null,
+        NOT: { pagamento: { is: { status: 'CONFIRMADO' as const } } },
         OR: [
           // Em andamento: aparece SEMPRE que a mesa está aberta, por mais antigo que seja o pedido
           // (ex.: mesa aberta pelo caixa há horas, antes de o cliente chegar)
@@ -147,85 +169,33 @@ export class MesaService {
    * preço sempre do banco, produto precisa existir/estar disponível no restaurante
    * da mesa, mesa não pode estar inativa e o restaurante é avisado por WhatsApp.
    */
-  async criarPedidoPublico(token: string, dados: CriarPedidoPublicoMesaDTO) {
+  async criarPedidoPublico(
+    token: string,
+    dados: CriarPedidoPublicoMesaDTO,
+    /** Preenchido só quando quem pede está com a conta de cliente logada: é o que guarda o pedido no histórico fixo dele */
+    cliente_id?: string
+  ) {
+    const { convidado_ref } = dados
     const mesa = await this.findByToken(token) // 404 se QR inválido, 400 se mesa inativa/sem mesa
 
-    // Ingredientes escolhidos: busca TUDO no banco (nome, preço, quantidade inclusa e máxima).
-    // Só entram ingredientes que pertençam ao produto do item e estejam disponíveis.
-    const idsIngredientes = Array.from(
-      new Set(dados.itens.flatMap((i) => (i.ingredientes ?? []).map((g) => g.adicional_id)))
-    )
-    const doBanco = idsIngredientes.length
-      ? await prisma.adicional.findMany({
-          where: {
-            id: { in: idsIngredientes },
-            disponivel: true,
-            grupo: { produto: { estabelecimento_id: mesa.estabelecimento_id } },
-          },
-          include: { grupo: { select: { produto_id: true } } },
-        })
-      : []
-    const ingredientePorId = new Map(doBanco.map((a) => [a.id, a]))
-
-    const itensMontados = dados.itens.map((item) => {
-      const itens_adicionais: { adicional_id: string; nome_adicional: string; preco_extra: number }[] = []
-      const sem: string[] = []
-      const extras: string[] = []
-      const vistos = new Set<string>()
-
-      for (const escolha of item.ingredientes ?? []) {
-        if (vistos.has(escolha.adicional_id)) throw new AppError('Ingrediente repetido no mesmo item', 400)
-        vistos.add(escolha.adicional_id)
-
-        const ing = ingredientePorId.get(escolha.adicional_id)
-        if (!ing || ing.grupo.produto_id !== item.produto_id) {
-          throw new AppError('Um dos ingredientes escolhidos não está mais disponível. Atualize o cardápio.', 400)
-        }
-        if (escolha.quantidade > ing.quantidade_maxima) {
-          throw new AppError(`Máximo de ${ing.quantidade_maxima} para ${ing.nome}`, 400)
-        }
-
-        // Ingrediente fixo não pode ser retirado nem reduzido
-        if (ing.fixo && escolha.quantidade < ing.quantidade_inclusa) {
-          throw new AppError(`${ing.nome} faz parte do produto e não pode ser retirado`, 400)
-        }
-
-        // Regra do totem: paga só o que passa do incluso; tirar não desconta
-        const extra = Math.max(0, escolha.quantidade - ing.quantidade_inclusa)
-        for (let n = 0; n < extra; n++) {
-          itens_adicionais.push({
-            adicional_id: ing.id,
-            nome_adicional: ing.nome,
-            preco_extra: Number(ing.preco_extra),
-          })
-        }
-
-        if (escolha.quantidade < ing.quantidade_inclusa) {
-          sem.push(escolha.quantidade === 0 ? ing.nome : `${ing.nome} (${escolha.quantidade} em vez de ${ing.quantidade_inclusa})`)
-        } else if (extra > 0) {
-          extras.push(`${ing.nome} x${extra}`)
+    // Mesa reservada para este horário: só o dono da reserva senta nela. Logado na conta que
+    // reservou entra direto (a chegada é registrada); os demais precisam validar a reserva.
+    if (mesa.status !== 'OCUPADA') {
+      const segurando = await reservaSegurandoMesa(mesa.id, mesa.estabelecimento_id)
+      if (segurando) {
+        if (cliente_id && segurando.base.cliente_id === cliente_id) {
+          await registrarChegada(segurando.linhas)
+        } else {
+          throw new AppError(
+            `Esta mesa está reservada para as ${segurando.hora_inicio}. Escaneie o QR Code novamente e confirme sua reserva para usar a mesa.`,
+            403
+          )
         }
       }
+    }
 
-      // A cozinha lê isto: o que tirar, o que acrescentar e o recado do cliente
-      const observacao = [
-        item.para_levar ? 'PARA LEVAR' : '',
-        sem.length ? `Sem: ${sem.join(', ')}` : '',
-        extras.length ? `Extra: ${extras.join(', ')}` : '',
-        item.observacoes ?? '',
-      ]
-        .filter(Boolean)
-        .join(' | ')
-        .slice(0, 500)
-
-      return {
-        produto_id: item.produto_id,
-        quantidade: item.quantidade,
-        preco_unitario: 0, // ignorado: o service usa o preço do banco
-        ...(observacao ? { observacoes: observacao } : {}),
-        itens_adicionais,
-      }
-    })
+    // Mesmas regras de ingredientes/preço do delivery (Pedido.publico.ts)
+    const itensMontados = await montarItensPublicos(mesa.estabelecimento_id, dados.itens)
 
     // Passa pelo schema do pedido para garantir o mesmo formato do fluxo do restaurante
     const pedidoDto = criarPedidoSchema.parse({
@@ -233,6 +203,9 @@ export class MesaService {
       mesa_id: mesa.id,
       cliente_nome: dados.cliente_nome,
       cliente_telefone: '',
+      // Logado: o pedido já nasce na conta. Visitante: guarda o código do aparelho para poder
+      // ligar o pedido à conta se ele entrar antes de a conta da mesa fechar.
+      ...(cliente_id ? { cliente_id } : convidado_ref ? { convidado_ref } : {}),
       itens: itensMontados,
     })
 
@@ -246,6 +219,30 @@ export class MesaService {
       status: pedido.status,
       total: pedido.total,
     }
+  }
+
+  /**
+   * Liga à conta do cliente os pedidos que ele fez como VISITANTE nesta mesa.
+   * Só vale enquanto a conta da mesa está aberta: pedido já liquidado/pago não é ligado
+   * (o histórico do visitante some quando a conta fecha). O código do visitante é aleatório e só
+   * o aparelho que fez os pedidos o conhece, então ninguém consegue puxar pedidos de outra pessoa.
+   */
+  async vincularPedidosConvidado(token: string, convidado_ref: string, cliente_id: string) {
+    const mesa = await this.findByToken(token)
+
+    const { count } = await prisma.pedido.updateMany({
+      where: {
+        mesa_id: mesa.id,
+        estabelecimento_id: mesa.estabelecimento_id,
+        convidado_ref,
+        cliente_id: null,
+        liquidado_em: null,
+        NOT: { pagamento: { is: { status: 'CONFIRMADO' as const } } },
+      },
+      data: { cliente_id, convidado_ref: null },
+    })
+
+    return { vinculados: count }
   }
 
   async listar(

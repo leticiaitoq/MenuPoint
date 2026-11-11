@@ -395,6 +395,11 @@ export const ReservaRestauranteService = {
     return r.data
   },
 
+  /** "Cliente chegou": conclui a reserva e deixa a mesa ocupada em nome de quem reservou (sem exigir pedido) */
+  async registrarChegada(id: string): Promise<void> {
+    await api.post(`reservas/${id}/chegada`)
+  },
+
   /** Caixa reserva uma mesa para um dia e horário (descrição opcional). Nasce CONFIRMADA. */
   async criarPeloCaixa(dados: {
     mesa_id: string

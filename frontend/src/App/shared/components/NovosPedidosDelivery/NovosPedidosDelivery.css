@@ -1,0 +1,189 @@
+/* Aviso de pedidos novos de entrega/retirada: canto de baixo à direita (o de chamados de mesa fica no topo) */
+.pedidos-delivery-alerta {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 900;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 12px 14px 14px;
+  background: var(--bg-surface);
+  color: var(--text);
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px var(--shadow-color);
+  animation: pedidos-delivery-entrada 0.25s ease-out;
+}
+
+.pedidos-delivery-alerta__topo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.pedidos-delivery-alerta__sino {
+  display: inline-flex;
+  font-size: 22px;
+  color: var(--accent);
+  animation: pedidos-delivery-balanco 1.4s ease-in-out infinite;
+  transform-origin: 50% 0;
+}
+
+.pedidos-delivery-alerta__titulo {
+  flex: 1;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.pedidos-delivery-alerta__som {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  font-size: 20px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-muted, var(--text));
+  cursor: pointer;
+}
+.pedidos-delivery-alerta__som:hover { color: var(--text); }
+
+.pedidos-delivery-alerta__resumo { margin: 0 0 8px; font-size: 13px; color: var(--text-muted, var(--text)); }
+
+.pedidos-delivery-alerta__lista {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pedidos-delivery-alerta__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--bg-surface-2, rgba(127, 127, 127, 0.08));
+}
+.pedidos-delivery-alerta__item { border-left: 5px solid var(--accent); }
+
+.pedidos-delivery-alerta__icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.pedidos-delivery-alerta__icone { background: var(--brand-soft); color: var(--accent); }
+
+.pedidos-delivery-alerta__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-muted, var(--text));
+}
+.pedidos-delivery-alerta__info strong { font-size: 15px; color: var(--text); }
+.pedidos-delivery-alerta__info span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.pedidos-delivery-alerta__mais { margin: 0 0 8px; font-size: 12px; color: var(--text-muted, var(--text)); }
+
+.pedidos-delivery-alerta__btn {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--brand);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.pedidos-delivery-alerta__btn:hover { background: var(--brand-hover); }
+
+/* Recolhido: só o sino com o contador, no mesmo canto */
+.pedidos-delivery-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  font-size: 26px;
+  color: #fff;
+  background: var(--brand);
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 6px 20px var(--shadow-color);
+  cursor: pointer;
+  animation: pedidos-delivery-entrada 0.25s ease-out, pedidos-delivery-balanco 2.4s ease-in-out 0.5s infinite;
+}
+.pedidos-delivery-fab:hover { background: var(--brand-hover); }
+
+.pedidos-delivery-fab__contador {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  background: var(--danger, #d32f2f);
+  border: 2px solid var(--bg-surface);
+  border-radius: 999px;
+}
+
+.pedidos-delivery-fab__mudo {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--bg-surface);
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+}
+
+@keyframes pedidos-delivery-entrada {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pedidos-delivery-balanco {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(14deg); }
+  40% { transform: rotate(-12deg); }
+  60% { transform: rotate(8deg); }
+  80% { transform: rotate(-4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pedidos-delivery-alerta,
+  .pedidos-delivery-fab,
+  .pedidos-delivery-alerta__sino { animation: none; }
+}

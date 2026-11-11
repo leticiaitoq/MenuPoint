@@ -1,0 +1,114 @@
+.hres { display: flex; flex-direction: column; gap: 16px; padding: 24px; color: var(--text); }
+.hres__voltar {
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 12px;
+  padding: 8px 14px; font-size: 14px; color: var(--text);
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 999px; cursor: pointer;
+}
+.hres__voltar:hover { border-color: var(--accent); }
+.hres__titulo { margin: 0; font-size: 24px; }
+.hres__subtitulo { margin: 4px 0 0; font-size: 14px; color: var(--text-muted); }
+
+.hres__controles { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+.hres__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.hres__chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; font-size: 14px; color: var(--text);
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 999px; cursor: pointer;
+}
+.hres__chip:hover { border-color: var(--accent); }
+.hres__chip--ativo { color: var(--on-brand, #fff); background: var(--brand); border-color: var(--brand); }
+.hres__chip--pequeno { padding: 5px 10px; font-size: 13px; }
+.hres__chip-num {
+  min-width: 20px; padding: 1px 6px; font-size: 12px; font-weight: 700; text-align: center;
+  color: var(--text); background: var(--bg-surface-alt); border-radius: 999px;
+}
+.hres__chip--ativo .hres__chip-num { color: var(--brand); background: var(--on-brand, #fff); }
+
+.hres__datas { display: flex; flex-wrap: wrap; gap: 12px; }
+.hres__datas label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-muted); }
+.hres__datas input {
+  padding: 8px 10px; color: var(--text); background: var(--bg-surface);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+.hres__intervalo { margin: 0; font-size: 13px; color: var(--text-muted); }
+
+.hres__erro {
+  margin: 0; padding: 10px 14px; font-size: 14px; color: var(--danger);
+  background: var(--bg-surface); border: 1px solid var(--danger); border-radius: 10px;
+}
+.hres__erro button { margin-left: 8px; color: var(--accent); background: none; border: none; text-decoration: underline; cursor: pointer; }
+
+.hres__kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.hres__kpi {
+  display: flex; flex-direction: column; gap: 4px; padding: 14px 16px;
+  background: var(--bg-surface); border: 1px solid var(--border); border-left: 5px solid var(--brand);
+  border-radius: 12px; box-shadow: 0 2px 8px var(--shadow-color);
+}
+.hres__kpi--compareceu { border-left-color: var(--success); }
+.hres__kpi--cancelada  { border-left-color: var(--danger); }
+.hres__kpi--aberta     { border-left-color: var(--accent); }
+.hres__kpi--sem        { border-left-color: var(--warning); }
+.hres__kpi-rotulo { font-size: 13px; color: var(--text-muted); }
+.hres__kpi-valor { font-size: 30px; line-height: 1.1; color: var(--text); }
+.hres__kpi-nota { font-size: 12px; color: var(--text-faint, var(--text-muted)); }
+
+.hres__duplo { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.hres__cartao {
+  display: flex; flex-direction: column; gap: 12px; padding: 16px;
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+.hres__cartao-titulo { margin: 0; font-size: 16px; }
+.hres__lista-simples { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.hres__lista-simples li {
+  display: flex; justify-content: space-between; padding: 8px 10px; font-size: 14px;
+  background: var(--bg-surface-alt); border-radius: 8px;
+}
+
+.hres__legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--text-muted); }
+.hres__legenda-item { display: inline-flex; align-items: center; gap: 6px; }
+.hres__cor { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.hres__cor--compareceu { background: var(--success); }
+.hres__cor--aberta { background: var(--accent); }
+.hres__cor--cancelada { background: var(--danger); }
+.hres__cor--sem_comparecimento { background: var(--warning); }
+
+.hres__grafico {
+  display: flex; align-items: stretch; gap: 6px; height: 200px; padding-top: 4px; overflow-x: auto;
+}
+.hres__coluna { display: flex; flex-direction: column; align-items: center; flex: 1 0 28px; min-width: 28px; min-height: 0; }
+.hres__coluna-total { height: 16px; font-size: 12px; font-weight: 700; color: var(--text); }
+.hres__coluna-rotulo { margin-top: 4px; font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.hres__area { display: flex; flex: 1 1 0; align-items: flex-end; justify-content: center; width: 100%; min-height: 0; }
+.hres__barra {
+  display: flex; flex-direction: column-reverse; width: 100%; max-width: 44px;
+  overflow: hidden; border-radius: 6px 6px 0 0;
+}
+.hres__segmento { min-height: 4px; }
+
+.hres__lista-topo { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.hres__tabela-wrapper { overflow-x: auto; }
+.hres__tabela { width: 100%; border-collapse: collapse; font-size: 14px; }
+.hres__tabela th {
+  padding: 10px 8px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.hres__tabela td { padding: 10px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.hres__vazio { padding: 24px 8px !important; text-align: center; color: var(--text-muted); }
+.hres__badge {
+  display: inline-block; padding: 3px 10px; font-size: 12px; font-weight: 600; color: #fff; border-radius: 999px;
+}
+.hres__badge--compareceu { background: var(--success); }
+.hres__badge--aberta { background: var(--accent); }
+.hres__badge--cancelada { background: var(--danger); }
+.hres__badge--sem_comparecimento { background: var(--warning); }
+
+.hres__mais {
+  align-self: center; padding: 8px 18px; font-size: 14px; color: var(--text);
+  background: var(--bg-surface-alt); border: 1px solid var(--border); border-radius: 10px; cursor: pointer;
+}
+.hres__mais:hover { border-color: var(--accent); }
+
+@media (max-width: 640px) {
+  .hres { padding: 16px 12px; }
+}

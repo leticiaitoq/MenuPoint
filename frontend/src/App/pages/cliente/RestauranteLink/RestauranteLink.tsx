@@ -4,15 +4,19 @@ import { useClienteAuth, ROTA_APOS_LOGIN_CLIENTE } from '../../../shared/context
 import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext'
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext'
 import { useConvidado } from '../../../shared/contexts/Convidadocontext'
+import { useSistemaCliente } from '../../../shared/contexts/SistemaClienteContext'
 
 /**
- * Entrada pelo link do restaurante: /r/:slug
+ * Entrada pelo link do restaurante: /r/:slug — a ÚNICA porta do sistema DELIVERY.
+ *  0. marca esta aba como "delivery" e descarta qualquer mesa (QR Code) que estivesse guardada:
+ *     o cliente de fora do restaurante nunca carrega a sessão de quem está na mesa
  *  1. valida o slug na API e guarda o restaurante escolhido
- *  2. logado → /dwelcome | não logado → /login/cliente (e volta para /dwelcome)
+ *  2. vai para /dwelcome, logado ou não: o cliente navega sem conta e só entra (modal de aviso)
+ *     quando for fazer um pedido ou uma reserva
  *
- * Restaurante DIFERENTE do último acessado: a sessão do cliente é encerrada e ele precisa
- * entrar de novo (a conta é a mesma, mas o login vale só para o restaurante em que foi feito).
- * Abrir o link do MESMO restaurante de novo mantém o cliente logado.
+ * Restaurante DIFERENTE do último acessado: a sessão do cliente é encerrada (o login vale só para o
+ * restaurante em que foi feito) e ele segue como visitante. Abrir o link do MESMO restaurante de novo
+ * mantém o cliente logado.
  */
 const RestauranteLink: React.FC = () => {
   const { slug: slugDaUrl = '' } = useParams<{ slug: string }>()
@@ -21,11 +25,10 @@ const RestauranteLink: React.FC = () => {
   const { slug, restaurante, erro, selecionar } = useRestauranteCliente()
   const { limparCarrinho } = useCarrinho()
   const { limparConvidado } = useConvidado()
+  const { entrarNoDelivery } = useSistemaCliente()
 
   const slugNormalizado = slugDaUrl.trim().toLowerCase()
   const slugAnterior = useRef(slug)
-  // Marca que a sessão foi encerrada por causa da troca de restaurante (para avisar no login)
-  const encerrouPorTroca = useRef(false)
 
   // Refs para ler o valor mais novo sem colocar no array de dependências do efeito:
   // senão o sair() (que muda isAuthenticated) refaria o selecionar() e a busca na API.
@@ -35,37 +38,28 @@ const RestauranteLink: React.FC = () => {
   useEffect(() => {
     if (!slugNormalizado) return
 
+    // Delivery não herda a mesa do sistema local
+    entrarNoDelivery()
+    limparConvidado()
+
     const trocouDeRestaurante = Boolean(slugAnterior.current) && slugAnterior.current !== slugNormalizado
     if (trocouDeRestaurante) {
       // O carrinho do restaurante anterior não pode ir junto...
       limparCarrinho()
-      // ...a mesa (QR Code) do restaurante anterior também não vale mais aqui...
-      limparConvidado()
       // ...e o cliente precisa entrar de novo neste restaurante
-      if (sessao.current.isAuthenticated) {
-        encerrouPorTroca.current = true
-        sessao.current.sair()
-      }
+      if (sessao.current.isAuthenticated) sessao.current.sair()
     }
 
     slugAnterior.current = slugNormalizado
     selecionar(slugNormalizado)
-  }, [slugNormalizado, selecionar, limparCarrinho, limparConvidado])
+  }, [slugNormalizado, selecionar, limparCarrinho, limparConvidado, entrarNoDelivery])
 
   const pronto = restaurante?.slug === slugNormalizado && restaurante.aceita_entrega
 
   useEffect(() => {
     if (!pronto) return
-    navigate(isAuthenticated ? ROTA_APOS_LOGIN_CLIENTE : '/login/cliente', {
-      replace: true,
-      state: {
-        from: ROTA_APOS_LOGIN_CLIENTE,
-        aviso: encerrouPorTroca.current
-          ? `Você abriu outro restaurante${restaurante?.nome ? ` (${restaurante.nome})` : ''}. Entre novamente para continuar.`
-          : undefined,
-      },
-    })
-  }, [pronto, isAuthenticated, navigate, restaurante?.nome])
+    navigate(ROTA_APOS_LOGIN_CLIENTE, { replace: true })
+  }, [pronto, navigate])
 
   let mensagem = 'Abrindo o restaurante...'
   if (erro) mensagem = erro

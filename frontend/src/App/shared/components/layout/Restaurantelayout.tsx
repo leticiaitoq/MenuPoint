@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar/Navbar';
 import Footer from './Footer/Footer';
 import ChamadosMesa from '../ChamadosMesa/ChamadosMesa';
+import NovosPedidosDelivery from '../NovosPedidosDelivery/NovosPedidosDelivery';
 import RestaurantSidebar from './Sidebar/RestaurantSidebar';
 import { useEstabelecimento } from '../../contexts/Estabelecimentocontext';
 import './Restaurantelayout.css';
@@ -47,6 +48,9 @@ const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
 
       {/* Chamados de garçom e pedidos de conta das mesas: aparece em qualquer tela do restaurante */}
       <ChamadosMesa />
+
+      {/* Pedidos novos de entrega e retirada (link do restaurante): também em qualquer tela, com som diferente */}
+      <NovosPedidosDelivery />
     </div>
   );
 };

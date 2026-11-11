@@ -1,33 +1,32 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { ItemCarrinho } from '../components/Carrinho/Carrinho'
-import { CHAVE_RESTAURANTE_CLIENTE } from './RestauranteClienteContext'
+import { useSistemaCliente } from './SistemaClienteContext'
+import { useRestauranteCliente } from './RestauranteClienteContext'
 
-/** Onde o carrinho fica guardado para sobreviver ao recarregar a página */
-const CHAVE_CARRINHO = '@menupoint:carrinho'
-/** Carrinho esquecido por mais tempo que isso é descartado */
-const VALIDADE_CARRINHO_MS = 12 * 60 * 60 * 1000
+/**
+ * Carrinho do DELIVERY fica guardado no sessionStorage (por aba e por restaurante). Assim o visitante
+ * sem conta não perde o que escolheu ao ir para o login/cadastro (nem se der F5) e continua de onde parou.
+ * O carrinho da mesa (local) continua só em memória.
+ */
+const CHAVE_CARRINHO_DELIVERY = '@menupoint:carrinho_delivery'
 
-const slugAtual = (): string => {
-  try { return localStorage.getItem(CHAVE_RESTAURANTE_CLIENTE) ?? '' } catch { return '' }
-}
-
-const lerCarrinhoSalvo = (): ItemCarrinho[] => {
+function lerCarrinhoDelivery(slug: string | null): ItemCarrinho[] {
   try {
-    const bruto = localStorage.getItem(CHAVE_CARRINHO)
+    const bruto = sessionStorage.getItem(CHAVE_CARRINHO_DELIVERY)
     if (!bruto) return []
-    const salvo = JSON.parse(bruto) as { slug?: string; salvoEm?: number; itens?: ItemCarrinho[] }
-    const vencido = !salvo.salvoEm || Date.now() - salvo.salvoEm > VALIDADE_CARRINHO_MS
-    const outroRestaurante = (salvo.slug ?? '') !== slugAtual()
-    if (vencido || outroRestaurante || !Array.isArray(salvo.itens)) {
-      localStorage.removeItem(CHAVE_CARRINHO)
-      return []
-    }
-    return salvo.itens
+    const salvo = JSON.parse(bruto) as { slug?: string; itens?: ItemCarrinho[] }
+    return slug && salvo.slug === slug && Array.isArray(salvo.itens) ? salvo.itens : []
   } catch {
     return []
   }
 }
 
+/**
+ * Carrinho vive num Context (e não num useState local do MenuLocal) porque
+ * o cliente navega para o PersoPedido (outra rota) pra customizar o
+ * produto antes de adicionar — se o carrinho ficasse no state do MenuLocal,
+ * ele seria perdido toda vez que a tela desmonta pra essa navegação.
+ */
 interface CarrinhoContextData {
   itens: ItemCarrinho[]
   adicionarItem: (item: ItemCarrinho) => void
@@ -42,16 +41,34 @@ interface CarrinhoContextData {
 const CarrinhoContext = createContext<CarrinhoContextData>({} as CarrinhoContextData)
 
 export const CarrinhoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [itens, setItens] = useState<ItemCarrinho[]>(lerCarrinhoSalvo)
+  const { sistema } = useSistemaCliente()
+  const { slug } = useRestauranteCliente()
+  const [itens, setItens] = useState<ItemCarrinho[]>(() =>
+    sistema === 'delivery' ? lerCarrinhoDelivery(slug) : []
+  )
 
-  // Guarda a cada mudança
+  // Delivery: guarda o carrinho a cada mudança. Fora do delivery não guarda nada.
   useEffect(() => {
     try {
-      if (itens.length === 0) localStorage.removeItem(CHAVE_CARRINHO)
-      else localStorage.setItem(CHAVE_CARRINHO, JSON.stringify({ slug: slugAtual(), salvoEm: Date.now(), itens }))
+      if (sistema === 'delivery' && slug) {
+        sessionStorage.setItem(CHAVE_CARRINHO_DELIVERY, JSON.stringify({ slug, itens }))
+      } else {
+        sessionStorage.removeItem(CHAVE_CARRINHO_DELIVERY)
+      }
     } catch {
+      /* storage indisponível: segue só em memória */
     }
-  }, [itens])
+  }, [itens, sistema, slug])
+
+  // O carrinho da mesa (local) e o do delivery são de sistemas diferentes: não podem se misturar.
+  // Entrou em outro sistema nesta aba → começa vazio.
+  const sistemaAnterior = useRef(sistema)
+  useEffect(() => {
+    if (sistemaAnterior.current !== sistema) {
+      sistemaAnterior.current = sistema
+      setItens([])
+    }
+  }, [sistema])
 
   const adicionarItem = (item: ItemCarrinho) => {
     setItens((prev) => [...prev, item])
