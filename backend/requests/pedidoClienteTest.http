@@ -1,0 +1,19 @@
+@host = http://localhost:3333/api/v1
+@token_cliente = COLE_AQUI_O_TOKEN_DE_/auth/cliente/login
+
+### Delivery (retirada) — só cliente logado
+POST {{host}}/pedidos/publico/SLUG-DO-RESTAURANTE
+Authorization: Bearer {{token_cliente}}
+Content-Type: application/json
+
+{
+  "modalidade": "RETIRADA",
+  "cliente_nome": "Maria",
+  "cliente_telefone": "(16) 99999-9999",
+  "forma_pagamento": "PIX_PRESENCIAL",
+  "itens": [{ "produto_id": "UUID-DO-PRODUTO", "quantidade": 1 }]
+}
+
+### Histórico fixo (mesa + delivery). Filtros opcionais: ?origem=LOCAL|DELIVERY&slug=...
+GET {{host}}/pedidos/cliente/historico
+Authorization: Bearer {{token_cliente}}

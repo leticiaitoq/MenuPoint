@@ -11,6 +11,7 @@ import { z } from 'zod'
 import { AppError } from '@shared/errors/AppError'
 import { ChamadoMesaService } from './ChamadoMesa.service'
 import { JWTPayload } from '@modules/auth/Auth.schema'
+import { clienteIdOpcional } from '@modules/pedidos/Pedido.publico'
 
 const repository = new MesaRepository()
 const service = new MesaService(repository)
@@ -83,7 +84,9 @@ export async function mesasRoutes(app: FastifyInstance): Promise<void> {
           throw new AppError(parsed.error.issues[0]?.message ?? 'Dados do pedido inválidos', 400)
         }
 
-        const pedido = await service.criarPedidoPublico(token, parsed.data)
+        // Convidado (sem login) pede normalmente; logado tem o pedido ligado à conta (histórico fixo)
+        const clienteId = await clienteIdOpcional(request)
+        const pedido = await service.criarPedidoPublico(token, parsed.data, clienteId)
         return reply.status(201).send({ pedido })
       }
     )

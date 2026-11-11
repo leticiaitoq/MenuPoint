@@ -27,6 +27,7 @@ const enderecoEntregaSchema = z.object({
   cidade: z.string().min(1),
   estado: z.string().length(2).toUpperCase(),
   cep: z.string().regex(/^\d{5}-?\d{3}$/, 'CEP inválido'),
+  referencia: z.string().max(150).optional(),
 })
 
 export const criarPedidoSchema = z.object({

@@ -117,6 +117,10 @@ export class MesaService {
     const pedidos = await prisma.pedido.findMany({
       where: {
         mesa_id: mesa.id,
+        // Só a conta ABERTA: quando o caixa fecha a conta o histórico do convidado some.
+        // Quem quer guardar o histórico precisa estar logado (PedidoService.historicoDoCliente).
+        liquidado_em: null,
+        NOT: { pagamento: { is: { status: 'CONFIRMADO' as const } } },
         OR: [
           // Em andamento: aparece SEMPRE que a mesa está aberta, por mais antigo que seja o pedido
           // (ex.: mesa aberta pelo caixa há horas, antes de o cliente chegar)
@@ -155,7 +159,12 @@ export class MesaService {
    * preço sempre do banco, produto precisa existir/estar disponível no restaurante
    * da mesa, mesa não pode estar inativa e o restaurante é avisado por WhatsApp.
    */
-  async criarPedidoPublico(token: string, dados: CriarPedidoPublicoMesaDTO) {
+  async criarPedidoPublico(
+    token: string,
+    dados: CriarPedidoPublicoMesaDTO,
+    /** Só quando quem pede está com a conta de cliente logada: guarda o pedido no histórico fixo dele */
+    cliente_id?: string
+  ) {
     const mesa = await this.findByToken(token) // 404 se QR inválido, 400 se mesa inativa/sem mesa
 
     // Ingredientes escolhidos: busca TUDO no banco (nome, preço, quantidade inclusa e máxima).
@@ -241,6 +250,7 @@ export class MesaService {
       mesa_id: mesa.id,
       cliente_nome: dados.cliente_nome,
       cliente_telefone: '',
+      ...(cliente_id ? { cliente_id } : {}),
       itens: itensMontados,
     })
 
