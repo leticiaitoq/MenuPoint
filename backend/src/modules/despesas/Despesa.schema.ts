@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-/** Categorias que todo restaurante já tem (as próprias ficam na tabela categorias_despesa). */
 export const CATEGORIAS_PADRAO_DESPESA = [
   'Custos dos Produtos',
   'Contas',

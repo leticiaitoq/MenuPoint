@@ -2,7 +2,6 @@ import { z } from 'zod'
 import { cpfValido } from '@shared/utils/documentos'
 import { telefoneValido, formatarTelefone } from '@shared/utils/telefone'
 
-//  Campos reutilizados 
 const email = z
   .string()
   .trim()
@@ -10,7 +9,6 @@ const email = z
   .email('Formato de e-mail inválido')
   .toLowerCase()
 
-// Mesma regra de senha do restaurante
 const senhaForte = z
   .string()
   .min(8, 'Senha deve ter no mínimo 8 caracteres')
@@ -22,10 +20,6 @@ const codigo6 = z
   .string()
   .length(6, 'Código deve ter 6 dígitos')
   .regex(/^\d{6}$/, 'Código deve conter apenas números')
-
-// JWT do cliente
-// Mesmo formato do JWTPayload do restaurante, para o @fastify/jwt aceitar os dois.
-// perfil/escopo = 'CLIENTE' é o que separa um do outro nas rotas.
 export interface ClienteJWTPayload {
   sub: string
   nome: string
@@ -116,7 +110,7 @@ export const refreshTokenClienteSchema = z.object({
 })
 
 // Perfil (área logada) 
-// Aqui só nome e telefone. O CPF não muda. O e-mail (que é o login) tem fluxo próprio
+// Aqui só nome e telefone. O CPF não muda. O e-mail tem fluxo próprio
 export const atualizarPerfilClienteSchema = z.object({
   nome: z
     .string()
@@ -171,7 +165,7 @@ export interface ClienteResumoDTO {
   email: string
   telefone: string
   email_verificado: boolean
-  /** URL pública da foto de perfil; null = cliente ainda não enviou (o front mostra a imagem padrão) */
+  /** URL pública da foto de perfil; null = cliente ainda não enviou */
   foto_url: string | null
 }
 

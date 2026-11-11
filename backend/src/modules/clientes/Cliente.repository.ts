@@ -54,7 +54,7 @@ export class ClienteRepository {
     return prisma.cliente.update({ where: { id }, data: { foto_url } })
   }
 
-  /** Troca a senha e derruba os refresh tokens abertos (o service abre uma sessão nova em seguida). */
+  /** Troca a senha e derruba os refresh tokens abertos */
   async atualizarSenha(id: string, senha_hash: string): Promise<void> {
     await prisma.$transaction([
       prisma.cliente.update({ where: { id }, data: { senha_hash } }),
@@ -66,7 +66,7 @@ export class ClienteRepository {
     await prisma.cliente.update({ where: { id }, data: { ultimo_acesso: new Date() } })
   }
 
-  // ── Códigos de 6 dígitos ───────────────────────────────────────────────────
+  //  Códigos de 6 dígitos 
   private gerarCodigo6Digitos(): string {
     return crypto.randomInt(0, 1_000_000).toString().padStart(6, '0')
   }
@@ -189,13 +189,12 @@ export class ClienteRepository {
   }
 
   // Alteração de e-mail (logado)
-  /** Guarda o e-mail novo junto do código. O e-mail atual só muda em aplicarAlteracaoEmail. */
   async criarTokenAlteracaoEmail(
     cliente_id: string,
     novo_email: string,
     expiracaoMinutos = 15
   ): Promise<string> {
-    // Um pedido por vez: o novo apaga os anteriores do cliente (e limpa vencidos/usados de todos)
+    // Um pedido por vez: o novo apaga os anteriores do cliente
     await prisma.tokenAlteracaoEmailCliente.deleteMany({
       where: {
         OR: [{ cliente_id }, { usado: true }, { expira_em: { lt: new Date() } }],
@@ -259,8 +258,7 @@ export class ClienteRepository {
   }
 
   /**
-   * Consome o refresh token de forma atômica: só um pedido consegue marcar
-   * "usado". Devolve false se já foi usado, venceu ou não é de cliente.
+   * só um pedido consegue marcar "usado". Devolve false se já foi usado, venceu ou não é de cliente.
    */
   async consumirRefreshToken(token: string): Promise<boolean> {
     const r = await prisma.refreshToken.updateMany({

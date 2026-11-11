@@ -19,10 +19,6 @@ const estabelecimentoDe = (request: FastifyRequest): string => {
   return user.estabelecimento_id
 }
 
-/**
- * Despesas do restaurante. Dinheiro do negócio: só ADMIN acessa.
- * Registradas em /api/v1/despesas (veja app.ts).
- */
 export async function despesasRoutes(app: FastifyInstance): Promise<void> {
   app.addHook('onRequest', authorize('ADMIN'))
 

@@ -294,7 +294,6 @@ export class ClienteService {
   }
 
   // Envia a foto para o Storage e grava a URL no cadastro do cliente.
-  // a foto aparece em qualquer dispositivo em que a conta entrar.
   async atualizarFoto(id: string, arquivo: { buffer: Buffer; mimetype: string }): Promise<ClientePerfilDTO> {
     const atual = await this.buscarAtivo(id)
 
@@ -321,9 +320,7 @@ export class ClienteService {
 
   //  ALTERAR E-MAIL (logado) 
   // confere a senha e manda um código para o NOVO e-mail
-  //  com o código certo o e-mail muda e uma sessão nova é devolvida
-  // Erros de senha/código são 400 (não 401) de propósito: o front trata 401 como "sessão expirada".
-  async solicitarAlteracaoEmail(
+    async solicitarAlteracaoEmail(
     id: string,
     data: SolicitarAlteracaoEmailClienteDTO
   ): Promise<{ email: string }> {

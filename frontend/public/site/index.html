@@ -1,82 +1,159 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
+
 <head>
+
   <meta charset="UTF-8" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
   <title>MenuPoint – O point que transforma fome em vendas</title>
+
   <meta name="description" content="Sistema completo para restaurantes gerenciarem pedidos, cardápios e mesas de forma simples, inteligente e eficiente. Comece agora.">
+
   <!-- Open Graph -->
+
   <meta property="og:title" content="MenuPoint – O point que transforma fome em vendas">
+
   <meta property="og:description" content="Sistema completo para restaurantes gerenciarem pedidos, cardápios e mesas de forma simples, inteligente e eficiente.">
+
   <meta property="og:image" content="https://www.menupoint.space/site/assets/Home.png">
+
   <meta property="og:type" content="website">
+
   <meta property="og:locale" content="pt_BR">
+
   <!-- Twitter Card -->
+
   <meta name="twitter:card" content="summary_large_image">
+
   <meta name="twitter:title" content="MenuPoint – O point que transforma fome em vendas">
+
   <meta name="twitter:description" content="Sistema completo para restaurantes gerenciarem pedidos, cardápios e mesas de forma simples, inteligente e eficiente.">
+
   <meta name="twitter:image" content="https://www.menupoint.space/site/assets/Home.png">
+
   <link rel="icon" href="./assets/Logo.png" type="image/png">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Syne:wght@800&display=swap" rel="stylesheet"/>
+
   <link rel="stylesheet" href="style.css">
 
+
+
 </head>
+
 <body>
+
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="i-cart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></symbol><symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol><symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol><symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></symbol><symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol><symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></symbol><symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol><symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol><symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol><symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol><symbol id="i-trend" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></symbol><symbol id="i-dollar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol><symbol id="i-checkc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol><symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol><symbol id="i-layout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></symbol><symbol id="i-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol><symbol id="i-truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></symbol><symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol><symbol id="i-msg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></symbol><symbol id="i-tool" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol></defs></svg>
 
+
+
 <nav>
+
   <div class="nav-inner">
+
     <a href="#" class="nav-logo">
+
       <div class="logo-icon">
+
         <img src="./assets/Logo.png" alt="Logo" class="logo-img">
+
       </div>
+
       <img src="./assets/Texto.png" alt="Testo" class="texto-img">
+
     </a>
+
     <ul class="nav-links" id="navLinks">
+
       <li><a href="#features">Funcionalidades</a></li>
+
       <li><a href="#how">Como funciona</a></li>
+
       <li><a href="#why">Vantagens</a></li>
+
       <li><a href="#pricing">Planos</a></li>
+
       <li><a href="#about">Sobre</a></li>
+
       <li><a href="/login">Entrar</a></li>
+
     </ul>
+
     <a href="#pricing" class="btn-red nav-cta">Começar agora</a>
+
     <button class="hamburger" id="hamburger" aria-label="Menu">
+
       <span></span><span></span><span></span>
+
     </button>
+
   </div>
+
 </nav>
 
+
+
 <section class="hero">
+
   <div class="container">
+
     <div class="hero-inner">
+
       <div>
+
         <span class="eyebrow">Gestão completa para restaurantes</span>
+
         <h1>
+
           <span class="brand">MenuPoint</span><br>
+
           O point que transforma<br>fome em vendas
+
         </h1>
+
         <p>Sistema completo para restaurantes gerenciarem pedidos, cardápios e mesas de forma simples, inteligente e eficiente.</p>
+
         <div class="hero-btns">
+
           <a href="#pricing" class="btn-red">Começar agora</a>
+
           <a href="#how" class="btn-outline">Como funciona</a>
+
         </div>
+
         <div class="hero-checks">
+
           <span><span class="check"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Fácil de usar</span>
+
           <span><span class="check"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Mais vendas</span>
+
           <span><span class="check"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Menos erros</span>
+
         </div>
+
       </div>
+
       <img src="./assets/Home.png" alt="Painel do MenuPoint" class="home-img">
+
     </div>
+
   </div>
+
 </section>
 
-<!-- ── PROBLEM / SOLUTION ─────────────────────────── -->
+
+
+<!-- PROBLEM / SOLUTION  -->
+
 <section class="problem-solution">
+
   <div class="container">
+
     <div class="ps-grid">
-      <div class="ps-box">
+      <div class="ps-box ps-problem">
         <div class="badge">O problema</div>
         <h3>Muitos restaurantes ainda usam:</h3>
         <div class="old-methods">
@@ -84,7 +161,7 @@
           <div class="old-method"><div class="icon"><svg class="ico" aria-hidden="true"><use href="#i-msg"/></svg></div>WhatsApp</div>
           <div class="old-method"><div class="icon"><svg class="ico" aria-hidden="true"><use href="#i-tool"/></svg></div>Controle manual</div>
         </div>
-        <p style="font-size:.85rem;color:var(--gray-700);margin-bottom:12px">Isso gera:</p>
+        <p class="ps-sub">Isso gera:</p>
         <ul class="problems-list">
           <li><span class="x"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></span> Erros de pedidos</li>
           <li><span class="x"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></span> Falta de organização</li>
@@ -92,562 +169,1094 @@
           <li><span class="x"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></span> Clientes insatisfeitos</li>
         </ul>
       </div>
-      <div>
-        <img src="./assets/Mascote.png" alt="Mascote do MenuPoint" class="chef-img">
-        <div class="ps-box" style="margin-top:24px">
-          <div class="badge">A solução</div>
-          <h3>Com o MenuPoint você:</h3>
-          <ul class="solution-list">
-            <li><span class="check-green"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Organiza pedidos em tempo real</li>
-            <li><span class="check-green"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Controla mesas e atendimento</li>
-            <li><span class="check-green"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Gerencia cardápio digital</li>
-            <li><span class="check-green"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Aumenta suas vendas</li>
-            <li><span class="check-green"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Melhora a experiência do cliente</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── FEATURES ───────────────────────────────────── -->
-<section class="features" id="features">
-  <div class="container">
-    <h2 class="section-title">Tudo que seu restaurante precisa</h2>
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-cart"/></svg></div>
-        <h4>Gestão de Pedidos</h4>
-        <p>Acompanhe todos os pedidos em tempo real e organize sua cozinha.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg></div>
-        <h4>Cardápio Digital</h4>
-        <p>Organize produtos, categorias, preços e promoções facilmente.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-grid"/></svg></div>
-        <h4>Gestão de Mesas</h4>
-        <p>Veja mesas ocupadas, reservas e tempo de permanência.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg></div>
-        <h4>Relatórios</h4>
-        <p>Acompanhe vendas, faturamento e desempenho do seu restaurante.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-tag"/></svg></div>
-        <h4>Promoções</h4>
-        <p>Crie ofertas e combos para atrair mais clientes e vender mais.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-phone"/></svg></div>
-        <h4>Experiência do Cliente</h4>
-        <p>Pedidos rápidos, simples e intuitivos direto do celular.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── MÓDULOS DO PAINEL ──────────────────────────── -->
-<section class="screenshots">
-  <div class="container">
-    <h2 class="section-title">Tudo em um só painel</h2>
-    <div class="modules-grid">
-      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-layout"/></svg><strong>Dashboard</strong><span>Visão geral do dia</span></div>
-      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-clipboard"/></svg><strong>Fila de pedidos</strong><span>Da cozinha ao cliente</span></div>
-      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-grid"/></svg><strong>Mesas</strong><span>Ocupação e QR Code</span></div>
-      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><strong>Cardápio</strong><span>Produtos e categorias</span></div>
-      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-card"/></svg><strong>Caixa</strong><span>Pagamentos por mesa</span></div>
-      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-calendar"/></svg><strong>Reservas</strong><span>Mesas reservadas</span></div>
-      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg><strong>Relatórios</strong><span>Vendas e despesas</span></div>
-      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg><strong>Histórico</strong><span>Todos os pedidos</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ── HOW IT WORKS ───────────────────────────────── -->
-<section class="how" id="how">
-  <div class="container">
-    <h2 class="section-title">Como funciona</h2>
-    <div class="steps-row">
-      <div class="step">
-        <div class="step-icon"><svg class="ico" aria-hidden="true"><use href="#i-phone"/></svg></div>
-        <div class="step-num">1</div>
-        <h4>Cliente faz o pedido pelo cardápio digital</h4>
-      </div>
-      <div class="step-arrow">→</div>
-      <div class="step">
-        <div class="step-icon"><svg class="ico" aria-hidden="true"><use href="#i-clipboard"/></svg></div>
-        <div class="step-num">2</div>
-        <h4>Pedido entra na fila e cozinha prepara</h4>
-      </div>
-      <div class="step-arrow">→</div>
-      <div class="step">
-        <div class="step-icon"><svg class="ico" aria-hidden="true"><use href="#i-checkc"/></svg></div>
-        <div class="step-num">3</div>
-        <h4>Pedido fica pronto e é marcado</h4>
-      </div>
-      <div class="step-arrow">→</div>
-      <div class="step">
-        <div class="step-icon"><svg class="ico" aria-hidden="true"><use href="#i-truck"/></svg></div>
-        <div class="step-num">4</div>
-        <h4>Pedido é entregue ao cliente</h4>
-      </div>
-      <div class="step-arrow">→</div>
-      <div class="step">
-        <div class="step-icon"><svg class="ico" aria-hidden="true"><use href="#i-trend"/></svg></div>
-        <div class="step-num">5</div>
-        <h4>Restaurante acompanha tudo em tempo real</h4>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── WHY + TESTIMONIAL ──────────────────────────── -->
-<section class="why-section" id="why">
-  <div class="container">
-    <div class="why-grid">
-      <div class="why-list">
-        <h3>Por que usar o MenuPoint?</h3>
-        <ul class="why-items">
-          <li><span class="why-icon"><svg class="ico" aria-hidden="true"><use href="#i-dollar"/></svg></span> Aumenta o faturamento</li>
-          <li><span class="why-icon"><svg class="ico" aria-hidden="true"><use href="#i-zap"/></svg></span> Agiliza o atendimento</li>
-          <li><span class="why-icon"><svg class="ico" aria-hidden="true"><use href="#i-checkc"/></svg></span> Reduz erros</li>
-          <li><span class="why-icon"><svg class="ico" aria-hidden="true"><use href="#i-star"/></svg></span> Moderniza seu restaurante</li>
+      <img src="./assets/Mascote-recortado.png" alt="Mascote do MenuPoint" class="chef-img">
+      <div class="ps-box ps-solution">
+        <div class="badge">A solução</div>
+        <h3>Com o MenuPoint você:</h3>
+        <ul class="solution-list">
+          <li><span class="check-green"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Organiza pedidos em tempo real</li>
+          <li><span class="check-green"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Controla mesas e atendimento</li>
+          <li><span class="check-green"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Gerencia cardápio digital</li>
+          <li><span class="check-green"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Aumenta suas vendas</li>
+          <li><span class="check-green"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Melhora a experiência do cliente</li>
         </ul>
       </div>
-      <div class="who-box">
-        <div class="badge">Para quem é</div>
-        <h3>Feito para o dia a dia de quem serve</h3>
-        <p>Restaurantes, lanchonetes, pizzarias, bares e cafeterias que querem organizar pedidos, mesas e cardápio sem papel e sem confusão.</p>
-        <div class="chips"><span>Restaurantes</span><span>Lanchonetes</span><span>Pizzarias</span><span>Bares</span><span>Cafeterias</span></div>
-      </div>
     </div>
   </div>
 </section>
 
-<!-- ── PRICING ──────────────────────────────────────── -->
-<section class="pricing" id="pricing">
+<!--  FEATURES  -->
+
+<section class="features" id="features">
+
   <div class="container">
+
+    <h2 class="section-title">Tudo que seu restaurante precisa</h2>
+
+    <div class="features-grid">
+
+      <div class="feature-card">
+
+        <div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-cart"/></svg></div>
+
+        <h4>Gestão de Pedidos</h4>
+
+        <p>Acompanhe todos os pedidos em tempo real e organize sua cozinha.</p>
+
+      </div>
+
+      <div class="feature-card">
+
+        <div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg></div>
+
+        <h4>Cardápio Digital</h4>
+
+        <p>Organize produtos, categorias, preços e promoções facilmente.</p>
+
+      </div>
+
+      <div class="feature-card">
+
+        <div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-grid"/></svg></div>
+
+        <h4>Gestão de Mesas</h4>
+
+        <p>Veja mesas ocupadas, reservas e tempo de permanência.</p>
+
+      </div>
+
+      <div class="feature-card">
+
+        <div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg></div>
+
+        <h4>Relatórios</h4>
+
+        <p>Acompanhe vendas, faturamento e desempenho do seu restaurante.</p>
+
+      </div>
+
+      <div class="feature-card">
+
+        <div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-tag"/></svg></div>
+
+        <h4>Promoções</h4>
+
+        <p>Crie ofertas e combos para atrair mais clientes e vender mais.</p>
+
+      </div>
+
+      <div class="feature-card">
+
+        <div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-phone"/></svg></div>
+
+        <h4>Experiência do Cliente</h4>
+
+        <p>Pedidos rápidos, simples e intuitivos direto do celular.</p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!--  MÓDULOS DO PAINEL  -->
+
+<section class="screenshots">
+
+  <div class="container">
+
+    <h2 class="section-title">Tudo em um só painel</h2>
+
+    <div class="modules-grid">
+
+      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-layout"/></svg><strong>Dashboard</strong><span>Visão geral do dia</span></div>
+
+      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-clipboard"/></svg><strong>Fila de pedidos</strong><span>Da cozinha ao cliente</span></div>
+
+      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-grid"/></svg><strong>Mesas</strong><span>Ocupação e QR Code</span></div>
+
+      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><strong>Cardápio</strong><span>Produtos e categorias</span></div>
+
+      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-card"/></svg><strong>Caixa</strong><span>Pagamentos por mesa</span></div>
+
+      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-calendar"/></svg><strong>Reservas</strong><span>Mesas reservadas</span></div>
+
+      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg><strong>Relatórios</strong><span>Vendas e despesas</span></div>
+
+      <div class="module"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg><strong>Histórico</strong><span>Todos os pedidos</span></div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!--  HOW IT WORKS  -->
+
+<section class="how" id="how">
+
+  <div class="container">
+
+    <h2 class="section-title">Como funciona</h2>
+
+    <div class="steps-row">
+
+      <div class="step">
+
+        <div class="step-icon"><svg class="ico" aria-hidden="true"><use href="#i-phone"/></svg></div>
+
+        <div class="step-num">1</div>
+
+        <h4>Cliente faz o pedido pelo cardápio digital</h4>
+
+      </div>
+
+      <div class="step-arrow">→</div>
+
+      <div class="step">
+
+        <div class="step-icon"><svg class="ico" aria-hidden="true"><use href="#i-clipboard"/></svg></div>
+
+        <div class="step-num">2</div>
+
+        <h4>Pedido entra na fila e cozinha prepara</h4>
+
+      </div>
+
+      <div class="step-arrow">→</div>
+
+      <div class="step">
+
+        <div class="step-icon"><svg class="ico" aria-hidden="true"><use href="#i-checkc"/></svg></div>
+
+        <div class="step-num">3</div>
+
+        <h4>Pedido fica pronto e é marcado</h4>
+
+      </div>
+
+      <div class="step-arrow">→</div>
+
+      <div class="step">
+
+        <div class="step-icon"><svg class="ico" aria-hidden="true"><use href="#i-truck"/></svg></div>
+
+        <div class="step-num">4</div>
+
+        <h4>Pedido é entregue ao cliente</h4>
+
+      </div>
+
+      <div class="step-arrow">→</div>
+
+      <div class="step">
+
+        <div class="step-icon"><svg class="ico" aria-hidden="true"><use href="#i-trend"/></svg></div>
+
+        <div class="step-num">5</div>
+
+        <h4>Restaurante acompanha tudo em tempo real</h4>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- WHY + TESTIMONIAL  -->
+
+<section class="why-section" id="why">
+
+  <div class="container">
+
+    <div class="why-grid">
+
+      <div class="why-list">
+
+        <h3>Por que usar o MenuPoint?</h3>
+
+        <ul class="why-items">
+
+          <li><span class="why-icon"><svg class="ico" aria-hidden="true"><use href="#i-dollar"/></svg></span> Aumenta o faturamento</li>
+
+          <li><span class="why-icon"><svg class="ico" aria-hidden="true"><use href="#i-zap"/></svg></span> Agiliza o atendimento</li>
+
+          <li><span class="why-icon"><svg class="ico" aria-hidden="true"><use href="#i-checkc"/></svg></span> Reduz erros</li>
+
+          <li><span class="why-icon"><svg class="ico" aria-hidden="true"><use href="#i-star"/></svg></span> Moderniza seu restaurante</li>
+
+        </ul>
+
+      </div>
+
+      <div class="who-box">
+
+        <div class="badge">Para quem é</div>
+
+        <h3>Feito para o dia a dia de quem serve</h3>
+
+        <p>Restaurantes, lanchonetes, pizzarias, bares e cafeterias que querem organizar pedidos, mesas e cardápio sem papel e sem confusão.</p>
+
+        <div class="chips"><span>Restaurantes</span><span>Lanchonetes</span><span>Pizzarias</span><span>Bares</span><span>Cafeterias</span></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- PRICING  -->
+
+<section class="pricing" id="pricing">
+
+  <div class="container">
+
     <h2 class="section-title">Planos para todo tamanho de restaurante</h2>
+
     <p class="section-sub">Escolha o plano ideal para a sua operação. O plano Enterprise é combinado de acordo com a sua necessidade.</p>
 
+
+
     <div class="pricing-toggle">
+
       <span class="toggle-label active" id="label-mensal">Mensal</span>
+
       <label class="toggle-wrap">
+
         <input type="checkbox" id="billingToggle">
+
         <span class="toggle-knob"></span>
+
       </label>
+
       <span class="toggle-label" id="label-anual">Anual</span>
+
       <span class="discount-badge">2 meses grátis</span>
+
     </div>
+
+
 
     <div class="pricing-grid">
 
+
+
       <!-- BÁSICO -->
+
       <div class="plan-card">
+
         <div class="plan-name">Básico</div>
+
         <div class="plan-desc">Ideal para quem está começando</div>
+
         <div class="plan-price" id="price-basic">
+
           <sup>R$</sup><span class="val">97</span><span class="period">/mês</span>
+
         </div>
+
         <div class="plan-price-annual" id="annual-basic"></div>
+
         <hr class="plan-divider">
+
         <ul class="plan-features">
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Gestão de pedidos</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Cardápio digital</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Até 10 mesas</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> 1 usuário / operador</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Suporte por e-mail</li>
+
           <li class="disabled"><span class="fi off"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Relatórios avançados</li>
+
           <li class="disabled"><span class="fi off"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Promoções e combos</li>
+
           <li class="disabled"><span class="fi off"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Múltiplos usuários</li>
+
         </ul>
+
         <button class="plan-btn filled" onclick="iniciarPagamento('basico', this)">Assinar plano Básico</button>
+
       </div>
+
+
 
       <!-- PRO (popular) -->
+
       <div class="plan-card popular">
+
         <span class="popular-tag">Mais popular</span>
+
         <div class="plan-name" style="color:var(--red)">Pro</div>
+
         <div class="plan-desc">Para restaurantes em crescimento</div>
+
         <div class="plan-price" id="price-pro">
+
           <sup>R$</sup><span class="val">197</span><span class="period">/mês</span>
+
         </div>
+
         <div class="plan-price-annual" id="annual-pro"></div>
+
         <hr class="plan-divider">
+
         <ul class="plan-features">
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Tudo do plano Básico</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Mesas ilimitadas</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Até 5 usuários</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Relatórios completos</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Promoções e combos</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Histórico de pedidos</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Suporte via WhatsApp</li>
+
           <li class="disabled"><span class="fi off"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> API de integrações</li>
+
         </ul>
+
         <button class="plan-btn filled" onclick="iniciarPagamento('pro', this)">Assinar plano Pro</button>
+
       </div>
+
+
 
       <!-- ENTERPRISE -->
+
       <div class="plan-card">
+
         <div class="plan-name">Enterprise</div>
+
         <div class="plan-desc">Para redes e franquias</div>
+
         <div class="plan-price plan-price--custom" id="price-ent">
+
           <span class="val">A combinar</span>
+
         </div>
+
         <div class="plan-price-annual plan-price-annual--neutral" id="annual-ent">Valor sob medida para a sua operação</div>
+
         <hr class="plan-divider">
+
         <ul class="plan-features">
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Tudo do plano Pro</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Usuários ilimitados</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Múltiplas unidades</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> API de integrações</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Dashboard centralizado</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Onboarding dedicado</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> Suporte prioritário 24/7</li>
+
           <li><span class="fi"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span> SLA garantido</li>
+
         </ul>
+
         <button type="button" class="plan-btn outline" onclick="abrirContato()">Falar com especialista</button>
+
       </div>
+
+
 
     </div><!-- /pricing-grid -->
+
     <div class="plan-dots" id="planDots" aria-hidden="true">
+
       <button type="button" class="plan-dot" data-i="0" tabindex="-1"></button>
+
       <button type="button" class="plan-dot" data-i="1" tabindex="-1"></button>
+
       <button type="button" class="plan-dot" data-i="2" tabindex="-1"></button>
+
     </div>
+
   </div>
+
 </section>
 
-<!-- ── SOBRE ──────────────────────────────────────── -->
+
+
+<!-- SOBRE  -->
+
 <section class="about-section" id="about">
+
   <div class="container">
+
     <h2 class="section-title">Sobre o MenuPoint</h2>
+
     <div class="about-grid">
+
       <div class="about-text">
+
         <p class="about-lead">Nascemos da frustração de ver bons restaurantes perderem vendas por causa de processos ultrapassados.</p>
+
         <p>Em 2026, um grupo de empreendedores apaixonados por tecnologia e gastronomia se uniu com um objetivo claro: criar uma ferramenta simples o suficiente para qualquer restaurante usar no primeiro dia, mas poderosa o bastante para crescer junto com o negócio.</p>
+
         <p>O MenuPoint nasceu para ser o ponto de encontro entre a eficiência digital e o calor humano da boa hospitalidade. Hoje, o MenuPoint reúne pedidos, mesas, cardápio e caixa em um só painel, para atender melhor, vender mais e trabalhar com muito menos estresse.</p>
+
         <p><strong>Nossa missão:</strong> transformar a gestão de restaurantes em algo tão simples quanto pedir uma pizza.</p>
+
       </div>
+
       <div class="about-stats">
+
         <div class="stat-card"><div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-grid"/></svg></div><div class="stat-title">QR Code por mesa</div><div class="stat-label">O cliente pede direto do celular</div></div>
+
         <div class="stat-card"><div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-clipboard"/></svg></div><div class="stat-title">Fila em tempo real</div><div class="stat-label">Pedidos chegam direto à cozinha</div></div>
+
         <div class="stat-card"><div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg></div><div class="stat-title">Cardápio com link próprio</div><div class="stat-label">Um endereço exclusivo para o seu restaurante</div></div>
+
         <div class="stat-card"><div class="feature-icon"><svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg></div><div class="stat-title">Caixa e relatórios</div><div class="stat-label">Pagamentos, despesas e vendas</div></div>
+
       </div>
+
     </div>
+
   </div>
+
 </section>
 
-<!-- ── CTA BAND ───────────────────────────────────── -->
+
+
+<!-- CTA BAND -->
+
 <section class="cta-band" id="cta">
+
   <div class="container">
+
     <h2>Pronto para transformar seu restaurante?</h2>
+
     <p>O point que transforma fome em vendas</p>
+
     <a href="#pricing" class="btn-white">Começar agora →</a>
+
   </div>
+
 </section>
 
-<!-- ── FOOTER ─────────────────────────────────────── -->
+
+
+<!-- FOOTER  -->
+
 <footer>
+
   <div class="container">
+
     <div class="footer-grid">
+
       <div class="footer-brand">
+
         <div class="brand">MenuPoint</div>
+
         <p>Sistema completo para restaurantes venderem mais e atenderem melhor.</p>
+
       </div>
+
       <div class="footer-col">
+
         <h4>Navegação</h4>
+
         <ul>
+
           <li><a href="#">Início</a></li>
+
           <li><a href="#features">Funcionalidades</a></li>
+
           <li><a href="#how">Como funciona</a></li>
+
           <li><a href="#why">Vantagens</a></li>
+
         </ul>
+
       </div>
+
       <div class="footer-col">
+
         <h4>Suporte</h4>
+
         <ul>
+
           <li><a href="mailto:my.menupoint@gmail.com.br">Central de ajuda</a></li>
+
           <li><a href="mailto:my.menupoint@gmail.com.br">Contato</a></li>
+
           <li><a href="/termos">Termos de Uso e Privacidade</a></li>
+
         </ul>
+
       </div>
+
       <div class="footer-col">
+
         <h4>Contato</h4>
+
         <ul>
+
           <li><a href="my.menupoint@gmail.com">E-mail</a></li>
+
           <li><a href="https://instagram.com/menupoint" target="_blank">Instagram</a></li>
+
         </ul>
+
       </div>
+
     </div>
+
     <div class="footer-bottom">© 2026 MenuPoint. Todos os direitos reservados.</div>
+
   </div>
+
 </footer>
 
-<!-- ── CONTATO: FALAR COM ESPECIALISTA (Enterprise) ──── -->
+
+
+<!-- CONTATO: FALAR COM ESPECIALISTA (Enterprise) -->
+
 <div class="modal" id="contatoModal" hidden>
+
   <div class="modal-backdrop" data-fechar></div>
+
   <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="contatoTitulo">
+
     <button type="button" class="modal-close" data-fechar aria-label="Fechar">&times;</button>
 
+
+
     <div id="contatoFormWrap">
+
       <h3 id="contatoTitulo">Fale com um especialista</h3>
+
       <p class="modal-sub">Conte um pouco sobre o seu negócio e nossa equipe entra em contato para montar o plano Enterprise sob medida.</p>
 
+
+
       <form id="contatoForm" novalidate>
+
         <label class="campo">Nome <span class="req">*</span>
+
           <input name="nome" type="text" autocomplete="name" maxlength="100" required>
+
         </label>
+
         <label class="campo">E-mail <span class="req">*</span>
+
           <input name="email" type="email" autocomplete="email" inputmode="email" maxlength="150" required>
+
         </label>
+
         <div class="campo-linha">
+
           <label class="campo">Telefone / WhatsApp
+
             <input name="telefone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20">
+
           </label>
+
           <label class="campo">Restaurante ou rede
+
             <input name="restaurante" type="text" maxlength="150">
+
           </label>
+
         </div>
+
         <label class="campo">Como podemos ajudar?
+
           <textarea name="mensagem" rows="3" maxlength="1000" placeholder="Ex.: temos 4 unidades e queremos centralizar os pedidos"></textarea>
+
         </label>
+
+
 
         <!-- Isca para robôs: invisível para pessoas -->
+
         <div class="campo-isca" aria-hidden="true">
+
           <label>Não preencha este campo <input name="website" type="text" tabindex="-1" autocomplete="off"></label>
+
         </div>
 
+
+
         <p class="form-erro" id="contatoErro" role="alert" hidden></p>
+
         <button type="submit" class="plan-btn filled" id="contatoEnviar">Enviar mensagem</button>
+
       </form>
+
     </div>
+
+
 
     <div class="modal-sucesso" id="contatoSucesso" hidden>
+
       <div class="ok-icon" aria-hidden="true">✓</div>
+
       <h3>Mensagem enviada!</h3>
+
       <p class="modal-sub">Recebemos seu contato. Nossa equipe fala com você em breve pelo e-mail informado.</p>
+
       <button type="button" class="plan-btn outline" data-fechar>Fechar</button>
+
     </div>
+
   </div>
+
 </div>
 
+
+
 <script>
+
   // Mobile menu toggle
+
   const hamburger = document.getElementById('hamburger');
+
   const navLinks  = document.getElementById('navLinks');
+
   hamburger.addEventListener('click', () => navLinks.classList.toggle('open'));
+
   const navBar = document.querySelector('nav');
+
   const marcarNav = () => navBar.classList.toggle('scrolled', window.scrollY > 8);
+
   window.addEventListener('scroll', marcarNav, { passive: true }); marcarNav();
 
+
+
   // Close menu on link click
+
   navLinks.querySelectorAll('a').forEach(a =>
+
     a.addEventListener('click', () => navLinks.classList.remove('open'))
+
   );
 
+
+
   // Pricing toggle — mensal vs anual
+
   const toggle = document.getElementById('billingToggle');
+
   const labelM = document.getElementById('label-mensal');
+
   const labelA = document.getElementById('label-anual');
+
   const plans = [
+
     { monthly: 97,  priceEl: 'price-basic', annualEl: 'annual-basic' },
+
     { monthly: 197, priceEl: 'price-pro',   annualEl: 'annual-pro'   },
+
     // Enterprise não entra aqui: o valor é "a combinar" e não muda com mensal/anual.
+
   ];
 
+
+
   // Formata no padrão brasileiro: 97 -> "97", 80.83 -> "80,83"
+
   const brl = (n) => n.toLocaleString('pt-BR', {
+
     minimumFractionDigits: Number.isInteger(+n.toFixed(2)) ? 0 : 2,
+
     maximumFractionDigits: 2,
+
   });
 
+
+
   function updatePricing() {
+
     const isAnnual = toggle.checked;
+
     labelM.classList.toggle('active', !isAnnual);
+
     labelA.classList.toggle('active',  isAnnual);
+
     plans.forEach(p => {
+
       const totalAnual = p.monthly * 10;            // paga 10 meses, usa 12 (2 meses grátis)
+
       const val = isAnnual ? totalAnual / 12 : p.monthly;
+
       document.querySelector(`#${p.priceEl} .val`).textContent = brl(val);
+
       document.getElementById(p.annualEl).textContent = isAnnual
+
         ? `R$ ${brl(totalAnual)}/ano — você economiza R$ ${brl(p.monthly * 2)}`
+
         : '';
+
     });
+
   }
+
   toggle.addEventListener('change', updatePricing);
 
-  // Preços vêm do backend (Planos.config.ts): mudou lá, muda aqui. Se a API não responder,
-  // ficam os valores escritos acima. O anual segue a regra atual: 10 meses por ano (2 meses grátis).
+
+
+  // Preços vêm do backend 
+
   const API_URL = 'https://menupoint-api.kindflower-23d9c6c8.brazilsouth.azurecontainerapps.io';
+
   const CARD_DO_PLANO = { starter: 'price-basic', pro: 'price-pro' };
+
   fetch(`${API_URL}/api/v1/assinatura/planos`)
+
     .then((r) => (r.ok ? r.json() : Promise.reject()))
+
     .then((lista) => {
+
       lista.forEach((pl) => {
+
         const alvo = plans.find((x) => x.priceEl === CARD_DO_PLANO[pl.slug]);
+
         if (!alvo) return;
+
         alvo.monthly = Number(pl.valor);
+
       });
+
       updatePricing();
+
     })
+
     .catch(() => {});
 
 
+
+
+
   const observer = new IntersectionObserver((entries) => {
+
     entries.forEach(e => {
+
       if (e.isIntersecting) {
+
         e.target.style.opacity = '1';
+
         e.target.style.transform = 'translateY(0)';
+
       }
+
     });
+
   }, { threshold: 0.1 });
 
+
+
   document.querySelectorAll('.feature-card, .step, .ps-box, .why-items li, .plan-card').forEach(el => {
+
     el.style.opacity = '0';
+
     el.style.transform = 'translateY(24px)';
+
     el.style.transition = 'opacity .5s ease, transform .5s ease';
+
     observer.observe(el);
+
   });
 
+
+
 // Plano escolhido no site segue para o cadastro do app (?plano=); o pagamento vem depois do cadastro.
+
 const APP_URL = '';
+
 const planos = { basico: 'starter', pro: 'pro' };
 
+
+
 function iniciarPagamento(plano, btn) {
+
   if (btn) {
+
     btn.disabled = true;
+
     btn.dataset.originalText = btn.textContent;
+
     btn.textContent = 'Aguarde…';
+
   }
+
   if (plano === 'enterprise') {
+
     // Enterprise não tem checkout: abre o formulário "Falar com especialista"
+
     if (btn) { btn.disabled = false; btn.textContent = btn.dataset.originalText; }
+
     abrirContato();
+
     return;
+
   }
+
   const slug = planos[plano];
+
   const url = slug && `${APP_URL}/cadastro?plano=${slug}`;
+
   if (!url) {
+
     console.error('Plano não encontrado:', plano);
+
     if (btn) { btn.disabled = false; btn.textContent = btn.dataset.originalText; }
+
     return;
+
   }
+
   window.location.href = url;
+
 }
 
-// ── Planos em carrossel (celular/tablet) ─────────────────────────────────────
+
+
+// Planos em carrossel (celular/tablet)
+
 (function () {
+
   const grid  = document.querySelector('.pricing-grid');
+
   const cards = Array.from(grid.querySelectorAll('.plan-card'));
+
   const dots  = Array.from(document.querySelectorAll('#planDots .plan-dot'));
+
   const rolavel = () => grid.scrollWidth > grid.clientWidth + 2;
+
   const centralizar = (card, suave) => {
+
     grid.scrollTo({ left: card.offsetLeft - (grid.clientWidth - card.offsetWidth) / 2, behavior: suave ? 'smooth' : 'auto' });
+
   };
+
   function marcar() {
+
     if (!rolavel()) return;
+
     const meio = grid.scrollLeft + grid.clientWidth / 2;
+
     let melhor = 0, dist = Infinity;
+
     cards.forEach((c, i) => {
+
       const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - meio);
+
       if (d < dist) { dist = d; melhor = i; }
+
     });
+
     dots.forEach((d, i) => d.classList.toggle('active', i === melhor));
+
   }
+
   grid.addEventListener('scroll', marcar, { passive: true });
+
   dots.forEach((d, i) => d.addEventListener('click', () => centralizar(cards[i], true)));
-  // Abre mostrando o plano Pro (o mais popular) no centro
+
   const iniciar = () => { if (rolavel()) { centralizar(cards[1], false); marcar(); } };
+
   window.addEventListener('load', iniciar);
+
   window.addEventListener('resize', marcar);
+
 })();
 
-// ── Falar com especialista (Enterprise) ──────────────────────────────────────
-// Envia o formulário para a API, que manda um alerta por e-mail para a equipe.
+
+
+// Falar com especialista (Enterprise)
+
 const API_CONTATO = ['localhost', '127.0.0.1'].includes(location.hostname)
+
   ? 'http://localhost:3333'
+
   : API_URL;
 
+
+
 const contatoModal   = document.getElementById('contatoModal');
+
 const contatoForm    = document.getElementById('contatoForm');
+
 const contatoErro    = document.getElementById('contatoErro');
+
 const contatoEnviar  = document.getElementById('contatoEnviar');
+
 const contatoFormWrap = document.getElementById('contatoFormWrap');
+
 const contatoSucesso = document.getElementById('contatoSucesso');
+
 let focoAnterior = null;
 
+
+
 function abrirContato() {
+
   focoAnterior = document.activeElement;
+
   contatoForm.reset();
+
   contatoErro.hidden = true;
+
   contatoFormWrap.hidden = false;
+
   contatoSucesso.hidden = true;
+
   contatoModal.hidden = false;
+
   document.body.classList.add('modal-open');
+
   setTimeout(() => contatoForm.elements.nome.focus(), 50);
+
 }
+
+
 
 function fecharContato() {
+
   contatoModal.hidden = true;
+
   document.body.classList.remove('modal-open');
+
   if (focoAnterior && focoAnterior.focus) focoAnterior.focus();
+
 }
+
+
 
 contatoModal.addEventListener('click', (e) => {
+
   if (e.target.closest('[data-fechar]')) fecharContato();
+
 });
+
 document.addEventListener('keydown', (e) => {
+
   if (e.key === 'Escape' && !contatoModal.hidden) fecharContato();
+
 });
+
+
 
 function mostrarErroContato(texto) {
+
   contatoErro.textContent = texto;
+
   contatoErro.hidden = false;
+
 }
 
+
+
 contatoForm.addEventListener('submit', async (e) => {
+
   e.preventDefault();
+
   contatoErro.hidden = true;
 
+
+
   const dados = Object.fromEntries(new FormData(contatoForm));
+
   Object.keys(dados).forEach((k) => { dados[k] = String(dados[k]).trim(); });
 
+
+
   if (dados.nome.length < 2) { mostrarErroContato('Informe seu nome.'); contatoForm.elements.nome.focus(); return; }
+
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dados.email)) { mostrarErroContato('Informe um e-mail válido.'); contatoForm.elements.email.focus(); return; }
 
+
+
   contatoEnviar.disabled = true;
+
   contatoEnviar.textContent = 'Enviando…';
 
+
+
   try {
+
     const resposta = await fetch(`${API_CONTATO}/api/v1/contato/especialista`, {
+
       method: 'POST',
+
       headers: { 'Content-Type': 'application/json' },
+
       body: JSON.stringify(dados),
+
     });
 
+
+
     if (!resposta.ok) {
+
       const corpo = await resposta.json().catch(() => ({}));
+
       const detalhe = Array.isArray(corpo.errors) && corpo.errors[0] && corpo.errors[0].message;
+
       throw new Error(detalhe || corpo.message || 'Não foi possível enviar agora. Tente novamente.');
+
     }
 
+
+
     contatoFormWrap.hidden = true;
+
     contatoSucesso.hidden = false;
+
   } catch (err) {
+
     const semConexao = err instanceof TypeError;
+
     mostrarErroContato(semConexao ? 'Sem conexão com o servidor. Verifique sua internet e tente de novo.' : err.message);
+
   } finally {
+
     contatoEnviar.disabled = false;
+
     contatoEnviar.textContent = 'Enviar mensagem';
+
   }
+
 });
+
+
+
 
 
 </script>
+
 </body>
+
 </html>

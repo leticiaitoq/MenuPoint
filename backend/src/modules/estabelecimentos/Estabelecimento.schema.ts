@@ -131,7 +131,6 @@ export const criarEstabelecimentoSchema = z.object({
 export type CriarEstabelecimentoDTO = z.infer<typeof criarEstabelecimentoSchema>
 
 // Telefone/WhatsApp: aceita com ou sem máscara, grava sempre formatado.
-// Texto vazio apaga o valor (vira null) — são campos opcionais.
 const telefoneBR = (rotulo: string) =>
   z
     .string()

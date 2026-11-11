@@ -50,7 +50,7 @@ const MenuLocal: React.FC = () => {
   // ── Estados
   const navigate = useNavigate();
   const location = useLocation();
-  const { itens: itensCarrinho, removerItem, limparCarrinho } = useCarrinho();
+  const { itens: itensCarrinho, removerItem, alterarQuantidade, limparCarrinho } = useCarrinho();
   const { mesa, nome: nomeConvidado, mesaToken, estabelecimentoId } = useConvidado();
   const [busca, setBusca]                     = useState('');
   const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
@@ -324,6 +324,7 @@ const MenuLocal: React.FC = () => {
         onFechar={() => setCarrinhoAberto(false)}
         itens={itensCarrinho}
         onRemover={removerItem}
+        onAlterarQuantidade={alterarQuantidade}
         onEditar={editarItem}
         onFinalizar={finalizarPedido}
         onFecharConta={mesaToken ? () => setContaAberta(true) : undefined}

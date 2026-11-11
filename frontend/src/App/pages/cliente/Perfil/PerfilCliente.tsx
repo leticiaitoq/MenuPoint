@@ -6,7 +6,7 @@ import ClienteService, { ClientePerfil, FOTO_PADRAO_CLIENTE, mensagemDeErro } fr
 import RecortadorImagem from '../../../shared/components/RecortadorImagem/RecortadorImagem';
 import './PerfilCliente.css';
 
-// ── Utilitários ──────────────────────────────────────────────────────────────
+// Utilitários 
 const soDigitos = (v: string) => v.replace(/\D/g, '');
 
 // Mesma máscara do cadastro: (11) 91234-5678
@@ -714,7 +714,7 @@ const PerfilCliente: React.FC = () => {
           <h2 className="perfil__secao-titulo">ENDEREÇOS DE ENTREGA</h2>
           <div className="perfil__secao-linha">
             <p className="perfil__secao-texto">Cadastre e gerencie onde você quer receber seus pedidos.</p>
-            <button className="perfil__btn-editar" onClick={() => navigate('/endereço')}>
+               <button className="perfil__btn-editar" onClick={() => navigate('/perfil/enderecos')}>
               GERENCIAR
             </button>
           </div>

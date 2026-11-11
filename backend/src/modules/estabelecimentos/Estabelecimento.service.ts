@@ -3,8 +3,8 @@ import bcrypt from 'bcryptjs'
 import prisma from '@config/prisma'
 import { BaseService } from '@shared/abstracts/BaseService'
 import { AppError } from '@shared/errors/AppError'
-import { enviarImagemPublica, extensaoDeImagem } from '@shared/storage/supabase'
 import { EstabelecimentoRepository } from './Estabelecimento.repository'
+import { enviarImagemPublica, extensaoDeImagem, removerImagemPublica } from '@shared/storage/supabase'
 import {
   CriarEstabelecimentoDTO,
   AtualizarEstabelecimentoDTO,
@@ -97,6 +97,14 @@ export class EstabelecimentoService extends BaseService <
     await this.repository.update(id, { logo_url: url } as any)
     return url
   }
+
+    // Volta para a logo padrão (logo_url = null) e apaga o arquivo do Storage.
+  async removerLogo(id: string): Promise<void> {
+    const atual = await this.findById(id)
+    await this.repository.update(id, { logo_url: null } as any)
+    const url = (atual as any).logo_url as string | null
+    if (url) await removerImagemPublica(url)
+  }
   
   async desativar(id: string): Promise<void> {
     await this.findById(id)
@@ -113,9 +121,7 @@ export class EstabelecimentoService extends BaseService <
     return this.repository.update(id, { ativo: true } as any)
   }
 
-  // ── Chave PIX: dado sensível. Só o dono da empresa (ADMIN com escopo
-  // GLOBAL) altera, e só depois de confirmar a senha atual — igual ao fluxo
-  // de dados sensíveis do usuário (nome/e-mail/razão social).
+  // Chave PIX: dado sensível.
   async atualizarPix(
     id: string,
     usuario: { id: string; perfil: string; escopo: string },
@@ -135,7 +141,6 @@ export class EstabelecimentoService extends BaseService <
       throw new AppError('Usuário não encontrado', 404)
     }
 
-    // 403 (e não 401) de propósito: o front trata 401 como sessão expirada.
     const senhaCorreta = await bcrypt.compare(data.senha_atual, atual.senha_hash)
     if (!senhaCorreta) {
       throw new AppError('Senha incorreta', 403)
