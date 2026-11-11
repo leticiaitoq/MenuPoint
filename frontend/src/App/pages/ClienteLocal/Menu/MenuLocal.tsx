@@ -166,7 +166,7 @@ const MenuLocal: React.FC = () => {
 
     if (!mesaToken) {
       setCarrinhoAberto(false);
-      setErroEnvio('Escaneie o QR Code da sua mesa para fazer o pedido.');
+      setErroEnvio('Escaneie o QR Code da sua mesa novamente para enviar o pedido.');
       return;
     }
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { HiHome, HiOfficeBuilding, HiCheckCircle } from 'react-icons/hi';
 import { MdDiamond } from 'react-icons/md';
 import { FiPhone, FiPlus } from 'react-icons/fi';
@@ -165,7 +165,8 @@ const PainelLateral: React.FC<PainelLateralProps> = ({
 const CadastroEndereco: React.FC = () => {
   // ── Estado geral
   const navigate = useNavigate();
-  const { cliente } = useClienteAuth();
+  const location = useLocation();
+  const { cliente, isAuthenticated } = useClienteAuth();
   const { slug, restaurante } = useRestauranteCliente();
   const { itens, limparCarrinho } = useCarrinho();
 
@@ -247,6 +248,13 @@ const CadastroEndereco: React.FC = () => {
    */
   const handleConfirmar = async () => {
     if (!enderecoConfirmado || enviando) return;
+    // Delivery: pode navegar sem conta, mas para ENVIAR o pedido precisa entrar (o carrinho é mantido)
+    if (!isAuthenticated) {
+      navigate('/login/cliente', {
+        state: { from: location.pathname, aviso: 'Entre na sua conta para enviar o pedido ao restaurante.' },
+      });
+      return;
+    }
     if (!slug) { setErroPedido('Abra o link do restaurante para pedir.'); return; }
     if (itens.length === 0) { setErroPedido('Seu carrinho está vazio. Escolha algo no cardápio.'); return; }
     if (itens.some((i) => !i.produtoId)) { limparCarrinho(); setErroPedido('Seu carrinho estava desatualizado. Adicione os itens novamente.'); return; }

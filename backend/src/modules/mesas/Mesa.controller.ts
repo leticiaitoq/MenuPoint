@@ -10,6 +10,7 @@ import {
 import { AppError } from '@shared/errors/AppError'
 import { JWTPayload } from '@modules/auth/Auth.schema'
 import { clienteIdOpcional } from '@modules/pedidos/Pedido.publico'
+import { chegadaPeloCliente } from '@modules/reservas/Reserva.chegada'
 
 const repository = new MesaRepository()
 const service = new MesaService(repository)
@@ -22,8 +23,34 @@ export async function mesasRoutes(app: FastifyInstance): Promise<void> {
       '/qrcode/:token',
       async (request: FastifyRequest, reply: FastifyReply) => {
         const { token } = request.params as { token: string }
-        const mesa = await service.findByToken(token)
+        const mesa = await service.infoPublica(token)
         return reply.send(mesa)
+      }
+    )
+
+    // POST /mesas/qrcode/:token/chegada — o cliente confirma que chegou à mesa reservada (sem login).
+    // Valida pelo telefone da reserva (ou pela conta logada). Limite por IP: ninguém testa telefones em série.
+    publicRoutes.post(
+      '/qrcode/:token/chegada',
+      {
+        config: {
+          rateLimit: {
+            max: 5,
+            timeWindow: '1 minute',
+            errorResponseBuilder: () => ({
+              statusCode: 429,
+              status: 'error',
+              message: 'Muitas tentativas. Aguarde um minuto e tente de novo.',
+            }),
+          },
+        },
+      },
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { token } = request.params as { token: string }
+        const { telefone } = (request.body ?? {}) as { telefone?: string }
+        const mesa = await service.findByToken(token)
+        const clienteId = await clienteIdOpcional(request)
+        return reply.send(await chegadaPeloCliente(mesa, telefone, clienteId))
       }
     )
 

@@ -171,7 +171,8 @@ const RestHistorico: React.FC = () => {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  const [aba, setAba] = useState<Aba>('pedidos');
+  // O Histórico mostra só pedidos: as abas Pedidos/Mesas/Reservas foram removidas
+  const [aba] = useState<Aba>('pedidos');
 
   // Filtros
   const [dataInicio, setDataInicio] = useState('');
@@ -327,10 +328,6 @@ const RestHistorico: React.FC = () => {
     setPedidoSelecionado(null);
     setSessaoSelecionada(s);
   };
-  const trocarAba = (nova: Aba) => {
-    fecharDetalhes();
-    setAba(nova);
-  };
 
   // ── Exporta a lista da aba atual em CSV ──
   const exportarCsv = () => {
@@ -417,34 +414,6 @@ const RestHistorico: React.FC = () => {
               <FiDownload /> Exportar
             </button>
           </div>
-        </div>
-
-        {/* ── Abas: pedidos / mesas ── */}
-        <div className="hist__abas" role="tablist">
-          <button
-            role="tab"
-            aria-selected={aba === 'pedidos'}
-            className={`hist__aba${aba === 'pedidos' ? ' hist__aba--ativa' : ''}`}
-            onClick={() => trocarAba('pedidos')}
-          >
-            Pedidos ({pedidosFiltrados.length})
-          </button>
-          <button
-            role="tab"
-            aria-selected={aba === 'mesas'}
-            className={`hist__aba${aba === 'mesas' ? ' hist__aba--ativa' : ''}`}
-            onClick={() => trocarAba('mesas')}
-          >
-            Mesas ({sessoesFiltradas.length})
-          </button>
-          <button
-            role="tab"
-            aria-selected={aba === 'reservas'}
-            className={`hist__aba${aba === 'reservas' ? ' hist__aba--ativa' : ''}`}
-            onClick={() => trocarAba('reservas')}
-          >
-            Reservas ({reservasFiltradas.length})
-          </button>
         </div>
 
         {/* ── Origem: de onde veio o pedido (restaurante local × delivery) ── */}

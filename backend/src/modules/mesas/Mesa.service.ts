@@ -1,6 +1,7 @@
 import prisma from '@config/prisma'
 import { Mesa, StatusMesa } from '@prisma/client'
 import { AppError } from '@shared/errors/AppError'
+import { reservaSegurandoMesa, registrarChegada } from '@modules/reservas/Reserva.chegada'
 import { MesaRepository } from './Mesa.repository'
 import {
   CriarMesaDTO,
@@ -80,6 +81,13 @@ export class MesaService {
     }
 
     return mesa
+  }
+
+  /** Dados públicos da mesa (QR Code) + se ela está reservada para quem ainda não confirmou a chegada */
+  async infoPublica(token: string) {
+    const mesa = await this.findByToken(token)
+    const segurando = mesa.status === 'OCUPADA' ? null : await reservaSegurandoMesa(mesa.id, mesa.estabelecimento_id)
+    return { ...mesa, reserva_agora: segurando ? { hora_inicio: segurando.hora_inicio } : null }
   }
 
   async findByToken(token: string) {
@@ -168,6 +176,22 @@ export class MesaService {
     cliente_id?: string
   ) {
     const mesa = await this.findByToken(token) // 404 se QR inválido, 400 se mesa inativa/sem mesa
+
+    // Mesa reservada para este horário: só o dono da reserva senta nela. Logado na conta que
+    // reservou entra direto (a chegada é registrada); os demais precisam validar a reserva.
+    if (mesa.status !== 'OCUPADA') {
+      const segurando = await reservaSegurandoMesa(mesa.id, mesa.estabelecimento_id)
+      if (segurando) {
+        if (cliente_id && segurando.base.cliente_id === cliente_id) {
+          await registrarChegada(segurando.linhas)
+        } else {
+          throw new AppError(
+            `Esta mesa está reservada para as ${segurando.hora_inicio}. Escaneie o QR Code novamente e confirme sua reserva para usar a mesa.`,
+            403
+          )
+        }
+      }
+    }
 
     // Mesmas regras de ingredientes/preço do delivery (Pedido.publico.ts)
     const itensMontados = await montarItensPublicos(mesa.estabelecimento_id, dados.itens)

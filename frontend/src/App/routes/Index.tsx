@@ -100,12 +100,16 @@ const AppRoutes: React.FC = () => {
           O cliente local usa /menulocal, /historicolocal e /perfilLocal (acima).
         */}
         <Route element={<RotaComRestaurante />}>
+          {/* Navegação livre: o cliente vê o cardápio e monta o carrinho sem conta.
+              O login só é exigido ao ENVIAR o pedido (telas de endereço e retirada). */}
+          <Route path="/dwelcome" element={<DWelcomePage />} />
+          <Route path="/menu" element={<MenuCliente />} />
+          <Route path="/endereço" element={<CadastroEndereco />} />
+          <Route path="/retirada" element={<InfoRetirada />} />
+
+          {/* Áreas da conta do cliente: exigem login */}
           <Route element={<RotaProtegidaCliente />}>
-            <Route path="/dwelcome" element={<DWelcomePage />} />
-            <Route path="/menu" element={<MenuCliente />} />
             <Route path="/reserva" element={<Reserva />} />
-            <Route path="/endereço" element={<CadastroEndereco />} />
-            <Route path="/retirada" element={<InfoRetirada />} />
             <Route path="/historico" element={<ControlePedido />} />
             <Route path="/perfil" element={<PerfilCliente />} />
           </Route>

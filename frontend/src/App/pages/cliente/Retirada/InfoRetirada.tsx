@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { HiUser, HiPhone } from 'react-icons/hi';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import PagamentoDelivery, { itensParaPedido } from '../../../shared/components/PagamentoDelivery/PagamentoDelivery';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
@@ -26,8 +26,9 @@ const formatarTelefone = (valor: string): string => {
 
 const InfoRetirada: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const { cliente } = useClienteAuth();
+  const { cliente, isAuthenticated } = useClienteAuth();
   const { slug } = useRestauranteCliente();
   const { itens, limparCarrinho } = useCarrinho();
 
@@ -50,6 +51,13 @@ const handleTelefone = (e: React.ChangeEvent<HTMLInputElement>) =>
 
  const handleContinuar = async () => {
   if (enviando) return;
+  // Delivery: pode navegar sem conta, mas para ENVIAR o pedido precisa entrar (o carrinho é mantido)
+  if (!isAuthenticated) {
+    navigate('/login/cliente', {
+      state: { from: location.pathname, aviso: 'Entre na sua conta para enviar o pedido ao restaurante.' },
+    });
+    return;
+  }
   if (!form.nome.trim()) { setErro('Informe seu nome.'); return; }
   if (!form.telefone || form.telefone.length < 14) { setErro('Informe um telefone válido.'); return; }
   if (!slug) { setErro('Abra o link do restaurante para pedir.'); return; }

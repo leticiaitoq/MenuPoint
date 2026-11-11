@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import MesaPublicaService from '../../../services/mesaPublica.service';
+import MesaPublicaService, { MesaPublica } from '../../../services/mesaPublica.service';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
 import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
 import { useSistemaCliente, ROTA_INICIAL_SISTEMA } from '../../../shared/contexts/SistemaClienteContext';
@@ -39,6 +39,14 @@ const MesaQr: React.FC = () => {
   const [erro, setErro] = useState<string | null>(null);
   const [tentativa, setTentativa] = useState(0);
 
+  // Mesa reservada para agora: o cliente confirma a reserva (telefone) antes de ocupar a mesa
+  const [reservada, setReservada] = useState<{ hora: string } | null>(null);
+  const [telefone, setTelefone] = useState('');
+  const [validando, setValidando] = useState(false);
+  const [erroValidacao, setErroValidacao] = useState('');
+  const mesaPendente = useRef<MesaPublica | null>(null);
+  const entrarRef = useRef<((mesa: MesaPublica) => void) | undefined>(undefined);
+
   useEffect(() => {
     if (!token) {
       setErro('Link de mesa inválido.');
@@ -48,33 +56,57 @@ const MesaQr: React.FC = () => {
     let cancelado = false;
     setErro(null);
 
+    // Grava a mesa na sessão do convidado e abre o cardápio da mesa
+    const entrar = (mesa: MesaPublica) => {
+      const ctx = contexto.current;
+      // Mesa de OUTRO restaurante: o carrinho do anterior não vai junto
+      const trocouDeRestaurante =
+        Boolean(ctx.restauranteAnteriorId) && ctx.restauranteAnteriorId !== mesa.estabelecimento?.id;
+      if (trocouDeRestaurante) ctx.limparCarrinho();
+
+      // Esta aba passa a ser do sistema LOCAL (mesa). O delivery fica intocado.
+      ctx.entrarNoLocal();
+
+      // Sem nome digitado: quem escaneia agora não herda o nome de outro cliente.
+      // Já logado → o nome é o da conta.
+      definirConvidado({
+        nome: ctx.isAuthenticated ? ctx.cliente?.nome ?? '' : '',
+        mesa: String(mesa.numero).padStart(2, '0'),
+        mesaId: mesa.id,
+        mesaToken: token,
+        estabelecimentoId: mesa.estabelecimento?.id,
+        restauranteSlug: mesa.estabelecimento?.slug?.trim().toLowerCase(),
+        restauranteNome: mesa.estabelecimento?.nome,
+        restauranteLogo: mesa.estabelecimento?.logo_url ?? null,
+      });
+
+      // Logado pula a tela de convidado e vai direto ao cardápio DA MESA (nunca ao delivery)
+      navigate(ctx.isAuthenticated ? ROTA_INICIAL_SISTEMA.local : '/welcomepage', { replace: true });
+    };
+    entrarRef.current = entrar;
+
     MesaPublicaService.buscarPorToken(token)
-      .then((mesa) => {
+      .then(async (mesa) => {
         if (cancelado) return;
-        const ctx = contexto.current;
-        // Mesa de OUTRO restaurante: o carrinho do anterior não vai junto
-        const trocouDeRestaurante =
-          Boolean(ctx.restauranteAnteriorId) && ctx.restauranteAnteriorId !== mesa.estabelecimento?.id;
-        if (trocouDeRestaurante) ctx.limparCarrinho();
 
-        // Esta aba passa a ser do sistema LOCAL (mesa). O delivery fica intocado.
-        ctx.entrarNoLocal();
+        if (mesa.reserva_agora) {
+          // Logado na conta que reservou: entra direto. Os demais validam a reserva.
+          if (contexto.current.isAuthenticated) {
+            try {
+              await MesaPublicaService.registrarChegada(token);
+              if (!cancelado) entrar(mesa);
+              return;
+            } catch {
+              /* não é o dono da reserva: cai na validação por telefone */
+            }
+          }
+          if (cancelado) return;
+          mesaPendente.current = mesa;
+          setReservada({ hora: mesa.reserva_agora.hora_inicio });
+          return;
+        }
 
-        // Sem nome digitado: quem escaneia agora não herda o nome de outro cliente.
-        // Já logado → o nome é o da conta.
-        definirConvidado({
-          nome: ctx.isAuthenticated ? ctx.cliente?.nome ?? '' : '',
-          mesa: String(mesa.numero).padStart(2, '0'),
-          mesaId: mesa.id,
-          mesaToken: token,
-          estabelecimentoId: mesa.estabelecimento?.id,
-          restauranteSlug: mesa.estabelecimento?.slug?.trim().toLowerCase(),
-          restauranteNome: mesa.estabelecimento?.nome,
-          restauranteLogo: mesa.estabelecimento?.logo_url ?? null,
-        });
-
-        // Logado pula a tela de convidado e vai direto ao cardápio DA MESA (nunca ao delivery)
-        navigate(ctx.isAuthenticated ? ROTA_INICIAL_SISTEMA.local : '/welcomepage', { replace: true });
+        entrar(mesa);
       })
       .catch((err: any) => {
         if (cancelado) return;
@@ -89,9 +121,55 @@ const MesaQr: React.FC = () => {
     };
   }, [token, tentativa, definirConvidado, navigate]);
 
+  const validarReserva = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !mesaPendente.current || validando) return;
+    if (telefone.replace(/\D/g, '').length < 10) {
+      setErroValidacao('Informe o telefone com DDD, o mesmo usado na reserva.');
+      return;
+    }
+    setValidando(true);
+    setErroValidacao('');
+    try {
+      await MesaPublicaService.registrarChegada(token, telefone);
+      entrarRef.current?.(mesaPendente.current);
+    } catch (err: any) {
+      setErroValidacao(
+        err?.response?.data?.message ?? 'Não foi possível confirmar a reserva. Tente de novo.'
+      );
+    } finally {
+      setValidando(false);
+    }
+  };
+
   return (
     <div className="mesa-qr">
-      {erro ? (
+      {reservada ? (
+        <form className="mesa-qr__card" onSubmit={validarReserva}>
+          <h1 className="mesa-qr__titulo">Mesa reservada</h1>
+          <p className="mesa-qr__texto">
+            Esta mesa está reservada para as {reservada.hora}. Se a reserva é sua, informe o telefone
+            usado nela para confirmar sua chegada.
+          </p>
+          <input
+            className="mesa-qr__input"
+            type="tel"
+            inputMode="tel"
+            placeholder="(00) 00000-0000"
+            value={telefone}
+            onChange={(e) => setTelefone(e.target.value)}
+            autoFocus
+          />
+          {erroValidacao && (
+            <p className="mesa-qr__erro" role="alert">
+              {erroValidacao}
+            </p>
+          )}
+          <button className="mesa-qr__btn" type="submit" disabled={validando}>
+            {validando ? 'Confirmando…' : 'Confirmar minha chegada'}
+          </button>
+        </form>
+      ) : erro ? (
         <div className="mesa-qr__card" role="alert">
           <h1 className="mesa-qr__titulo">Não foi possível abrir a mesa</h1>
           <p className="mesa-qr__texto">{erro}</p>

@@ -963,9 +963,9 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--warning-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Quebra a linha em vez de cortar: o horário e o nome da reserva sempre aparecem */
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .caixa__card-reserva--proxima {

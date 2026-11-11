@@ -29,6 +29,8 @@ export interface MesaPublica {
     tema: 'CLARO' | 'ESCURO'
     aceita_mesa: boolean
   }
+  /** Preenchido quando a mesa está reservada para este horário e a chegada ainda não foi confirmada */
+  reserva_agora?: { hora_inicio: string } | null
 }
 
 /** Formas de pagamento que o cliente pode avisar ao pedir a conta (valores do enum FormaPagamento do backend) */
@@ -62,6 +64,18 @@ const MesaPublicaService = {
     const r = await apiPublica.get<MesaPublica>(`mesas/qrcode/${encodeURIComponent(token)}`)
     return r.data
   },
+  /**
+   * Cliente chegou à mesa reservada: valida a reserva (telefone usado na reserva, ou conta logada)
+   * e a mesa passa a ocupada em nome dele. 403 = telefone não confere | 404 = sem reserva agora.
+   */
+  async registrarChegada(token: string, telefone?: string): Promise<{ ok: boolean; nome?: string }> {
+    const r = await apiPublica.post<{ ok: boolean; nome?: string }>(
+      `mesas/qrcode/${encodeURIComponent(token)}/chegada`,
+      telefone ? { telefone } : {}
+    )
+    return r.data
+  },
+
   /** Cliente na mesa pede atendimento */
 async chamarGarcom(token: string): Promise<void> {
   await apiPublica.post(`mesas/qrcode/${encodeURIComponent(token)}/chamar-garcom`)
