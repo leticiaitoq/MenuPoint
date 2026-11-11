@@ -30,7 +30,7 @@ const AssinaturaSucesso: React.FC = () => {
   const [statusMP, setStatusMP] = useState<string | null>(null);
   const [progresso, setProgresso] = useState(5);
   // O Mercado Pago já mostrou a própria tela de carregamento, então a conferência roda em silêncio.
-  // Só aparece uma tela de "Confirmando..." se demorar mais que isso (ou ao verificar de novo).
+  // Só aparece uma tela de "Confirmando..." se demorar mais que isso.
   const [mostrarCarregando, setMostrarCarregando] = useState(false);
 
   // Pagamento aprovado: encerra a sessão e volta ao login, que mostra o modal de sucesso.

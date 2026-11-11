@@ -8,7 +8,7 @@
   box-sizing: border-box;
 }
 
-/* ── Barra de busca ── */
+/* Barra de busca  */
 .menu__busca-wrap {
   display: flex;
   align-items: center;
@@ -37,11 +37,27 @@
 
 .menu__busca::placeholder { color: #aaa; }
 
-/* ── Categorias ── */
 .menu__categorias {
   display: flex;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;         
+  overflow-x: auto;           
+  overflow-y: hidden;
+  padding: 4px 4px 12px;     
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;     
+  scrollbar-color: #c0392b transparent;
+}
+
+.menu__categorias::-webkit-scrollbar {
+  height: 6px;
+}
+.menu__categorias::-webkit-scrollbar-thumb {
+  background: #c0392b;
+  border-radius: 3px;
+}
+.menu__categorias::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .menu__cat-btn {
@@ -53,6 +69,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s;
@@ -81,7 +98,7 @@
   pointer-events: none; /* o clique vai sempre para o botão */
 }
 
-/* ── Grid de produtos — 3 colunas ── */
+/* Grid de produtos — 3 colunas */
 .menu__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -96,7 +113,7 @@
   padding: 32px 0;
 }
 
-/* ── Card de produto ── */
+/* Card de produto  */
 .menu__card {
   background-color: #ffffff;
   border-radius: 16px;
@@ -174,7 +191,7 @@
 .menu__card-add:hover  { background-color: #a93226; transform: scale(1.08); }
 .menu__card-add:active { transform: scale(0.95); }
 
-/* ── Botão flutuante do carrinho ── */
+/* Botão flutuante do carrinho */
 .menu__carrinho-fab {
   position: fixed;
   top: 86px;
@@ -214,7 +231,7 @@
   border: 2px solid #c0392b;
 }
 
-/* ── Modal de tipo de pedido ── */
+/* Modal de tipo de pedido  */
 .mtp__overlay {
   position: fixed;
   inset: 0;
@@ -276,7 +293,7 @@
   pointer-events: none;
 }
 
-/* ── Responsividade Mobile ── */
+/* Responsividade Mobile */
 @media (max-width: 600px) {
   .menu {
     margin: -16px;
@@ -295,10 +312,10 @@
   }
 
   /* Categorias: botões menores, scroll horizontal */
-  .menu__categorias {
+    .menu__categorias {
     gap: 8px;
+    flex-wrap: nowrap;
   }
-
   .menu__cat-btn {
     width: 58px;
     height: 58px;
@@ -381,7 +398,7 @@
   }
 }
 
-/* ── Produto em destaque ── */
+/*  Produto em destaque  */
 .menu__card { position: relative; }
 
 .menu__card--destaque {

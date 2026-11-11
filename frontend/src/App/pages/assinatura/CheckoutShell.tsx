@@ -2,12 +2,11 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './checkout.css';
 
-// Moldura das telas de assinatura (plano, pagamento e retorno): barra no topo com a marca e
-// "Pagamento seguro", conteúdo à esquerda e imagem à direita (some no celular).
+// Moldura das telas de assinatura (plano, pagamento e retorno)
 
 interface CheckoutShellProps {
   children: React.ReactNode;
-  /** Mostra o link "← Voltar" (ex.: '/planos'). Sem valor, não aparece. */
+  /** Mostra o link "Voltar" (/planos). Sem valor, não aparece. */
   voltarPara?: string;
 }
 

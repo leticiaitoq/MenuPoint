@@ -7,7 +7,7 @@ import '../auth/LoginPage.css';
 import './PagamentoPage.css';
 
 // Tela única de escolha do plano: aparece depois da confirmação do e-mail e antes do pagamento.
-// Quem já escolheu o plano no site (/cadastro?plano=...) não passa por aqui.
+// Quem já escolheu o plano no site (/cadastro?plano=) não passa por aqui.
 
 const CHAVE_PLANO = '@menupoint:plano';
 
@@ -37,7 +37,7 @@ const PlanosPage: React.FC = () => {
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
 
-  // Assinatura já ativa: não há o que escolher, segue para o sistema
+  // Assinatura já ativa: não tem o que escolher, segue para o sistema
   useEffect(() => {
     AssinaturaService.minha()
       .then((a) => { if (a.status === 'ATIVA') navigate(ROTA_APOS_LOGIN, { replace: true }); })

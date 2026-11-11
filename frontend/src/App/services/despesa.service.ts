@@ -1,6 +1,6 @@
 import api from './api'
 
-// ── Tipos ────────────────────────────────────────────────────────────────────
+//Tipos 
 export type FormaPagamentoDespesa = 'PIX' | 'BOLETO' | 'CARTAO' | 'DINHEIRO'
 
 /** Rótulos que a tela mostra para cada forma de pagamento da despesa */
@@ -56,7 +56,7 @@ export interface PeriodoDespesa {
   data_fim?: string
 }
 
-// ── Erros ────────────────────────────────────────────────────────────────────
+//  Erros
 /** Texto de erro para a tela (usa a mensagem que o servidor mandou, quando houver). */
 export function mensagemErroDespesa(err: any, padrao: string): string {
   if (err?.response) {

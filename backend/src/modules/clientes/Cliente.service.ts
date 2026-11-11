@@ -44,7 +44,7 @@ export class ClienteService {
 
   constructor(private readonly repository: ClienteRepository) {}
 
-  // ── helpers ────────────────────────────────────────────────────────────────
+  //  helpers 
   private resumo(c: ClienteBanco): ClienteResumoDTO {
     return {
       id: c.id,
@@ -133,7 +133,7 @@ export class ClienteService {
     return { email: data.email }
   }
 
-  // ── LOGIN ──────────────────────────────────────────────────────────────────
+  //LOGIN
   async login(data: LoginClienteDTO, jwtSign: JwtSign): Promise<ClienteSessaoDTO> {
     const cliente = await this.repository.findByEmail(data.email)
 
@@ -267,12 +267,12 @@ export class ClienteService {
     return this.abrirSessao(cliente, jwtSign)
   }
 
-  // ── LOGOUT ─────────────────────────────────────────────────────────────────
+  //  LOGOUT
   async logout(refresh_token: string): Promise<void> {
     await this.repository.revogarRefreshToken(refresh_token)
   }
 
-  // ── ME / PERFIL ────────────────────────────────────────────────────────────
+  //  ME / PERFIL 
   private perfil(c: ClienteBanco): ClientePerfilDTO {
     return { ...this.resumo(c), cpf: c.cpf, criado_em: c.criado_em }
   }

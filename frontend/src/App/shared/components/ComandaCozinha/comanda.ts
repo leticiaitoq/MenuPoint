@@ -101,7 +101,7 @@ const ROTULO_TIPO: Record<ModalidadePedido, string> = {
   ENTREGA: 'ENTREGA',
 };
 
-// ── Utilitários ────────────────────────────────────────────────────────────────
+// Utilitários 
 /** "Porções" e "porcoes" viram a mesma chave — evita duplicar grupos por acento/caixa */
 const normalizar = (texto: string) =>
   texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
@@ -120,7 +120,7 @@ export const formatarDataHora = (data: Date) =>
     minute: '2-digit',
   })}`;
 
-// ── Gerador ────────────────────────────────────────────────────────────────────
+// Gerador 
 export function gerarComanda(pedido: PedidoParaComanda, opcoes: OpcoesComanda = {}): Comanda {
   const ignoradas = (opcoes.ignorarCategorias ?? []).map(normalizar);
 

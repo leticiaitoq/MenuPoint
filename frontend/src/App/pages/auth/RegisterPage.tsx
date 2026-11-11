@@ -28,9 +28,8 @@ import { useAuth } from '../../shared/contexts/Authcontext';
 import TermsModal from '../../shared/components/TermsModal/TermesModal';
 import './RegisterPage.css';
 
-/* ────────────────────────────────────────────────────────────────
-   Constantes e utilitários
-──────────────────────────────────────────────────────────────── */
+/*
+   Constantes e utilitários */
 
 const ESTADOS_BR = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO',
@@ -135,7 +134,6 @@ type Erros = Record<string, string>;
 
 /**
  * Largura de cada campo na grade de 12 colunas.
- *  d  = desktop (≥ 769px) · m = mobile · xs = telas muito estreitas (≤ 480px)
  */
 const span = (d: number, m = 12, xs?: number) =>
   ({
@@ -144,10 +142,9 @@ const span = (d: number, m = 12, xs?: number) =>
     ...(xs ? { '--span-xs': xs } : {}),
   } as React.CSSProperties);
 
-/* ────────────────────────────────────────────────────────────────
+/*
    Componentes de apoio (fora do componente principal para não
-   remontar a cada digitação e perder o foco do input)
-──────────────────────────────────────────────────────────────── */
+   remontar a cada digitação e perder o foco do input) */
 
 interface FieldProps {
   name: string;
@@ -205,9 +202,8 @@ const ChefHatArt: React.FC = () => (
   </svg>
 );
 
-/* ────────────────────────────────────────────────────────────────
-   Página
-──────────────────────────────────────────────────────────────── */
+/*
+   Página */
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();

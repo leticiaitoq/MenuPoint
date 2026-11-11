@@ -1,7 +1,7 @@
 import api from './api'
 import apiCliente from './apiCliente'
 
-// ── Tipos ────────────────────────────────────────────────────────────────────
+//  Tipos
 export type StatusReserva = 'PENDENTE' | 'CONFIRMADA' | 'CONCLUIDA' | 'CANCELADA'
 
 /** Reservas que ainda "seguram" a mesa (as únicas que contam para a disponibilidade) */

@@ -44,14 +44,14 @@ const PagamentoPage: React.FC = () => {
     }
   };
 
-  // Fecha a aba do Mercado Pago que nós abrimos (o navegador pode não deixar; sem problema)
+  // Fecha a aba do Mercado Pago que nós abrimos 
   const fecharJanelaDoCheckout = () => {
     try { janelaRef.current?.close(); } catch { /* ignora */ }
     janelaRef.current = null;
   };
 
   // Enquanto o checkout está aberto em outra aba: confere o pagamento a cada 3 s e também
-  // na hora em que a pessoa volta para esta aba.
+  // na hora em que a pessoa volta para a aba.
   useEffect(() => {
     if (!aguardando) return;
     let cancelado = false;

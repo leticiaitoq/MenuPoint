@@ -9,9 +9,10 @@ import { useConvidado } from '../../../shared/contexts/Convidadocontext';
 import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/ingredientes';
 import RestaurantePublicoService from '../../../services/restaurantePublico.service';
 import MesaPublicaService from '../../../services/mesaPublica.service';
+import { iconeDaCategoria } from '../../../shared/constants/categoriasPadrao';
 import './MenuLocal.css';
 
-// ── Tipos
+// Tipos
 interface Categoria {
   id: string;
   label: string;
@@ -30,11 +31,10 @@ interface Produto {
   ingredientes: IngredienteProduto[];
 }
 
-// "Todos" usa o PNG; as demais categorias vêm da API (ícone = emoji ou imagem)
 const CATEGORIA_TODOS: Categoria = {
   id: 'todos',
   label: 'Todos',
-  icon: '/icons/icons-categorias/icons-categorias/todos.png',
+  icon: '/icons/categorias/todos.svg',
 };
 
 const ehImagem = (icon: string) => icon.startsWith('/') || icon.startsWith('http');
@@ -45,9 +45,9 @@ const compararProdutos = (idsCategorias: string[]) => (a: Produto, b: Produto) =
   || a.ordem - b.ordem
   || idsCategorias.indexOf(a.categoriaId) - idsCategorias.indexOf(b.categoriaId);
 
-// ── Componente
+//  Componente
 const MenuLocal: React.FC = () => {
-  // ── Estados
+  //  Estados
   const navigate = useNavigate();
   const { itens: itensCarrinho, removerItem, limparCarrinho } = useCarrinho();
   const { mesa, nome: nomeConvidado, mesaToken, estabelecimentoId } = useConvidado();
@@ -88,7 +88,7 @@ const MenuLocal: React.FC = () => {
           const ativas = lista.filter((c) => c.ativo !== false);
           const novasCategorias: Categoria[] = [
             CATEGORIA_TODOS,
-            ...ativas.map((c) => ({ id: c.id, label: c.nome, icon: c.icone ?? '🍽️' })),
+            ...ativas.map((c) => ({ id: c.id, label: c.nome, icon: iconeDaCategoria(c.nome, c.icone) })),
           ];
           setCategorias(novasCategorias);
           setCategoriaAtiva((atual) =>
@@ -136,7 +136,7 @@ const MenuLocal: React.FC = () => {
     };
   }, [estabelecimentoId]);
 
-  // ── Filtro
+  // Filtro
   const produtosFiltrados = produtos.filter((p) => {
     const naCategoria = categoriaAtiva === 'todos' || p.categoriaId === categoriaAtiva;
     const naBusca = p.nome.toLowerCase().includes(busca.toLowerCase());
@@ -145,7 +145,7 @@ const MenuLocal: React.FC = () => {
 
   const totalCarrinho = itensCarrinho.reduce((acc, i) => acc + i.quantidade, 0);
 
-  // ── Handlers
+  // Handlers
   const abrirPersonalizacao = (produto: Produto) => {
     navigate('/personaliza', { state: { produto, modoCliente: 'guest' } });
   };
@@ -199,7 +199,7 @@ const MenuLocal: React.FC = () => {
     }
   };
 
-  // ── Render
+  // Render
   return (
     <CustomerLayout
       mode="guest"

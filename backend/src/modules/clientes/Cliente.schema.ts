@@ -36,7 +36,7 @@ export interface ClienteJWTPayload {
   empresa_id: null
 }
 
-// ── Cadastro ─────────────────────────────────────────────────────────────────
+//Cadastro 
 export const registrarClienteSchema = z
   .object({
     nome: z
@@ -67,7 +67,7 @@ export const registrarClienteSchema = z
 
 export type RegistrarClienteDTO = z.infer<typeof registrarClienteSchema>
 
-// ── Login ────────────────────────────────────────────────────────────────────
+// Login 
 export const loginClienteSchema = z.object({
   email,
   senha: z.string().min(1, 'Senha é obrigatória'),
@@ -165,7 +165,7 @@ export const alterarSenhaClienteSchema = z
 
 export type AlterarSenhaClienteDTO = z.infer<typeof alterarSenhaClienteSchema>
 
-// ── Respostas ────────────────────────────────────────────────────────────────
+//  Respostas 
 // O que vai para o front (nunca senha_hash). O CPF só sai em GET /me.
 export interface ClienteResumoDTO {
   id: string

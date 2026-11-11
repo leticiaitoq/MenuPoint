@@ -3,7 +3,7 @@ import { HiX, HiOutlineExclamation } from 'react-icons/hi';
 import { useAuth } from '../../contexts/Authcontext';
 import './CancelarPedido.css';
 
-// ── Regras ─────────────────────────────────────────────────────────────────────
+// Regras 
 /** Só estes perfis podem cancelar pedido (é a ação mais sensível do caixa) */
 const PERFIS_AUTORIZADOS = ['ADMIN', 'CAIXA'];
 
@@ -21,18 +21,17 @@ const OUTRO_MAX = 200;
 const formatarMoeda = (valor: number) =>
   valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-// ── Props ──────────────────────────────────────────────────────────────────────
+// Props 
 interface CancelarPedidoProps {
   aberto: boolean;
   mesaNumero: number;
   /** Resumo do que será cancelado (opcional) */
   itens?: number;
   total?: number;
-  /** Se > 0, o cancelamento é bloqueado (precisaria de estorno) */
   pagamentosRealizados?: number;
   /** Chamada à API em andamento: trava os botões */
   salvando?: boolean;
-  /** Erro devolvido pela API (ex.: mesa já tem pagamento) */
+  /** Erro devolvido pela API*/
   erro?: string | null;
   onFechar: () => void;
   /** Recebe o texto do motivo — vai para Pedido.cancelamento_motivo no backend */
@@ -82,7 +81,7 @@ const CancelarPedido: React.FC<CancelarPedidoProps> = ({
 
   if (!aberto) return null;
 
-  // ── Bloqueios (a ordem importa: permissão primeiro) ──────────────────────────
+  // Bloqueios (a ordem importa: permissão primeiro) 
   const perfil = usuario?.perfil;
   const semPermissao = !perfil || !PERFIS_AUTORIZADOS.includes(perfil);
   const temPagamento = pagamentosRealizados > 0;
@@ -93,7 +92,7 @@ const CancelarPedido: React.FC<CancelarPedidoProps> = ({
       ? `Esta mesa já tem ${formatarMoeda(pagamentosRealizados)} em pagamentos. Não é possível cancelar o pedido — o valor precisa ser estornado antes.`
       : null;
 
-  // ── Validação do motivo ──────────────────────────────────────────────────────
+  // Validação do motivo 
   const outroValido =
     outroTexto.trim().length >= OUTRO_MIN && outroTexto.length <= OUTRO_MAX;
   const podeConfirmar = !salvando && motivoId !== null && (motivoId !== 'outro' || outroValido);

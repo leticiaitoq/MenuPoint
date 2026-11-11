@@ -11,7 +11,7 @@ import PedidoService, { Pedido as PedidoApi, StatusPedido as StatusApi } from '.
 import { mensagemDeErro } from '../../../../services/cliente.service';
 import './Fila.css';
 
-// ── Tipos ──────────────────────────────────────────────────────────────────────
+// Tipos 
 type StatusFila = 'recebido' | 'preparando' | 'pronto' | 'entregue';
 
 /** Cada comida do pedido anda sozinha pela cozinha: tem a sua própria etapa */
@@ -70,7 +70,7 @@ const PARA_API: Record<StatusFila, StatusApi> = {
 
 const INTERVALO_ATUALIZACAO_MS = 20000;
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// Helpers 
 const formatarPreco = (valor: number): string => `R$ ${valor.toFixed(2).replace('.', ',')}`;
 
 const tempoRelativo = (iso: string): string => {

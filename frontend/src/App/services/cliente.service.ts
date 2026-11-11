@@ -1,7 +1,7 @@
 import apiCliente from './apiCliente'
 import { prepararImagem } from './imagem'
 
-// ── Tipos ────────────────────────────────────────────────────────────────────
+//  Tipos
 export interface Cliente {
   id: string
   nome: string

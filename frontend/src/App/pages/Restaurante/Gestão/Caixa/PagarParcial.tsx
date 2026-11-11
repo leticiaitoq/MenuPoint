@@ -7,7 +7,7 @@ import PagamentoService, { FormaPagamentoApi, ItemDaConta, ResumoConta } from '.
 import { mensagemDeErro } from '../../../../services/cliente.service';
 import './PagarParcial.css';
 
-// ── Tipos ──────────────────────────────────────────────────────────────────────
+//Tipos
 type MeioRotulo = 'Débito' | 'Crédito' | 'Pix' | 'Dinheiro';
 const MEIOS_PAGAMENTO: { rotulo: MeioRotulo; api: FormaPagamentoApi }[] = [
   { rotulo: 'Débito', api: 'DEBITO' },
@@ -25,6 +25,18 @@ interface FormaPagamento {
 }
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
+
+//  Máscara de moeda: digita só números e os 2 últimos viram centavos (R$ 1.234,56) 
+const centavosParaMoeda = (centavos: number): string => {
+  const c = Math.max(0, Math.round(centavos));
+  const reais = String(Math.floor(c / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `R$ ${reais},${String(c % 100).padStart(2, '0')}`;
+};
+/** "R$ 12,50" =12.5 (campo vazio =0) */
+const moedaParaNumero = (texto: string): number => Number(texto.replace(/\D/g, '') || 0) / 100;
+/** 12.5 ="R$ 12,50" (usado para preencher o campo com um valor já salvo) */
+const numeroParaMoeda = (valor: number): string => centavosParaMoeda(Math.round(valor * 100));
+
 const formatarMoeda = (valor: number) =>
   valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -35,7 +47,7 @@ const valorDasUnidades = (item: ItemDaConta, unidades: number, pct: number) =>
 const gerarIdForma = () => `f${Date.now()}${Math.floor(Math.random() * 1000)}`;
 const novaForma = (valor = 0): FormaPagamento => ({ id: gerarIdForma(), meio: 'Pix', valor, recebido: 0 });
 
-// ── Conteúdo ───────────────────────────────────────────────────────────────────
+// Conteúdo
 const PagarParcialConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ id, resumo }) => {
   const navigate = useNavigate();
   const pct = resumo.taxa_servico_percentual;
@@ -45,7 +57,7 @@ const PagarParcialConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ i
     [resumo.itens]
   );
 
-  // item_pedido_id → quantas unidades o cliente quer pagar agora
+  // item_pedido_id =quantas unidades o cliente quer pagar agora
   const [selecionados, setSelecionados] = useState<Record<string, number>>({});
   const [formas, setFormas] = useState<FormaPagamento[]>([novaForma()]);
   const [salvando, setSalvando] = useState(false);
@@ -135,7 +147,7 @@ const PagarParcialConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ i
     <RestaurantLayout>
       <div className="pagar-parcial">
 
-        {/* ── Cabeçalho ── */}
+        {/*  Cabeçalho  */}
         <div className="pagar-parcial__header">
           <button
             className="pagar-parcial__voltar"
@@ -247,13 +259,12 @@ const PagarParcialConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ i
                       <span>Valor</span>
                       <div className="pagar-parcial__campo-valor">
                         <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="0,00"
-                          value={forma.valor === 0 ? '' : forma.valor}
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="R$ 0,00"
+                          value={forma.valor === 0 ? '' : numeroParaMoeda(forma.valor)}
                           onFocus={(e) => e.target.select()}
-                          onChange={(e) => atualizarForma(forma.id, 'valor', e.target.value)}
+                          onChange={(e) => atualizarForma(forma.id, 'valor', String(moedaParaNumero(e.target.value)))}
                         />
                         <em className="pagar-parcial__percentual">{percentual(forma.valor)}%</em>
                       </div>
@@ -273,13 +284,12 @@ const PagarParcialConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ i
                       <label className="pagar-parcial__campo pagar-parcial__campo--recebido">
                         <span>Recebido (opcional, para o troco)</span>
                         <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="0,00"
-                          value={forma.recebido === 0 ? '' : forma.recebido}
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="R$ 0,00"
+                          value={forma.recebido === 0 ? '' : numeroParaMoeda(forma.recebido)}
                           onFocus={(e) => e.target.select()}
-                          onChange={(e) => atualizarForma(forma.id, 'recebido', e.target.value)}
+                          onChange={(e) => atualizarForma(forma.id, 'recebido', String(moedaParaNumero(e.target.value)))}
                         />
                         {troco > 0 && <em className="pagar-parcial__troco">Troco: {formatarMoeda(troco)}</em>}
                       </label>
@@ -329,7 +339,7 @@ const PagarParcialConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ i
   );
 };
 
-// ── Rota: carrega a conta da mesa pelo :id da URL ──────────────────────────────
+// Rota: carrega a conta da mesa pelo :id da URL
 const PagarParcial: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();

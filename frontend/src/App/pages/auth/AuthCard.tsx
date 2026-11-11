@@ -1,13 +1,6 @@
 import React from 'react';
 import './AuthCard.css';
 
-/**
- * Painel da marca das telas de login, cadastro de cliente, recuperação de senha etc.
- * Segue o mesmo visual da lateral do cadastro de restaurante (RegisterPage):
- * gradiente vinho, logo, "MenuPoint", frase e chapéu de chef.
- * No mobile vira o cabeçalho vermelho no topo (só logo + nome).
- */
-
 // Mesmo desenho do ChefHatArt do RegisterPage
 const ChefHatArt: React.FC = () => (
   <svg

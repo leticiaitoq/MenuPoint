@@ -177,7 +177,6 @@
   height: 20px;
 }
 
-/* esconde o "olhinho" nativo do Edge/Chrome (já temos o nosso) */
 .recover-pass__input::-ms-reveal,
 .recover-pass__input::-ms-clear {
   display: none;

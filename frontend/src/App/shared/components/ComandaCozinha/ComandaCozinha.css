@@ -1,4 +1,4 @@
-/* ── Modal ─────────────────────────────────────────────────────────────────── */
+/* Modal  */
 .comanda__overlay {
   position: fixed;
   inset: 0;
@@ -202,7 +202,7 @@
   text-align: right;
 }
 
-/* ── Mobile ────────────────────────────────────────────────────────────────── */
+/* Mobile  */
 @media (max-width: 480px) {
   .comanda-folha { padding: 14px; }
   .comanda-folha__cabecalho { flex-direction: column; }

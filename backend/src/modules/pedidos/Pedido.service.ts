@@ -123,7 +123,7 @@ export class PedidoService {
         })
         .catch(console.error)
     }
-    // ─────────────────────────────────────────────────────────────────────
+    //
 
     return pedido
   }

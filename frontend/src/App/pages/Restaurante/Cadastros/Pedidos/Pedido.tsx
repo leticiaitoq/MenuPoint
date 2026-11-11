@@ -12,7 +12,7 @@ import { ROTAS_CAIXA } from '../../../../routes/caixaRotas';
 import ModalAlerta from '../../../../shared/components/ModalAlerta/ModalAlerta';
 import './Pedido.css';
 
-// ── Tipos ──────────────────────────────────────────────────────────────────────
+// Tipos 
 interface ItemPedido {
   id: string; // id do produto
   nome: string;
@@ -205,7 +205,7 @@ const Pedido: React.FC = () => {
   const quantidadeNoPedido = (produtoId: string) =>
     itens.find((i) => i.id === produtoId)?.quantidade ?? 0;
 
-  // ── Itens ────────────────────────────────────────────────────────────────────
+  //  Itens 
   const adicionarProduto = (p: Produto) => {
     setErro('');
     setItens((prev) => {
@@ -253,7 +253,7 @@ const Pedido: React.FC = () => {
     navigate(ROTAS_CAIXA.lista);
   };
 
-  // ── Salvar ───────────────────────────────────────────────────────────────────
+  // Salvar 
   const salvarPedido = async () => {
     if (enviando) return; // evita duplo clique lançar o pedido duas vezes
 

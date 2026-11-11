@@ -4,7 +4,6 @@ import { JWTPayload } from '@modules/auth/Auth.schema'
 
 export type Perfil = 'ADMIN' | 'ATENDENTE' | 'CAIXA' | 'CLIENTE'
 
-// ─────────────────────────────────────────────────────────────────────────────
 // authorize(...perfis)
 //
 // Hook que verifica se o usuário autenticado possui um dos perfis informados.
@@ -21,7 +20,7 @@ export type Perfil = 'ADMIN' | 'ATENDENTE' | 'CAIXA' | 'CLIENTE'
 // Uso em rota individual:
 //
 //   app.delete('/:id', { preHandler: authorize('ADMIN') }, handler)
-// ─────────────────────────────────────────────────────────────────────────────
+
 
 export function authorize(...perfisPermitidos: Perfil[]) {
   return async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
@@ -39,13 +38,11 @@ export function authorize(...perfisPermitidos: Perfil[]) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 // authenticate
-//
 // Apenas verifica autenticação, sem restrição de perfil.
 // Equivalente ao addHook('onRequest', async (req) => req.jwtVerify())
 // mas importável como preHandler individual.
-// ─────────────────────────────────────────────────────────────────────────────
 
 export async function authenticate(
   request: FastifyRequest,
@@ -54,7 +51,6 @@ export async function authenticate(
   await request.jwtVerify()
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // requireEstabelecimento(request, estabelecimento_id)
 //
 // Verifica se o usuário pertence ao estabelecimento da requisição.
@@ -63,7 +59,6 @@ export async function authenticate(
 // Uso: chamar dentro do handler, após jwtVerify:
 //
 //   requireEstabelecimento(request, estabelecimento_id)
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function requireEstabelecimento(
   request: FastifyRequest,

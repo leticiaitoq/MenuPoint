@@ -32,7 +32,7 @@ import ConfirmarAcaoPedido, { TipoAcaoPedido } from '../../../../shared/componen
 import ModalAlerta from '../../../../shared/components/ModalAlerta/ModalAlerta';
 import './PagarMesa.css';
 
-// ── Tipos ──────────────────────────────────────────────────────────────────────
+// Tipos
 type StatusPedido = 'aberta' | 'fechada';
 type FormaPagamento = 'pix' | 'debito' | 'credito' | 'dinheiro' | 'outras';
 type AbaDesconto = 'cupom' | 'manual';
@@ -242,7 +242,7 @@ const montarPedidoDaApi = (mesa: MesaApi, pedidos: PedidoApi[], resumo: ResumoCo
   };
 };
 
-// ── Componente ─────────────────────────────────────────────────────────────────
+// Componente 
 const PagarMesaConteudo: React.FC<{
   id: string;
   pedidoBase: PedidoDetalhe;
@@ -461,7 +461,7 @@ const PagarMesaConteudo: React.FC<{
     }
   };
 
-  // ── Pagamento ────────────────────────────────────────────────────────────────
+  //  Pagamento 
   const abrirModalPagamento = () => {
     setFormaSelecionada(null);
     setValorRecebidoCentavos(0);
@@ -530,7 +530,7 @@ const PagarMesaConteudo: React.FC<{
     }
   };
 
-  // ── Desconto ─────────────────────────────────────────────────────────────────
+  // Desconto 
   const abrirModalDesconto = () => {
     setAbaDesconto('cupom');
     setCodigoCupom('');

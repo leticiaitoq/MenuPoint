@@ -17,7 +17,7 @@
 .auth-brand__logo {
   width: 150px;
   height: 150px;
-  object-fit: cover; /* a arte é 16:9 com o emblema centralizado: corta as laterais vazias */
+  object-fit: cover; 
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.22));
 }
 
@@ -28,15 +28,14 @@
   font-size: 42px;
   line-height: 1;
   letter-spacing: 0.5px;
-  color: #ffa62b;                      /* era #ffbd59 — agora igual ao desktop */
+  color: #ffa62b;                      
   text-decoration: underline;
-  text-decoration-color: #ffa62b;      /* sublinhado continua laranja sob o "Point" */
+  text-decoration-color: #ffa62b;      
   text-decoration-thickness: 2px;
   text-underline-offset: 6px;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
 }
 
-/* O index.css aplica "* { font-family: Arimo }", que vence a herança: reforçamos aqui */
 .auth-brand__wordmark span {
   font-family: inherit;
   color: #ffffff; 

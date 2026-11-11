@@ -104,7 +104,7 @@ export const redefinirSenhaSchema = z.object({
 
 export type RedefinirSenhaDTO = z.infer<typeof redefinirSenhaSchema>
 
-// ── REGISTRO ─────────────────────────────────────────────────────────────────
+//  REGISTRO 
 // Cadastro em 2 etapas (o front envia tudo de uma vez no final):
 //   Etapa 1 — restaurante: nome, CNPJ, razão social e endereço
 //   Etapa 2 — responsável: nome, CPF, e-mail e senha

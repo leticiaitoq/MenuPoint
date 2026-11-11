@@ -39,10 +39,8 @@ import EstabelecimentoService, {
 import RecortadorImagem from '../../../shared/components/RecortadorImagem/RecortadorImagem';
 import './Config.css';
 
-// ────────────────────────────────────────────────────────────────────────────
-// Constantes
-// ────────────────────────────────────────────────────────────────────────────
 
+// Constantes
 const DIAS: { chave: DiaSemana; nome: string }[] = [
   { chave: 'segunda', nome: 'Segunda-feira' },
   { chave: 'terca', nome: 'Terça-feira' },
@@ -71,7 +69,7 @@ const TAMANHO_MAX_LOGO = 20 * 1024 * 1024; // original; é reduzida antes do env
 
 type Erros = Partial<Record<string, string>>;
 
-// ── Utilitários de máscara / conversão ──────────────────────────────────────
+//Utilitários de máscara / conversão
 
 const soDigitos = (v: string) => v.replace(/\D/g, '');
 
@@ -99,17 +97,22 @@ function mascaraCep(valor: string): string {
   return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
 }
 
-function paraNumero(valor: string): number {
-  const limpo = valor.trim();
-  if (limpo === '') return NaN;
-  const normalizado = limpo.includes(',') ? limpo.replace(/\./g, '').replace(',', '.') : limpo;
-  return Number(normalizado);
-}
-
-function formatarMoeda(valor: string | number | null | undefined): string {
-  const n = Number(valor ?? 0);
-  return Number.isFinite(n) ? n.toFixed(2).replace('.', ',') : '0,00';
-}
+// Máscara de moeda: digita só números e os 2 últimos viram centavos (R$ 1.234,56)
+const MAX_DIGITOS_MOEDA = 8; // até R$ 999.999,99
+const centavosParaMoeda = (centavos: number): string => {
+  const c = Math.max(0, Math.round(centavos));
+  const reais = String(Math.floor(c / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `R$ ${reais},${String(c % 100).padStart(2, '0')}`;
+};
+/** Texto digitado → "R$ 12,50". Campo vazio (ou zero) apaga o texto. */
+const mascaraMoeda = (texto: string): string => {
+  const centavos = Number(texto.replace(/\D/g, '').slice(0, MAX_DIGITOS_MOEDA));
+  return centavos > 0 ? centavosParaMoeda(centavos) : '';
+};
+/** "R$ 12,50" → 12.5 (campo vazio → 0) */
+const moedaParaNumero = (texto: string): number => Number(texto.replace(/\D/g, '') || 0) / 100;
+/** 12.5 → "R$ 12,50" (usado para preencher o campo com um valor já salvo) */
+const numeroParaMoeda = (valor: number): string => centavosParaMoeda(Math.round(valor * 100));
 
 function mensagemDeErro(err: any, padrao: string): string {
   const dados = err?.response?.data;
@@ -122,7 +125,7 @@ function mensagemDeErro(err: any, padrao: string): string {
   return primeiro ?? dados?.message ?? padrao;
 }
 
-// ── Horários: todos os dias sempre existem; o padrão é "fechado" ────────────
+//Horários: todos os dias sempre existem; o padrão é "fechado"
 
 function horarioTodoFechado(): HorarioFuncionamento {
   const base = {} as HorarioFuncionamento;
@@ -149,15 +152,10 @@ function normalizarHorario(bruto: unknown): HorarioFuncionamento {
   return horario;
 }
 
-// ────────────────────────────────────────────────────────────────────────────
 // Seções — cada uma tem seu próprio pedaço do formulário, sua validação e
 // o que ela manda pro backend. É isso que permite salvar cada uma sozinha.
-// A antiga seção "Identidade" (nome livre do estabelecimento) foi removida:
-// o nome exibido no cabeçalho agora vem da empresa e só muda pelo fluxo de
-// "Alterar dados" (senha), dentro da aba "Dados da empresa".
-// ────────────────────────────────────────────────────────────────────────────
 
-// ── Contato ──────────────────────────────────────────────────────────────────
+//Contato 
 
 interface ContatoForm {
   telefone: string;
@@ -193,7 +191,7 @@ const payloadContato = (v: ContatoForm): AtualizarEstabelecimentoDTO => ({
   email: v.email.trim(),
 });
 
-// ── Endereço ─────────────────────────────────────────────────────────────────
+//Endereço 
 
 interface EnderecoForm {
   rua: string;
@@ -248,7 +246,7 @@ const payloadEndereco = (v: EnderecoForm): AtualizarEstabelecimentoDTO => {
   };
 };
 
-// ── Horário de funcionamento ─────────────────────────────────────────────────
+// Horário de funcionamento
 
 interface HorarioForm {
   horario: HorarioFuncionamento;
@@ -282,7 +280,7 @@ const payloadHorario = (v: HorarioForm): AtualizarEstabelecimentoDTO => {
   return { horario_funcionamento: horario };
 };
 
-// ── Atendimento e entrega ─────────────────────────────────────────────────────
+//Atendimento e entrega
 
 interface AtendimentoForm {
   aceita_entrega: boolean;
@@ -300,8 +298,8 @@ const ATENDIMENTO_PADRAO: AtendimentoForm = {
   aceita_mesa: true,
   tempo_entrega_min: '30',
   tempo_entrega_max: '60',
-  taxa_entrega: '0,00',
-  pedido_minimo: '0,00',
+  taxa_entrega: 'R$ 0,00',
+  pedido_minimo: 'R$ 0,00',
 };
 
 const extrairAtendimento = (e: Estabelecimento): AtendimentoForm => ({
@@ -310,8 +308,8 @@ const extrairAtendimento = (e: Estabelecimento): AtendimentoForm => ({
   aceita_mesa: e.aceita_mesa,
   tempo_entrega_min: String(e.tempo_entrega_min ?? 30),
   tempo_entrega_max: String(e.tempo_entrega_max ?? 60),
-  taxa_entrega: formatarMoeda(e.taxa_entrega),
-  pedido_minimo: formatarMoeda(e.pedido_minimo),
+  taxa_entrega: numeroParaMoeda(Number(e.taxa_entrega ?? 0)),
+  pedido_minimo: numeroParaMoeda(Number(e.pedido_minimo ?? 0)),
 });
 
 function validarAtendimento(v: AtendimentoForm): Erros {
@@ -322,9 +320,9 @@ function validarAtendimento(v: AtendimentoForm): Erros {
   else if (!Number.isInteger(max) || max < min) {
     erros.tempo = 'O tempo máximo deve ser maior ou igual ao mínimo.';
   }
-  const taxa = paraNumero(v.taxa_entrega);
+  const taxa = moedaParaNumero(v.taxa_entrega);
   if (!Number.isFinite(taxa) || taxa < 0) erros.taxa_entrega = 'Valor inválido.';
-  const minimo = paraNumero(v.pedido_minimo);
+  const minimo = moedaParaNumero(v.pedido_minimo);
   if (!Number.isFinite(minimo) || minimo < 0) erros.pedido_minimo = 'Valor inválido.';
   return erros;
 }
@@ -335,11 +333,11 @@ const payloadAtendimento = (v: AtendimentoForm): AtualizarEstabelecimentoDTO => 
   aceita_mesa: v.aceita_mesa,
   tempo_entrega_min: Number(v.tempo_entrega_min),
   tempo_entrega_max: Number(v.tempo_entrega_max),
-  taxa_entrega: paraNumero(v.taxa_entrega),
-  pedido_minimo: paraNumero(v.pedido_minimo),
+  taxa_entrega: moedaParaNumero(v.taxa_entrega),
+  pedido_minimo: moedaParaNumero(v.pedido_minimo),
 });
 
-// ── Divulgação (tipo de cozinha + link do cardápio) ──────────────────────────
+//Divulgação (tipo de cozinha + link do cardápio)
 
 // Opções prontas do dropdown. O valor salvo no banco é o próprio texto;
 // "Outros" libera um campo para o restaurante digitar o tipo dele.
@@ -394,7 +392,7 @@ const payloadDivulgacao = (v: DivulgacaoForm): AtualizarEstabelecimentoDTO => ({
   tipo_cozinha: v.tipo_cozinha === OUTROS ? v.tipo_cozinha_outro.trim() : v.tipo_cozinha,
 });
 
-// ── PIX ──────────────────────────────────────────────────────────────────────
+//PIX
 
 interface PixForm {
   tipo_chave_pix: TipoChavePix | '';
@@ -415,13 +413,10 @@ function validarPix(v: PixForm): Erros {
 }
 
 // PIX tem endpoint e DTO próprios (PATCH /estabelecimentos/:id/pix, que exige
-// senha_atual) — por isso não usa o useSecao genérico nem o
-// AtualizarEstabelecimentoDTO. Ver usePix logo abaixo.
+// senha_atual) — não usa o useSecao genérico nem o
+// AtualizarEstabelecimentoDTO. 
 
-// ────────────────────────────────────────────────────────────────────────────
-// Hook: uma seção completa (valor, validação, salvar, descartar)
-// ────────────────────────────────────────────────────────────────────────────
-
+// Hook:seção completa (valor, validação, salvar, descartar)
 interface Secao<T> {
   valor: T;
   definir: <K extends keyof T>(campo: K, valor: T[K]) => void;
@@ -512,7 +507,7 @@ function useSecao<T>(
   return { valor, definir, erros, limparErro, alterado, salvando, salvoRecente, erroGeral, salvar, descartar };
 }
 
-// ── PIX: hook dedicado, sem salvar automático ───────────────────────────────
+//  PIX: hook dedicado, sem salvar automático 
 // Diferente do useSecao, não chama EstabelecimentoService.atualizar. Ele só
 // guarda o valor e valida; quem efetivamente salva é confirmarComSenha,
 // chamada depois que o usuário confirma a senha no modal (o endpoint de PIX
@@ -598,9 +593,8 @@ function usePix(estab: Estabelecimento | null) {
   return { valor, definir, erros, alterado, salvando, salvoRecente, erroGeral, validar, confirmarComSenha, descartar };
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+
 // Peças de interface
-// ────────────────────────────────────────────────────────────────────────────
 
 interface CampoProps {
   id: string;
@@ -742,7 +736,7 @@ const SecaoCabecalho: React.FC<{
   </div>
 );
 
-// ── Diálogo genérico (acessível: Esc fecha, foco entra no diálogo) ──────────
+// Diálogo genérico
 
 const Dialogo: React.FC<{
   titulo: string;
@@ -777,11 +771,7 @@ const Dialogo: React.FC<{
   );
 };
 
-// ── Alterar dados sensíveis (exige a senha) ─────────────────────────────────
-// Este é o ÚNICO fluxo de edição do nome exibido no cabeçalho: não existe
-// mais um botão "Editar perfil" separado — ele cumpriria a mesma função
-// deste modal, então foi removido.
-
+// Alterar dados sensíveis (exige a senha) 
 interface DadosSensiveis {
   nome_empresa: string;
   razao_social: string;
@@ -1080,7 +1070,7 @@ const PassoEditar: React.FC<{
   );
 };
 
-// ── Passo 3: confirmar o e-mail novo com o código ───────────────────────────
+//Passo 3: confirmar o e-mail novo com o código
 const ESPERA_REENVIO_SEGUNDOS = 30;
 const TAMANHO_CODIGO = 6;
 
@@ -1367,9 +1357,8 @@ const ModalDadosSensiveis: React.FC<{
   );
 };
 
-// ── Confirmação de senha para salvar o PIX ──────────────────────────────────
-// O endpoint de PIX exige senha_atual em toda alteração (diferente do fluxo
-// de dados sensíveis, que confirma a senha uma vez e libera a edição).
+// Confirmação de senha para salvar o PIX 
+// O endpoint de PIX exige senha_atual em toda alteração.
 
 const ModalSenhaPix: React.FC<{
   onConfirmar: (senha: string) => Promise<ResultadoPix>;
@@ -1448,10 +1437,8 @@ const ModalSenhaPix: React.FC<{
   );
 };
 
-// ────────────────────────────────────────────────────────────────────────────
-// Tela
-// ────────────────────────────────────────────────────────────────────────────
 
+// Tela
 type AbaId = 'dados-empresa' | 'contato-endereco' | 'horario' | 'atendimento';
 
 const Config: React.FC = () => {
@@ -1522,7 +1509,7 @@ const Config: React.FC = () => {
     return pix.confirmarComSenha(estab.id, senha);
   };
 
-  // ── Abas ─────────────────────────────────────────────────────────────────
+  //Abas 
   const ABAS: { id: AbaId; titulo: string; icone: React.ReactNode; alterado: boolean }[] = [
     { id: 'dados-empresa', titulo: 'Dados da empresa', icone: <HiOfficeBuilding />, alterado: divulgacao.alterado },
     { id: 'contato-endereco', titulo: 'Contato e Endereço', icone: <HiLocationMarker />, alterado: contato.alterado || endereco.alterado },
@@ -1709,7 +1696,7 @@ const Config: React.FC = () => {
     });
   };
 
-  // ── Estados de carregamento / erro ────────────────────────────────────────
+  // Estados de carregamento / erro
 
   if (!perfil && carregando) {
     return (
@@ -2270,20 +2257,22 @@ const Config: React.FC = () => {
                     <input
                       id="taxa"
                       className="config__input"
-                      inputMode="decimal"
+                      inputMode="numeric"
+                      placeholder="R$ 0,00"
                       value={atendimento.valor.taxa_entrega}
                       disabled={!podeEditar || atendimento.salvando}
-                      onChange={(e) => atendimento.definir('taxa_entrega', e.target.value)}
+                      onChange={(e) => atendimento.definir('taxa_entrega', mascaraMoeda(e.target.value))}
                     />
                   </Campo>
                   <Campo id="minimo" rotulo="Pedido mínimo (R$)" erro={atendimento.erros.pedido_minimo}>
                     <input
                       id="minimo"
                       className="config__input"
-                      inputMode="decimal"
+                      inputMode="numeric"
+                      placeholder="R$ 0,00"
                       value={atendimento.valor.pedido_minimo}
                       disabled={!podeEditar || atendimento.salvando}
-                      onChange={(e) => atendimento.definir('pedido_minimo', e.target.value)}
+                      onChange={(e) => atendimento.definir('pedido_minimo', mascaraMoeda(e.target.value))}
                     />
                   </Campo>
                 </div>

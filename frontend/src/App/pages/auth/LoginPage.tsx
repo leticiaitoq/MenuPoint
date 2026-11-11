@@ -56,7 +56,7 @@ const LoginPage: React.FC = () => {
         senha: password,
       });
 
-      // Guarda a sessão; o perfil completo é buscado do banco logo em seguida
+      // Guarda a sessão. O perfil completo é buscado do banco logo em seguida
       entrar({
         token: resultado.token,
         refresh_token: resultado.refresh_token,

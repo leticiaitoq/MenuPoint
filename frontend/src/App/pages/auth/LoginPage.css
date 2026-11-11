@@ -86,7 +86,7 @@
   box-sizing: border-box;
 }
 
-/* Input com ícone à esquerda — padding extra para não sobrepor */
+/* Input com ícone à esquerda*/
 .login-page__input--with-icon {
   padding-left: 40px;
 }
@@ -113,7 +113,7 @@
 }
 
 /**
- * Desativamento do icone nativo do revelar senha, que vem com o edge ou chrome
+ * Desativamento do icone nativo do revelar senha
  */
 .login-page__input::-ms-reveal,
 .login-page__input::-ms-clear {
@@ -190,6 +190,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
 .login-page__redirect-link:hover {
   text-decoration: underline;
 }
+
 /* Toast de sucesso ao logar no login e no VerifyCodePage*/
 .login-page__toast-overlay {
   position: fixed;
