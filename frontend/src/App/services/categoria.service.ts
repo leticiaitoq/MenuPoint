@@ -21,6 +21,8 @@ export interface Produto {
   preco: number
   preco_promocional: number | null
   imagem_url: string | null
+  /** Tempo médio de preparo, em minutos (opcional no cadastro) */
+  tempo_preparo_min?: number | null
   disponivel: boolean
   destaque: boolean
   ordem: number

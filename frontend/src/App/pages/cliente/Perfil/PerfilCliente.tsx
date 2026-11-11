@@ -40,7 +40,19 @@ function clienteDesde(iso: string): string {
   return data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 }
 
-const PerfilCliente: React.FC = () => {
+interface PerfilClienteProps {
+  /**
+   * 'delivery' (padrão): perfil do link do restaurante, com endereços de entrega.
+   * 'local': a mesma tela dentro do fluxo da mesa (/perfilLocal): usa o layout do cliente local
+   * e não mostra endereços de entrega (na mesa não existe entrega).
+   */
+  modo?: 'delivery' | 'local';
+  /** Substitui o "sair" padrão (no local, o cliente continua na mesa como convidado). */
+  aoSair?: () => void;
+}
+
+const PerfilCliente: React.FC<PerfilClienteProps> = ({ modo = 'delivery', aoSair }) => {
+  const modoLayout = modo === 'local' ? 'guest' : 'logged';
   const navigate = useNavigate();
   const { entrar, sair, atualizarCliente } = useClienteAuth();
 
@@ -354,6 +366,10 @@ const PerfilCliente: React.FC = () => {
 
   // ── Sair ──
   const handleSair = () => {
+    if (aoSair) {
+      aoSair();
+      return;
+    }
     // Navega antes de limpar a sessão: assim a rota protegida não "lembra" o /perfil
     // Delivery não exige conta para navegar: depois de sair, volta ao início como visitante
     navigate('/dwelcome', { replace: true });
@@ -363,7 +379,7 @@ const PerfilCliente: React.FC = () => {
   // ── Estados de tela ──
   if (carregando && !perfil) {
     return (
-      <CustomerLayout mode="logged">
+      <CustomerLayout mode={modoLayout}>
         <div className="perfil">
           <div className="perfil__card">
             <p className="perfil__estado" role="status">Carregando seu perfil…</p>
@@ -375,7 +391,7 @@ const PerfilCliente: React.FC = () => {
 
   if (!perfil) {
     return (
-      <CustomerLayout mode="logged">
+      <CustomerLayout mode={modoLayout}>
         <div className="perfil">
           <div className="perfil__card">
             <h1 className="perfil__nome">Não foi possível abrir o perfil</h1>
@@ -392,7 +408,7 @@ const PerfilCliente: React.FC = () => {
   const desde = clienteDesde(perfil.criado_em);
 
   return (
-    <CustomerLayout mode="logged">
+    <CustomerLayout mode={modoLayout}>
       <div className="perfil">
 
         {aviso && (
@@ -710,16 +726,18 @@ const PerfilCliente: React.FC = () => {
           )}
         </div>
 
-        {/* ── Endereços ── */}
-        <div className="perfil__secao">
-          <h2 className="perfil__secao-titulo">ENDEREÇOS DE ENTREGA</h2>
-          <div className="perfil__secao-linha">
-            <p className="perfil__secao-texto">Cadastre e gerencie onde você quer receber seus pedidos.</p>
-               <button className="perfil__btn-editar" onClick={() => navigate('/perfil/enderecos')}>
-              GERENCIAR
-            </button>
+        {/* ── Endereços (só no delivery: na mesa não existe entrega) ── */}
+        {modo !== 'local' && (
+          <div className="perfil__secao">
+            <h2 className="perfil__secao-titulo">ENDEREÇOS DE ENTREGA</h2>
+            <div className="perfil__secao-linha">
+              <p className="perfil__secao-texto">Cadastre e gerencie onde você quer receber seus pedidos.</p>
+              <button className="perfil__btn-editar" onClick={() => navigate('/perfil/enderecos')}>
+                GERENCIAR
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ── Sair ── */}
         <button className="perfil__btn-sair" onClick={handleSair}>

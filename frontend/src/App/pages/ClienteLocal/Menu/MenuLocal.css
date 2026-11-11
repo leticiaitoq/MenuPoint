@@ -8,7 +8,7 @@
   box-sizing: border-box;
 }
 
-/* ── Barra de busca ── */
+/*  Barra de busca */
 .menu__busca-wrap {
   display: flex;
   align-items: center;
@@ -38,11 +38,28 @@
   color: var(--text-faint);
 }
 
-/* ── Categorias ── */
+/* Categorias  */
 .menu__categorias {
   display: flex;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;          
+  overflow-x: auto;           
+  overflow-y: hidden;
+  padding: 4px 4px 12px;      
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;      
+  scrollbar-color: #c0392b transparent;
+}
+
+.menu__categorias::-webkit-scrollbar {
+  height: 6px;
+}
+.menu__categorias::-webkit-scrollbar-thumb {
+  background: #c0392b;
+  border-radius: 3px;
+}
+.menu__categorias::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .menu__cat-btn {
@@ -52,6 +69,7 @@
   border: none;
   background-color:  var(--bg-surface);
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -81,7 +99,7 @@
   display: block;
   pointer-events: none; /* o clique vai sempre para o botão */
 }
-/* ── Grid de produtos — 3 colunas ── */
+/*  Grid de produtos — 3 colunas  */
 .menu__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -96,7 +114,7 @@
   padding: 32px 0;
 }
 
-/* ── Card de produto ── */
+/* Card de produto  */
 .menu__card {
   background-color: var(--bg-surface);
   border-radius: 16px;
@@ -186,7 +204,7 @@
   pointer-events: none;
 }
 
-/* ── Responsividade Mobile ── */
+/*  Responsividade Mobile  */
 @media (max-width: 600px) {
   .menu {
     margin: -16px;
@@ -268,3 +286,7 @@
   text-align: center;
   cursor: pointer;
 }
+
+/* Card abre o modal de detalhes do produto */
+.menu__card--clicavel { cursor: pointer; }
+.menu__card--clicavel:focus-visible { outline: 2px solid var(--brand, #c0392b); outline-offset: 2px; }

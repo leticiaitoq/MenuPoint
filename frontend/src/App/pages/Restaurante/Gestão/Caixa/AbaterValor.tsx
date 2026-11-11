@@ -18,12 +18,20 @@ const FORMAS: { api: FormaPagamentoApi; rotulo: string }[] = [
   { api: 'CREDITO', rotulo: 'Crédito' },
 ];
 
-// Aceita "50", "50,5" e "50.50"
-const paraNumeroSimples = (texto: string) => {
-  const normal = texto.includes(',') ? texto.replace(/\./g, '').replace(',', '.') : texto;
-  const n = parseFloat(normal);
-  return Number.isFinite(n) && n > 0 ? r2(n) : 0;
+// Máscara de moeda: digita só números e os 2 últimos viram centavos (R$ 1.234,56)
+const MAX_DIGITOS_MOEDA = 8; // até R$ 999.999,99
+const centavosParaMoeda = (centavos: number): string => {
+  const c = Math.max(0, Math.round(centavos));
+  const reais = String(Math.floor(c / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `R$ ${reais},${String(c % 100).padStart(2, '0')}`;
 };
+/** Texto digitado → "R$ 12,50". Campo vazio (ou zero) apaga o texto. */
+const mascaraMoeda = (texto: string): string => {
+  const centavos = Number(texto.replace(/\D/g, '').slice(0, MAX_DIGITOS_MOEDA));
+  return centavos > 0 ? centavosParaMoeda(centavos) : '';
+};
+/** "R$ 12,50" → 12.5 (campo vazio → 0) */
+const moedaParaNumero = (texto: string): number => Number(texto.replace(/\D/g, '') || 0) / 100;
 
 const AbaterValorConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ id, resumo }) => {
   const navigate = useNavigate();
@@ -44,7 +52,7 @@ const AbaterValorConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ id
   // Resultado REAL devolvido pelo servidor (não a prévia da tela)
   const [resultado, setResultado] = useState<ResultadoParcial | null>(null);
 
-  const valorDado = paraNumeroSimples(valorTexto);
+  const valorDado = r2(moedaParaNumero(valorTexto));
   // Dinheiro a mais que o saldo vira troco; nas outras formas não pode passar do saldo
   const valorAbatido = r2(Math.min(valorDado, resumo.restante));
   const troco = forma === 'DINHEIRO' ? r2(Math.max(valorDado - resumo.restante, 0)) : 0;
@@ -241,10 +249,10 @@ const AbaterValorConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ id
               <input
                 className="pagar-parcial__input-valor"
                 type="text"
-                inputMode="decimal"
+                inputMode="numeric"
                 placeholder="R$ 0,00"
                 value={valorTexto}
-                onChange={(e) => setValorTexto(e.target.value.replace(/[^\d.,]/g, ''))}
+                onChange={(e) => setValorTexto(mascaraMoeda(e.target.value))}
                 autoFocus
               />
             </label>
@@ -297,7 +305,7 @@ const AbaterValorConteudo: React.FC<{ id: string; resumo: ResumoConta }> = ({ id
   );
 };
 
-// ── Rota: carrega a conta da mesa pelo :id da URL ──────────────────────────────
+//Rota: carrega a conta da mesa pelo :id da URL
 const AbaterValor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();

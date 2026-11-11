@@ -28,7 +28,7 @@ import DespesaService, {
 } from '../../../../../services/despesa.service';
 import './Despesas.css';
 
-// ── Tipos ──────────────────────────────────────────────────────────────
+// Tipos
 type Categoria = string;
 
 type FormaPagamento = 'Pix' | 'Boleto' | 'Cartão' | 'Dinheiro';
@@ -54,8 +54,8 @@ interface FormularioDespesa {
 
 type ChaveOrdenacao = 'dataISO' | 'descricao' | 'categoria' | 'fornecedor' | 'valor';
 
-// ── Constantes ────────────────────────────────────────────────────────
-// Mesmas categorias do cadastro (a lista real vem da API; esta é só o que aparece antes de carregar)
+//Constantes 
+// Mesmas categorias do cadastro (a lista real vem da API)
 const CATEGORIAS_INICIAIS = ['Custos dos Produtos', 'Contas', 'Marketing', 'Aluguel', 'Taxas e Comissões', 'Outros'];
 
 const FORMAS_PAGAMENTO: FormaPagamento[] = FORMAS_PAGAMENTO_DESPESA.map((f) => f.rotulo as FormaPagamento);
@@ -71,7 +71,7 @@ const FORMULARIO_VAZIO: FormularioDespesa = {
   valor: '',
 };
 
-// ── Conversão API <-> tela ───────────────────────────────────────────────
+// Conversão API <-> tela 
 const doServidor = (d: DespesaApi): Despesa => ({
   id: d.id,
   dataISO: d.data_despesa,
@@ -82,7 +82,24 @@ const doServidor = (d: DespesaApi): Despesa => ({
   valor: d.valor,
 });
 
-// ── Helpers ────────────────────────────────────────────────────────────
+//  Helpers 
+//  Máscara de moeda
+const MAX_DIGITOS_MOEDA = 8; // até R$ 999.999,99
+const centavosParaMoeda = (centavos: number): string => {
+  const c = Math.max(0, Math.round(centavos));
+  const reais = String(Math.floor(c / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `R$ ${reais},${String(c % 100).padStart(2, '0')}`;
+};
+/** Texto digitado  "R$ 12,50". Campo vazio (ou zero) apaga o texto. */
+const mascaraMoeda = (texto: string): string => {
+  const centavos = Number(texto.replace(/\D/g, '').slice(0, MAX_DIGITOS_MOEDA));
+  return centavos > 0 ? centavosParaMoeda(centavos) : '';
+};
+/** "R$ 12,50" = 12.5 (campo vazio = 0) */
+const moedaParaNumero = (texto: string): number => Number(texto.replace(/\D/g, '') || 0) / 100;
+/** 12.5 = "R$ 12,50" */
+const numeroParaMoeda = (valor: number): string => centavosParaMoeda(Math.round(valor * 100));
+
 const formatarPreco = (valor: number): string =>
   valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -115,7 +132,7 @@ const PAGAMENTO_ESTILO: Record<FormaPagamento, string> = {
   Dinheiro: 'despesas__pagamento-icone--dinheiro',
 };
 
-// ── Componente principal ────────────────────────────────────────────────
+//Componente principal 
 const Despesas: React.FC = () => {
   const navigate = useNavigate();
 
@@ -150,7 +167,7 @@ const Despesas: React.FC = () => {
   // Modal de exclusão
   const [despesaParaExcluir, setDespesaParaExcluir] = useState<Despesa | null>(null);
 
-  // ── Carregamento (API) ─────────────────────────────────────────────
+  // Carregamento (API) 
   // O período vai para o servidor; categoria e forma de pagamento filtram na própria tela.
   const carregar = useCallback(async () => {
     if (periodoInicio && periodoFim && periodoInicio > periodoFim) {
@@ -186,7 +203,7 @@ const Despesas: React.FC = () => {
       .catch(() => { /* mantém a lista inicial; o erro principal aparece na tabela */ });
   }, []);
 
-  // ── Filtragem ──────────────────────────────────────────────────────
+  // Filtragem 
   const despesasFiltradas = useMemo(() => {
     return despesas.filter((d) => {
       const dentroCategoria = categoriaFiltro === 'Todas as categorias' || d.categoria === categoriaFiltro;
@@ -197,7 +214,7 @@ const Despesas: React.FC = () => {
     });
   }, [despesas, categoriaFiltro, pagamentoFiltro, periodoInicio, periodoFim]);
 
-  // ── Ordenação ──────────────────────────────────────────────────────
+  // Ordenação 
   const despesasOrdenadas = useMemo(() => {
     const copia = [...despesasFiltradas];
     copia.sort((a, b) => {
@@ -213,16 +230,16 @@ const Despesas: React.FC = () => {
     return copia;
   }, [despesasFiltradas, ordenarPor, ordemDecrescente]);
 
-  // ── Paginação ──────────────────────────────────────────────────────
+  // Paginação
   const totalPaginas = Math.max(1, Math.ceil(despesasOrdenadas.length / ITENS_POR_PAGINA));
   const paginaSegura = Math.min(paginaAtual, totalPaginas);
   const indiceInicio = (paginaSegura - 1) * ITENS_POR_PAGINA;
   const despesasDaPagina = despesasOrdenadas.slice(indiceInicio, indiceInicio + ITENS_POR_PAGINA);
 
-  // ── Totais do período filtrado ──────────────────────────────────────
+  //  Totais do período filtrado 
   const totalPeriodo = despesasFiltradas.reduce((acc, d) => acc + d.valor, 0);
 
-  // ── Handlers ───────────────────────────────────────────────────────
+  // Handlers 
   const alternarOrdenacao = (chave: ChaveOrdenacao) => {
     if (ordenarPor === chave) {
       setOrdemDecrescente((atual) => !atual);
@@ -247,7 +264,7 @@ const Despesas: React.FC = () => {
       categoria: despesa.categoria,
       fornecedor: despesa.fornecedor,
       pagamento: despesa.pagamento,
-      valor: String(despesa.valor),
+      valor: numeroParaMoeda(despesa.valor),
     });
     setModalAberto(true);
   };
@@ -266,7 +283,7 @@ const Despesas: React.FC = () => {
   const salvarDespesa = async (evento: React.FormEvent) => {
     evento.preventDefault();
 
-    const valorNumerico = Number(formulario.valor.replace(',', '.'));
+    const valorNumerico = moedaParaNumero(formulario.valor);
     if (!formulario.dataISO || !formulario.descricao.trim() || !valorNumerico || valorNumerico <= 0) {
       setErroModal('Preencha a data, a descrição e um valor maior que zero.');
       return;
@@ -326,7 +343,7 @@ const Despesas: React.FC = () => {
     <RestaurantLayout>
       <div className="despesas">
 
-        {/* ── Cabeçalho ── */}
+        {/*  Cabeçalho  */}
         <div className="despesas__cabecalho">
           <div>
             <h2 className="despesas__titulo">Despesas</h2>
@@ -337,7 +354,7 @@ const Despesas: React.FC = () => {
           </button>
         </div>
 
-        {/* ── Filtros ── */}
+        {/*  Filtros  */}
         <div className="despesas__filtros">
 
           <div className="despesas__filtro-periodo">
@@ -441,7 +458,7 @@ const Despesas: React.FC = () => {
 
         </div>
 
-        {/* ── Resumo do período ── */}
+        {/*  Resumo do período  */}
         <div className="despesas__resumo">
           <div className="despesas__resumo-item">
             <span className="despesas__resumo-icone despesas__resumo-icone--vermelho">
@@ -464,7 +481,7 @@ const Despesas: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Tabela ── */}
+        {/*  Tabela  */}
         <div className="despesas__tabela-wrapper">
           <div className="despesas__tabela-scroll">
             <table className="despesas__tabela">
@@ -542,7 +559,7 @@ const Despesas: React.FC = () => {
             </table>
           </div>
 
-          {/* ── Paginação ── */}
+          {/*  Paginação  */}
           <div className="despesas__paginacao">
             <span className="despesas__paginacao-info">
               Mostrando {despesasDaPagina.length} de {despesasOrdenadas.length} registros
@@ -573,7 +590,7 @@ const Despesas: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Modal: editar despesa ── */}
+        {/*  Modal: editar despesa  */}
         {modalAberto && (
           <div className="despesas__modal-overlay" onClick={fecharModal}>
             <div className="despesas__modal" onClick={(e) => e.stopPropagation()}>
@@ -650,13 +667,12 @@ const Despesas: React.FC = () => {
                   <label className="despesas__form-campo">
                     Valor (R$)
                     <input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
+                      type="text"
+                      inputMode="numeric"
                       required
-                      placeholder="0,00"
+                      placeholder="R$ 0,00"
                       value={formulario.valor}
-                      onChange={(e) => atualizarCampoFormulario('valor', e.target.value)}
+                      onChange={(e) => atualizarCampoFormulario('valor', mascaraMoeda(e.target.value))}
                     />
                   </label>
                 </div>
@@ -676,7 +692,7 @@ const Despesas: React.FC = () => {
           </div>
         )}
 
-        {/* ── Modal: confirmar exclusão ── */}
+        {/*  Modal: confirmar exclusão  */}
         {despesaParaExcluir && (
           <div className="despesas__modal-overlay" onClick={() => setDespesaParaExcluir(null)}>
             <div className="despesas__modal despesas__modal--confirmar" onClick={(e) => e.stopPropagation()}>

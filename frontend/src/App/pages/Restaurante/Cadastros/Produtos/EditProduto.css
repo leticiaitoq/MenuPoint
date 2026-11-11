@@ -297,3 +297,71 @@
   color: var(--text-muted);
   margin: 0;
 }
+/* ═══════════════════════════════════════════════
+   RESPONSIVIDADE
+═══════════════════════════════════════════════ */
+
+/* Celular e tablet com barra inferior */
+@media (max-width: 768px) {
+  .editprod { padding-bottom: 90px; }
+
+  .editprod__titulo { font-size: 21px; }
+
+  .editprod__card { padding: 22px 18px; gap: 20px; }
+
+  /* foto em cima, descrição embaixo */
+  .editprod__secao-meio { flex-direction: column; gap: 20px; }
+
+  .editprod__foto-col { width: 100%; flex-shrink: 1; }
+
+  .editprod__foto-wrap {
+    width: 100%;
+    max-width: 360px;
+    height: auto;
+    aspect-ratio: 4 / 3;
+  }
+
+  .editprod__desc-col { width: 100%; min-width: 0; }
+
+  /* Cancelar / Salvar: barra fixa no rodapé, acima da navegação inferior */
+  .editprod__acoes {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+    z-index: 90;
+    padding: 12px 16px;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 16px var(--shadow-color);
+  }
+
+  .editprod__acoes > button {
+    flex: 1;
+    min-height: 46px;
+    padding: 10px 12px;
+  }
+}
+
+/* Celular */
+@media (max-width: 600px) {
+  /* "Nome do Produto" / "Preço": rótulo em cima do campo */
+  .editprod__linha-nome { flex-direction: column; align-items: stretch; }
+
+  .editprod__label-inline {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+  }
+
+  .editprod__input-inline { padding: 12px 14px; font-size: 16px; }
+
+  .editprod__select { font-size: 16px; }
+
+  .editprod__label--direita { margin-left: 0; }
+
+  .editprod__popup {
+    width: calc(100% - 32px);
+    padding: 28px 20px;
+  }
+}

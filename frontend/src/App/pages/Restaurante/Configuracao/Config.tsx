@@ -42,6 +42,7 @@ import './Config.css';
 // Constantes
 
 
+// Constantes
 const DIAS: { chave: DiaSemana; nome: string }[] = [
   { chave: 'segunda', nome: 'Segunda-feira' },
   { chave: 'terca', nome: 'Terça-feira' },
@@ -189,17 +190,22 @@ function mascaraCep(valor: string): string {
   return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
 }
 
-function paraNumero(valor: string): number {
-  const limpo = valor.trim();
-  if (limpo === '') return NaN;
-  const normalizado = limpo.includes(',') ? limpo.replace(/\./g, '').replace(',', '.') : limpo;
-  return Number(normalizado);
-}
-
-function formatarMoeda(valor: string | number | null | undefined): string {
-  const n = Number(valor ?? 0);
-  return Number.isFinite(n) ? n.toFixed(2).replace('.', ',') : '0,00';
-}
+// Máscara de moeda: digita só números e os 2 últimos viram centavos (R$ 1.234,56)
+const MAX_DIGITOS_MOEDA = 8; // até R$ 999.999,99
+const centavosParaMoeda = (centavos: number): string => {
+  const c = Math.max(0, Math.round(centavos));
+  const reais = String(Math.floor(c / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `R$ ${reais},${String(c % 100).padStart(2, '0')}`;
+};
+/** Texto digitado → "R$ 12,50". Campo vazio (ou zero) apaga o texto. */
+const mascaraMoeda = (texto: string): string => {
+  const centavos = Number(texto.replace(/\D/g, '').slice(0, MAX_DIGITOS_MOEDA));
+  return centavos > 0 ? centavosParaMoeda(centavos) : '';
+};
+/** "R$ 12,50" → 12.5 (campo vazio → 0) */
+const moedaParaNumero = (texto: string): number => Number(texto.replace(/\D/g, '') || 0) / 100;
+/** 12.5 → "R$ 12,50" (usado para preencher o campo com um valor já salvo) */
+const numeroParaMoeda = (valor: number): string => centavosParaMoeda(Math.round(valor * 100));
 
 function mensagemDeErro(err: any, padrao: string): string {
   const dados = err?.response?.data;
@@ -382,8 +388,8 @@ const ATENDIMENTO_PADRAO: AtendimentoForm = {
   aceita_mesa: true,
   tempo_entrega_min: '30',
   tempo_entrega_max: '60',
-  taxa_entrega: '0,00',
-  pedido_minimo: '0,00',
+  taxa_entrega: 'R$ 0,00',
+  pedido_minimo: 'R$ 0,00',
 };
 
 const extrairAtendimento = (e: Estabelecimento): AtendimentoForm => ({
@@ -392,8 +398,8 @@ const extrairAtendimento = (e: Estabelecimento): AtendimentoForm => ({
   aceita_mesa: true,
   tempo_entrega_min: String(e.tempo_entrega_min ?? 30),
   tempo_entrega_max: String(e.tempo_entrega_max ?? 60),
-  taxa_entrega: formatarMoeda(e.taxa_entrega),
-  pedido_minimo: formatarMoeda(e.pedido_minimo),
+  taxa_entrega: numeroParaMoeda(Number(e.taxa_entrega ?? 0)),
+  pedido_minimo: numeroParaMoeda(Number(e.pedido_minimo ?? 0)),
 });
 
 function validarAtendimento(v: AtendimentoForm): Erros {
@@ -404,9 +410,9 @@ function validarAtendimento(v: AtendimentoForm): Erros {
   else if (!Number.isInteger(max) || max < min) {
     erros.tempo = 'O tempo máximo deve ser maior ou igual ao mínimo.';
   }
-  const taxa = paraNumero(v.taxa_entrega);
+  const taxa = moedaParaNumero(v.taxa_entrega);
   if (!Number.isFinite(taxa) || taxa < 0) erros.taxa_entrega = 'Valor inválido.';
-  const minimo = paraNumero(v.pedido_minimo);
+  const minimo = moedaParaNumero(v.pedido_minimo);
   if (!Number.isFinite(minimo) || minimo < 0) erros.pedido_minimo = 'Valor inválido.';
   return erros;
 }
@@ -417,8 +423,8 @@ const payloadAtendimento = (v: AtendimentoForm): AtualizarEstabelecimentoDTO => 
   aceita_mesa: true,
   tempo_entrega_min: Number(v.tempo_entrega_min),
   tempo_entrega_max: Number(v.tempo_entrega_max),
-  taxa_entrega: paraNumero(v.taxa_entrega),
-  pedido_minimo: paraNumero(v.pedido_minimo),
+  taxa_entrega: moedaParaNumero(v.taxa_entrega),
+  pedido_minimo: moedaParaNumero(v.pedido_minimo),
 });
 
 // Divulgação (tipo de cozinha + link do cardápio) 
@@ -498,6 +504,7 @@ function validarPix(v: PixForm): Erros {
 // Hook: uma seção completa (valor, validação, salvar, descartar)
 
 
+// Hook:seção completa (valor, validação, salvar, descartar)
 interface Secao<T> {
   valor: T;
   definir: <K extends keyof T>(campo: K, valor: T[K]) => void;
@@ -1554,6 +1561,7 @@ const ModalSenhaPix: React.FC<{
 
 // Tela
 
+// Tela
 type AbaId = 'dados-empresa' | 'contato-endereco' | 'horario' | 'atendimento';
 
 const Config: React.FC = () => {
@@ -2516,20 +2524,22 @@ const Config: React.FC = () => {
                     <input
                       id="taxa"
                       className="config__input"
-                      inputMode="decimal"
+                      inputMode="numeric"
+                      placeholder="R$ 0,00"
                       value={atendimento.valor.taxa_entrega}
                       disabled={!podeEditar || atendimento.salvando}
-                      onChange={(e) => atendimento.definir('taxa_entrega', e.target.value)}
+                      onChange={(e) => atendimento.definir('taxa_entrega', mascaraMoeda(e.target.value))}
                     />
                   </Campo>
                   <Campo id="minimo" rotulo="Pedido mínimo (R$)" erro={atendimento.erros.pedido_minimo}>
                     <input
                       id="minimo"
                       className="config__input"
-                      inputMode="decimal"
+                      inputMode="numeric"
+                      placeholder="R$ 0,00"
                       value={atendimento.valor.pedido_minimo}
                       disabled={!podeEditar || atendimento.salvando}
-                      onChange={(e) => atendimento.definir('pedido_minimo', e.target.value)}
+                      onChange={(e) => atendimento.definir('pedido_minimo', mascaraMoeda(e.target.value))}
                     />
                   </Campo>
                 </div>

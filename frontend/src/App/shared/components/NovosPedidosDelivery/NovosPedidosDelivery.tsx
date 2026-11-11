@@ -6,7 +6,9 @@ import PedidoService, { Pedido } from '../../../services/pedido.service';
 import './NovosPedidosDelivery.css';
 
 /**
- * Aviso de mudanças na fila: pedidos novos feitos pelo link do restaurante (entrega e retirada).
+ * Aviso de mudanças na fila: pedidos novos do delivery (entrega e retirada, feitos pelo link do restaurante)
+ * e do local (mesa, feitos pelo QR Code ou lançados no salão). Pedido de mesa que ganha item novo
+ * também avisa de novo, porque volta a aguardar aceite.
  * Fica no layout do restaurante, então existe em QUALQUER tela.
  *  - Por padrão fica FECHADO: só um sino com o contador, no canto de baixo à direita.
  *    Só abre quando a pessoa clica nele (e fecha na setinha). Trocar de tela não reabre.
@@ -64,6 +66,12 @@ const haQuantoTempo = (iso: string, agora: number): string => {
   if (min < 60) return `há ${min} min`;
   return `há ${Math.floor(min / 60)} h`;
 };
+
+const chaveDoPedido = (p: Pedido): string => `${p.id}:${p.itens?.length ?? 0}`;
+
+// Delivery mostra só o nome do cliente; pedido de mesa mostra "Mesa N" antes do nome
+const quemPediu = (p: Pedido): string =>
+  p.modalidade === 'MESA' && p.mesa ? `Mesa ${p.mesa.numero} · ${p.cliente_nome}` : p.cliente_nome;
 
 const moeda = (v: number): string =>
   Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -145,13 +153,14 @@ const NovosPedidosDelivery: React.FC = () => {
 
   const carregar = useCallback(async () => {
     try {
-      // Só pedidos ainda não aceitos (RECEBIDO); entrega e retirada são filtradas aqui (pedido de mesa tem outro aviso)
+      // Só pedidos ainda não aceitos (RECEBIDO), de qualquer origem: delivery (entrega/retirada) e local (mesa).
+      // Chamados de garçom e pedidos de conta têm outro aviso (ChamadosMesa).
       const lista = (await PedidoService.listar({ status: ['RECEBIDO'] }))
-        .filter((p) => p.modalidade === 'ENTREGA' || p.modalidade === 'RETIRADA')
         .sort((a, b) => new Date(a.criado_em).getTime() - new Date(b.criado_em).getTime());
-      const novos = lista.filter((p) => !pedidosVistos.has(p.id));
+      // A chave inclui a quantidade de itens: item novo em pedido de mesa já visto conta como mudança
+      const novos = lista.filter((p) => !pedidosVistos.has(chaveDoPedido(p)));
       if (novos.length > 0) {
-        novos.forEach((p) => pedidosVistos.add(p.id));
+        novos.forEach((p) => pedidosVistos.add(chaveDoPedido(p)));
         salvarVistos();
         if (somRef.current) avisarComSom();
       }
@@ -237,7 +246,7 @@ const NovosPedidosDelivery: React.FC = () => {
             <div className="pedidos-delivery-alerta__info">
               <strong>Pedido #{p.numero_pedido}</strong>
               <span>
-                {p.cliente_nome} · {moeda(p.total)} · {haQuantoTempo(p.criado_em, agora)}
+                {quemPediu(p)} · {moeda(p.total)} · {haQuantoTempo(p.criado_em, agora)}
               </span>
             </div>
           </li>
