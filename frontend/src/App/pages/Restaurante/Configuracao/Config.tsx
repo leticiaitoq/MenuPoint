@@ -20,7 +20,6 @@ import {
   HiTrash,
   HiTruck,
   HiUpload,
-  HiUserGroup,
   HiX,
   HiEye,
   HiEyeOff
@@ -93,6 +92,97 @@ function telefoneValido(valor: string): boolean {
   if (d.length === 10) return true;
   return d.length === 11 && d[2] === '9';
 }
+
+function mascaraCpf(valor: string): string {
+  const d = soDigitos(valor).slice(0, 11);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
+function mascaraCnpj(valor: string): string {
+  const d = soDigitos(valor).slice(0, 14);
+  if (d.length <= 2) return d;
+  if (d.length <= 5) return `${d.slice(0, 2)}.${d.slice(2)}`;
+  if (d.length <= 8) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`;
+  if (d.length <= 12) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`;
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
+
+function cpfValido(valor: string): boolean {
+  const d = soDigitos(valor);
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  const dv = (n: number) => {
+    let soma = 0;
+    for (let i = 0; i < n; i++) soma += Number(d[i]) * (n + 1 - i);
+    const r = (soma * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  return dv(9) === Number(d[9]) && dv(10) === Number(d[10]);
+}
+
+function cnpjValido(valor: string): boolean {
+  const d = soDigitos(valor);
+  if (d.length !== 14 || /^(\d)\1{13}$/.test(d)) return false;
+  const dv = (n: number) => {
+    const pesos = n === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    let soma = 0;
+    for (let i = 0; i < n; i++) soma += Number(d[i]) * pesos[i];
+    const r = soma % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+  return dv(12) === Number(d[12]) && dv(13) === Number(d[13]);
+}
+
+const REGEX_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function mascaraChavePix(tipo: TipoChavePix | '', valor: string): string {
+  switch (tipo) {
+    case 'CPF': return mascaraCpf(valor);
+    case 'CNPJ': return mascaraCnpj(valor);
+    case 'TELEFONE': return mascaraTelefone(valor);
+    case 'EMAIL': return valor.replace(/\s/g, '').toLowerCase().slice(0, 77);
+    case 'ALEATORIA': return valor.replace(/[^0-9a-fA-F-]/g, '').toLowerCase().slice(0, 36);
+    default: return valor;
+  }
+}
+
+function erroChavePix(tipo: TipoChavePix | '', valor: string): string | null {
+  const v = valor.trim();
+  if (!v) return null;
+  if (!tipo) return 'Escolha o tipo da chave PIX.';
+  switch (tipo) {
+    case 'CPF': return cpfValido(v) ? null : 'CPF inválido.';
+    case 'CNPJ': return cnpjValido(v) ? null : 'CNPJ inválido.';
+    case 'TELEFONE': return telefoneValido(v) ? null : 'Telefone inválido. Use DDD + número.';
+    case 'EMAIL': return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) ? null : 'E-mail inválido.';
+    case 'ALEATORIA': return REGEX_UUID.test(v) ? null : 'Chave aleatória inválida. Cole os 36 caracteres da chave.';
+  }
+}
+
+function normalizarChavePix(tipo: TipoChavePix | '', valor: string): string {
+  const v = valor.trim();
+  switch (tipo) {
+    case 'CPF':
+    case 'CNPJ': return soDigitos(v);
+    case 'TELEFONE': {
+      const d = soDigitos(v);
+      return `+55${d.length > 11 && d.startsWith('55') ? d.slice(2) : d}`;
+    }
+    case 'EMAIL':
+    case 'ALEATORIA': return v.toLowerCase();
+    default: return v;
+  }
+}
+
+const PLACEHOLDER_PIX: Record<TipoChavePix, string> = {
+  CPF: '000.000.000-00',
+  CNPJ: '00.000.000/0000-00',
+  EMAIL: 'voce@exemplo.com',
+  TELEFONE: '(00) 00000-0000',
+  ALEATORIA: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+};
 
 function mascaraCep(valor: string): string {
   const d = soDigitos(valor).slice(0, 8);
@@ -299,7 +389,7 @@ const ATENDIMENTO_PADRAO: AtendimentoForm = {
 const extrairAtendimento = (e: Estabelecimento): AtendimentoForm => ({
   aceita_entrega: e.aceita_entrega,
   aceita_retirada: e.aceita_retirada,
-  aceita_mesa: e.aceita_mesa,
+  aceita_mesa: true,
   tempo_entrega_min: String(e.tempo_entrega_min ?? 30),
   tempo_entrega_max: String(e.tempo_entrega_max ?? 60),
   taxa_entrega: formatarMoeda(e.taxa_entrega),
@@ -324,7 +414,7 @@ function validarAtendimento(v: AtendimentoForm): Erros {
 const payloadAtendimento = (v: AtendimentoForm): AtualizarEstabelecimentoDTO => ({
   aceita_entrega: v.aceita_entrega,
   aceita_retirada: v.aceita_retirada,
-  aceita_mesa: v.aceita_mesa,
+  aceita_mesa: true,
   tempo_entrega_min: Number(v.tempo_entrega_min),
   tempo_entrega_max: Number(v.tempo_entrega_max),
   taxa_entrega: paraNumero(v.taxa_entrega),
@@ -395,12 +485,13 @@ const PIX_PADRAO: PixForm = { tipo_chave_pix: '', chave_pix: '' };
 
 const extrairPix = (e: Estabelecimento): PixForm => ({
   tipo_chave_pix: e.tipo_chave_pix ?? '',
-  chave_pix: e.chave_pix ?? '',
+  chave_pix: mascaraChavePix(e.tipo_chave_pix ?? '', e.chave_pix ?? ''),
 });
 
 function validarPix(v: PixForm): Erros {
   const erros: Erros = {};
-  if (v.chave_pix.trim() && !v.tipo_chave_pix) erros.chave_pix = 'Escolha o tipo da chave PIX.';
+  const erro = erroChavePix(v.tipo_chave_pix, v.chave_pix);
+  if (erro) erros.chave_pix = erro;
   return erros;
 }
 
@@ -412,6 +503,7 @@ interface Secao<T> {
   definir: <K extends keyof T>(campo: K, valor: T[K]) => void;
   erros: Erros;
   limparErro: (chave: string) => void;
+  definirErro: (chave: string, mensagem: string) => void;
   alterado: boolean;
   salvando: boolean;
   salvoRecente: boolean;
@@ -462,6 +554,9 @@ function useSecao<T>(
   const limparErro = (chave: string) =>
     setErros((atual) => (atual[chave] ? { ...atual, [chave]: undefined } : atual));
 
+  const definirErro = (chave: string, mensagem: string) =>
+    setErros((atual) => ({ ...atual, [chave]: mensagem }));
+
   const descartar = () => {
     setValor(baseline);
     setErros({});
@@ -494,7 +589,7 @@ function useSecao<T>(
     }
   };
 
-  return { valor, definir, erros, limparErro, alterado, salvando, salvoRecente, erroGeral, salvar, descartar };
+  return { valor, definir, erros, limparErro, definirErro, alterado, salvando, salvoRecente, erroGeral, salvar, descartar };
 }
 
 // PIX: hook dedicado, sem salvar automático
@@ -528,7 +623,18 @@ function usePix(estab: Estabelecimento | null) {
   const alterado = useMemo(() => JSON.stringify(valor) !== JSON.stringify(baseline), [valor, baseline]);
 
   const definir = <K extends keyof PixForm>(campo: K, v: PixForm[K]) => {
-    setValor((atual) => ({ ...atual, [campo]: v }));
+    setValor((atual) => {
+      if (campo === 'tipo_chave_pix') return { tipo_chave_pix: v as PixForm['tipo_chave_pix'], chave_pix: '' };
+      return { ...atual, chave_pix: mascaraChavePix(atual.tipo_chave_pix, String(v)) };
+    });
+    setErros({});
+    if (erroGeral) setErroGeral(null);
+    if (salvoRecente) setSalvoRecente(false);
+  };
+
+  const preencher = (tipo: TipoChavePix, chave: string) => {
+    setValor({ tipo_chave_pix: tipo, chave_pix: mascaraChavePix(tipo, chave) });
+    setErros({});
     if (erroGeral) setErroGeral(null);
     if (salvoRecente) setSalvoRecente(false);
   };
@@ -551,7 +657,7 @@ function usePix(estab: Estabelecimento | null) {
     setSalvando(true);
     setErroGeral(null);
     try {
-      const chave = valor.chave_pix.trim();
+      const chave = normalizarChavePix(valor.tipo_chave_pix, valor.chave_pix);
       const payload: AtualizarPixDTO = {
         senha_atual: senhaAtual,
         chave_pix: chave ? chave : null,
@@ -565,10 +671,10 @@ function usePix(estab: Estabelecimento | null) {
       window.setTimeout(() => setSalvoRecente(false), 2500);
       return { ok: true };
     } catch (err: any) {
-      if (err?.response?.status === 403) {
+      const mensagem = mensagemDeErro(err, 'Não foi possível salvar a chave PIX.');
+      if (err?.response?.status === 403 && /senha/i.test(err?.response?.data?.message ?? '')) {
         return { ok: false, mensagem: 'Senha incorreta.' };
       }
-      const mensagem = mensagemDeErro(err, 'Não foi possível salvar a chave PIX.');
       setErroGeral(mensagem);
       return { ok: false, mensagem };
     } finally {
@@ -576,7 +682,9 @@ function usePix(estab: Estabelecimento | null) {
     }
   };
 
-  return { valor, definir, erros, alterado, salvando, salvoRecente, erroGeral, validar, confirmarComSenha, descartar };
+  const temChave = baseline.chave_pix.trim() !== '';
+
+  return { valor, temChave, definir, erros, alterado, salvando, salvoRecente, erroGeral, validar, preencher, confirmarComSenha, descartar };
 }
 
 // Peças de interface
@@ -681,7 +789,12 @@ const SecaoCabecalho: React.FC<{
   secao: Pick<Secao<unknown>, 'alterado' | 'salvando' | 'salvoRecente' | 'erroGeral' | 'salvar' | 'descartar'>;
   podeEditar: boolean;
   icone?: React.ReactNode;
-}> = ({ titulo, id, secao, podeEditar, icone }) => (
+  // Seções "travadas": campos cinzas até clicar em Alterar
+  editando?: boolean;
+  aoAlterar?: () => void;
+  aoCancelar?: () => void;
+  aoSalvar?: () => void;
+}> = ({ titulo, id, secao, podeEditar, icone, editando, aoAlterar, aoCancelar, aoSalvar }) => (
   <div className="config__card-cabecalho">
     <h3 className="config__card-titulo" id={id}>
       {icone && <span className="config__card-titulo-icone">{icone}</span>}
@@ -695,7 +808,29 @@ const SecaoCabecalho: React.FC<{
           salvoRecente={secao.salvoRecente}
           comErro={Boolean(secao.erroGeral)}
         />
-        {secao.alterado && (
+        {aoAlterar && !editando && (
+          <div className="config__secao-acoes">
+            <button className="config__btn config__btn--pequeno" type="button" onClick={aoAlterar}>
+              <HiPencil aria-hidden="true" /> Alterar
+            </button>
+          </div>
+        )}
+        {aoAlterar && editando && (
+          <div className="config__secao-acoes">
+            <button className="config__btn config__btn--pequeno" type="button" onClick={aoCancelar} disabled={secao.salvando}>
+              {secao.alterado ? 'Descartar' : 'Cancelar'}
+            </button>
+            <button
+              className="config__btn config__btn--primario config__btn--pequeno"
+              type="button"
+              onClick={aoSalvar}
+              disabled={secao.salvando}
+            >
+              {secao.salvando ? 'Salvando…' : 'Salvar'}
+            </button>
+          </div>
+        )}
+        {!aoAlterar && secao.alterado && (
           <div className="config__secao-acoes">
             <button
               className="config__btn config__btn--pequeno"
@@ -1447,11 +1582,78 @@ const Config: React.FC = () => {
   const mesclar = (payload: AtualizarEstabelecimentoDTO) => mesclarEstabelecimento(payload as Partial<Estabelecimento>);
   const contato = useSecao(estab, CONTATO_PADRAO, extrairContato, validarContato, payloadContato, mesclar);
   const endereco = useSecao(estab, ENDERECO_PADRAO, extrairEndereco, validarEndereco, payloadEndereco, mesclar);
+
+  // CEP: mesma busca no ViaCEP do cadastro. Só dispara quando a pessoa digita o CEP (não ao abrir a tela).
+  const [buscandoCep, setBuscandoCep] = useState(false);
+  const buscaCepId = useRef(0);
+
+  const buscarCep = async (cepFormatado: string) => {
+    const idBusca = ++buscaCepId.current;
+    setBuscandoCep(true);
+    try {
+      const resp = await fetch(`https://viacep.com.br/ws/${soDigitos(cepFormatado)}/json/`);
+      const dados = await resp.json();
+      if (idBusca !== buscaCepId.current) return; // a pessoa já digitou outro CEP
+
+      if (dados.erro) {
+        endereco.definirErro('cep', 'CEP não encontrado. Preencha o endereço manualmente.');
+        return;
+      }
+
+      if (dados.logradouro) endereco.definir('rua', dados.logradouro);
+      if (dados.bairro) endereco.definir('bairro', dados.bairro);
+      if (dados.localidade) endereco.definir('cidade', dados.localidade);
+      if (dados.uf && UFS.includes(dados.uf)) endereco.definir('estado', dados.uf);
+      ['rua', 'bairro', 'cidade', 'estado'].forEach((c) => endereco.limparErro(c));
+      document.getElementById('numero')?.focus();
+    } catch {
+      // Falha de rede: a pessoa preenche o endereço na mão.
+    } finally {
+      if (idBusca === buscaCepId.current) setBuscandoCep(false);
+    }
+  };
+
+  const aoMudarCep = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatado = mascaraCep(e.target.value);
+    endereco.definir('cep', formatado);
+    endereco.limparErro('cep');
+    if (formatado.length === 9) {
+      buscarCep(formatado);
+    } else {
+      buscaCepId.current++; // cancela busca em andamento
+      setBuscandoCep(false);
+    }
+  };
   const horario = useSecao(estab, HORARIO_PADRAO, extrairHorario, validarHorario, payloadHorario, mesclar);
   const atendimento = useSecao(estab, ATENDIMENTO_PADRAO, extrairAtendimento, validarAtendimento, payloadAtendimento, mesclar);
   const divulgacao = useSecao(estab, DIVULGACAO_PADRAO, extrairDivulgacao, validarDivulgacao, payloadDivulgacao, mesclar);
   const pix = usePix(estab);
+
+  // Contato e Endereço ficam travados (cinza) até a pessoa clicar em "Alterar"
+  const [editandoContato, setEditandoContato] = useState(false);
+  const [editandoEndereco, setEditandoEndereco] = useState(false);
+
+  const cancelarContato = () => { contato.descartar(); setEditandoContato(false); };
+  const salvarContato = async () => {
+    if (!contato.alterado) { setEditandoContato(false); return; }
+    if (await contato.salvar()) setEditandoContato(false);
+  };
+  const cancelarEndereco = () => {
+    buscaCepId.current++;
+    setBuscandoCep(false);
+    endereco.descartar();
+    setEditandoEndereco(false);
+  };
+  const salvarEndereco = async () => {
+    if (!endereco.alterado) { setEditandoEndereco(false); return; }
+    if (await endereco.salvar()) setEditandoEndereco(false);
+  };
+
   const [pixModalAberto, setPixModalAberto] = useState(false);
+  const [editandoPix, setEditandoPix] = useState(false);
+  const [avisoPix, setAvisoPix] = useState<string | null>(null);
+  const desativandoPix = useRef(false);
+  const pixTravado = pix.temChave && !editandoPix;
 
   // Link que o restaurante divulga
   const linkCardapio = estab?.slug ? `${window.location.origin}/r/${estab.slug}` : '';
@@ -1477,14 +1679,54 @@ const Config: React.FC = () => {
   const algumAlterado = secoesAutoSalvaveis.some((s) => s.alterado) || pix.alterado;
   const totalPendentes = secoesAutoSalvaveis.filter((s) => s.alterado).length + (pix.alterado ? 1 : 0);
 
+  const atalhosPix = useMemo(() => {
+    const lista: { tipo: TipoChavePix; rotulo: string; valor: string }[] = [];
+    const cnpj = empresa?.cnpj ?? estab?.cnpj;
+    if (cnpj) lista.push({ tipo: 'CNPJ', rotulo: 'CNPJ', valor: String(cnpj) });
+    if (usuario?.cpf) lista.push({ tipo: 'CPF', rotulo: 'CPF', valor: String(usuario.cpf) });
+    if (usuario?.email) lista.push({ tipo: 'EMAIL', rotulo: 'E-mail', valor: String(usuario.email) });
+    return lista;
+  }, [empresa?.cnpj, estab?.cnpj, usuario?.cpf, usuario?.email]);
+
   const iniciarSalvarPix = () => {
+    if (!pix.alterado) {
+      setEditandoPix(false);
+      setAvisoPix('Nenhum dado alterado.');
+      window.setTimeout(() => setAvisoPix(null), 3500);
+      return;
+    }
     if (!pix.validar()) return;
     setPixModalAberto(true);
   };
 
-  const confirmarPix = (senha: string) => {
-    if (!estab) return Promise.resolve<ResultadoPix>({ ok: false, mensagem: 'Estabelecimento não encontrado.' });
-    return pix.confirmarComSenha(estab.id, senha);
+  const confirmarPix = async (senha: string) => {
+    if (!estab) return { ok: false, mensagem: 'Estabelecimento não encontrado.' } as ResultadoPix;
+    const resultado = await pix.confirmarComSenha(estab.id, senha);
+    if (resultado.ok) {
+      desativandoPix.current = false;
+      setEditandoPix(false);
+    }
+    return resultado;
+  };
+
+  const desativarPix = () => {
+    desativandoPix.current = true;
+    pix.definir('tipo_chave_pix', '');
+    setPixModalAberto(true);
+  };
+
+  const fecharModalPix = () => {
+    setPixModalAberto(false);
+    if (desativandoPix.current) {
+      desativandoPix.current = false;
+      pix.descartar();
+    }
+  };
+
+  const descartarPix = () => {
+    pix.descartar();
+    setEditandoPix(false);
+    setAvisoPix(null);
   };
 
   // Abas 
@@ -1985,9 +2227,13 @@ const Config: React.FC = () => {
           {abaAtiva === 'contato-endereco' && (
             <div className="config__duas-colunas">
               <section className="config__subcard" aria-labelledby="sec-contato">
-                <SecaoCabecalho titulo="Contato" id="sec-contato" secao={contato} podeEditar={podeEditar} icone={<HiPhone />} />
+                <SecaoCabecalho
+                  titulo="Contato" id="sec-contato" secao={contato} podeEditar={podeEditar} icone={<HiPhone />}
+                  editando={editandoContato} aoAlterar={() => setEditandoContato(true)}
+                  aoCancelar={cancelarContato} aoSalvar={() => void salvarContato()}
+                />
                 {contato.erroGeral && <p className="config__erro" role="alert">{contato.erroGeral}</p>}
-                <div className="config__grade config__grade--1col">
+                <div className={`config__grade config__grade--1col ${!editandoContato ? 'config__campos--travados' : ''}`}>
                   <Campo id="telefone" rotulo="Telefone" erro={contato.erros.telefone} dica="Opcional. Aparece no seu cardápio.">
                     <input
                       id="telefone"
@@ -1995,7 +2241,7 @@ const Config: React.FC = () => {
                       inputMode="tel"
                       placeholder="(11) 3456-7890"
                       value={contato.valor.telefone}
-                      disabled={!podeEditar || contato.salvando}
+                      disabled={!podeEditar || contato.salvando || !editandoContato}
                       onChange={(e) => contato.definir('telefone', mascaraTelefone(e.target.value))}
                     />
                   </Campo>
@@ -2011,7 +2257,7 @@ const Config: React.FC = () => {
                       inputMode="tel"
                       placeholder="(11) 91234-5678"
                       value={contato.valor.whatsapp}
-                      disabled={!podeEditar || contato.salvando}
+                      disabled={!podeEditar || contato.salvando || !editandoContato}
                       onChange={(e) => contato.definir('whatsapp', mascaraTelefone(e.target.value))}
                     />
                   </Campo>
@@ -2019,7 +2265,7 @@ const Config: React.FC = () => {
                     id="email-contato"
                     rotulo="E-mail de contato"
                     erro={contato.erros.email}
-                    dica="Opcional. Diferente do e-mail de acesso, este é o que seus clientes veem."
+                    dica="Opcional. É o e-mail que seus clientes veem. Usar o de acesso o deixa visível a eles."
                   >
                     <input
                       id="email-contato"
@@ -2028,27 +2274,48 @@ const Config: React.FC = () => {
                       type="email"
                       placeholder="contato@seurestaurante.com.br"
                       value={contato.valor.email}
-                      disabled={!podeEditar || contato.salvando}
+                      disabled={!podeEditar || contato.salvando || !editandoContato}
                       onChange={(e) => contato.definir('email', e.target.value)}
                     />
                   </Campo>
+                  {podeEditar && usuario?.email && contato.valor.email.trim().toLowerCase() !== usuario.email.toLowerCase() && (
+                    <div className="config__pix-atalhos">
+                      <button
+                        type="button"
+                        className="config__pix-atalho"
+                        disabled={contato.salvando || !editandoContato}
+                        onClick={() => contato.definir('email', usuario.email)}
+                      >
+                        Usar e-mail de acesso ({usuario.email})
+                      </button>
+                    </div>
+                  )}
                 </div>
               </section>
 
               <section className="config__subcard" aria-labelledby="sec-endereco">
-                <SecaoCabecalho titulo="Endereço" id="sec-endereco" secao={endereco} podeEditar={podeEditar} icone={<HiLocationMarker />} />
+                <SecaoCabecalho
+                  titulo="Endereço" id="sec-endereco" secao={endereco} podeEditar={podeEditar} icone={<HiLocationMarker />}
+                  editando={editandoEndereco} aoAlterar={() => setEditandoEndereco(true)}
+                  aoCancelar={cancelarEndereco} aoSalvar={() => void salvarEndereco()}
+                />
                 {endereco.erroGeral && <p className="config__erro" role="alert">{endereco.erroGeral}</p>}
-                <div className="config__grade config__grade--endereco-compacta">
+                <div className={`config__grade config__grade--endereco-compacta ${!editandoEndereco ? 'config__campos--travados' : ''}`}>
                   <Campo id="cep" rotulo="CEP" erro={endereco.erros.cep} className="config__col-cep">
-                    <input
-                      id="cep"
-                      className="config__input"
-                      inputMode="numeric"
-                      placeholder="00000-000"
-                      value={endereco.valor.cep}
-                      disabled={!podeEditar || endereco.salvando}
-                      onChange={(e) => endereco.definir('cep', mascaraCep(e.target.value))}
-                    />
+                    <div className="config__cep-wrap">
+                      <input
+                        id="cep"
+                        className="config__input"
+                        inputMode="numeric"
+                        placeholder="00000-000"
+                        autoComplete="postal-code"
+                        value={endereco.valor.cep}
+                        disabled={!podeEditar || endereco.salvando || !editandoEndereco}
+                        aria-invalid={!!endereco.erros.cep}
+                        onChange={aoMudarCep}
+                      />
+                      {buscandoCep && <span className="config__spinner" aria-label="Buscando CEP" />}
+                    </div>
                   </Campo>
                   <Campo id="rua" rotulo="Rua" erro={endereco.erros.rua} className="config__col-rua">
                     <input
@@ -2056,7 +2323,7 @@ const Config: React.FC = () => {
                       className="config__input"
                       value={endereco.valor.rua}
                       maxLength={150}
-                      disabled={!podeEditar || endereco.salvando}
+                      disabled={!podeEditar || endereco.salvando || !editandoEndereco}
                       onChange={(e) => endereco.definir('rua', e.target.value)}
                     />
                   </Campo>
@@ -2066,7 +2333,7 @@ const Config: React.FC = () => {
                       className="config__input"
                       value={endereco.valor.numero}
                       maxLength={10}
-                      disabled={!podeEditar || endereco.salvando}
+                      disabled={!podeEditar || endereco.salvando || !editandoEndereco}
                       onChange={(e) => endereco.definir('numero', e.target.value)}
                     />
                   </Campo>
@@ -2077,7 +2344,7 @@ const Config: React.FC = () => {
                       placeholder="Sala, andar… (opcional)"
                       value={endereco.valor.complemento}
                       maxLength={80}
-                      disabled={!podeEditar || endereco.salvando}
+                      disabled={!podeEditar || endereco.salvando || !editandoEndereco}
                       onChange={(e) => endereco.definir('complemento', e.target.value)}
                     />
                   </Campo>
@@ -2087,7 +2354,7 @@ const Config: React.FC = () => {
                       className="config__input"
                       value={endereco.valor.bairro}
                       maxLength={80}
-                      disabled={!podeEditar || endereco.salvando}
+                      disabled={!podeEditar || endereco.salvando || !editandoEndereco}
                       onChange={(e) => endereco.definir('bairro', e.target.value)}
                     />
                   </Campo>
@@ -2097,7 +2364,7 @@ const Config: React.FC = () => {
                       className="config__input"
                       value={endereco.valor.cidade}
                       maxLength={80}
-                      disabled={!podeEditar || endereco.salvando}
+                      disabled={!podeEditar || endereco.salvando || !editandoEndereco}
                       onChange={(e) => endereco.definir('cidade', e.target.value)}
                     />
                   </Campo>
@@ -2106,7 +2373,7 @@ const Config: React.FC = () => {
                       id="estado"
                       className="config__input config__select"
                       value={endereco.valor.estado}
-                      disabled={!podeEditar || endereco.salvando}
+                      disabled={!podeEditar || endereco.salvando || !editandoEndereco}
                       onChange={(e) => endereco.definir('estado', e.target.value)}
                     >
                       <option value="">UF</option>
@@ -2220,14 +2487,6 @@ const Config: React.FC = () => {
                     desabilitado={!podeEditar || atendimento.salvando}
                     onChange={(v) => atendimento.definir('aceita_retirada', v)}
                   />
-                  <CartaoOpcao
-                    id="aceita-mesa"
-                    rotulo="Pedido na mesa"
-                    icone={<HiUserGroup />}
-                    marcado={atendimento.valor.aceita_mesa}
-                    desabilitado={!podeEditar || atendimento.salvando}
-                    onChange={(v) => atendimento.definir('aceita_mesa', v)}
-                  />
                 </div>
 
                 <div className="config__grade config__grade--2col">
@@ -2290,10 +2549,21 @@ const Config: React.FC = () => {
                         salvoRecente={pix.salvoRecente}
                         comErro={Boolean(pix.erroGeral)}
                       />
-                      {pix.alterado && (
+                      {pixTravado && (
                         <div className="config__secao-acoes">
-                          <button className="config__btn config__btn--pequeno" type="button" onClick={pix.descartar} disabled={pix.salvando}>
-                            Descartar
+                          <span className="config__pix-ativa"><HiCheckCircle aria-hidden="true" /> Ativa</span>
+                          <button className="config__btn config__btn--pequeno" type="button" onClick={() => setEditandoPix(true)}>
+                            <HiPencil aria-hidden="true" /> Alterar
+                          </button>
+                          <button className="config__btn config__btn--pequeno config__btn--perigo" type="button" onClick={desativarPix}>
+                            <HiTrash aria-hidden="true" /> Desativar
+                          </button>
+                        </div>
+                      )}
+                      {(pix.alterado || editandoPix) && (
+                        <div className="config__secao-acoes">
+                          <button className="config__btn config__btn--pequeno" type="button" onClick={descartarPix} disabled={pix.salvando}>
+                            {pix.alterado ? 'Descartar' : 'Cancelar'}
                           </button>
                           <button
                             className="config__btn config__btn--primario config__btn--pequeno"
@@ -2309,14 +2579,15 @@ const Config: React.FC = () => {
                   )}
                 </div>
                 {pix.erroGeral && <p className="config__erro" role="alert">{pix.erroGeral}</p>}
+                {avisoPix && <p className="config__pix-aviso" role="status">{avisoPix}</p>}
 
-                <div className="config__grade config__grade--1col">
+                <div className={`config__grade config__grade--1col config__pix-campos ${pixTravado ? 'config__pix-campos--travado' : ''}`}>
                   <Campo id="tipo-pix" rotulo="Tipo da chave">
                     <select
                       id="tipo-pix"
                       className="config__input config__select"
                       value={pix.valor.tipo_chave_pix}
-                      disabled={!podeEditar || pix.salvando}
+                      disabled={!podeEditar || pix.salvando || pixTravado}
                       onChange={(e) => pix.definir('tipo_chave_pix', e.target.value as TipoChavePix | '')}
                     >
                       <option value="">Sem chave PIX</option>
@@ -2325,13 +2596,37 @@ const Config: React.FC = () => {
                       ))}
                     </select>
                   </Campo>
-                  <Campo id="chave-pix" rotulo="Chave PIX" erro={pix.erros.chave_pix} dica="Opcional.">
+                  {podeEditar && !pixTravado && atalhosPix.length > 0 && (
+                    <div className="config__pix-atalhos">
+                      <span className="config__pix-atalhos-rotulo">Usar dado do cadastro:</span>
+                      {atalhosPix.map((a) => (
+                        <button
+                          key={a.tipo}
+                          type="button"
+                          className={`config__pix-atalho ${pix.valor.tipo_chave_pix === a.tipo && soDigitos(pix.valor.chave_pix) === soDigitos(a.valor) ? 'config__pix-atalho--ativo' : ''}`}
+                          disabled={pix.salvando}
+                          onClick={() => pix.preencher(a.tipo, a.valor)}
+                        >
+                          {a.rotulo}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <Campo
+                    id="chave-pix"
+                    rotulo="Chave PIX"
+                    erro={pix.erros.chave_pix}
+                    dica={pixTravado ? 'Seus clientes veem esta chave ao escolher pagar com Pix.' : pix.valor.tipo_chave_pix ? 'Opcional. Você pode trocar pelo dado que preferir.' : 'Escolha o tipo da chave para preencher.'}
+                  >
                     <input
                       id="chave-pix"
                       className="config__input"
                       value={pix.valor.chave_pix}
-                      maxLength={150}
-                      disabled={!podeEditar || pix.salvando}
+                      inputMode={['CPF', 'CNPJ', 'TELEFONE'].includes(pix.valor.tipo_chave_pix) ? 'numeric' : pix.valor.tipo_chave_pix === 'EMAIL' ? 'email' : 'text'}
+                      placeholder={pix.valor.tipo_chave_pix ? PLACEHOLDER_PIX[pix.valor.tipo_chave_pix] : ''}
+                      autoComplete="off"
+                      maxLength={77}
+                      disabled={!podeEditar || pix.salvando || pixTravado || !pix.valor.tipo_chave_pix}
                       onChange={(e) => pix.definir('chave_pix', e.target.value)}
                     />
                   </Campo>
@@ -2358,7 +2653,7 @@ const Config: React.FC = () => {
       )}
 
       {pixModalAberto && (
-        <ModalSenhaPix onConfirmar={confirmarPix} onFechar={() => setPixModalAberto(false)} />
+        <ModalSenhaPix onConfirmar={confirmarPix} onFechar={fecharModalPix} />
       )}
 
       {saidaPendente && (

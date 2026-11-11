@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { telefoneValido, formatarTelefone } from '@shared/utils/telefone'
+import { cpfValido, cnpjValido } from '@shared/utils/documentos'
 
 const enderecoSchema = z.object({
   rua: z.string().min(1, 'Rua é obrigatória'),
@@ -131,6 +132,7 @@ export const criarEstabelecimentoSchema = z.object({
 export type CriarEstabelecimentoDTO = z.infer<typeof criarEstabelecimentoSchema>
 
 // Telefone/WhatsApp: aceita com ou sem máscara, grava sempre formatado.
+// Texto vazio apaga o valor (vira null) — são campos opcionais.
 const telefoneBR = (rotulo: string) =>
   z
     .string()
@@ -194,6 +196,17 @@ export type AtualizarEstabelecimentoDTO = z.infer<typeof atualizarEstabeleciment
 
 // ── PIX é dado sensível: schema próprio, sempre exigindo a senha atual do
 // usuário (verificada no service). Nunca aceito pelo PUT genérico acima.
+function chavePixValida(tipo: string, chave: string): boolean {
+  switch (tipo) {
+    case 'CPF': return cpfValido(chave)
+    case 'CNPJ': return cnpjValido(chave)
+    case 'TELEFONE': return telefoneValido(chave)
+    case 'EMAIL': return z.string().email().safeParse(chave).success
+    case 'ALEATORIA': return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(chave)
+    default: return false
+  }
+}
+
 export const atualizarPixSchema = z
   .object({
     senha_atual: z.string().min(1, 'Informe sua senha'),
@@ -206,6 +219,10 @@ export const atualizarPixSchema = z
   .refine((d) => !d.chave_pix || d.tipo_chave_pix, {
     message: 'Informe o tipo da chave PIX',
     path: ['tipo_chave_pix'],
+  })
+  .refine((d) => !d.chave_pix || !d.tipo_chave_pix || chavePixValida(d.tipo_chave_pix, d.chave_pix), {
+    message: 'Chave PIX inválida para o tipo escolhido',
+    path: ['chave_pix'],
   })
 
 export type AtualizarPixDTO = z.infer<typeof atualizarPixSchema>

@@ -7,7 +7,7 @@ import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
 import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
-import PagamentoPedido, { trocoParaNumero } from '../../../shared/components/PagamentoPedido/PagamentoPedido';
+import PagamentoPedido, { AcoesPedido, trocoParaNumero } from '../../../shared/components/PagamentoPedido/PagamentoPedido';
 import {
   UFS_BR, buscarCepViaCep, cepValido, formatarCep, formatarTelefone, numeroValido, telefoneValido,
 } from '../../../shared/utils/enderecoValidacao';
@@ -39,7 +39,7 @@ interface Endereco {
   principal: boolean;
 }
 
-/** De onde um telefone veio: do cadastro da conta ou de um endereço. */
+/** Telefone vem do cadastro da conta ou de um endereço. */
 interface OrigemTelefone {
   tipo: 'cadastro' | 'endereco';
   /** "Cadastro" ou o nome do endereço (Casa, Trabalho...) */
@@ -580,6 +580,7 @@ const CadastroEndereco: React.FC = () => {
               </button>
 
               <PagamentoPedido
+                restaurante={restaurante}
                 itens={itensCarrinho}
                 taxaEntrega={taxaEntrega}
                 momento="na entrega"
@@ -591,15 +592,12 @@ const CadastroEndereco: React.FC = () => {
 
               {erro && <p className="pgp__erro">{erro}</p>}
 
-              <div className="cad-end__acoes cad-end__acoes--direita">
-                <button
-                  className="cad-end__btn-salvar"
-                  onClick={handleConfirmar}
-                  disabled={!enderecoSelecionadoId || !forma || enviando}
-                >
-                  {enviando ? 'Enviando...' : 'Confirmar entrega'}
-                </button>
-              </div>
+              <AcoesPedido
+                rotulo="Confirmar entrega"
+                enviando={enviando}
+                desabilitado={!enderecoSelecionadoId || !forma}
+                onConfirmar={handleConfirmar}
+              />
             </div>
 
             <PainelLateral enderecos={enderecos} telefones={telefones} onEditarTelefone={handleEditarTelefone} />

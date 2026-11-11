@@ -74,7 +74,7 @@ export class EstabelecimentoService extends BaseService <
     }
 
     try {
-      return await this.repository.update(id, data as any)
+      return await this.repository.update(id, { ...data, aceita_mesa: true } as any)
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         const alvo = String(err.meta?.target ?? '')
@@ -121,7 +121,7 @@ export class EstabelecimentoService extends BaseService <
     return this.repository.update(id, { ativo: true } as any)
   }
 
-  // Chave PIX: dado sensível.
+  // ── Chave PIX: dado sensível. Só o dono da empresa altera, e só depois de confirmar a senha atual
   async atualizarPix(
     id: string,
     usuario: { id: string; perfil: string; escopo: string },
@@ -129,7 +129,7 @@ export class EstabelecimentoService extends BaseService <
   ): Promise<Estabelecimento> {
     await this.findById(id)
 
-    if (usuario.perfil !== 'ADMIN' || usuario.escopo !== 'GLOBAL') {
+    if (usuario.perfil !== 'ADMIN') {
       throw new AppError(
         'Apenas o dono da empresa pode alterar a chave PIX',
         403
@@ -141,6 +141,7 @@ export class EstabelecimentoService extends BaseService <
       throw new AppError('Usuário não encontrado', 404)
     }
 
+    // 403 (e não 401) de propósito: o front trata 401 como sessão expirada.
     const senhaCorreta = await bcrypt.compare(data.senha_atual, atual.senha_hash)
     if (!senhaCorreta) {
       throw new AppError('Senha incorreta', 403)

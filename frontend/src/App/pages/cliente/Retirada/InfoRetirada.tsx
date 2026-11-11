@@ -6,7 +6,7 @@ import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
 import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
 import { formatarTelefone, telefoneValido } from '../../../shared/utils/enderecoValidacao';
-import PagamentoPedido, { trocoParaNumero } from '../../../shared/components/PagamentoPedido/PagamentoPedido';
+import PagamentoPedido, { AcoesPedido, trocoParaNumero } from '../../../shared/components/PagamentoPedido/PagamentoPedido';
 import PedidoClienteService, { FormaPagamentoOnline, PedidoCriado, itensDoCarrinho } from '../../../services/pedidoCliente.service';
 import '../../../shared/components/PagamentoPedido/PagamentoPedido.css';
 import './InfoRetirada.css';
@@ -130,6 +130,7 @@ const handleTelefone = (e: React.ChangeEvent<HTMLInputElement>) =>
           </div>
 
           <PagamentoPedido
+            restaurante={restaurante}
             itens={itensCarrinho}
             taxaEntrega={0}
             momento="na retirada"
@@ -141,18 +142,12 @@ const handleTelefone = (e: React.ChangeEvent<HTMLInputElement>) =>
 
           {erro && <p className="pgp__erro">{erro}</p>}
 
-          <div className="retirada__acoes">
-            <button className="retirada__btn-voltar" onClick={() => navigate(-1)}>
-              Voltar
-            </button>
-            <button
-              className="retirada__btn-confirmar"
-              onClick={handleContinuar}
-              disabled={enviando || !forma}
-            >
-              {enviando ? 'Enviando...' : 'Confirmar pedido'}
-            </button>
-          </div>
+          <AcoesPedido
+            rotulo="Confirmar pedido"
+            enviando={enviando}
+            desabilitado={!forma}
+            onConfirmar={handleContinuar}
+          />
         </div>
 
         {/* ── Painel lateral: onde retirar */}

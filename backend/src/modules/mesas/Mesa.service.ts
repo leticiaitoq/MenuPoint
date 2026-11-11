@@ -92,14 +92,6 @@ export class MesaService {
       throw new AppError('Esta mesa está inativa', 400)
     }
 
-    const estab = (mesa as any).estabelecimento
-    if (estab && !estab.aceita_mesa) {
-      throw new AppError(
-        'Este estabelecimento não aceita pedidos em mesa no momento',
-        400
-      )
-    }
-
     return mesa
   }
 
