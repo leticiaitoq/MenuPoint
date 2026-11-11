@@ -818,7 +818,7 @@
 /* ── Disponibilidade de mesas + reservas dos clientes ── */
 .caixa__resumo {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -974,7 +974,7 @@
 }
 
 @media (max-width: 720px) {
-  .caixa__resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .caixa__resumo { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .caixa__reserva-acoes { width: 100%; }
 }
 
@@ -1155,3 +1155,13 @@
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
 }
 .caixa__reserva-agora { font-weight: 700; font-size: 13px; color: var(--warning-text, #92400e); }
+
+/* Resumo vira abas (Mesas · Reservas · Deliveres) */
+.caixa__resumo-item--aba {
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+.caixa__resumo-item--aba:hover { border-color: var(--brand-soft-border); }
+.caixa__resumo-detalhe { font-size: 12px; color: var(--text-faint); }

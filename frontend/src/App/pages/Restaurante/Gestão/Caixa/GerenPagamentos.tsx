@@ -13,7 +13,6 @@ import {
   HiOutlineXCircle,
   HiOutlineClipboardList,
   HiOutlinePencil,
-  HiOutlineCalendar,
 } from 'react-icons/hi';
 import { MdQrCode2 } from 'react-icons/md';
 import RestaurantLayout from '../../../../shared/components/layout/Restaurantelayout';
@@ -50,6 +49,9 @@ type StatusMesaCaixa = 'aberta' | 'fechada' | 'livre' | 'reservada';
 type StatusInicialMesa = 'livre' | 'reservada';
 type FiltroMesas = 'todas' | 'abertas' | 'livres' | 'reservadas';
 type ModoVisualizacao = 'grade' | 'lista';
+type AbaCaixa = 'salao' | 'delivery' | 'reservas';
+type FiltroReservas = 'todas' | 'hoje' | 'pendentes' | 'confirmadas';
+type FiltroDelivery = 'ativos' | 'entrega' | 'retirada' | 'concluidos';
 
 interface MesaCaixa {
   id: string;
@@ -205,6 +207,8 @@ const GerenPagamentos: React.FC = () => {
   const { usuario } = useAuth();
   // Só o administrador pode cadastrar mesa (regra do backend: POST /mesas)
   const podeCadastrar = usuario?.perfil === 'ADMIN';
+  // Mesma regra do backend: só ADMIN e CAIXA cancelam pedido
+  const podeCancelarDelivery = usuario?.perfil === 'ADMIN' || usuario?.perfil === 'CAIXA';
 
   // Mesas reais, vindas do banco
   const [mesas, setMesas]           = useState<MesaCaixa[]>([]);
@@ -242,6 +246,18 @@ const GerenPagamentos: React.FC = () => {
   const [atualizando, setAtualizando]       = useState(false);
 
   const [filtro, setFiltro]             = useState<FiltroMesas>('todas');
+
+  // Abas do Caixa: Salão (mesas), Reservas e Delivery (entrega/retirada)
+  const [abaCaixa, setAbaCaixa] = useState<AbaCaixa>('salao');
+  const [filtroReservas, setFiltroReservas] = useState<FiltroReservas>('todas');
+
+  // Delivery: pedidos de entrega/retirada em andamento + os concluídos/cancelados de hoje
+  const [pedidosDelivery, setPedidosDelivery] = useState<PedidoApi[]>([]);
+  const [erroDelivery, setErroDelivery]       = useState<string | null>(null);
+  const [filtroDelivery, setFiltroDelivery]   = useState<FiltroDelivery>('ativos');
+  const [agindoDeliveryId, setAgindoDeliveryId] = useState<string | null>(null);
+  const [cancelandoDeliveryId, setCancelandoDeliveryId] = useState<string | null>(null);
+  const [motivoDelivery, setMotivoDelivery]   = useState('');
   const [visualizacao, setVisualizacao] = useState<ModoVisualizacao>('grade');
 
   // O modo lista só existe no desktop (> 768px). No celular/tablet sempre mostra a grade,
@@ -381,6 +397,24 @@ const GerenPagamentos: React.FC = () => {
       setErroLista(null);
     }
     try {
+      // Delivery não derruba o Caixa: se falhar, as mesas seguem e a aba Delivery avisa
+      const inicioDoDia = new Date();
+      inicioDoDia.setHours(0, 0, 0, 0);
+      void Promise.all([
+        PedidoService.listar({ status: STATUS_EM_ANDAMENTO }),
+        PedidoService.listar({ status: ['ENTREGUE', 'CANCELADO'], data_inicio: inicioDoDia.toISOString() }),
+      ]).then(
+        ([andamento, encerrados]) => {
+          setPedidosDelivery(
+            [...andamento, ...encerrados]
+              .filter((p) => p.modalidade !== 'MESA')
+              .sort((a, b) => new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime())
+          );
+          setErroDelivery(null);
+        },
+        (err) => setErroDelivery(mensagemDeErro(err, 'Não foi possível carregar os pedidos de delivery.'))
+      );
+
       const [lista, pedidosAbertos, reservas] = await Promise.all([
         MesaService.listar(),
         PedidoService.listar({ status: STATUS_NA_CONTA, modalidade: 'MESA', conta_aberta: true }),
@@ -796,6 +830,68 @@ const GerenPagamentos: React.FC = () => {
     }
   };
 
+  // Lista de reservas da aba Reservas (usa as reservas já agrupadas)
+  const gruposFiltrados = useMemo(
+    () =>
+      gruposAtivos.filter((g) =>
+        filtroReservas === 'hoje'        ? dataDaReserva(g.base) === hojeLocal(agora) :
+        filtroReservas === 'pendentes'   ? g.base.status === 'PENDENTE' :
+        filtroReservas === 'confirmadas' ? g.base.status === 'CONFIRMADA' : true
+      ),
+    [gruposAtivos, filtroReservas, agora]
+  );
+
+  // ── Delivery ─────────────────────────────────────────────────────────────────
+  const deliveryAtivos = useMemo(
+    () => pedidosDelivery.filter((p) => STATUS_EM_ANDAMENTO.includes(p.status)),
+    [pedidosDelivery]
+  );
+  const deliveryFiltrados = useMemo(() => {
+    if (filtroDelivery === 'concluidos') return pedidosDelivery.filter((p) => !STATUS_EM_ANDAMENTO.includes(p.status));
+    if (filtroDelivery === 'entrega') return deliveryAtivos.filter((p) => p.modalidade === 'ENTREGA');
+    if (filtroDelivery === 'retirada') return deliveryAtivos.filter((p) => p.modalidade === 'RETIRADA');
+    return deliveryAtivos;
+  }, [pedidosDelivery, deliveryAtivos, filtroDelivery]);
+
+  const PROXIMO_DELIVERY: Partial<Record<PedidoApi['status'], { status: PedidoApi['status']; rotulo: (p: PedidoApi) => string }>> = {
+    RECEBIDO: { status: 'PREPARO', rotulo: () => 'Aceitar' },
+    PREPARO:  { status: 'PRONTO', rotulo: () => 'Marcar pronto' },
+    PRONTO:   { status: 'ENTREGUE', rotulo: (p) => (p.modalidade === 'ENTREGA' ? 'Marcar entregue' : 'Cliente retirou') },
+  };
+
+  const avancarDelivery = async (p: PedidoApi) => {
+    const prox = PROXIMO_DELIVERY[p.status];
+    if (!prox || agindoDeliveryId) return;
+    setAgindoDeliveryId(p.id);
+    try {
+      await PedidoService.atualizarStatus(p.id, prox.status);
+      await carregarMesas(true);
+    } catch (err: any) {
+      setErroDelivery(mensagemDeErro(err, 'Não foi possível atualizar o pedido.'));
+    } finally {
+      setAgindoDeliveryId(null);
+    }
+  };
+
+  const cancelarDelivery = async (p: PedidoApi) => {
+    const motivo = motivoDelivery.trim();
+    if (motivo.length < 3) { setErroDelivery('Informe o motivo do cancelamento (mínimo 3 letras).'); return; }
+    setAgindoDeliveryId(p.id);
+    try {
+      await PedidoService.cancelarPedido(p.id, motivo);
+      setCancelandoDeliveryId(null);
+      setMotivoDelivery('');
+      setErroDelivery(null);
+      await carregarMesas(true);
+    } catch (err: any) {
+      setErroDelivery(mensagemDeErro(err, 'Não foi possível cancelar o pedido.'));
+    } finally {
+      setAgindoDeliveryId(null);
+    }
+  };
+
+  const FORMA_ROTULO: Record<string, string> = { PIX_ONLINE: 'Pix', PIX_PRESENCIAL: 'Pix', DINHEIRO: 'Dinheiro', CARTAO: 'Cartão' };
+
   const mensagemVazio =
     filtro === 'abertas'    ? 'Nenhuma mesa aberta no momento.'     :
     filtro === 'livres'     ? 'Nenhuma mesa livre no momento.'      :
@@ -818,12 +914,12 @@ const GerenPagamentos: React.FC = () => {
             <div
               className="caixa__chip-info"
               role="status"
-              aria-label={`${totalAbertas} pedidos em aberto`}
+              aria-label={`${totalAbertas + deliveryAtivos.length} pedidos em aberto`}
               title="Total de pedidos em aberto no momento"
             >
               <HiClipboardList className="caixa__chip-info-icone" />
               <span className="caixa__chip-info-texto">Pedidos em aberto</span>
-              <span className="caixa__chip-info-numero">{totalAbertas}</span>
+              <span className="caixa__chip-info-numero">{totalAbertas + deliveryAtivos.length}</span>
             </div>
 
             {/* "Histórico" é uma ação real — <button> */}
@@ -941,43 +1037,58 @@ const GerenPagamentos: React.FC = () => {
           </div>
         )}
 
-        {/* ── Disponibilidade de mesas (inclui as reservas feitas pelos clientes) ── */}
-        {!carregando && !erroLista && mesasView.length > 0 && (
-          <div className="caixa__resumo" role="status" aria-label="Resumo de disponibilidade das mesas">
-            <div className="caixa__resumo-item caixa__resumo-item--destaque">
-              <span className="caixa__resumo-numero">{totalLivres}</span>
-              <span className="caixa__resumo-rotulo">
-                de {mesasView.length} mesas disponíveis
-              </span>
-            </div>
-            <div className="caixa__resumo-item">
-              <span className="caixa__resumo-numero">{totalAbertas}</span>
-              <span className="caixa__resumo-rotulo">ocupadas</span>
-            </div>
-            <div className="caixa__resumo-item">
-              <span className="caixa__resumo-numero">{totalReservadas}</span>
-              <span className="caixa__resumo-rotulo">reservadas</span>
-            </div>
-            <div className="caixa__resumo-item">
-              <span className="caixa__resumo-numero">{totalReservasHoje}</span>
-              <span className="caixa__resumo-rotulo">reservas hoje</span>
-            </div>
-          </div>
-        )}
+        {/* ── Resumo = abas do Caixa: Mesas · Reservas · Deliveres (cada uma mostra só o seu conteúdo) ── */}
+        <div className="caixa__resumo" role="tablist" aria-label="Áreas do caixa">
+          {([
+            ['salao', 'Mesas', totalAbertas, carregando ? '' : `${totalLivres} livres de ${mesasView.length}`],
+            ['reservas', 'Reservas', gruposAtivos.length, `${totalReservasHoje} hoje · ${totalReservadas} mesas reservadas`],
+            ['delivery', 'Deliveres', deliveryAtivos.length, `${deliveryAtivos.filter((p) => p.status === 'RECEBIDO').length} novos`],
+          ] as [AbaCaixa, string, number, string][]).map(([id, rotulo, qtd, detalhe]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={abaCaixa === id}
+              className={`caixa__resumo-item caixa__resumo-item--aba${abaCaixa === id ? ' caixa__resumo-item--destaque' : ''}`}
+              onClick={(e) => { e.stopPropagation(); setAbaCaixa(id); }}
+            >
+              <span className="caixa__resumo-numero">{qtd}</span>
+              <span className="caixa__resumo-rotulo">{rotulo}</span>
+              {detalhe && <span className="caixa__resumo-detalhe">{detalhe}</span>}
+            </button>
+          ))}
+        </div>
 
-        {erroReservas && (
+        {abaCaixa !== 'delivery' && erroReservas && (
           <div className="caixa__vazio" role="alert">{erroReservas}</div>
         )}
 
         {/* ── Reservas (hoje e próximos dias) feitas pelos clientes no app ── */}
-        {reservasAtivasHoje.length > 0 && (
+        {abaCaixa === 'reservas' && (
           <div className="caixa__painel caixa__reservas">
-            <h3 className="caixa__reservas-titulo">
-              <HiOutlineCalendar /> Reservas
-            </h3>
+            <div className="caixa__abas" role="tablist" aria-label="Filtrar reservas" style={{ marginBottom: 12 }}>
+              {([
+                ['todas', `Todas (${gruposAtivos.length})`],
+                ['hoje', `Hoje (${totalReservasHoje})`],
+                ['pendentes', `Aguardando (${gruposAtivos.filter((g) => g.base.status === 'PENDENTE').length})`],
+                ['confirmadas', `Confirmadas (${gruposAtivos.filter((g) => g.base.status === 'CONFIRMADA').length})`],
+              ] as [FiltroReservas, string][]).map(([id, rotulo]) => (
+                <button
+                  key={id}
+                  role="tab"
+                  aria-selected={filtroReservas === id}
+                  className={`caixa__aba${filtroReservas === id ? ' caixa__aba--ativa' : ''}`}
+                  onClick={() => setFiltroReservas(id)}
+                >
+                  {rotulo}
+                </button>
+              ))}
+            </div>
+
+            {gruposFiltrados.length === 0 && <div className="caixa__vazio">Nenhuma reserva nesta lista.</div>}
 
             <div className="caixa__reservas-lista">
-              {gruposAtivos.map((g) => {
+              {gruposFiltrados.map((g) => {
                 const r = g.base;
                 const emConflito = g.linhas.some((l) => idsEmConflito.has(l.id));
                 // Perto do horário (30 min antes) ou já na janela da reserva: destaque na lista
@@ -1068,8 +1179,96 @@ const GerenPagamentos: React.FC = () => {
           </div>
         )}
 
-        {/* ── Painel de mesas ── */}
-        <div className="caixa__painel">
+        {/* ── Delivery: entrega e retirada (pedidos feitos pelo link do restaurante) ── */}
+        {abaCaixa === 'delivery' && (
+          <div className="caixa__painel caixa__reservas">
+            <div className="caixa__abas" role="tablist" aria-label="Filtrar delivery" style={{ marginBottom: 12 }}>
+              {([
+                ['ativos', `Em andamento (${deliveryAtivos.length})`],
+                ['entrega', `Entrega (${deliveryAtivos.filter((p) => p.modalidade === 'ENTREGA').length})`],
+                ['retirada', `Retirada (${deliveryAtivos.filter((p) => p.modalidade === 'RETIRADA').length})`],
+                ['concluidos', 'Concluídos hoje'],
+              ] as [FiltroDelivery, string][]).map(([id, rotulo]) => (
+                <button
+                  key={id}
+                  role="tab"
+                  aria-selected={filtroDelivery === id}
+                  className={`caixa__aba${filtroDelivery === id ? ' caixa__aba--ativa' : ''}`}
+                  onClick={() => setFiltroDelivery(id)}
+                >
+                  {rotulo}
+                </button>
+              ))}
+            </div>
+
+            {erroDelivery && <div className="caixa__vazio" role="alert">{erroDelivery}</div>}
+
+            {deliveryFiltrados.length === 0 && !erroDelivery ? (
+              <div className="caixa__vazio">Nenhum pedido de delivery nesta lista.</div>
+            ) : (
+              <div className="caixa__reservas-lista">
+                {deliveryFiltrados.map((p) => {
+                  const prox = PROXIMO_DELIVERY[p.status];
+                  const end = p.endereco_entrega;
+                  const forma = FORMA_ROTULO[p.pagamento?.metodo ?? p.forma_pagamento ?? ''] ?? 'Pagamento na hora';
+                  return (
+                    <div key={p.id} className="caixa__reserva">
+                      <div className="caixa__reserva-info">
+                        <strong className="caixa__reserva-hora">
+                          #{p.numero_pedido} · {p.modalidade === 'ENTREGA' ? 'Entrega' : 'Retirada'} · {new Date(p.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </strong>
+                        <span className="caixa__reserva-nome">{p.cliente_nome}{p.cliente_telefone ? ` · ${p.cliente_telefone}` : ''}</span>
+                        <span className="caixa__reserva-detalhe">
+                          {p.itens.reduce((soma, i) => soma + i.quantidade, 0)} itens · {formatarMoeda(p.total)} · {forma}
+                          {end ? ` · ${end.rua}, ${end.numero} — ${end.bairro}` : ''}
+                        </span>
+                        {p.status === 'CANCELADO' && p.cancelamento_motivo && (
+                          <span className="caixa__reserva-obs">Motivo: {p.cancelamento_motivo}</span>
+                        )}
+                      </div>
+
+                      <span className={`caixa__reserva-status caixa__reserva-status--${p.status === 'RECEBIDO' ? 'pendente' : 'confirmada'}`}>
+                        {{ RECEBIDO: 'Novo', PREPARO: 'Em preparo', PRONTO: 'Pronto', ENTREGUE: 'Concluído', CANCELADO: 'Cancelado' }[p.status]}
+                      </span>
+
+                      <div className="caixa__reserva-acoes">
+                        {cancelandoDeliveryId === p.id ? (
+                          <>
+                            <input
+                              className="caixa__reserva-btn"
+                              placeholder="Motivo do cancelamento"
+                              value={motivoDelivery}
+                              maxLength={200}
+                              onChange={(e) => setMotivoDelivery(e.target.value)}
+                            />
+                            <button className="caixa__reserva-btn caixa__reserva-btn--perigo" disabled={agindoDeliveryId === p.id} onClick={() => void cancelarDelivery(p)}>Confirmar</button>
+                            <button className="caixa__reserva-btn" onClick={() => { setCancelandoDeliveryId(null); setMotivoDelivery(''); }}>Voltar</button>
+                          </>
+                        ) : (
+                          <>
+                            {prox && (
+                              <button className="caixa__reserva-btn caixa__reserva-btn--ok" disabled={agindoDeliveryId === p.id} onClick={() => void avancarDelivery(p)}>
+                                {prox.rotulo(p)}
+                              </button>
+                            )}
+                            {prox && podeCancelarDelivery && (
+                              <button className="caixa__reserva-btn caixa__reserva-btn--perigo" onClick={() => { setCancelandoDeliveryId(p.id); setMotivoDelivery(''); }}>
+                                Cancelar
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Painel de mesas (aba Salão) ── */}
+        <div className="caixa__painel" style={abaCaixa !== 'salao' ? { display: 'none' } : undefined}>
 
           {/* ── Filtros + alternância de visualização ── */}
           <div className="caixa__filtros">
