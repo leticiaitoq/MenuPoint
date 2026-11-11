@@ -5,9 +5,12 @@ import Carrinho, { ItemCarrinho } from '../../../shared/components/Carrinho/Carr
 import ChamarGarcom from '../../../shared/components/ChamarGarcom/Chamargarcom';
 import FecharConta from '../../../shared/components/FecharConta/FecharConta';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
+import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
+import { useLoginObrigatorio } from '../../../shared/contexts/LoginObrigatorioContext';
 import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
 import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/ingredientes';
+import { consumirRetomada } from '../../../shared/utils/pendenciaLogin';
 import RestaurantePublicoService from '../../../services/restaurantePublico.service';
 import MesaPublicaService from '../../../services/mesaPublica.service';
 import './MenuCliente.css';
@@ -52,6 +55,8 @@ const MenuCliente: React.FC = () => {
   const location = useLocation();
   const { restaurante } = useRestauranteCliente();
   const { mesa, mesaToken } = useConvidado();
+  const { isAuthenticated } = useClienteAuth();
+  const { exigirLogin } = useLoginObrigatorio();
 
   const [categorias, setCategorias] = useState<Categoria[]>([CATEGORIA_TODOS]);
   const [produtos, setProdutos]     = useState<Produto[]>([]);
@@ -142,6 +147,13 @@ const MenuCliente: React.FC = () => {
 
   // Limpa o temporizador ao sair da tela
   useEffect(() => () => window.clearTimeout(timerConta.current), []);
+
+  // Voltou do login depois de tentar enviar o pedido: continua de onde parou (escolha entrega × retirada)
+  useEffect(() => {
+    if (isAuthenticated && itensCarrinho.length > 0 && consumirRetomada('tipo-pedido')) {
+      setModalTipoAberto(true);
+    }
+  }, [isAuthenticated, itensCarrinho.length]);
 
   // Consome o aviso "abrir o carrinho": sem isso o carrinho reabriria toda vez que o cliente voltasse a esta tela
   useEffect(() => {
@@ -290,6 +302,8 @@ const MenuCliente: React.FC = () => {
         onAlterarQuantidade={alterarQuantidade}
         onEditar={editarItem}
         onFinalizar={() => {
+          // Sem conta não envia: abre o aviso de login e o carrinho continua como está
+          if (!exigirLogin({ motivo: 'pedido', retorno: '/menu', retomar: 'tipo-pedido' })) return;
           setCarrinhoAberto(false);
           setModalTipoAberto(true);
         }}
@@ -313,14 +327,19 @@ const MenuCliente: React.FC = () => {
         <>
           <div className="mtp__overlay" onClick={() => setModalTipoAberto(false)} />
           <div className="mtp__modal">
-            <button className="mtp__card" onClick={() => escolherTipo('/endereço')}>
-              <span className="mtp__card-label">Para entrega</span>
-              <img src="/images/Delivery.png" alt="Para entrega" className="mtp__card-img" />
-            </button>
-            <button className="mtp__card" onClick={() => escolherTipo('/retirada')}>
-              <span className="mtp__card-label">Para Retirada</span>
-              <img src="/images/Retirada.png" alt="Para retirada" className="mtp__card-img" />
-            </button>
+            {/* Só oferece o que o restaurante aceita (cadastro do restaurante) */}
+            {restaurante?.aceita_entrega !== false && (
+              <button className="mtp__card" onClick={() => escolherTipo('/endereço')}>
+                <span className="mtp__card-label">Para entrega</span>
+                <img src="/images/Delivery.png" alt="Para entrega" className="mtp__card-img" />
+              </button>
+            )}
+            {restaurante?.aceita_retirada !== false && (
+              <button className="mtp__card" onClick={() => escolherTipo('/retirada')}>
+                <span className="mtp__card-label">Para Retirada</span>
+                <img src="/images/Retirada.png" alt="Para retirada" className="mtp__card-img" />
+              </button>
+            )}
           </div>
         </>
       )}

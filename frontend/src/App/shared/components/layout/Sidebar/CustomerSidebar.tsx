@@ -2,6 +2,9 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { HiHome, HiClipboardList, HiViewList } from 'react-icons/hi';
 import { MdTableRestaurant } from 'react-icons/md';
+import { useClienteAuth } from '../../../contexts/ClienteAuthContext';
+import { useLoginObrigatorio } from '../../../contexts/LoginObrigatorioContext';
+import { MotivoLogin } from '../../../utils/pendenciaLogin';
 import './CustomerSidebar.css';
 
 // ── Tipos ──────────────────────────────────────────────
@@ -30,12 +33,20 @@ const SIDEBAR_CONFIG: Record<CustomerSidebarItem, { to: string; icon: React.Reac
   menu:   { to: '/menu',       icon: <HiViewList />,        label: 'Cardápio' },
 };
 
+// Itens que o visitante (sem conta) não abre: o clique mostra o aviso de login em vez de navegar
+const ITENS_QUE_EXIGEM_LOGIN: Partial<Record<CustomerSidebarItem, MotivoLogin>> = {
+  tables: 'reserva',
+};
+
 // ── Componente ─────────────────────────────────────────
 const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
   items,
   onItemClick,
   routeOverrides,
 }) => {
+  const { isAuthenticated } = useClienteAuth();
+  const { exigirLogin } = useLoginObrigatorio();
+
   return (
     <aside className="customer-sidebar">
       <nav className="customer-sidebar__nav">
@@ -53,6 +64,20 @@ const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
                 key={item}
                 className="customer-sidebar__item"
                 onClick={handleClick}
+                aria-label={config.label}
+              >
+                <span className="customer-sidebar__icon">{config.icon}</span>
+              </button>
+            );
+          }
+
+          const motivoLogin = ITENS_QUE_EXIGEM_LOGIN[item];
+          if (motivoLogin && !isAuthenticated) {
+            return (
+              <button
+                key={item}
+                className="customer-sidebar__item"
+                onClick={() => exigirLogin({ motivo: motivoLogin, retorno: to })}
                 aria-label={config.label}
               >
                 <span className="customer-sidebar__icon">{config.icon}</span>

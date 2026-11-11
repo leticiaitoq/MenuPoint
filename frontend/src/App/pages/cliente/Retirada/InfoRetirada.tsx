@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { HiUser, HiPhone, HiOfficeBuilding, HiCheckCircle, HiLocationMarker } from 'react-icons/hi';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
 import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
 import { formatarTelefone, telefoneValido } from '../../../shared/utils/enderecoValidacao';
 import PagamentoPedido, { trocoParaNumero } from '../../../shared/components/PagamentoPedido/PagamentoPedido';
-import PedidoClienteService, { FormaPagamentoOnline, PedidoCriado, itensDoCarrinho } from '../../../services/pedidoCliente.service';
+import PedidoClienteService, { FormaPagamentoDelivery, PedidoDeliveryCriado } from '../../../services/pedidoCliente.service';
+import { itensParaPedido } from '../../../shared/components/PagamentoDelivery/PagamentoDelivery';
+import { mensagemDeErro } from '../../../services/cliente.service';
 import '../../../shared/components/PagamentoPedido/PagamentoPedido.css';
 import './InfoRetirada.css';
 
@@ -28,7 +30,8 @@ const formatarEnderecoRestaurante = (e?: { rua?: string; numero?: string; comple
 
 const InfoRetirada: React.FC = () => {
   const navigate = useNavigate();
-  const { cliente } = useClienteAuth();
+  const location = useLocation();
+  const { cliente, isAuthenticated } = useClienteAuth();
   const { slug, restaurante } = useRestauranteCliente();
   const { itens: itensCarrinho, limparCarrinho } = useCarrinho();
 
@@ -39,8 +42,8 @@ const InfoRetirada: React.FC = () => {
   });
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
-  const [pedidoCriado, setPedidoCriado] = useState<PedidoCriado | null>(null);
-  const [forma, setForma] = useState<FormaPagamentoOnline | null>(null);
+  const [pedidoCriado, setPedidoCriado] = useState<PedidoDeliveryCriado | null>(null);
+  const [forma, setForma] = useState<FormaPagamentoDelivery | null>(null);
   const [troco, setTroco] = useState('');
 
   // Carrinho vazio não tem o que retirar: volta para o cardápio (menos logo depois de pedir)
@@ -55,6 +58,14 @@ const handleTelefone = (e: React.ChangeEvent<HTMLInputElement>) =>
     atualizarForm({ telefone: formatarTelefone(e.target.value) });
 
   const handleContinuar = async () => {
+    if (enviando) return;
+    // Delivery: pode navegar sem conta, mas para ENVIAR o pedido precisa entrar (o carrinho é mantido)
+    if (!isAuthenticated) {
+      navigate('/login/cliente', {
+        state: { from: location.pathname, aviso: 'Entre na sua conta para enviar o pedido ao restaurante.' },
+      });
+      return;
+    }
     const nome = form.nome.trim();
     if (nome.length < 3 || !/^[A-Za-zÀ-ÿ' -]+$/.test(nome)) {
       setErro('Informe seu nome (só letras, com pelo menos 3 caracteres).');
@@ -65,23 +76,25 @@ const handleTelefone = (e: React.ChangeEvent<HTMLInputElement>) =>
       return;
     }
     if (!forma) { setErro('Escolha como você vai pagar.'); return; }
-    if (!slug) return;
+    if (!slug) { setErro('Abra o link do restaurante para pedir.'); return; }
+    if (itensCarrinho.length === 0) { setErro('Seu carrinho está vazio. Escolha algo no cardápio.'); return; }
+    if (itensCarrinho.some((i) => !i.produtoId)) { limparCarrinho(); setErro('Seu carrinho estava desatualizado. Adicione os itens novamente.'); return; }
 
     setErro('');
     setEnviando(true);
     try {
-      const pedido = await PedidoClienteService.criar(slug, {
+      const pedido = await PedidoClienteService.criarDelivery(slug, {
         modalidade: 'RETIRADA',
         cliente_nome: nome,
         cliente_telefone: form.telefone,
         forma_pagamento: forma,
         ...(forma === 'DINHEIRO' && trocoParaNumero(troco) ? { troco_para: trocoParaNumero(troco) } : {}),
-        itens: itensDoCarrinho(itensCarrinho),
+        itens: itensParaPedido(itensCarrinho),
       });
       setPedidoCriado(pedido);
       limparCarrinho();
     } catch (e: any) {
-      setErro(e.message);
+      setErro(mensagemDeErro(e, 'Não foi possível enviar o pedido. Tente novamente.'));
     } finally {
       setEnviando(false);
     }

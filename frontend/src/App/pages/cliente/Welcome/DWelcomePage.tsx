@@ -4,6 +4,7 @@ import { FaMapMarkerAlt, FaClock, FaStore, FaClipboardList, FaCalendarAlt, FaArr
 import CustomerLayout from "../../../shared/components/layout/Customerlayout";
 import { useClienteAuth } from "../../../shared/contexts/ClienteAuthContext";
 import { useRestauranteCliente } from "../../../shared/contexts/RestauranteClienteContext";
+import { useLoginObrigatorio } from "../../../shared/contexts/LoginObrigatorioContext";
 import type { DiaSemana, HorarioFuncionamento } from "../../../services/estabelecimento.service";
 import "./DWelcomePage.css";
 
@@ -50,6 +51,7 @@ const dinheiro = (v: string | number) => `R$ ${Number(v).toFixed(2).replace(".",
 const DWelcomePage: React.FC = () => {
   const navigate = useNavigate();
   const { cliente } = useClienteAuth();
+  const { exigirLogin } = useLoginObrigatorio();
   const { restaurante, carregando, erro, slug } = useRestauranteCliente();
 
   if (!slug || carregando || erro || !restaurante) {
@@ -135,7 +137,7 @@ const DWelcomePage: React.FC = () => {
           </div>
 
           <div className="wc__acoes">
-            <button className="wc__btn wc__btn--pedido" onClick={() => navigate("/reserva")}>
+            <button className="wc__btn wc__btn--pedido" onClick={() => { if (exigirLogin({ motivo: "reserva", retorno: "/reserva" })) navigate("/reserva"); }}>
               <FaCalendarAlt size={20} />
               <span>FAZER RESERVA</span>
               <FaArrowRight size={18} className="wc__btn-arrow" />

@@ -90,6 +90,31 @@ export interface MesaResponseDTO {
 export const PEDIDO_PUBLICO_MAX_ITENS = 30
 export const PEDIDO_PUBLICO_MAX_QUANTIDADE = 20
 
+// Item de pedido feito pelo cliente (mesa ou delivery). Só ids e quantidades: nomes e preços vêm do banco.
+export const itemPedidoPublicoSchema =
+  z.object({
+    produto_id: z.string().uuid('Produto inválido'),
+    quantidade: z
+      .number()
+      .int()
+      .min(1, 'Quantidade deve ser ao menos 1')
+      .max(PEDIDO_PUBLICO_MAX_QUANTIDADE, `Quantidade máxima por item: ${PEDIDO_PUBLICO_MAX_QUANTIDADE}`),
+    observacoes: z.string().trim().max(500, 'Observação muito longa').optional(),
+    // Item para viagem (a cozinha vê "PARA LEVAR" no começo da observação)
+    para_levar: z.boolean().optional(),
+    // Quantidade escolhida de cada ingrediente/adicional do produto. Só ids e quantidades:
+    // nomes e preços são sempre lidos do banco.
+    ingredientes: z
+      .array(
+        z.object({
+          adicional_id: z.string().uuid('Ingrediente inválido'),
+          quantidade: z.number().int().min(0).max(20, 'Quantidade máxima por ingrediente: 20'),
+        })
+      )
+      .max(60, 'Ingredientes demais no mesmo item')
+      .optional(),
+  })
+
 export const criarPedidoPublicoMesaSchema = z.object({
   cliente_nome: z
     .string({ error: 'Informe o nome' })
@@ -98,31 +123,17 @@ export const criarPedidoPublicoMesaSchema = z.object({
     .max(100, 'Nome deve ter no máximo 100 caracteres'),
   itens: z
     .array(
-      z.object({
-        produto_id: z.string().uuid('Produto inválido'),
-        quantidade: z
-          .number()
-          .int()
-          .min(1, 'Quantidade deve ser ao menos 1')
-          .max(PEDIDO_PUBLICO_MAX_QUANTIDADE, `Quantidade máxima por item: ${PEDIDO_PUBLICO_MAX_QUANTIDADE}`),
-        observacoes: z.string().trim().max(500, 'Observação muito longa').optional(),
-        // Item para viagem (a cozinha vê "PARA LEVAR" no começo da observação)
-        para_levar: z.boolean().optional(),
-        // Quantidade escolhida de cada ingrediente/adicional do produto. Só ids e quantidades:
-        // nomes e preços são sempre lidos do banco.
-        ingredientes: z
-          .array(
-            z.object({
-              adicional_id: z.string().uuid('Ingrediente inválido'),
-              quantidade: z.number().int().min(0).max(20, 'Quantidade máxima por ingrediente: 20'),
-            })
-          )
-          .max(60, 'Ingredientes demais no mesmo item')
-          .optional(),
-      })
+      itemPedidoPublicoSchema
     )
     .min(1, 'O pedido deve ter ao menos 1 item')
     .max(PEDIDO_PUBLICO_MAX_ITENS, `Máximo de ${PEDIDO_PUBLICO_MAX_ITENS} itens por pedido`),
+  // Código aleatório do aparelho do visitante (ver Pedido.convidado_ref). Só é guardado sem login.
+  convidado_ref: z.string().uuid('Código de visitante inválido').optional(),
 })
 
 export type CriarPedidoPublicoMesaDTO = z.infer<typeof criarPedidoPublicoMesaSchema>
+
+// Cliente que entrou na conta depois de pedir como visitante: pede para ligar esses pedidos a ele
+export const vincularPedidosConvidadoSchema = z.object({
+  convidado_ref: z.string().uuid('Código de visitante inválido'),
+})

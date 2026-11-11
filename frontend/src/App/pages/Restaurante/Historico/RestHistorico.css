@@ -722,3 +722,42 @@
     font-size: 13px;
   }
 }
+
+/* ── Origem do pedido: restaurante local × delivery ── */
+.hist__origens {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--bg-surface-alt, #f1f1f1);
+  margin-bottom: 12px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.hist__origem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-muted, #666);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.hist__origem--ativa {
+  background: var(--bg-surface, #fff);
+  color: var(--text, #222);
+  box-shadow: 0 1px 4px var(--shadow-color, rgba(0, 0, 0, 0.12));
+}
+.hist__origem-num {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 50px;
+  background: var(--bg-card-glass, rgba(0, 0, 0, 0.06));
+  font-size: 12px;
+  text-align: center;
+}

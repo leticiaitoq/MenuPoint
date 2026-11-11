@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { CHAVES_CLIENTE } from './apiCliente'
 
 /**
  * Erro das chamadas públicas da mesa, já com o texto que o servidor mandou
@@ -26,6 +27,15 @@ const apiPublica = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+// Convidado não tem token. Cliente LOGADO na mesa manda o dele só para o pedido ficar ligado à
+// conta (histórico fixo). Se o token estiver vencido o backend ignora e trata como convidado:
+// o pedido nunca é bloqueado por causa do login (e aqui não há redirecionamento para o login).
+apiPublica.interceptors.request.use((config) => {
+  const token = localStorage.getItem(CHAVES_CLIENTE.token)
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
+
 export interface MesaPublica {
   id: string
   numero: number
@@ -39,6 +49,8 @@ export interface MesaPublica {
     tema: 'CLARO' | 'ESCURO'
     aceita_mesa: boolean
   }
+  /** Preenchido quando a mesa está reservada para este horário e a chegada ainda não foi confirmada */
+  reserva_agora?: { hora_inicio: string } | null
 }
 
 /** Formas de pagamento que o cliente pode avisar ao pedir a conta (valores do enum FormaPagamento do backend) */
@@ -92,6 +104,18 @@ const MesaPublicaService = {
     const r = await apiPublica.get<MesaPublica>(`mesas/qrcode/${encodeURIComponent(token)}`)
     return r.data
   },
+  /**
+   * Cliente chegou à mesa reservada: valida a reserva (telefone usado na reserva, ou conta logada)
+   * e a mesa passa a ocupada em nome dele. 403 = telefone não confere | 404 = sem reserva agora.
+   */
+  async registrarChegada(token: string, telefone?: string): Promise<{ ok: boolean; nome?: string }> {
+    const r = await apiPublica.post<{ ok: boolean; nome?: string }>(
+      `mesas/qrcode/${encodeURIComponent(token)}/chegada`,
+      telefone ? { telefone } : {}
+    )
+    return r.data
+  },
+
   /** Cliente na mesa pede atendimento */
 async chamarGarcom(token: string): Promise<void> {
     try {

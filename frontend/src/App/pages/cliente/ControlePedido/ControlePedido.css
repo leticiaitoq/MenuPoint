@@ -300,3 +300,15 @@
     align-items: center;
   }
 }
+
+/* ── Visitante sem conta: convite para entrar */
+.pedidos__entrar {
+  align-self: center;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 50px;
+  background: var(--primary, #ff6b00);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}

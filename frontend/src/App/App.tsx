@@ -5,6 +5,7 @@ import { CarrinhoProvider } from './shared/contexts/CarrinhoContext';
 import { RestauranteClienteProvider } from './shared/contexts/RestauranteClienteContext';
 import { EstabelecimentoProvider } from './shared/contexts/Estabelecimentocontext';
 import { ConvidadoProvider } from './shared/contexts/Convidadocontext';
+import { SistemaClienteProvider } from './shared/contexts/SistemaClienteContext';
 import AppRoutes from './routes/Index';
 import { TemaProvider } from './shared/contexts/TemaContext';
 
@@ -15,11 +16,13 @@ const App: React.FC = () => {
        <ClienteAuthProvider>
         <RestauranteClienteProvider>
           <EstabelecimentoProvider>
-            <ConvidadoProvider>
-              <CarrinhoProvider>
-                <AppRoutes />
-              </CarrinhoProvider>
-            </ConvidadoProvider>
+            <SistemaClienteProvider>
+              <ConvidadoProvider>
+                <CarrinhoProvider>
+                  <AppRoutes />
+                </CarrinhoProvider>
+              </ConvidadoProvider>
+            </SistemaClienteProvider>
           </EstabelecimentoProvider>
         </RestauranteClienteProvider>
       </ClienteAuthProvider>
