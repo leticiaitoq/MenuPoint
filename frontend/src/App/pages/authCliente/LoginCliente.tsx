@@ -6,6 +6,7 @@ import AuthCard from '../auth/AuthCard';
 import ClienteService, { mensagemDeErro } from '../../services/cliente.service';
 import { useClienteAuth } from '../../shared/contexts/ClienteAuthContext';
 import { useSistemaCliente, destinoDoSistema } from '../../shared/contexts/SistemaClienteContext';
+import { consumirRetornoLogin } from '../../shared/utils/pendenciaLogin';
 import './LoginCliente.css';
 
 const LoginCliente: React.FC = () => {
@@ -32,7 +33,8 @@ const LoginCliente: React.FC = () => {
     if (!showSucesso) return;
     const timer = setTimeout(() => {
       // Volta para a tela de onde veio, se ela for do MESMO sistema; senão, para a primeira tela dele
-      const destino = (location.state as { from?: string } | null)?.from;
+      // Tela de onde veio (aviso de "faça login") ou a guardada na pendência de login
+      const destino = consumirRetornoLogin((location.state as { from?: string } | null)?.from);
       navigate(destinoDoSistema(sistema, destino), { replace: true });
     }, 1200);
     return () => clearTimeout(timer);

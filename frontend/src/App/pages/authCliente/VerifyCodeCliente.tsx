@@ -6,6 +6,7 @@ import AuthCard from '../auth/AuthCard';
 import ClienteService, { mensagemDeErro } from '../../services/cliente.service';
 import { useClienteAuth } from '../../shared/contexts/ClienteAuthContext';
 import { useSistemaCliente, destinoDoSistema } from '../../shared/contexts/SistemaClienteContext';
+import { consumirRetornoLogin } from '../../shared/utils/pendenciaLogin';
 import './VerifyCodeCliente.css';
 
 interface LocationStateCliente {
@@ -48,7 +49,7 @@ const VerifyCodeCliente: React.FC = () => {
   useEffect(() => {
     if (!showSucesso) return;
     // Cadastro confirmado: continua no sistema de onde a pessoa veio (mesa ou delivery)
-    const timer = setTimeout(() => navigate(destinoDoSistema(sistema), { replace: true }), 1800);
+    const timer = setTimeout(() => navigate(destinoDoSistema(sistema, consumirRetornoLogin()), { replace: true }), 1800);
     return () => clearTimeout(timer);
   }, [showSucesso, navigate, sistema]);
 

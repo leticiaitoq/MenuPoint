@@ -30,7 +30,8 @@ import Fila from "../pages/Restaurante/Gestão/Fila/Fila";
 import Relatorios from "../pages/Restaurante/Gestão/Relatorios/Relatorios";
 import RestauranteLink from "../pages/cliente/RestauranteLink/RestauranteLink";
 import { RotaProtegida } from "../shared/components/RotaProtegida";
-import { RotaProtegidaCliente } from "../shared/components/RotaProtegidaCliente";
+import { RotaExigeLogin } from "../shared/components/RotaExigeLogin";
+import { LoginObrigatorioProvider } from "../shared/contexts/LoginObrigatorioContext";
 import { RotaComRestaurante } from "../shared/components/RotaComRestaurante";
 import AcessoPeloLink from "../pages/cliente/AcessoPeloLink/AcessoPeloLink";
 import NovaSenhaCliente from "../pages/authCliente/NovaSenhaCliente";
@@ -68,6 +69,8 @@ const EntradaSistema: React.FC = () => {
 const AppRoutes: React.FC = () => {
   return (
     <BrowserRouter>
+      {/* Modal "faça login para continuar" (pedido/reserva do delivery): precisa estar dentro do Router */}
+      <LoginObrigatorioProvider>
       <Routes>
         <Route path="/welcomepage" element={<WelcomePage />} />
         {/* Link/QR Code da mesa: resolve o token e redireciona para a /welcomepage */}
@@ -96,22 +99,29 @@ const AppRoutes: React.FC = () => {
         {/*
           SISTEMA DELIVERY (fora do restaurante) — só abre quem entrou pelo link /r/:slug.
           O guarda de sistema vem ANTES do login: quem está na mesa (QR Code) é devolvido ao cardápio
-          da mesa e nunca entra aqui, mesmo logado. Dentro dele, as telas exigem login (/login/cliente).
+          da mesa e nunca entra aqui, mesmo logado. Dentro dele, o cliente navega sem login; reserva, perfil e
+          envio do pedido exigem conta (modal de aviso → /login/cliente).
           O cliente local usa /menulocal, /historicolocal e /perfilLocal (acima).
         */}
         <Route element={<RotaComRestaurante />}>
-          {/* Navegação livre: o cliente vê o cardápio e monta o carrinho sem conta.
-              O login só é exigido ao ENVIAR o pedido (telas de endereço e retirada). */}
+          {/* Navegação livre, SEM login: o cliente vê o início, o cardápio, monta o carrinho e abre o
+              histórico (que fica vazio enquanto não houver conta). */}
           <Route path="/dwelcome" element={<DWelcomePage />} />
           <Route path="/menu" element={<MenuCliente />} />
-          <Route path="/endereço" element={<CadastroEndereco />} />
-          <Route path="/retirada" element={<InfoRetirada />} />
+          <Route path="/historico" element={<ControlePedido />} />
 
-          {/* Áreas da conta do cliente: exigem login */}
-          <Route element={<RotaProtegidaCliente />}>
+          {/* Só abrem logado. Quem chega sem conta volta para a tela de origem e vê o modal de aviso:
+              aceitou → login e volta aqui; recusou → o modal fecha e nada acontece. */}
+          <Route element={<RotaExigeLogin motivo="reserva" fallback="/dwelcome" />}>
             <Route path="/reserva" element={<Reserva />} />
-            <Route path="/historico" element={<ControlePedido />} />
+          </Route>
+          <Route element={<RotaExigeLogin motivo="perfil" fallback="/dwelcome" />}>
             <Route path="/perfil" element={<PerfilCliente />} />
+          </Route>
+          {/* Enviar o pedido (entrega ou retirada) exige conta; o carrinho é mantido durante o login */}
+          <Route element={<RotaExigeLogin motivo="pedido" fallback="/menu" />}>
+            <Route path="/endereço" element={<CadastroEndereco />} />
+            <Route path="/retirada" element={<InfoRetirada />} />
           </Route>
         </Route>
 
@@ -145,6 +155,7 @@ const AppRoutes: React.FC = () => {
           />
         </Route>
       </Routes>
+      </LoginObrigatorioProvider>
     </BrowserRouter>
   );
 };

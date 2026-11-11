@@ -1,6 +1,25 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { ItemCarrinho } from '../components/Carrinho/Carrinho'
 import { useSistemaCliente } from './SistemaClienteContext'
+import { useRestauranteCliente } from './RestauranteClienteContext'
+
+/**
+ * Carrinho do DELIVERY fica guardado no sessionStorage (por aba e por restaurante). Assim o visitante
+ * sem conta não perde o que escolheu ao ir para o login/cadastro (nem se der F5) e continua de onde parou.
+ * O carrinho da mesa (local) continua só em memória.
+ */
+const CHAVE_CARRINHO_DELIVERY = '@menupoint:carrinho_delivery'
+
+function lerCarrinhoDelivery(slug: string | null): ItemCarrinho[] {
+  try {
+    const bruto = sessionStorage.getItem(CHAVE_CARRINHO_DELIVERY)
+    if (!bruto) return []
+    const salvo = JSON.parse(bruto) as { slug?: string; itens?: ItemCarrinho[] }
+    return slug && salvo.slug === slug && Array.isArray(salvo.itens) ? salvo.itens : []
+  } catch {
+    return []
+  }
+}
 
 /**
  * Carrinho vive num Context (e não num useState local do MenuLocal) porque
@@ -18,11 +37,27 @@ interface CarrinhoContextData {
 const CarrinhoContext = createContext<CarrinhoContextData>({} as CarrinhoContextData)
 
 export const CarrinhoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [itens, setItens] = useState<ItemCarrinho[]>([])
+  const { sistema } = useSistemaCliente()
+  const { slug } = useRestauranteCliente()
+  const [itens, setItens] = useState<ItemCarrinho[]>(() =>
+    sistema === 'delivery' ? lerCarrinhoDelivery(slug) : []
+  )
+
+  // Delivery: guarda o carrinho a cada mudança. Fora do delivery não guarda nada.
+  useEffect(() => {
+    try {
+      if (sistema === 'delivery' && slug) {
+        sessionStorage.setItem(CHAVE_CARRINHO_DELIVERY, JSON.stringify({ slug, itens }))
+      } else {
+        sessionStorage.removeItem(CHAVE_CARRINHO_DELIVERY)
+      }
+    } catch {
+      /* storage indisponível: segue só em memória */
+    }
+  }, [itens, sistema, slug])
 
   // O carrinho da mesa (local) e o do delivery são de sistemas diferentes: não podem se misturar.
   // Entrou em outro sistema nesta aba → começa vazio.
-  const { sistema } = useSistemaCliente()
   const sistemaAnterior = useRef(sistema)
   useEffect(() => {
     if (sistemaAnterior.current !== sistema) {

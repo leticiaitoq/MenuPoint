@@ -7,6 +7,7 @@ import CustomerSidebar, { CustomerSidebarItem } from './Sidebar/CustomerSidebar'
 import { useClienteAuth } from '../../contexts/ClienteAuthContext';
 import { FOTO_PADRAO_CLIENTE } from '../../../services/cliente.service';
 import { useConvidado } from '../../contexts/Convidadocontext';
+import { useLoginObrigatorio } from '../../contexts/LoginObrigatorioContext';
 import ContaConvidadoModal from '../ContaConvidadoModal/ContaConvidadoModal';
 import './Customerlayout.css';
 
@@ -18,7 +19,7 @@ interface CustomerLayoutProps {
    * - 'welcome' → tela de entrada, só navbar e footer, sem sidebar
    * - 'guest'   → sistema LOCAL (QR code da mesa): convidado OU cliente logado na mesa.
    *               Sidebar reduzida, tudo aponta para as telas da mesa (/menulocal, /historicolocal, /perfilLocal)
-   * - 'logged'  → sistema DELIVERY (link do restaurante): sempre logado, sidebar completa
+   * - 'logged'  → sistema DELIVERY (link do restaurante): navegação livre (com ou sem conta), sidebar completa
    */
   mode?: 'welcome' | 'guest' | 'logged';
   cartCount?: number;
@@ -57,6 +58,7 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
 }) => {
   // ── cliente logado (nome na navbar)
   const { cliente, isAuthenticated } = useClienteAuth();
+  const { exigirLogin } = useLoginObrigatorio();
 
   // Nome digitado na WelcomePage (só existe no fluxo do cliente local)
   // e a mesa em que ele está (vem do QR Code; continua valendo depois de entrar na conta)
@@ -79,6 +81,8 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
   const [mostrarConta, setMostrarConta] = useState(false);
   const handleClick = () => {
     if (isAuthenticated) navigate(mode === 'guest' ? '/perfilLocal' : '/perfil');
+    // Delivery sem conta: o aviso de login leva ao perfil depois de entrar
+    else if (mode === 'logged') exigirLogin({ motivo: 'perfil', retorno: '/perfil' });
     else setMostrarConta(true);
   };
 

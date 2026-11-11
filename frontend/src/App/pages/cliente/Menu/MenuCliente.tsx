@@ -4,6 +4,9 @@ import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import Carrinho from '../../../shared/components/Carrinho/Carrinho';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
 import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
+import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
+import { useLoginObrigatorio } from '../../../shared/contexts/LoginObrigatorioContext';
+import { consumirRetomada } from '../../../shared/utils/pendenciaLogin';
 import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/ingredientes';
 import RestaurantePublicoService from '../../../services/restaurantePublico.service';
 import './MenuCliente.css';
@@ -49,6 +52,8 @@ const compararProdutos = (idsCategorias: string[]) => (a: Produto, b: Produto) =
 const MenuCliente: React.FC = () => {
   const navigate = useNavigate();
   const { restaurante } = useRestauranteCliente();
+  const { isAuthenticated } = useClienteAuth();
+  const { exigirLogin } = useLoginObrigatorio();
   // Delivery é FORA do restaurante: aqui não existe mesa, garçom nem fechar conta (isso é do sistema local)
 
   const [categorias, setCategorias] = useState<Categoria[]>([CATEGORIA_TODOS]);
@@ -133,6 +138,13 @@ const MenuCliente: React.FC = () => {
   const { itens: itensCarrinho, removerItem } = useCarrinho();
   const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
   const [modalTipoAberto, setModalTipoAberto] = useState(false);
+
+  // Voltou do login depois de tentar enviar o pedido: continua de onde parou (escolha entrega × retirada)
+  useEffect(() => {
+    if (isAuthenticated && itensCarrinho.length > 0 && consumirRetomada('tipo-pedido')) {
+      setModalTipoAberto(true);
+    }
+  }, [isAuthenticated, itensCarrinho.length]);
 
   // ── Filtro ──────────────────────────────────────────────────────────────────
   const produtosFiltrados = produtos.filter((p) => {
@@ -252,6 +264,8 @@ const MenuCliente: React.FC = () => {
         itens={itensCarrinho}
         onRemover={removerItem}
         onFinalizar={() => {
+          // Sem conta não envia: abre o aviso de login e o carrinho continua como está
+          if (!exigirLogin({ motivo: 'pedido', retorno: '/menu', retomar: 'tipo-pedido' })) return;
           setCarrinhoAberto(false);
           setModalTipoAberto(true);
         }}

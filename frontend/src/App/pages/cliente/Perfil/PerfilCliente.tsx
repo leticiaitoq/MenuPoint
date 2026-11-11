@@ -355,7 +355,8 @@ const PerfilCliente: React.FC = () => {
   // ── Sair ──
   const handleSair = () => {
     // Navega antes de limpar a sessão: assim a rota protegida não "lembra" o /perfil
-    navigate('/login/cliente', { replace: true });
+    // Delivery não exige conta para navegar: depois de sair, volta ao início como visitante
+    navigate('/dwelcome', { replace: true });
     sair();
   };
 
