@@ -1737,11 +1737,15 @@ const Config: React.FC = () => {
           <div className="config__cabecalho-perfil">
             <div className="config__avatar-col">
               <img
+                key={estab.logo_url || 'padrao'}
                 className="config__avatar"
-                src={estab.logo_url ?? LOGO_PADRAO}
-                alt={`Logo de ${nomeExibido}`}
+                src={estab.logo_url || LOGO_PADRAO}
+                alt=""
+                aria-label={`Logo de ${nomeExibido}`}
                 onError={(e) => {
-                  e.currentTarget.src = LOGO_PADRAO;
+                  const img = e.currentTarget;
+                  img.onerror = null;
+                  if (!img.src.endsWith(LOGO_PADRAO)) img.src = LOGO_PADRAO;
                 }}
               />
               {podeEditar && (
