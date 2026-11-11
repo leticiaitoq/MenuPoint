@@ -19,6 +19,7 @@ import {
   OrigemPedido,
   montarItensPublicos,
   origemDoPedido,
+  restauranteAbertoAgora,
 } from './Pedido.publico'
 
 export class PedidoService {
@@ -873,6 +874,7 @@ export class PedidoService {
         aceita_retirada: true,
         taxa_entrega: true,
         pedido_minimo: true,
+        horario_funcionamento: true,
       },
     })
     if (!estabelecimento) throw new AppError('Restaurante não encontrado', 404)
@@ -882,6 +884,9 @@ export class PedidoService {
     }
     if (dados.modalidade === 'RETIRADA' && !estabelecimento.aceita_retirada) {
       throw new AppError(`${estabelecimento.nome} não está aceitando retiradas no momento`, 400)
+    }
+    if (!restauranteAbertoAgora(estabelecimento.horario_funcionamento)) {
+      throw new AppError('O restaurante está fechado no momento. Confira o horário de funcionamento.', 400)
     }
 
     const conta = await prisma.cliente.findFirst({

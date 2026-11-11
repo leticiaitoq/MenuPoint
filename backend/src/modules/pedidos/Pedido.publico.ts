@@ -167,3 +167,38 @@ export async function clienteIdOpcional(request: FastifyRequest): Promise<string
     return undefined
   }
 }
+/**
+ * Sem horário cadastrado (ou dia sem abertura/fechamento), considera FECHADO.
+ */
+export function restauranteAbertoAgora(horario: unknown, agora = new Date()): boolean {
+  if (!horario || typeof horario !== 'object') return false
+
+  const partes = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    weekday: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(agora)
+
+  const valor = (tipo: string) => partes.find((p) => p.type === tipo)?.value ?? ''
+  const dia = valor('weekday').normalize('NFD').replace(/[\u0300-\u036f]/g, '').split('-')[0].toLowerCase()
+  const minutosAgora = (Number(valor('hour')) % 24) * 60 + Number(valor('minute'))
+
+  const config = (horario as Record<string, any>)[dia]
+  if (!config) return false
+  if (!config.aberto) return false
+  if (!config.abertura || !config.fechamento) return false
+
+  const paraMinutos = (hhmm: string) => {
+    const [h, m] = hhmm.split(':').map(Number)
+    return h * 60 + m
+  }
+  const abre = paraMinutos(config.abertura)
+  const fecha = paraMinutos(config.fechamento)
+
+  // Horário que passa da meia-noite (ex.: 18:00 às 02:00)
+  return abre <= fecha
+    ? minutosAgora >= abre && minutosAgora < fecha
+    : minutosAgora >= abre || minutosAgora < fecha
+}

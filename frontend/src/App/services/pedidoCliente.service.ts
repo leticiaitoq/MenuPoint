@@ -12,6 +12,8 @@ export type OrigemPedido = 'LOCAL' | 'DELIVERY'
 export type ModalidadePedidoCliente = 'MESA' | 'ENTREGA' | 'RETIRADA'
 export type StatusPedidoCliente = 'RECEBIDO' | 'PREPARO' | 'PRONTO' | 'ENTREGUE' | 'CANCELADO'
 export type FormaPagamentoDelivery = 'PIX_PRESENCIAL' | 'DINHEIRO' | 'CARTAO'
+/** Mesmo tipo com o nome que o PagamentoPedido usa (valores idênticos) */
+export type FormaPagamentoOnline = FormaPagamentoDelivery
 
 export interface EnderecoEntrega {
   rua: string

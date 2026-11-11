@@ -1,14 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
-import Carrinho from '../../../shared/components/Carrinho/Carrinho';
+import Carrinho, { ItemCarrinho } from '../../../shared/components/Carrinho/Carrinho';
+import ChamarGarcom from '../../../shared/components/ChamarGarcom/Chamargarcom';
+import FecharConta from '../../../shared/components/FecharConta/FecharConta';
 import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
-import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
 import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
+import { useConvidado } from '../../../shared/contexts/Convidadocontext';
 import { useLoginObrigatorio } from '../../../shared/contexts/LoginObrigatorioContext';
-import { consumirRetomada } from '../../../shared/utils/pendenciaLogin';
+import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
 import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/ingredientes';
+import { consumirRetomada } from '../../../shared/utils/pendenciaLogin';
 import RestaurantePublicoService from '../../../services/restaurantePublico.service';
+import MesaPublicaService from '../../../services/mesaPublica.service';
 import './MenuCliente.css';
 
 // Tipos
@@ -50,9 +54,9 @@ const MenuCliente: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { restaurante } = useRestauranteCliente();
+  const { mesa, mesaToken } = useConvidado();
   const { isAuthenticated } = useClienteAuth();
   const { exigirLogin } = useLoginObrigatorio();
-  // Delivery é FORA do restaurante: aqui não existe mesa, garçom nem fechar conta (isso é do sistema local)
 
   const [categorias, setCategorias] = useState<Categoria[]>([CATEGORIA_TODOS]);
   const [produtos, setProdutos]     = useState<Produto[]>([]);
@@ -137,6 +141,12 @@ const MenuCliente: React.FC = () => {
     () => Boolean((location.state as { abrirCarrinho?: boolean } | null)?.abrirCarrinho)
   );
   const [modalTipoAberto, setModalTipoAberto] = useState(false);
+  const [contaAberta, setContaAberta]         = useState(false);
+  const [contaPedida, setContaPedida]         = useState(false);
+  const timerConta = useRef<number | undefined>(undefined);
+
+  // Limpa o temporizador ao sair da tela
+  useEffect(() => () => window.clearTimeout(timerConta.current), []);
 
   // Voltou do login depois de tentar enviar o pedido: continua de onde parou (escolha entrega × retirada)
   useEffect(() => {
@@ -167,6 +177,22 @@ const MenuCliente: React.FC = () => {
     navigate('/personaliza', { state: { produto, modoCliente: 'logged' } });
   };
 
+  // Depois de pedir a conta, o botão fica bloqueado por 2 minutos (evita pedidos repetidos)
+  const aoPedirConta = () => {
+    setContaPedida(true);
+    window.clearTimeout(timerConta.current);
+    timerConta.current = window.setTimeout(() => setContaPedida(false), 120_000);
+  };
+
+  // Volta para a tela do pedido com o item já preenchido
+  const editarItem = (item: ItemCarrinho) => {
+    if (!item.produtoOrigem) return;
+    setCarrinhoAberto(false);
+    navigate('/personaliza', {
+      state: { produto: item.produtoOrigem, modoCliente: 'logged', editarItemId: item.id },
+    });
+  };
+
   const escolherTipo = (rota: string) => {
     navigate(rota);
   };
@@ -183,7 +209,7 @@ const MenuCliente: React.FC = () => {
   style={{ '--bg-arte': 'url(/images/Fundo-menu.png)' } as React.CSSProperties}
 >
 
-        {/* Busca */}
+        {/* Busca + botão Chamar garçom (o botão só aparece quando entrou pelo QR da mesa) */}
         <div className="menu__topo">
           <div className="menu__busca-wrap">
             <img src="/icons/lupa.png" alt="" className="menu__busca-icon" />
@@ -195,6 +221,9 @@ const MenuCliente: React.FC = () => {
               onChange={(e) => setBusca(e.target.value)}
             />
           </div>
+          {mesaToken && (
+            <ChamarGarcom mesa={mesa} onChamar={() => MesaPublicaService.chamarGarcom(mesaToken)} />
+          )}
         </div>
 
         {/* Categorias */}
@@ -278,7 +307,20 @@ const MenuCliente: React.FC = () => {
           setCarrinhoAberto(false);
           setModalTipoAberto(true);
         }}
+        onFecharConta={mesaToken ? () => setContaAberta(true) : undefined}
+        contaPedida={contaPedida}
       />
+
+      {mesaToken && (
+        <FecharConta
+          aberto={contaAberta}
+          mesa={mesa}
+          itensNoCarrinho={totalCarrinho}
+          onPedir={(forma) => MesaPublicaService.pedirConta(mesaToken, forma)}
+          onConcluido={aoPedirConta}
+          onFechar={() => setContaAberta(false)}
+        />
+      )}
 
       {/* Modal de tipo de pedido — entrega ou retirada */}
       {modalTipoAberto && (
@@ -289,13 +331,13 @@ const MenuCliente: React.FC = () => {
             {restaurante?.aceita_entrega !== false && (
               <button className="mtp__card" onClick={() => escolherTipo('/endereço')}>
                 <span className="mtp__card-label">Para entrega</span>
-                <img src="/images/delivery.png" alt="Para entrega" className="mtp__card-img" />
+                <img src="/images/Delivery.png" alt="Para entrega" className="mtp__card-img" />
               </button>
             )}
             {restaurante?.aceita_retirada !== false && (
               <button className="mtp__card" onClick={() => escolherTipo('/retirada')}>
                 <span className="mtp__card-label">Para Retirada</span>
-                <img src="/images/retirada.png" alt="Para retirada" className="mtp__card-img" />
+                <img src="/images/Retirada.png" alt="Para retirada" className="mtp__card-img" />
               </button>
             )}
           </div>

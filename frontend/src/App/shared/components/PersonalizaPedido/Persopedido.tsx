@@ -40,7 +40,7 @@ interface PersoPedidoRouteState {
 const PersoPedido: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { adicionarItem } = useCarrinho();
+  const { itens: itensCarrinho, adicionarItem, atualizarItem } = useCarrinho();
   const { sistema } = useSistemaCliente();
 
   /**

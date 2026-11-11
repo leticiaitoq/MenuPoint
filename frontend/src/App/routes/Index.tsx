@@ -118,6 +118,7 @@ const AppRoutes: React.FC = () => {
           </Route>
           <Route element={<RotaExigeLogin motivo="perfil" fallback="/dwelcome" />}>
             <Route path="/perfil" element={<PerfilCliente />} />
+            <Route path="/perfil/enderecos" element={<EnderecosPerfil />} />
           </Route>
           {/* Enviar o pedido (entrega ou retirada) exige conta; o carrinho é mantido durante o login */}
           <Route element={<RotaExigeLogin motivo="pedido" fallback="/menu" />}>

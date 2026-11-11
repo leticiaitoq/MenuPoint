@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { HiUser, HiPhone } from 'react-icons/hi';
+import React, { useEffect, useState } from 'react';
+import { HiUser, HiPhone, HiOfficeBuilding, HiCheckCircle, HiLocationMarker } from 'react-icons/hi';
 import { useLocation, useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
-import PagamentoDelivery, { itensParaPedido } from '../../../shared/components/PagamentoDelivery/PagamentoDelivery';
-import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
 import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
 import { useRestauranteCliente } from '../../../shared/contexts/RestauranteClienteContext';
-import PedidoClienteService, { FormaPagamentoDelivery } from '../../../services/pedidoCliente.service';
+import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
+import { formatarTelefone, telefoneValido } from '../../../shared/utils/enderecoValidacao';
+import PagamentoPedido, { trocoParaNumero } from '../../../shared/components/PagamentoPedido/PagamentoPedido';
+import PedidoClienteService, { FormaPagamentoDelivery, PedidoDeliveryCriado } from '../../../services/pedidoCliente.service';
+import { itensParaPedido } from '../../../shared/components/PagamentoDelivery/PagamentoDelivery';
 import { mensagemDeErro } from '../../../services/cliente.service';
+import '../../../shared/components/PagamentoPedido/PagamentoPedido.css';
 import './InfoRetirada.css';
 
 // ── Tipos
@@ -28,21 +31,25 @@ const formatarEnderecoRestaurante = (e?: { rua?: string; numero?: string; comple
 const InfoRetirada: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
   const { cliente, isAuthenticated } = useClienteAuth();
-  const { slug } = useRestauranteCliente();
-  const { itens, limparCarrinho } = useCarrinho();
+  const { slug, restaurante } = useRestauranteCliente();
+  const { itens: itensCarrinho, limparCarrinho } = useCarrinho();
 
-  // Dados da conta já vêm preenchidos (o cliente pode trocar)
+  // Nome e telefone já vêm da conta do cliente (dá para trocar neste pedido)
   const [form, setForm] = useState<FormRetirada>({
     nome:     cliente?.nome ?? '',
-    telefone: formatarTelefone(cliente?.telefone ?? ''),
+    telefone: cliente?.telefone ? formatarTelefone(cliente.telefone) : '',
   });
   const [erro, setErro] = useState('');
-  const [forma, setForma] = useState<FormaPagamentoDelivery>('PIX_PRESENCIAL');
   const [enviando, setEnviando] = useState(false);
-  const [numeroPedido, setNumeroPedido] = useState<number | null>(null);
-  const subtotal = itens.reduce((acc, i) => acc + i.preco * i.quantidade, 0);
+  const [pedidoCriado, setPedidoCriado] = useState<PedidoDeliveryCriado | null>(null);
+  const [forma, setForma] = useState<FormaPagamentoDelivery | null>(null);
+  const [troco, setTroco] = useState('');
+
+  // Carrinho vazio não tem o que retirar: volta para o cardápio (menos logo depois de pedir)
+  useEffect(() => {
+    if (itensCarrinho.length === 0 && !pedidoCriado) navigate('/menu', { replace: true });
+  }, [itensCarrinho.length, pedidoCriado, navigate]);
 
   const atualizarForm = (campo: Partial<FormRetirada>) =>
     setForm((prev) => ({ ...prev, ...campo }));
@@ -50,40 +57,48 @@ const InfoRetirada: React.FC = () => {
 const handleTelefone = (e: React.ChangeEvent<HTMLInputElement>) =>
     atualizarForm({ telefone: formatarTelefone(e.target.value) });
 
- const handleContinuar = async () => {
-  if (enviando) return;
-  // Delivery: pode navegar sem conta, mas para ENVIAR o pedido precisa entrar (o carrinho é mantido)
-  if (!isAuthenticated) {
-    navigate('/login/cliente', {
-      state: { from: location.pathname, aviso: 'Entre na sua conta para enviar o pedido ao restaurante.' },
-    });
-    return;
-  }
-  if (!form.nome.trim()) { setErro('Informe seu nome.'); return; }
-  if (!form.telefone || form.telefone.length < 14) { setErro('Informe um telefone válido.'); return; }
-  if (!slug) { setErro('Abra o link do restaurante para pedir.'); return; }
-  if (itens.length === 0) { setErro('Seu carrinho está vazio. Escolha algo no cardápio.'); return; }
-  if (itens.some((i) => !i.produtoId)) { limparCarrinho(); setErro('Seu carrinho estava desatualizado. Adicione os itens novamente.'); return; }
+  const handleContinuar = async () => {
+    if (enviando) return;
+    // Delivery: pode navegar sem conta, mas para ENVIAR o pedido precisa entrar (o carrinho é mantido)
+    if (!isAuthenticated) {
+      navigate('/login/cliente', {
+        state: { from: location.pathname, aviso: 'Entre na sua conta para enviar o pedido ao restaurante.' },
+      });
+      return;
+    }
+    const nome = form.nome.trim();
+    if (nome.length < 3 || !/^[A-Za-zÀ-ÿ' -]+$/.test(nome)) {
+      setErro('Informe seu nome (só letras, com pelo menos 3 caracteres).');
+      return;
+    }
+    if (!telefoneValido(form.telefone)) {
+      setErro('Informe um telefone válido com DDD, ex.: (16) 99999-9999.');
+      return;
+    }
+    if (!forma) { setErro('Escolha como você vai pagar.'); return; }
+    if (!slug) { setErro('Abra o link do restaurante para pedir.'); return; }
+    if (itensCarrinho.length === 0) { setErro('Seu carrinho está vazio. Escolha algo no cardápio.'); return; }
+    if (itensCarrinho.some((i) => !i.produtoId)) { limparCarrinho(); setErro('Seu carrinho estava desatualizado. Adicione os itens novamente.'); return; }
 
-  setErro('');
-  setEnviando(true);
-  try {
-    const pedido = await PedidoClienteService.criarDelivery(slug, {
-      modalidade: 'RETIRADA',
-      cliente_nome: form.nome.trim(),
-      cliente_telefone: form.telefone,
-      forma_pagamento: forma,
-      itens: itensParaPedido(itens),
-    });
-    limparCarrinho();
-    setNumeroPedido(pedido.numero_pedido);
-    setSucesso(true);  // abre o modal
-  } catch (err) {
-    setErro(mensagemDeErro(err, 'Não foi possível enviar o pedido. Tente novamente.'));
-  } finally {
-    setEnviando(false);
-  }
-};
+    setErro('');
+    setEnviando(true);
+    try {
+      const pedido = await PedidoClienteService.criarDelivery(slug, {
+        modalidade: 'RETIRADA',
+        cliente_nome: nome,
+        cliente_telefone: form.telefone,
+        forma_pagamento: forma,
+        ...(forma === 'DINHEIRO' && trocoParaNumero(troco) ? { troco_para: trocoParaNumero(troco) } : {}),
+        itens: itensParaPedido(itensCarrinho),
+      });
+      setPedidoCriado(pedido);
+      limparCarrinho();
+    } catch (e: any) {
+      setErro(mensagemDeErro(e, 'Não foi possível enviar o pedido. Tente novamente.'));
+    } finally {
+      setEnviando(false);
+    }
+  };
 
   const enderecoRestaurante = formatarEnderecoRestaurante(restaurante?.endereco);
 
@@ -112,15 +127,30 @@ const handleTelefone = (e: React.ChangeEvent<HTMLInputElement>) =>
             />
           </div>
 
-          <PagamentoDelivery forma={forma} onChange={setForma} momento="na retirada" subtotal={subtotal} />
+          <div className="retirada__campo">
+            <label className="retirada__label" htmlFor="retiradaTelefone">
+              <HiPhone className="retirada__label-icone" /> Telefone para contato
+            </label>
+            <input
+              id="retiradaTelefone"
+              className="retirada__input"
+              type="text"
+              inputMode="tel"
+              placeholder="(16) 99999-9999"
+              value={form.telefone}
+              onChange={handleTelefone}
+            />
+          </div>
 
-          {/* Erro */}
-          {erro && <p className="retirada__erro">{erro}</p>}
-
-          {/* Ações */}
-          <button className="retirada__btn-continuar" onClick={handleContinuar} disabled={enviando}>
-            {enviando ? 'Enviando...' : 'Confirmar pedido'}
-          </button>
+          <PagamentoPedido
+            itens={itensCarrinho}
+            taxaEntrega={0}
+            momento="na retirada"
+            forma={forma}
+            onForma={setForma}
+            troco={troco}
+            onTroco={setTroco}
+          />
 
           {erro && <p className="pgp__erro">{erro}</p>}
 
@@ -162,11 +192,12 @@ const handleTelefone = (e: React.ChangeEvent<HTMLInputElement>) =>
         </aside>
       </div>
 
-            {sucesso && (
-        <div className="retirada__overlay" onClick={() => setSucesso(false)}>
-            <div className="retirada__modal" onClick={(e) => e.stopPropagation()}>
-            <span className="retirada__modal-emoji">✅</span>
-            <h2 className="retirada__modal-titulo">Pedido {numeroPedido ? `#${numeroPedido} ` : ''}confirmado!</h2>
+      {/* ── Modal de sucesso */}
+      {pedidoCriado && (
+        <div className="retirada__overlay" onClick={() => navigate('/historico')}>
+          <div className="retirada__modal" onClick={(e) => e.stopPropagation()}>
+            <HiCheckCircle className="retirada__modal-icone" />
+            <h2 className="retirada__modal-titulo">Pedido #{pedidoCriado.numero_pedido} confirmado!</h2>
             <p className="retirada__modal-texto">
               Seu pedido está sendo preparado. Retire no balcão quando estiver pronto.
             </p>

@@ -21,6 +21,12 @@ function lerCarrinhoDelivery(slug: string | null): ItemCarrinho[] {
   }
 }
 
+/**
+ * Carrinho vive num Context (e não num useState local do MenuLocal) porque
+ * o cliente navega para o PersoPedido (outra rota) pra customizar o
+ * produto antes de adicionar — se o carrinho ficasse no state do MenuLocal,
+ * ele seria perdido toda vez que a tela desmonta pra essa navegação.
+ */
 interface CarrinhoContextData {
   itens: ItemCarrinho[]
   adicionarItem: (item: ItemCarrinho) => void
