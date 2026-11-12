@@ -1165,3 +1165,43 @@
 }
 .caixa__resumo-item--aba:hover { border-color: var(--brand-soft-border); }
 .caixa__resumo-detalhe { font-size: 12px; color: var(--text-faint); }
+
+/* Aba Reservas: abas de filtro à esquerda e atalho do histórico à direita */
+.caixa__reservas-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.caixa__reservas-topo .caixa__abas {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.caixa__reservas-topo .caixa__abas::-webkit-scrollbar { display: none; }
+
+.caixa__btn-historico {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.caixa__btn-historico:hover {
+  color: var(--on-brand, #fff);
+  background: var(--brand);
+  border-color: var(--brand);
+}

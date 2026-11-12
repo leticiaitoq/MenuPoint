@@ -11,7 +11,7 @@ import {
  * Pedidos feitos pelo CLIENTE (sem passar pelo caixa/garçom).
  *
  * Existem dois "sistemas" de cliente, e a origem do pedido é sempre derivada da modalidade:
- *   - LOCAL    → modalidade MEaSA (QR Code da mesa, dentro do restaurante)
+ *   - LOCAL    → modalidade MESA (QR Code da mesa, dentro do restaurante)
  *   - DELIVERY → modalidade ENTREGA ou RETIRADA (link do restaurante, fora dele)
  * Não existe coluna "origem": derivar da modalidade evita dois campos que podem divergir.
  */

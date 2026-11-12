@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
 import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
 import { FOTO_PADRAO_CLIENTE } from '../../../services/cliente.service';
+import PerfilCliente from '../../cliente/Perfil/PerfilCliente';
 import './PerfilLocal.css';
 
 // ── Tipos
@@ -52,6 +53,15 @@ const PerfilLocal: React.FC = () => {
     definirConvidado({ nome: '', mesa });
     navigate('/welcomepage', { replace: true });
   };
+  // Nome da conta mudou no perfil: a navbar da mesa mostra o nome do convidado, então acompanha
+  const nomeAnterior = useRef(conta?.nome);
+  useEffect(() => {
+    if (isAuthenticated && conta?.nome && conta.nome !== nomeAnterior.current) {
+      definirConvidado({ nome: conta.nome });
+    }
+    nomeAnterior.current = conta?.nome;
+  }, [conta?.nome, isAuthenticated, definirConvidado]);
+
   const [editando, setEditando]     = useState(false);
   const [temaEscuro, setTemaEscuro] = useState(false);
 
