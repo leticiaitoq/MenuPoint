@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiClipboardList, HiExclamation } from 'react-icons/hi';
@@ -7,6 +6,8 @@ import { BsCashCoin } from 'react-icons/bs';
 import RestaurantLayout from '../../../shared/components/layout/Restaurantelayout';
 import MesaService from '../../../services/mesa.service';
 import PedidoService from '../../../services/pedido.service';
+import RelatorioService from '../../../services/relatorio.service';
+import { useAuth } from '../../../shared/contexts/Authcontext';
 import { mensagemDeErro } from '../../../services/cliente.service';
 import './HomeRestaurante.css';
 
@@ -14,7 +15,8 @@ interface ResumoHome {
   totalPedidos: number;
   pedidosNaFila: number;
   pedidosAguardando: number;
-  faturamento: number;
+  /** null = não carregou (ou o perfil não tem acesso) */
+  faturamento: number | null;
   mesasDisponiveis: number;
 }
 
@@ -22,7 +24,7 @@ const RESUMO_VAZIO: ResumoHome = {
   totalPedidos: 0,
   pedidosNaFila: 0,
   pedidosAguardando: 0,
-  faturamento: 0,
+  faturamento: null,
   mesasDisponiveis: 0,
 };
 
@@ -33,6 +35,14 @@ const formatarReais = (valor: number): string =>
     style: 'currency',
     currency: 'BRL',
   });
+
+const dois = (n: number) => String(n).padStart(2, '0');
+
+/** Hoje como AAAA-MM-DD no horário local (mesmo formato que a tela de Relatórios envia) */
+const hojeISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${dois(d.getMonth() + 1)}-${dois(d.getDate())}`;
+};
 
 const limitesDeHoje = () => {
   const inicio = new Date();
@@ -49,6 +59,9 @@ const limitesDeHoje = () => {
 
 const HomeRestaurante: React.FC = () => {
   const navigate = useNavigate();
+  const { usuario } = useAuth();
+  // Relatórios (e o faturamento) são só do administrador
+  const ehAdmin = usuario?.perfil === 'ADMIN';
 
   const [resumo, setResumo] = useState<ResumoHome>(RESUMO_VAZIO);
   const [carregando, setCarregando] = useState(true);
@@ -58,33 +71,27 @@ const HomeRestaurante: React.FC = () => {
     if (!silencioso) setCarregando(true);
 
     try {
-      const [pedidosHoje, ocupacao] = await Promise.all([
+      const hoje = hojeISO();
+
+      const [pedidosHoje, ativos, ocupacao, faturamento] = await Promise.all([
+        // pedidos feitos hoje
         PedidoService.listar(limitesDeHoje()),
+        // fila: tudo que está em andamento, de qualquer dia (igual à tela da Fila)
+        PedidoService.listar({ status: ['RECEBIDO', 'PREPARO', 'PRONTO'] }),
         MesaService.resumoOcupacao(),
+        // faturamento: o mesmo número da tela de Relatórios ("Hoje"). Se falhar, só esse card fica em "—"
+        ehAdmin
+          ? RelatorioService.resumo({ data_inicio: hoje, data_fim: hoje })
+              .then((r) => r.faturamento)
+              .catch(() => null)
+          : Promise.resolve(null),
       ]);
 
-      const validos = pedidosHoje.filter(
-        (p) => p.status !== 'CANCELADO'
-      );
-
       setResumo({
-        totalPedidos: validos.length,
-
-        pedidosNaFila: validos.filter(
-          (p) => p.status === 'RECEBIDO' || p.status === 'PREPARO'
-        ).length,
-
-        pedidosAguardando: validos.filter(
-          (p) => p.status === 'RECEBIDO'
-        ).length,
-
-        faturamento: validos
-          .filter((p) => p.pagamento?.status === 'CONFIRMADO')
-          .reduce(
-            (soma, p) => soma + (p.pagamento?.valor ?? p.total),
-            0
-          ),
-
+        totalPedidos: pedidosHoje.filter((p) => p.status !== 'CANCELADO').length,
+        pedidosNaFila: ativos.length,
+        pedidosAguardando: ativos.filter((p) => p.status === 'RECEBIDO').length,
+        faturamento,
         mesasDisponiveis: ocupacao.livre,
       });
 
@@ -96,7 +103,7 @@ const HomeRestaurante: React.FC = () => {
     } finally {
       setCarregando(false);
     }
-  }, []);
+  }, [ehAdmin]);
 
   useEffect(() => {
     void carregar();
@@ -111,7 +118,7 @@ const HomeRestaurante: React.FC = () => {
 
   const ou = (texto: string) => (carregando ? '—' : texto);
 
-  const cards = [
+  const todosOsCards = [
     {
       id: 'pedidos',
       icon: (
@@ -138,7 +145,7 @@ const HomeRestaurante: React.FC = () => {
         <BsCashCoin className="home-rest__card-icon home-rest__card-icon--green" />
       ),
       value: 'Faturamento',
-      sub: ou(formatarReais(resumo.faturamento)),
+      sub: ou(resumo.faturamento === null ? '—' : formatarReais(resumo.faturamento)),
       route: '/restaurante/relatorios',
     },
     {
@@ -155,6 +162,9 @@ const HomeRestaurante: React.FC = () => {
       route: '/restaurante/caixa',
     },
   ];
+
+  // O faturamento é financeiro: só o administrador vê (a API de relatórios também é só dele)
+  const cards = todosOsCards.filter((c) => c.id !== 'faturamento' || ehAdmin);
 
   return (
     <RestaurantLayout>

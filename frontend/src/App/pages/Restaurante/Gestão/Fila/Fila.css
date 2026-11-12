@@ -554,10 +554,10 @@ label.fila__item { cursor: pointer; }
 .fila__erro--modal { margin: 10px 0 0; }
 
 
-/* ═══════════════════════════════════════════════════════════
+/*
    RESPONSIVO — cole no FINAL do Fila.css (depois de .fila__erro--modal),
    para vencer as regras base. Substitui o bloco responsivo antigo.
-═══════════════════════════════════════════════════════════ */
+*/
 
 /* elementos que só existem no celular */
 .fila__abas,
@@ -786,3 +786,4 @@ label.fila__item { cursor: pointer; }
   }
   .fila__barra-acao .fila__btn-avancar { width: auto; min-height: 44px; padding: 0 18px; flex-shrink: 0; }
 }
+.fila__link-mesa { display: block; }

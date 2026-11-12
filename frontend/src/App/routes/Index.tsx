@@ -19,6 +19,7 @@ import Reserva from "../pages/cliente/Reserva/Reserva";
 import ControlePedido from "../pages/cliente/ControlePedido/ControlePedido";
 import CadastroEndereco from "../pages/cliente/CadastroEnde/CadastroEndereço";
 import RestHistorico from '../pages/Restaurante/Historico/RestHistorico';
+import HistoricoReservas from '../pages/Restaurante/Reservas/HistoricoReservas';
 import RestProdutos from '../pages/Restaurante/Produtos/RestProdutos';
 import CadProdutos from '../pages/Restaurante/Cadastros/Produtos/CadProdutos';
 import EditProduto from '../pages/Restaurante/Cadastros/Produtos/EditProduto';
@@ -134,6 +135,8 @@ const AppRoutes: React.FC = () => {
           <Route path="/restaurante/home" element={<HomeRestaurante /> } />
           <Route path="/restaurante/pedido" element={<Pedido />} />
           <Route path="/restaurante/historico" element={<RestHistorico />} />
+          {/* Sem item na sidebar: o acesso é pelo botão "Histórico" da aba Reservas do Caixa */}
+          <Route path="/restaurante/reservas/historico" element={<HistoricoReservas />} />
           <Route path="/restaurante/produtos" element={<RestProdutos />} />
           <Route path="/restaurante/cadprodutos" element={<CadProdutos />} />
           <Route path="/restaurante/editprodutos/:id" element={<EditProduto />} />

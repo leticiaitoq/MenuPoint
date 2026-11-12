@@ -426,7 +426,7 @@
 /* ── Cartões de opção (Entrega / Retirada / Pedido na mesa) ── */
 .config__cartoes-opcao {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -1166,10 +1166,8 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   .config__otp--chacoalha { animation: none; }
 }
 
-/* ═══════════════════════════════════════════════════════════
+/*
    RESPONSIVO — complementa os @media acima; fica no FINAL do arquivo
-═══════════════════════════════════════════════════════════ */
-
 /* Link do cardápio (input + Copiar + Abrir) */
 .config__linha-link { display: flex; gap: 8px; }
 
@@ -1246,14 +1244,140 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   .config__aba-ponto { margin-left: auto; flex-shrink: 0; }
 }
 
-/* Botões de editar logo */
+/* Botões de editar logo (agrupados: um embaixo do outro) */
+.config__avatar-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
 .config__avatar-col .config__btn--pequeno {
   min-width: 128px;
   white-space: nowrap;
+}
+
+/* Celular/tablet: foto à esquerda e os botões empilhados à direita.
+   Antes avatar + 2 botões ficavam numa linha só e o "Remover logo" estourava e era cortado
+   pelo overflow:hidden do cabeçalho. */
+@media (max-width: 768px) {
+  .config__avatar-col {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    text-align: left;
+  }
+  .config__avatar-col .config__avatar { flex-shrink: 0; }
+  .config__avatar-col .config__avatar-acoes { flex: 1 1 0; width: auto; }
+  .config__avatar-col .config__btn--pequeno { width: 100%; }
+  /* aviso/erro do envio ocupa a linha inteira embaixo */
+  .config__avatar-col > .config__erro,
+  .config__avatar-col > .config__hint { flex: 1 1 100%; margin: 0; }
 }
 
 @media (min-width: 769px) {
   .config__avatar-col .config__btn--pequeno {
     width: 100%;
   }
+}
+
+.config__pix-atalhos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.config__pix-atalhos-rotulo {
+  width: 100%;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.config__pix-atalho {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.config__pix-atalho:hover:not(:disabled) { border-color: var(--cfg-primaria); }
+.config__pix-atalho:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.config__pix-atalho--ativo {
+  border-color: var(--cfg-primaria);
+  background: var(--cfg-primaria);
+  color: #fff;
+}
+
+.config__pix-campos { transition: opacity 0.2s; }
+.config__pix-campos--travado { opacity: 0.55; }
+.config__pix-campos--travado .config__input { cursor: default; }
+
+.config__pix-ativa {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2e7d4f;
+  background: rgba(46, 125, 79, 0.14);
+}
+
+.config__btn--perigo { color: #c0392b; }
+.config__btn--perigo:hover:not(:disabled) { border-color: #c0392b; }
+
+.config__pix-aviso {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+}
+
+/* CEP: spinner da busca automática (ViaCEP) */
+.config__cep-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.config__spinner {
+  position: absolute;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--cfg-borda);
+  border-top-color: var(--cfg-vermelho);
+  border-radius: 50%;
+  animation: config-spin 0.7s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes config-spin {
+  to { transform: rotate(360deg); }
+}
+
+
+/* Contato / Endereço: campos cinzas e travados até clicar em "Alterar" */
+.config__campos--travados .config__input:disabled {
+  background: var(--bg-page);
+  color: var(--text-muted);
+  border-color: var(--cfg-borda);
+  opacity: 1;
+  cursor: default;
+  box-shadow: none;
 }

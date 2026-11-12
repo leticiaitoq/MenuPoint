@@ -147,6 +147,7 @@ export class MesaService {
         status: true,
         criado_em: true,
         total: true,
+        cliente_nome: true,
         itens: {
           select: {
             id: true,

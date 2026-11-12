@@ -114,6 +114,12 @@
   min-height: 90px;
 }
 
+.cadprod__input--mini {
+  padding: 5px 8px;
+  font-size: 13px;
+  width: 100px;
+}
+
 /* Linha categoria + preço */
 .cadprod__linha {
   display: flex;
@@ -258,6 +264,57 @@
 
 .cadprod__btn-foto:hover { background: var(--bg-surface-alt); }
 
+/* Chips de categorias */
+.cadprod__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.cadprod__chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  background:var(--brand-soft);
+  color: var(--accent);
+  border: 1px solid var(--brand-soft-border);
+}
+
+.cadprod__chip-novo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px dashed var(--text-faint);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cadprod__chip-novo:hover { background: var(--bg-surface-alt); }
+
+.cadprod__nova-cat {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cadprod__chip-confirmar {
+  background: var(--success);
+  color: var(--on-status);
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
 .cadprod__popup-overlay {
   position: fixed;
   inset: 0;
@@ -301,4 +358,90 @@
   margin: 0;
 }
 
+/* Seletor de categoria pronta (inline, ao criar categoria no cadastro de produto) */
+.cadprod__select--mini {
+  padding: 5px 8px;
+  font-size: 13px;
+  max-width: 100%;
+  background-color: var(--bg-surface);
+}
+
+.cadprod__input--larga {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cadprod__chip-cancelar {
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
 .cadprod__contador { display: block; text-align: right; color: #888; font-size: 0.75rem; margin-top: 4px; }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVIDADE
+═══════════════════════════════════════════════ */
+
+/* Tablet: as 2 colunas (dados / foto e categorias) empilham */
+@media (max-width: 900px) {
+  .cadprod__card {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 24px;
+  }
+}
+
+/* Celular e tablet com barra inferior */
+@media (max-width: 768px) {
+  /* espaço no fim da página para a barra fixa de ações */
+  .cadprod { padding-bottom: 90px; }
+
+  .cadprod__titulo { font-size: 21px; }
+
+  /* Cancelar / Salvar: barra fixa no rodapé, acima da navegação inferior */
+  .cadprod__header-acoes {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+    z-index: 90;
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 16px var(--shadow-color);
+  }
+
+  .cadprod__header-acoes > button {
+    flex: 1;
+    min-height: 46px;
+    padding: 10px 12px;
+  }
+}
+
+/* Celular */
+@media (max-width: 600px) {
+  .cadprod__card { padding: 18px 16px; gap: 20px; }
+
+  .cadprod__col-esquerda,
+  .cadprod__col-direita { gap: 16px; }
+
+  /* campos lado a lado (ex.: preço / estoque) passam a ocupar a linha toda */
+  .cadprod__linha { flex-direction: column; gap: 16px; }
+
+  /* evita zoom automático do iPhone ao focar nos campos */
+  .cadprod__input,
+  .cadprod__select,
+  .cadprod__textarea { font-size: 16px; }
+
+  .cadprod__popup {
+    width: calc(100% - 32px);
+    padding: 28px 20px;
+  }
+}

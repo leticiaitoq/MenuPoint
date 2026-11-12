@@ -5,16 +5,6 @@ import type { AdicionalCategoria } from '../../../services/adicionalCategoria.se
 import QuantidadeStepper from '../QuantidadeStepper/QuantidadeStepper';
 import './IngredientesEditor.css';
 
-/**
- * Cadastro dos ingredientes de um produto, em duas listas:
- *  1) "O que já vem no produto": tudo o que faz parte do item (pão, carne, queijo...).
- *     O cliente pode retirar (sem desconto), a menos que o ingrediente seja FIXO.
- *  2) "Adicionais": extras que NÃO vêm no produto; só são cobrados se o cliente acrescentar.
- *
- * No banco continua sendo uma lista só: quantidade_inclusa >= 1 = "já vem", 0 = adicional.
- * O cliente paga o preço do extra apenas pelas unidades ACIMA do que já vem.
- */
-
 export type TipoIngrediente = 'incluso' | 'adicional';
 
 // Linha do formulário
@@ -46,6 +36,19 @@ export const linhaVazia = (tipo: TipoIngrediente = 'incluso'): LinhaIngrediente 
 });
 
 const formatarPrecoCampo = (valor: number) => Number(valor ?? 0).toFixed(2).replace('.', ',');
+
+// Máscara de moeda: digita só números e os 2 últimos viram centavos ("1.234,56").
+// O "R$" já aparece como prefixo fixo ao lado do campo, por isso não entra no texto.
+// "0,00" é aceito (preço grátis); para apagar o campo, basta apagar os dígitos.
+const MAX_DIGITOS_PRECO = 8; // até 999.999,99
+const mascaraPreco = (texto: string, anterior: string): string => {
+  const digitos = texto.replace(/\D/g, '').slice(0, MAX_DIGITOS_PRECO);
+  if (!digitos) return '';
+  const centavos = Number(digitos);
+  if (centavos === 0) return texto.length < anterior.length ? '' : '0,00';
+  const reais = String(Math.floor(centavos / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${reais},${String(centavos % 100).padStart(2, '0')}`;
+};
 
 /** Carrega os ingredientes já cadastrados no produto (grupo "Ingredientes") para editar. */
 export const linhasDoProduto = (produto: Produto): LinhaIngrediente[] =>
@@ -179,12 +182,11 @@ const IngredientesEditor: React.FC<IngredientesEditorProps> = ({
         <input
           className="ing__input ing__input--preco"
           type="text"
-          inputMode="decimal"
+          inputMode="numeric"
           placeholder={semExtra ? '—' : '0,00'}
           value={semExtra ? '' : l.precoExtra}
           disabled={disabled || semExtra}
-          // aceita ponto ou vírgula como separador decimal
-          onChange={(e) => alterar(l.chave, { precoExtra: e.target.value.replace('.', ',').replace(/[^\d,]/g, '').slice(0, 9) })}
+          onChange={(e) => alterar(l.chave, { precoExtra: mascaraPreco(e.target.value, l.precoExtra) })}
           aria-label="Preço de cada unidade extra"
         />
       </div>

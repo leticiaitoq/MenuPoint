@@ -576,9 +576,10 @@ const Reserva: React.FC = () => {
 
           {/* Data */}
           <div className="reserva__campo">
-                <label className="reserva__label">DATA</label>
+                <label className="reserva__label" htmlFor="reserva-data">DATA</label>
                 <div className="reserva__input-wrapper">
                   <input
+                    id="reserva-data"
                     type="date"
                     className="reserva__date-input"
                     min={hojeLocal()}
@@ -658,21 +659,23 @@ const Reserva: React.FC = () => {
           {/* Pessoas */}
           <div className="reserva__campo">
             <label className="reserva__label">PESSOAS</label>
-            <div className="reserva__pessoas">
+            <div className="reserva__pessoas" role="group" aria-label="Quantidade de pessoas">
               <button
-                className="reserva__pessoas-btn reserva__pessoas-btn--add"
-                onClick={incrementarPessoas}
-                aria-label="Adicionar pessoa"
-              >
-                +
-              </button>
-              <span className="reserva__pessoas-count">{pessoas}</span>
-              <button
+                type="button"
                 className="reserva__pessoas-btn reserva__pessoas-btn--remove"
                 onClick={decrementarPessoas}
                 aria-label="Remover pessoa"
               >
                 −
+              </button>
+              <span className="reserva__pessoas-count" aria-live="polite">{pessoas}</span>
+              <button
+                type="button"
+                className="reserva__pessoas-btn reserva__pessoas-btn--add"
+                onClick={incrementarPessoas}
+                aria-label="Adicionar pessoa"
+              >
+                +
               </button>
             </div>
           </div>
@@ -702,8 +705,9 @@ const Reserva: React.FC = () => {
 
           {/* Observação */}
           <div className="reserva__campo">
-            <label className="reserva__label">OBSERVAÇÃO</label>
+            <label className="reserva__label" htmlFor="reserva-observacao">OBSERVAÇÃO</label>
             <textarea
+              id="reserva-observacao"
               className="reserva__textarea"
               placeholder="Aniversário/ Cadeira infantil/ Necessidades especiais"
               value={observacao}

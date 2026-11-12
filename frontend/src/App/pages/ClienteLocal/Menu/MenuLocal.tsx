@@ -1,16 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import CustomerLayout from '../../../shared/components/layout/Customerlayout';
-import Carrinho, { ItemCarrinho } from '../../../shared/components/Carrinho/Carrinho';
-import ChamarGarcom from '../../../shared/components/ChamarGarcom/Chamargarcom';
-import FecharConta from '../../../shared/components/FecharConta/FecharConta';
-import { useCarrinho } from '../../../shared/contexts/CarrinhoContext';
-import { useConvidado } from '../../../shared/contexts/Convidadocontext';
-import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
-import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/ingredientes';
-import RestaurantePublicoService from '../../../services/restaurantePublico.service';
-import MesaPublicaService from '../../../services/mesaPublica.service';
-import './MenuLocal.css';
+import React, { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import CustomerLayout from "../../../shared/components/layout/Customerlayout";
+import Carrinho, {
+  ItemCarrinho,
+} from "../../../shared/components/Carrinho/Carrinho";
+import ChamarGarcom from "../../../shared/components/ChamarGarcom/Chamargarcom";
+import FecharConta from "../../../shared/components/FecharConta/FecharConta";
+import { useCarrinho } from "../../../shared/contexts/CarrinhoContext";
+import { useConvidado } from "../../../shared/contexts/Convidadocontext";
+import { useClienteAuth } from "../../../shared/contexts/ClienteAuthContext";
+import {
+  extrairIngredientes,
+  IngredienteProduto,
+} from "../../../shared/utils/ingredientes";
+import { registrarPedidoProprio } from "../../../shared/utils/meusPedidosMesa";
+import RestaurantePublicoService from "../../../services/restaurantePublico.service";
+import MesaPublicaService from "../../../services/mesaPublica.service";
+import { iconeDaCategoria } from "../../../shared/constants/categoriasPadrao";
+import ProdutoDetalhe from "../../../shared/components/ProdutoDetalhe/ProdutoDetalhe";
+import "./MenuLocal.css";
 
 // Tipos
 interface Categoria {
@@ -29,40 +37,59 @@ interface Produto {
   destaque: boolean;
   ordem: number;
   ingredientes: IngredienteProduto[];
+  /** Preço "de" (só quando há promoção); `preco` já é o valor cobrado */
+  precoOriginal: number | null;
+  categoriaNome: string;
+  tempoPreparoMin: number | null;
 }
 
-// "Todos" usa o PNG; as demais categorias vêm da API (ícone = emoji ou imagem)
 const CATEGORIA_TODOS: Categoria = {
-  id: 'todos',
-  label: 'Todos',
-  icon: '/icons/icons-categorias/icons-categorias/todos.png',
+  id: "todos",
+  label: "Todos",
+  icon: "/icons/categorias/todos.svg",
 };
 
-const ehImagem = (icon: string) => icon.startsWith('/') || icon.startsWith('http');
+const ehImagem = (icon: string) =>
+  icon.startsWith("/") || icon.startsWith("http");
 
 // Mesma ordem do painel do restaurante: destaques, depois a ordem definida por ele
-const compararProdutos = (idsCategorias: string[]) => (a: Produto, b: Produto) =>
-  Number(b.destaque) - Number(a.destaque)
-  || a.ordem - b.ordem
-  || idsCategorias.indexOf(a.categoriaId) - idsCategorias.indexOf(b.categoriaId);
+const compararProdutos =
+  (idsCategorias: string[]) => (a: Produto, b: Produto) =>
+    Number(b.destaque) - Number(a.destaque) ||
+    a.ordem - b.ordem ||
+    idsCategorias.indexOf(a.categoriaId) - idsCategorias.indexOf(b.categoriaId);
 
-// ── Componente
+//  Componente
 const MenuLocal: React.FC = () => {
-  // ── Estados
+  //  Estados
   const navigate = useNavigate();
   const location = useLocation();
-  const { itens: itensCarrinho, removerItem, alterarQuantidade, limparCarrinho } = useCarrinho();
-  const { mesa, nome: nomeConvidado, mesaToken, estabelecimentoId } = useConvidado();
+  const {
+    itens: itensCarrinho,
+    removerItem,
+    alterarQuantidade,
+    limparCarrinho,
+  } = useCarrinho();
+  const {
+    mesa,
+    nome: nomeConvidado,
+    mesaToken,
+    estabelecimentoId,
+  } = useConvidado();
   // Logado na mesa: o pedido leva o nome da conta e (no backend) fica ligado a ela → histórico fixo
   const { cliente } = useClienteAuth();
-  const [busca, setBusca]                     = useState('');
-  const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
+  const [busca, setBusca] = useState("");
+  const [categoriaAtiva, setCategoriaAtiva] = useState("todos");
+  // Produto aberto no modal de detalhes (null = fechado)
+  const [produtoDetalhe, setProdutoDetalhe] = useState<Produto | null>(null);
   // Voltando da edição de um item, o carrinho já abre
-  const [carrinhoAberto, setCarrinhoAberto]   = useState(
-    () => Boolean((location.state as { abrirCarrinho?: boolean } | null)?.abrirCarrinho)
+  const [carrinhoAberto, setCarrinhoAberto] = useState(() =>
+    Boolean(
+      (location.state as { abrirCarrinho?: boolean } | null)?.abrirCarrinho,
+    ),
   );
-  const [contaAberta, setContaAberta]         = useState(false);
-  const [contaPedida, setContaPedida]         = useState(false);
+  const [contaAberta, setContaAberta] = useState(false);
+  const [contaPedida, setContaPedida] = useState(false);
   const timerConta = useRef<number | undefined>(undefined);
 
   // Consome o aviso "abrir o carrinho": sem isso o carrinho reabriria toda vez que o cliente voltasse a esta tela
@@ -77,20 +104,26 @@ const MenuLocal: React.FC = () => {
   useEffect(() => () => window.clearTimeout(timerConta.current), []);
 
   const [categorias, setCategorias] = useState<Categoria[]>([CATEGORIA_TODOS]);
-  const [produtos, setProdutos]     = useState<Produto[]>([]);
+  const [produtos, setProdutos] = useState<Produto[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [erroMenu, setErroMenu]     = useState('');
-  const [enviando, setEnviando]     = useState(false);
-  const [erroEnvio, setErroEnvio]   = useState('');
+  const [erroMenu, setErroMenu] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [erroEnvio, setErroEnvio] = useState("");
 
   // Cardápio real do restaurante da mesa
   useEffect(() => {
-    if (!estabelecimentoId) { setCarregando(false); return; }
+    if (!estabelecimentoId) {
+      setCarregando(false);
+      return;
+    }
     let cancelado = false;
-    let ultimaAssinatura = '';
+    let ultimaAssinatura = "";
 
     const carregar = (silencioso: boolean) => {
-      if (!silencioso) { setCarregando(true); setErroMenu(''); }
+      if (!silencioso) {
+        setCarregando(true);
+        setErroMenu("");
+      }
 
       return RestaurantePublicoService.cardapio(estabelecimentoId)
         .then((lista) => {
@@ -102,57 +135,76 @@ const MenuLocal: React.FC = () => {
           const ativas = lista.filter((c) => c.ativo !== false);
           const novasCategorias: Categoria[] = [
             CATEGORIA_TODOS,
-            ...ativas.map((c) => ({ id: c.id, label: c.nome, icon: c.icone ?? '🍽️' })),
+            ...ativas.map((c) => ({
+              id: c.id,
+              label: c.nome,
+              icon: iconeDaCategoria(c.nome, c.icone),
+            })),
           ];
           setCategorias(novasCategorias);
           setCategoriaAtiva((atual) =>
-            novasCategorias.some((c) => c.id === atual) ? atual : 'todos'
+            novasCategorias.some((c) => c.id === atual) ? atual : "todos",
           );
           setProdutos(
-            ativas.flatMap((c) =>
-              (c.produtos ?? [])
-                .filter((p) => p.disponivel)
-                .map((p) => ({
-                  destaque: !!p.destaque,
-                  ingredientes: extrairIngredientes(p.grupos_adicionais),
-                  ordem: p.ordem ?? 0,
-                  id: p.id,
-                  categoriaId: c.id,
-                  nome: p.nome,
-                  descricao: p.descricao ?? '',
-                  preco: Number(p.preco_promocional ?? p.preco),
-                  imagem: p.imagem_url ?? '/icons/restaurant-logo.png',
-                }))
-            ).sort(compararProdutos(ativas.map((c) => c.id)))
+            ativas
+              .flatMap((c) =>
+                (c.produtos ?? [])
+                  .filter((p) => p.disponivel)
+                  .map((p) => ({
+                    destaque: !!p.destaque,
+                    ingredientes: extrairIngredientes(p.grupos_adicionais),
+                    ordem: p.ordem ?? 0,
+                    id: p.id,
+                    categoriaId: c.id,
+                    nome: p.nome,
+                    descricao: p.descricao ?? "",
+                    preco: Number(p.preco_promocional ?? p.preco),
+                    precoOriginal:
+                      p.preco_promocional != null &&
+                      Number(p.preco_promocional) < Number(p.preco)
+                        ? Number(p.preco)
+                        : null,
+                    categoriaNome: c.nome,
+                    tempoPreparoMin: p.tempo_preparo_min ?? null,
+                    imagem: p.imagem_url ?? "/icons/restaurant-logo.png",
+                  })),
+              )
+              .sort(compararProdutos(ativas.map((c) => c.id))),
           );
-          setErroMenu('');
+          setErroMenu("");
         })
         .catch(() => {
-          if (!cancelado && !silencioso) setErroMenu('Não foi possível carregar o cardápio.');
+          if (!cancelado && !silencioso)
+            setErroMenu("Não foi possível carregar o cardápio.");
         })
-        .finally(() => { if (!cancelado && !silencioso) setCarregando(false); });
+        .finally(() => {
+          if (!cancelado && !silencioso) setCarregando(false);
+        });
     };
 
     carregar(false);
 
-    const recarregar = () => { if (document.visibilityState === 'visible') carregar(true); };
+    const recarregar = () => {
+      if (document.visibilityState === "visible") carregar(true);
+    };
     const intervalo = window.setInterval(recarregar, 15000);
-    document.addEventListener('visibilitychange', recarregar);
-    window.addEventListener('focus', recarregar);
-    window.addEventListener('online', recarregar);
+    document.addEventListener("visibilitychange", recarregar);
+    window.addEventListener("focus", recarregar);
+    window.addEventListener("online", recarregar);
 
     return () => {
       cancelado = true;
       window.clearInterval(intervalo);
-      document.removeEventListener('visibilitychange', recarregar);
-      window.removeEventListener('focus', recarregar);
-      window.removeEventListener('online', recarregar);
+      document.removeEventListener("visibilitychange", recarregar);
+      window.removeEventListener("focus", recarregar);
+      window.removeEventListener("online", recarregar);
     };
   }, [estabelecimentoId]);
 
   // Filtro
   const produtosFiltrados = produtos.filter((p) => {
-    const naCategoria = categoriaAtiva === 'todos' || p.categoriaId === categoriaAtiva;
+    const naCategoria =
+      categoriaAtiva === "todos" || p.categoriaId === categoriaAtiva;
     const naBusca = p.nome.toLowerCase().includes(busca.toLowerCase());
     return naCategoria && naBusca;
   });
@@ -161,15 +213,19 @@ const MenuLocal: React.FC = () => {
 
   // Handlers
   const abrirPersonalizacao = (produto: Produto) => {
-    navigate('/personaliza', { state: { produto, modoCliente: 'guest' } });
+    navigate("/personaliza", { state: { produto, modoCliente: "guest" } });
   };
 
   // Volta para a tela do pedido com o item já preenchido
   const editarItem = (item: ItemCarrinho) => {
     if (!item.produtoOrigem) return;
     setCarrinhoAberto(false);
-    navigate('/personaliza', {
-      state: { produto: item.produtoOrigem, modoCliente: 'guest', editarItemId: item.id },
+    navigate("/personaliza", {
+      state: {
+        produto: item.produtoOrigem,
+        modoCliente: "guest",
+        editarItemId: item.id,
+      },
     });
   };
 
@@ -177,7 +233,10 @@ const MenuLocal: React.FC = () => {
   const aoPedirConta = () => {
     setContaPedida(true);
     window.clearTimeout(timerConta.current);
-    timerConta.current = window.setTimeout(() => setContaPedida(false), 120_000);
+    timerConta.current = window.setTimeout(
+      () => setContaPedida(false),
+      120_000,
+    );
   };
 
   // Envia o carrinho para a cozinha. O preço é recalculado pelo servidor.
@@ -186,7 +245,9 @@ const MenuLocal: React.FC = () => {
 
     if (!mesaToken) {
       setCarrinhoAberto(false);
-      setErroEnvio('Escaneie o QR Code da sua mesa novamente para enviar o pedido.');
+      setErroEnvio(
+        "Escaneie o QR Code da sua mesa novamente para enviar o pedido.",
+      );
       return;
     }
 
@@ -194,15 +255,18 @@ const MenuLocal: React.FC = () => {
     if (itensCarrinho.some((i) => !i.produtoId)) {
       limparCarrinho();
       setCarrinhoAberto(false);
-      setErroEnvio('Seu carrinho estava desatualizado. Adicione os itens novamente.');
+      setErroEnvio(
+        "Seu carrinho estava desatualizado. Adicione os itens novamente.",
+      );
       return;
     }
 
     setEnviando(true);
-    setErroEnvio('');
+    setErroEnvio("");
     try {
-      await MesaPublicaService.criarPedido(mesaToken, {
-        cliente_nome: (cliente?.nome || nomeConvidado)?.trim() || 'Cliente da mesa',
+      const criado = await MesaPublicaService.criarPedido(mesaToken, {
+        cliente_nome:
+          (cliente?.nome || nomeConvidado)?.trim() || "Cliente da mesa",
         itens: itensCarrinho.map((i) => ({
           produto_id: i.produtoId as string,
           quantidade: i.quantidade,
@@ -211,12 +275,16 @@ const MenuLocal: React.FC = () => {
           ...(i.paraLevar ? { para_levar: true } : {}),
         })),
       });
+      registrarPedidoProprio(mesaToken, criado.id); // para destacar "Seu pedido" no histórico da mesa
       limparCarrinho();
       setCarrinhoAberto(false);
-      navigate('/historicolocal'); // o cliente já vê o pedido recém-enviado
+      navigate("/historicolocal"); // o cliente já vê o pedido recém-enviado
     } catch (err: any) {
       setCarrinhoAberto(false);
-      setErroEnvio(err?.response?.data?.message ?? 'Não foi possível enviar o pedido. Tente novamente.');
+      setErroEnvio(
+        err?.response?.data?.message ??
+          "Não foi possível enviar o pedido. Tente novamente.",
+      );
     } finally {
       setEnviando(false);
     }
@@ -230,24 +298,33 @@ const MenuLocal: React.FC = () => {
       onCartClick={() => setCarrinhoAberto(true)}
     >
       <div
-  className="menu bg-arte bg-arte--opaco"
-  style={{ '--bg-arte': 'url(/images/Fundo-menu.png)' } as React.CSSProperties}
->
-
-        {/* Botão flutuante do carrinho — igual ao MenuCliente */}
-       <button
-        className="menu__carrinho-fab"
-        onClick={() => setCarrinhoAberto(true)}
-        aria-label="Abrir carrinho"
+        className="menu bg-arte bg-arte--opaco"
+        style={
+          { "--bg-arte": "url(/images/Fundo-menu.png)" } as React.CSSProperties
+        }
       >
-        <img src="/icons/carrinho.png" alt="" className="menu__carrinho-fab-icon" />
-        {totalCarrinho > 0 && (
-          <span className="menu__carrinho-fab-badge">{totalCarrinho}</span>
-        )}
-      </button>
+        {/* Botão flutuante do carrinho — igual ao MenuCliente */}
+        <button
+          className="menu__carrinho-fab"
+          onClick={() => setCarrinhoAberto(true)}
+          aria-label="Abrir carrinho"
+        >
+          <img
+            src="/icons/carrinho.png"
+            alt=""
+            className="menu__carrinho-fab-icon"
+          />
+          {totalCarrinho > 0 && (
+            <span className="menu__carrinho-fab-badge">{totalCarrinho}</span>
+          )}
+        </button>
 
         {erroEnvio && (
-          <p className="menu__erro-envio" role="alert" onClick={() => setErroEnvio('')}>
+          <p
+            className="menu__erro-envio"
+            role="alert"
+            onClick={() => setErroEnvio("")}
+          >
             {erroEnvio}
           </p>
         )}
@@ -265,7 +342,10 @@ const MenuLocal: React.FC = () => {
             />
           </div>
           {mesaToken && (
-            <ChamarGarcom mesa={mesa} onChamar={() => MesaPublicaService.chamarGarcom(mesaToken)} />
+            <ChamarGarcom
+              mesa={mesa}
+              onChamar={() => MesaPublicaService.chamarGarcom(mesaToken)}
+            />
           )}
         </div>
 
@@ -274,7 +354,7 @@ const MenuLocal: React.FC = () => {
           {categorias.map((cat) => (
             <button
               key={cat.id}
-              className={`menu__cat-btn${categoriaAtiva === cat.id ? ' menu__cat-btn--ativo' : ''}`}
+              className={`menu__cat-btn${categoriaAtiva === cat.id ? " menu__cat-btn--ativo" : ""}`}
               onClick={() => setCategoriaAtiva(cat.id)}
               aria-label={cat.label}
               title={cat.label}
@@ -282,7 +362,9 @@ const MenuLocal: React.FC = () => {
               {ehImagem(cat.icon) ? (
                 <img src={cat.icon} alt="" className="menu__cat-icon" />
               ) : (
-                <span className="menu__cat-icon" aria-hidden="true">{cat.icon}</span>
+                <span className="menu__cat-icon" aria-hidden="true">
+                  {cat.icon}
+                </span>
               )}
             </button>
           ))}
@@ -293,23 +375,49 @@ const MenuLocal: React.FC = () => {
           {carregando || erroMenu || produtosFiltrados.length === 0 ? (
             <p className="menu__vazio">
               {carregando
-                ? 'Carregando cardápio...'
-                : erroMenu || (estabelecimentoId ? 'Nenhum produto encontrado.' : 'Escaneie o QR Code da sua mesa para ver o cardápio.')}
+                ? "Carregando cardápio..."
+                : erroMenu ||
+                  (estabelecimentoId
+                    ? "Nenhum produto encontrado."
+                    : "Escaneie o QR Code da sua mesa para ver o cardápio.")}
             </p>
           ) : (
             produtosFiltrados.map((p) => (
-              <div key={p.id} className="menu__card">
+              <div
+                key={p.id}
+                className={`menu__card menu__card--clicavel${p.destaque ? " menu__card--destaque" : ""}`}
+                onClick={() => setProdutoDetalhe(p)}
+                onKeyDown={(e) => {
+                  if (
+                    e.target === e.currentTarget &&
+                    (e.key === "Enter" || e.key === " ")
+                  ) {
+                    e.preventDefault();
+                    setProdutoDetalhe(p);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-haspopup="dialog"
+                aria-label={`Ver detalhes de ${p.nome}`}
+              >
+                {p.destaque && (
+                  <span className="menu__card-selo">⭐ Destaque</span>
+                )}
                 <img src={p.imagem} alt={p.nome} className="menu__card-img" />
                 <div className="menu__card-body">
                   <h3 className="menu__card-nome">{p.nome}</h3>
                   <p className="menu__card-desc">{p.descricao}</p>
                   <div className="menu__card-rodape">
                     <span className="menu__card-preco">
-                      R${p.preco.toFixed(2).replace('.', ',')}
+                      R${p.preco.toFixed(2).replace(".", ",")}
                     </span>
                     <button
                       className="menu__card-add"
-                      onClick={() => abrirPersonalizacao(p)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        abrirPersonalizacao(p);
+                      }}
                       aria-label={`Personalizar ${p.nome}`}
                     >
                       +
@@ -321,6 +429,16 @@ const MenuLocal: React.FC = () => {
           )}
         </div>
       </div>
+
+      <ProdutoDetalhe
+        produto={produtoDetalhe}
+        onFechar={() => setProdutoDetalhe(null)}
+        onPedir={() => {
+          const escolhido = produtoDetalhe;
+          setProdutoDetalhe(null);
+          if (escolhido) abrirPersonalizacao(escolhido);
+        }}
+      />
 
       <Carrinho
         aberto={carrinhoAberto}

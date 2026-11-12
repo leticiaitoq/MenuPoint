@@ -260,7 +260,7 @@
 }
 
 .perfil__btn-editar-end:hover { background: var(--warning); }
-/* ── Perfil conectado ao back-end ─────────────────────────────────────────── */
+/* ── Perfil conectado ao back-end*/
 
 /* Botões da foto (as classes base .perfil__foto* estão no topo deste arquivo) */
 .perfil__foto-btn:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -370,3 +370,34 @@
   transition: background 0.2s, color 0.2s;
 }
 .perfil__btn-sair:hover { background: var(--brand-hover); color:var(--on-brand) ; }
+
+/* ── Campo de senha com botão de mostrar/ocultar (olho) ── */
+.perfil__campo-senha {
+  position: relative;
+  display: flex;
+}
+
+.perfil__campo-senha .perfil__input--senha {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.perfil__campo-senha-olho {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.perfil__campo-senha-olho:hover { opacity: 0.75; }

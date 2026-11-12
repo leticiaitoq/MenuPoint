@@ -13,6 +13,8 @@ import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/i
 import { consumirRetomada } from '../../../shared/utils/pendenciaLogin';
 import RestaurantePublicoService from '../../../services/restaurantePublico.service';
 import MesaPublicaService from '../../../services/mesaPublica.service';
+import { iconeDaCategoria } from '../../../shared/constants/categoriasPadrao';
+import ProdutoDetalhe from '../../../shared/components/ProdutoDetalhe/ProdutoDetalhe';
 import './MenuCliente.css';
 
 // Tipos
@@ -31,6 +33,10 @@ interface Produto {
   imagem: string;
   destaque: boolean;
   ingredientes: IngredienteProduto[];
+  /** Preço "de" (só quando há promoção); `preco` já é o valor cobrado */
+  precoOriginal: number | null;
+  categoriaNome: string;
+  tempoPreparoMin: number | null;
   ordem: number;
 }
 
@@ -38,7 +44,7 @@ interface Produto {
 const CATEGORIA_TODOS: Categoria = {
   id: 'todos',
   label: 'Todos',
-  icon: '/icons/icons-categorias/icons-categorias/todos.png',
+  icon: '/icons/categorias/todos.svg',
 };
 
 // Ícone pode ser imagem (caminho/URL) ou emoji
@@ -63,6 +69,8 @@ const MenuCliente: React.FC = () => {
   const [carregando, setCarregando] = useState(true);
   const [erroMenu, setErroMenu]     = useState('');
   const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
+  // Produto aberto no modal de detalhes (null = fechado)
+  const [produtoDetalhe, setProdutoDetalhe]   = useState<Produto | null>(null);
 
   // Cardápio real do restaurante escolhido pelo link /r/:slug.
   useEffect(() => {
@@ -84,7 +92,7 @@ const MenuCliente: React.FC = () => {
           const ativas = lista.filter((c) => c.ativo !== false);
           const novasCategorias: Categoria[] = [
             CATEGORIA_TODOS,
-            ...ativas.map((c) => ({ id: c.id, label: c.nome, icon: c.icone ?? '🍽️' })),
+            ...ativas.map((c) => ({ id: c.id, label: c.nome, icon: iconeDaCategoria(c.nome, c.icone) })),
           ];
           setCategorias(novasCategorias);
           // Se a categoria selecionada foi desativada/removida, volta para "Todos"
@@ -104,6 +112,9 @@ const MenuCliente: React.FC = () => {
                   nome: p.nome,
                   descricao: p.descricao ?? '',
                   preco: Number(p.preco_promocional ?? p.preco),
+                  precoOriginal: p.preco_promocional != null && Number(p.preco_promocional) < Number(p.preco) ? Number(p.preco) : null,
+                  categoriaNome: c.nome,
+                  tempoPreparoMin: p.tempo_preparo_min ?? null,
                   imagem: p.imagem_url ?? '/icons/restaurant-logo.png',
                 }))
             ).sort(compararProdutos(ativas.map((c) => c.id)))
@@ -172,7 +183,7 @@ const MenuCliente: React.FC = () => {
 
   const totalCarrinho = itensCarrinho.reduce((acc, i) => acc + i.quantidade, 0);
 
-  // ── Handlers
+  // Handlers
   const abrirPersonalizacao = (produto: Produto) => {
     navigate('/personaliza', { state: { produto, modoCliente: 'logged' } });
   };
@@ -255,7 +266,21 @@ const MenuCliente: React.FC = () => {
             </p>
           ) : (
             produtosFiltrados.map((p) => (
-              <div key={p.id} className={`menu__card${p.destaque ? ' menu__card--destaque' : ''}`}>
+              <div
+                key={p.id}
+                className={`menu__card menu__card--clicavel${p.destaque ? ' menu__card--destaque' : ''}`}
+                onClick={() => setProdutoDetalhe(p)}
+                onKeyDown={(e) => {
+                  if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    setProdutoDetalhe(p);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-haspopup="dialog"
+                aria-label={`Ver detalhes de ${p.nome}`}
+              >
                 {p.destaque && <span className="menu__card-selo">⭐ Destaque</span>}
                 <img src={p.imagem} alt={p.nome} className="menu__card-img" />
                 <div className="menu__card-body">
@@ -267,7 +292,7 @@ const MenuCliente: React.FC = () => {
                     </span>
                     <button
                       className="menu__card-add"
-                      onClick={() => abrirPersonalizacao(p)}
+                      onClick={(e) => { e.stopPropagation(); abrirPersonalizacao(p); }}
                       aria-label={`Personalizar ${p.nome}`}
                     >
                       +
@@ -280,6 +305,16 @@ const MenuCliente: React.FC = () => {
         </div>
 
       </div>
+
+      <ProdutoDetalhe
+        produto={produtoDetalhe}
+        onFechar={() => setProdutoDetalhe(null)}
+        onPedir={() => {
+          const escolhido = produtoDetalhe;
+          setProdutoDetalhe(null);
+          if (escolhido) abrirPersonalizacao(escolhido);
+        }}
+      />
 
       {/* Botão flutuante do carrinho */}
       <button

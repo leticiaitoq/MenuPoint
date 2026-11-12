@@ -23,6 +23,8 @@ export interface RestaurantePublico {
   aceita_entrega: boolean
   aceita_retirada: boolean
   aceita_mesa: boolean
+  chave_pix: string | null
+  tipo_chave_pix: 'CPF' | 'CNPJ' | 'EMAIL' | 'TELEFONE' | 'ALEATORIA' | null
 }
 
 const RestaurantePublicoService = {

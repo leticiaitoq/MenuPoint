@@ -1,139 +1,291 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { HiCheckCircle, HiClipboardList, HiUser } from 'react-icons/hi';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
-import HistoricoPedidos, { FiltroOrigem } from '../../../shared/components/HistoricoPedidos/HistoricoPedidos';
-import { useHistoricoCliente } from '../../../shared/components/HistoricoPedidos/useHistoricoCliente';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
 import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
+import { lerPedidosProprios } from '../../../shared/utils/meusPedidosMesa';
 import MesaPublicaService, { PedidoMesaPublico } from '../../../services/mesaPublica.service';
-import type { PedidoHistorico } from '../../../services/pedidoCliente.service';
+import ContaMesaModal from '../../../shared/components/ContaMesa/ContaMesaModal';
 import './Controlepedidolocal.css';
 
-const INTERVALO_ATUALIZACAO_MS = 15000;
 
-const formatarPrecoLocal = (valor: number): string => `R$ ${valor.toFixed(2).replace('.', ',')}`;
+type StatusPedidoLocal = 'pendente' | 'pronto' | 'finalizado';
 
-/** Pedido da mesa (rota pública) no formato do histórico compartilhado */
-const daMesa = (p: PedidoMesaPublico, mesa: number): PedidoHistorico => ({
+type FiltroAtivoLocal = 'todos' | 'pendentes' | 'prontos' | 'finalizados';
+
+interface ItemPedidoLocal {
+  id: string;
+  nome: string;
+  quantidade: number;
+  preco: number;
+  imagem: string;
+}
+
+interface PedidoLocal {
+  id: string;
+  numero: number;
+  status: StatusPedidoLocal;
+  horario: string;
+  mesa: number;
+  /** Quem fez o pedido ('' se o servidor ainda não informa) */
+  cliente: string;
+  itens: ItemPedidoLocal[];
+}
+
+
+const IMAGEM_PADRAO_PRODUTO = '/icons/restaurant-logo.png';
+const INTERVALO_ATUALIZACAO_MS = 15000; // atualiza sozinho para o cliente ver o pedido ficar pronto
+
+const STATUS_API_PARA_TELA: Record<PedidoMesaPublico['status'], StatusPedidoLocal> = {
+  RECEBIDO: 'pendente',
+  PREPARO: 'pendente',
+  PRONTO: 'pronto',
+  ENTREGUE: 'finalizado',
+};
+
+const converterPedido = (p: PedidoMesaPublico, mesa: number): PedidoLocal => ({
   id: p.id,
   numero: p.numero_pedido,
-  origem: 'LOCAL',
-  modalidade: 'MESA',
-  status: p.status,
-  criadoEm: p.criado_em,
-  total: Number(p.total),
-  taxaEntrega: 0,
-  formaPagamento: null,
-  mesaNumero: mesa,
-  restaurante: null,
-  endereco: null,
-  motivoCancelamento: null,
+  status: STATUS_API_PARA_TELA[p.status],
+  horario: new Date(p.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+  mesa,
+  cliente: (p.cliente_nome ?? '').trim(),
   itens: p.itens.map((i) => ({
     id: i.id,
     nome: i.produto.nome,
     quantidade: i.quantidade,
+    // preço unitário + extras (ingredientes acima do incluso), igual ao total cobrado no pedido
     preco: Number(i.preco_unitario) + (i.itens_adicionais ?? []).reduce((s, a) => s + Number(a.preco_extra), 0),
-    imagem: i.produto.imagem_url,
+    imagem: i.produto.imagem_url || IMAGEM_PADRAO_PRODUTO,
   })),
 });
 
-/**
- * Histórico do cliente LOCAL (dentro do restaurante).
- *  - Convidado: só a conta aberta da mesa. Quando o caixa fecha a conta, some (nada é guardado).
- *  - Logado: histórico FIXO da conta, com o filtro Restaurante local × Delivery. Mesmo vendo
- *    pedidos de delivery aqui, ele continua no sistema local (nenhum link leva ao delivery).
- */
+
+const calcularTotalLocal = (itens: ItemPedidoLocal[]): number =>
+  itens.reduce((acc, item) => acc + item.preco * item.quantidade, 0);
+
+const formatarPrecoLocal = (valor: number): string =>
+  `R$ ${valor.toFixed(2).replace('.', ',')}`;
+
+
 const ControlePedidoLocal: React.FC = () => {
-  const { mesaToken, restauranteSlug } = useConvidado();
-  const { isAuthenticated } = useClienteAuth();
-  const [origem, setOrigem] = useState<FiltroOrigem>('todos');
+  const [filtroLocal, setFiltroLocal]   = useState<FiltroAtivoLocal>('todos');
+  const { mesaToken, nome: nomeConvidado } = useConvidado();
+  // Logado na mesa: o pedido leva o nome da conta (mesma regra do cardápio)
+  const { cliente: clienteLogado } = useClienteAuth();
+  const [pedidosLocal, setPedidosLocal] = useState<PedidoLocal[]>([]);
+  const [carregando, setCarregando]     = useState(true);
+  const [erro, setErro]                 = useState<string | null>(null);
+  const [mesaNumero, setMesaNumero]     = useState<number | null>(null);
+  const [contaAberta, setContaAberta]   = useState(false);
 
-  // Pedidos da conta aberta da mesa (convidado: é a lista; logado: só o resumo)
-  const [pedidosMesa, setPedidosMesa] = useState<PedidoHistorico[]>([]);
-  const [mesaNumero, setMesaNumero] = useState<number | null>(null);
-  const [carregandoMesa, setCarregandoMesa] = useState(true);
-  const [erroMesa, setErroMesa] = useState<string | null>(null);
-
-  const carregarMesa = useCallback(async () => {
+  const carregarPedidos = useCallback(async () => {
     if (!mesaToken) {
-      setCarregandoMesa(false);
+      setCarregando(false);
       return;
     }
     try {
       const dados = await MesaPublicaService.listarPedidos(mesaToken);
       setMesaNumero(dados.mesa.numero);
-      setPedidosMesa(dados.pedidos.map((p) => daMesa(p, dados.mesa.numero)));
-      setErroMesa(null);
+      setPedidosLocal(dados.pedidos.map((p) => converterPedido(p, dados.mesa.numero)));
+      setErro(null);
     } catch (err: any) {
-      setErroMesa(err?.response?.data?.message ?? 'Não foi possível carregar os pedidos.');
+      // Em atualização automática, mantém o que já está na tela e só avisa
+      setErro(err?.response?.data?.message ?? 'Não foi possível carregar os pedidos.');
     } finally {
-      setCarregandoMesa(false);
+      setCarregando(false);
     }
   }, [mesaToken]);
 
   useEffect(() => {
-    void carregarMesa();
-    const timer = setInterval(carregarMesa, INTERVALO_ATUALIZACAO_MS);
+    carregarPedidos();
+    const timer = setInterval(carregarPedidos, INTERVALO_ATUALIZACAO_MS);
     return () => clearInterval(timer);
-  }, [carregarMesa]);
+  }, [carregarPedidos]);
 
-  // Histórico fixo: só para quem está logado
-  const conta = useHistoricoCliente(restauranteSlug, isAuthenticated);
+  // ── Pedidos "meus": os que ESTE aparelho enviou; para pedidos antigos, vale também o mesmo nome
+  const meusIds = useMemo(
+    () => (mesaToken ? lerPedidosProprios(mesaToken) : new Set<string>()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mesaToken, pedidosLocal]
+  );
+  const meuNome = (clienteLogado?.nome || nomeConvidado || '').trim().toLowerCase();
+  const ehMeu = (p: PedidoLocal) =>
+    meusIds.has(p.id) || (meuNome !== '' && p.cliente.toLowerCase() === meuNome);
 
-  const totalMesa = useMemo(() => pedidosMesa.reduce((acc, p) => acc + p.total, 0), [pedidosMesa]);
+  // ── Contagens para os badges dos filtros
+  const contagensLocal = {
+    todos:       pedidosLocal.length,
+    pendentes:   pedidosLocal.filter((p) => p.status === 'pendente').length,
+    prontos:     pedidosLocal.filter((p) => p.status === 'pronto').length,
+    finalizados: pedidosLocal.filter((p) => p.status === 'finalizado').length,
+  };
 
-  const resumo =
-    mesaToken && mesaNumero !== null && !carregandoMesa && pedidosMesa.length > 0 ? (
-      <div className="pedidos-local__resumo">
-        <div className="pedidos-local__resumo-item">
-          <span>Mesa</span>
-          <strong>{String(mesaNumero).padStart(2, '0')}</strong>
-        </div>
-        <div className="pedidos-local__resumo-item">
-          <span>Pedidos</span>
-          <strong>{pedidosMesa.length}</strong>
-        </div>
-        <div className="pedidos-local__resumo-item">
-          <span>Total da mesa</span>
-          <strong>{formatarPrecoLocal(totalMesa)}</strong>
-        </div>
-      </div>
-    ) : null;
+  // ── Pedidos filtrados conforme aba ativa
+  const pedidosLocalFiltrados = pedidosLocal.filter((p) => {
+    if (filtroLocal === 'pendentes')   return p.status === 'pendente';
+    if (filtroLocal === 'prontos')     return p.status === 'pronto';
+    if (filtroLocal === 'finalizados') return p.status === 'finalizado';
+    return true;
+  });
+
 
   return (
     <CustomerLayout mode="guest">
       <div className="pedidos-local">
+
+        {/* ── Cabeçalho ── */}
         <h1 className="pedidos-local__titulo">Meus Pedidos</h1>
 
-        {isAuthenticated ? (
-          <HistoricoPedidos
-            pedidos={conta.pedidos}
-            carregando={conta.carregando}
-            erro={conta.erro}
-            origem={origem}
-            onOrigemChange={setOrigem}
-            topo={resumo}
-            vazioTexto="Seus pedidos ficam guardados aqui. Faça o primeiro pelo cardápio."
-          />
-        ) : !mesaToken ? (
-          <p className="pedidos-local__vazio">Escaneie o QR Code da sua mesa para acompanhar os pedidos.</p>
-        ) : (
-          <HistoricoPedidos
-            pedidos={pedidosMesa}
-            carregando={carregandoMesa}
-            erro={erroMesa}
-            topo={
-              <>
-                {resumo}
-                <p className="hist-cli__aviso">
-                  Como convidado, seus pedidos somem quando a conta da mesa for fechada. Entre na sua conta
-                  (ícone de perfil) para guardar o histórico.
-                </p>
-              </>
-            }
-            vazioTexto={`Ainda não há pedidos na mesa${mesaNumero !== null ? ` ${String(mesaNumero).padStart(2, '0')}` : ''}. Faça o primeiro pelo cardápio.`}
-          />
+        {/* ── Resumo da mesa: vale também para quem chega numa mesa que já estava aberta ── */}
+        {mesaToken && mesaNumero !== null && !carregando && pedidosLocal.length > 0 && (
+          <div className="pedidos-local__resumo">
+            <div className="pedidos-local__resumo-item">
+              <span>Mesa</span>
+              <strong>{String(mesaNumero).padStart(2, '0')}</strong>
+            </div>
+            <div className="pedidos-local__resumo-item">
+              <span>Pedidos</span>
+              <strong>{pedidosLocal.length}</strong>
+            </div>
+            <div className="pedidos-local__resumo-item">
+              <span>Total da mesa</span>
+              <strong>{formatarPrecoLocal(pedidosLocal.reduce((acc, p) => acc + calcularTotalLocal(p.itens), 0))}</strong>
+            </div>
+          </div>
         )}
+
+        {/* ── Filtros ── */}
+        <div className="pedidos-local__filtros">
+          {(['todos', 'pendentes', 'prontos', 'finalizados'] as FiltroAtivoLocal[]).map((f) => (
+            <button
+              key={f}
+              className={`pedidos-local__filtro-btn ${filtroLocal === f ? 'pedidos-local__filtro-btn--ativo' : ''}`}
+              onClick={() => setFiltroLocal(f)}
+            >
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+              <span className="pedidos-local__filtro-badge">{contagensLocal[f]}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* ── Lista de pedidos ── */}
+        <div className="pedidos-local__lista">
+          {!mesaToken ? (
+            <p className="pedidos-local__vazio">
+              Escaneie o QR Code da sua mesa para acompanhar os pedidos.
+            </p>
+          ) : carregando ? (
+            <p className="pedidos-local__vazio">Carregando pedidos...</p>
+          ) : erro && pedidosLocal.length === 0 ? (
+            <p className="pedidos-local__vazio">{erro}</p>
+          ) : pedidosLocalFiltrados.length === 0 ? (
+            <p className="pedidos-local__vazio">
+              {pedidosLocal.length === 0
+                ? `Ainda não há pedidos na mesa${mesaNumero !== null ? ` ${String(mesaNumero).padStart(2, '0')}` : ''}. Faça o primeiro pelo cardápio.`
+                : 'Nenhum pedido nesta aba.'}
+            </p>
+          ) : (
+            pedidosLocalFiltrados.map((pedido) => {
+              const totalLocal = calcularTotalLocal(pedido.itens);
+              const meu = ehMeu(pedido);
+
+              return (
+                <div key={pedido.id} className={`pedidos-local__card${meu ? ' pedidos-local__card--meu' : ''}`}>
+
+                  {/* ── Cabeçalho do card ── */}
+                  <div className="pedidos-local__card-header">
+                    <div className="pedidos-local__card-info">
+                      <h2 className="pedidos-local__card-numero">Pedido #{pedido.numero}</h2>
+                      <span className={`pedidos-local__status pedidos-local__status--${pedido.status}`}>
+                        {pedido.status === 'pendente'   && <>🔵 Pendente</>}
+                        {pedido.status === 'pronto'     && <>🟡 Pronto</>}
+                        {pedido.status === 'finalizado' && (
+                          <><HiCheckCircle className="pedidos-local__status-icon" /> Finalizado</>
+                        )}
+                      </span>
+                    </div>
+
+                    {(pedido.cliente || meu) && (
+                      <p className="pedidos-local__cliente">
+                        {pedido.cliente && <><HiUser aria-hidden="true" /> {pedido.cliente}</>}
+                        {meu && <span className="pedidos-local__selo-meu">Seu pedido</span>}
+                      </p>
+                    )}
+
+                    <p className="pedidos-local__card-meta">
+                      {pedido.horario}&nbsp;&nbsp;|&nbsp;&nbsp;Mesa {pedido.mesa}
+                    </p>
+                  </div>
+
+                  {/* ── Corpo: itens + totais + ação ── */}
+                  <div className="pedidos-local__card-body">
+
+                    {/* Itens */}
+                    <div className="pedidos-local__itens">
+                      {pedido.itens.map((item) => (
+                        <div key={item.id} className="pedidos-local__item">
+                          <img
+                            src={item.imagem}
+                            alt={item.nome}
+                            className="pedidos-local__item-img"
+                          />
+                          <div className="pedidos-local__item-info">
+                            <span className="pedidos-local__item-nome">
+                              {item.quantidade}x {item.nome}
+                            </span>
+                            <span className="pedidos-local__item-preco">
+                              {formatarPrecoLocal(item.preco * item.quantidade)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Totais + botão de ação */}
+                    <div className="pedidos-local__card-rodape">
+                      <div className="pedidos-local__totais">
+                        <span className="pedidos-local__total-label">Total</span>
+                        <span className="pedidos-local__total-destaque">
+                          {formatarPrecoLocal(totalLocal)}
+                        </span>
+                      </div>
+
+                      {pedido.status === 'pendente' && (
+                        // Pedido aguardando preparo — cliente só pode acompanhar
+                        <span className="pedidos-local__btn pedidos-local__btn--aguardando">
+                          Aguardando...
+                        </span>
+                      )}
+
+                      {pedido.status === 'pronto' && (
+                        // A baixa (entregue) é feita pelo restaurante; o cliente só acompanha
+                        <span className="pedidos-local__btn pedidos-local__btn--aguardando">
+                          Pronto! Já vai à mesa
+                        </span>
+                      )}
+
+                      {pedido.status === 'finalizado' && (
+                        <button
+                          type="button"
+                          className="pedidos-local__btn pedidos-local__btn--conta"
+                          onClick={() => setContaAberta(true)}
+                        >
+                          <HiClipboardList className="pedidos-local__btn-icon" />
+                          Ver Conta
+                        </button>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
       </div>
+      <ContaMesaModal aberto={contaAberta} token={mesaToken} onFechar={() => setContaAberta(false)} />
     </CustomerLayout>
   );
 };

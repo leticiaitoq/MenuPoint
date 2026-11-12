@@ -74,7 +74,7 @@ export class EstabelecimentoService extends BaseService <
     }
 
     try {
-      return await this.repository.update(id, data as any)
+      return await this.repository.update(id, { ...data, aceita_mesa: true } as any)
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         const alvo = String(err.meta?.target ?? '')
@@ -121,7 +121,18 @@ export class EstabelecimentoService extends BaseService <
     return this.repository.update(id, { ativo: true } as any)
   }
 
-  // Chave PIX: dado sensível.
+  // Dono = o ADMIN mais antigo do estabelecimento (quem criou a conta no cadastro).
+  // Outros ADMIN criados depois (funcionários) NÃO são donos, mesmo sabendo a própria senha.
+  async ehDono(estabelecimentoId: string, usuarioId: string): Promise<boolean> {
+    const dono = await prisma.usuario.findFirst({
+      where: { estabelecimento_id: estabelecimentoId, perfil: 'ADMIN', ativo: true },
+      orderBy: { criado_em: 'asc' },
+      select: { id: true },
+    })
+    return dono?.id === usuarioId
+  }
+
+  // Chave PIX: dado sensível. Só o dono altera; a senha é a confirmação extra.
   async atualizarPix(
     id: string,
     usuario: { id: string; perfil: string; escopo: string },
@@ -129,7 +140,7 @@ export class EstabelecimentoService extends BaseService <
   ): Promise<Estabelecimento> {
     await this.findById(id)
 
-    if (usuario.perfil !== 'ADMIN' || usuario.escopo !== 'GLOBAL') {
+    if (usuario.perfil !== 'ADMIN' || !(await this.ehDono(id, usuario.id))) {
       throw new AppError(
         'Apenas o dono da empresa pode alterar a chave PIX',
         403
