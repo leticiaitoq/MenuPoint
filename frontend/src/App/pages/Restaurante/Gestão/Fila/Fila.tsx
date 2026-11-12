@@ -70,7 +70,7 @@ const PARA_API: Record<StatusFila, StatusApi> = {
 
 const INTERVALO_ATUALIZACAO_MS = 20000;
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+//  Helpers 
 const formatarPreco = (valor: number): string => `R$ ${valor.toFixed(2).replace('.', ',')}`;
 
 const tempoRelativo = (iso: string): string => {
@@ -248,6 +248,16 @@ const Fila: React.FC = () => {
       return novo;
     });
 
+  /** Marca (ou desmarca) de uma vez todos os itens da mesa que estão nesta etapa, de todos os pedidos dela */
+  const alternarTodosDaMesa = (mesaId: string) =>
+    setItensMarcados((prev) => {
+      const novo = new Set(prev);
+      const itens = fragmentosAtivos.filter((f) => f.pedido.mesaId === mesaId).flatMap((f) => f.itens);
+      const todos = itens.every((i) => novo.has(i.id));
+      itens.forEach((i) => (todos ? novo.delete(i.id) : novo.add(i.id)));
+      return novo;
+    });
+
   const abrirModal = (coluna: ConfiguracaoColuna) => {
     if (marcados.length === 0) return;
     setErroAcao(null);
@@ -306,6 +316,12 @@ const Fila: React.FC = () => {
     const aguardandoPagamento =
       colunaAtiva === 'entregue' && !!pedido.mesaId && (pedido.status !== 'entregue' || pedido.aguardandoPagamento);
 
+    // Mesa com itens em mais de um pedido nesta etapa: libera "marcar a mesa toda"
+    const fragmentosDaMesa = pedido.mesaId ? fragmentosAtivos.filter((f) => f.pedido.mesaId === pedido.mesaId) : [];
+    const itensDaMesa = fragmentosDaMesa.flatMap((f) => f.itens);
+    const mesaTodaMarcada = itensDaMesa.length > 0 && itensDaMesa.every((i) => itensMarcados.has(i.id));
+    const mostrarMesaToda = podeMarcar && fragmentosDaMesa.length > 1;
+
     return (
       <tr
         key={pedido.id}
@@ -320,6 +336,15 @@ const Fila: React.FC = () => {
           <span className="fila__mesa">
             <MdTableRestaurant /> {pedido.local}
           </span>
+          {mostrarMesaToda && (
+            <button
+              type="button"
+              className="fila__link-todos fila__link-mesa"
+              onClick={() => alternarTodosDaMesa(pedido.mesaId!)}
+            >
+              {mesaTodaMarcada ? 'Desmarcar a mesa' : `Marcar a mesa toda (${itensDaMesa.length} itens)`}
+            </button>
+          )}
         </td>
         <td className="fila__td fila__td--itens">
           <ul className="fila__itens-lista">

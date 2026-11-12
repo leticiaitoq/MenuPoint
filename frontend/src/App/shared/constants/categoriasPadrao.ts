@@ -185,12 +185,14 @@ const ARQUIVO_ICONE_POR_NOME: Record<string, string> = {
   'promocoes': 'promocoes',
   'menu infantil': 'menuinfantil',
 }
+/** Ícone das categorias que não estão na lista pronta ("Outra"): o mesmo prato do "Todos" */
+export const ICONE_TODOS = '/icons/categorias/todos.svg'
 
 /**
- * Ícone da categoria no cardápio do cliente: SVG próprio se existir,
- * senão o emoji salvo no banco, senão 🍽️.
+ * Ícone da categoria no cardápio do cliente: SVG próprio se a categoria for da lista,
+ * senão o prato do "Todos".
  */
-export const iconeDaCategoria = (nome: string, emoji: string | null): string => {
+export const iconeDaCategoria = (nome: string, _emoji?: string | null): string => {
   const arquivo = ARQUIVO_ICONE_POR_NOME[chaveDeNome(nome)]
-  return arquivo ? `/icons/categorias/${arquivo}.svg` : emoji ?? '🍽️'
+  return arquivo ? `/icons/categorias/${arquivo}.svg` : ICONE_TODOS
 }

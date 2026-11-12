@@ -70,6 +70,7 @@ export interface PedidoMesaPublico {
   status: 'RECEBIDO' | 'PREPARO' | 'PRONTO' | 'ENTREGUE'
   criado_em: string
   total: number | string
+  cliente_nome?: string
   itens: {
     id: string
     quantidade: number
