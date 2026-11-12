@@ -1487,6 +1487,7 @@ const ModalSenhaPix: React.FC<{
   onFechar: () => void;
 }> = ({ onConfirmar, onFechar }) => {
   const [senha, setSenha] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const campoRef = useRef<HTMLInputElement>(null);
@@ -1530,20 +1531,32 @@ const ModalSenhaPix: React.FC<{
         <p className="config__hint">Por segurança, confirme sua senha para salvar a nova chave PIX.</p>
 
         <Campo id="pix-senha" rotulo="Sua senha atual" erro={erro ?? undefined}>
-          <input
-            id="pix-senha"
-            ref={campoRef}
-            maxLength={60}
-            className="config__input"
-            type="password"
-            autoComplete="current-password"
-            value={senha}
-            disabled={enviando}
-            onChange={(e) => {
-              setSenha(e.target.value);
-              setErro(null);
-            }}
-          />
+          <div className="config__campo-senha">
+            <input
+              id="pix-senha"
+              ref={campoRef}
+              maxLength={60}
+              className="config__input"
+              type={mostrarSenha ? 'text' : 'password'}
+              autoComplete="current-password"
+              value={senha}
+              disabled={enviando}
+              onChange={(e) => {
+                setSenha(e.target.value);
+                setErro(null);
+              }}
+            />
+            <button
+              type="button"
+              className="config__campo-senha-olho"
+              onClick={() => setMostrarSenha((v) => !v)}
+              disabled={enviando}
+              aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+              tabIndex={-1}
+            >
+              {mostrarSenha ? <HiEyeOff /> : <HiEye />}
+            </button>
+          </div>
         </Campo>
 
         <div className="config__acoes config__acoes--fim">
@@ -2008,25 +2021,27 @@ const Config: React.FC = () => {
                 }}
               />
               {podeEditar && (
-                <button
-                  className="config__btn config__btn--pequeno"
-                  type="button"
-                  onClick={() => inputLogoRef.current?.click()}
-                  disabled={enviandoLogo}
-                >
-                  <HiUpload /> {enviandoLogo ? 'Enviando…' : 'Alterar logo'}
-                </button>
-              )}
-                {podeEditar && estab.logo_url && (
+                <div className="config__avatar-acoes">
                   <button
                     className="config__btn config__btn--pequeno"
                     type="button"
-                    onClick={removerLogo}
+                    onClick={() => inputLogoRef.current?.click()}
                     disabled={enviandoLogo}
                   >
-                    <HiTrash /> Remover logo
+                    <HiUpload /> {enviandoLogo ? 'Enviando…' : 'Alterar logo'}
                   </button>
-                )}
+                  {estab.logo_url && (
+                    <button
+                      className="config__btn config__btn--pequeno"
+                      type="button"
+                      onClick={removerLogo}
+                      disabled={enviandoLogo}
+                    >
+                      <HiTrash /> Remover logo
+                    </button>
+                  )}
+                </div>
+              )}
               <input
                 ref={inputLogoRef}
                 type="file"

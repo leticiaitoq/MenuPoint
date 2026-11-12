@@ -1166,10 +1166,8 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   .config__otp--chacoalha { animation: none; }
 }
 
-/* ═══════════════════════════════════════════════════════════
+/*
    RESPONSIVO — complementa os @media acima; fica no FINAL do arquivo
-═══════════════════════════════════════════════════════════ */
-
 /* Link do cardápio (input + Copiar + Abrir) */
 .config__linha-link { display: flex; gap: 8px; }
 
@@ -1246,10 +1244,36 @@ input:disabled + .config__switch-trilho { opacity: 0.55; }
   .config__aba-ponto { margin-left: auto; flex-shrink: 0; }
 }
 
-/* Botões de editar logo */
+/* Botões de editar logo (agrupados: um embaixo do outro) */
+.config__avatar-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
 .config__avatar-col .config__btn--pequeno {
   min-width: 128px;
   white-space: nowrap;
+}
+
+/* Celular/tablet: foto à esquerda e os botões empilhados à direita.
+   Antes avatar + 2 botões ficavam numa linha só e o "Remover logo" estourava e era cortado
+   pelo overflow:hidden do cabeçalho. */
+@media (max-width: 768px) {
+  .config__avatar-col {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    text-align: left;
+  }
+  .config__avatar-col .config__avatar { flex-shrink: 0; }
+  .config__avatar-col .config__avatar-acoes { flex: 1 1 0; width: auto; }
+  .config__avatar-col .config__btn--pequeno { width: 100%; }
+  /* aviso/erro do envio ocupa a linha inteira embaixo */
+  .config__avatar-col > .config__erro,
+  .config__avatar-col > .config__hint { flex: 1 1 100%; margin: 0; }
 }
 
 @media (min-width: 769px) {

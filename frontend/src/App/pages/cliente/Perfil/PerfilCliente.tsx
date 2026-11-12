@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { HiEye, HiEyeOff } from 'react-icons/hi';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
 import ClienteService, { ClientePerfil, FOTO_PADRAO_CLIENTE, mensagemDeErro } from '../../../services/cliente.service';
@@ -50,6 +51,29 @@ interface PerfilClienteProps {
   /** Substitui o "sair" padrão (no local, o cliente continua na mesa como convidado). */
   aoSair?: () => void;
 }
+
+// Campo de senha com botão de mostrar/ocultar (cada campo controla o próprio estado)
+const CampoSenha: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({ className, ...props }) => {
+  const [visivel, setVisivel] = useState(false);
+  return (
+    <div className="perfil__campo-senha">
+      <input
+        {...props}
+        className={`perfil__input perfil__input--senha${className ? ` ${className}` : ''}`}
+        type={visivel ? 'text' : 'password'}
+      />
+      <button
+        type="button"
+        className="perfil__campo-senha-olho"
+        onClick={() => setVisivel((v) => !v)}
+        aria-label={visivel ? 'Ocultar senha' : 'Mostrar senha'}
+        tabIndex={-1}
+      >
+        {visivel ? <HiEyeOff /> : <HiEye />}
+      </button>
+    </div>
+  );
+};
 
 const PerfilCliente: React.FC<PerfilClienteProps> = ({ modo = 'delivery', aoSair }) => {
   const modoLayout = modo === 'local' ? 'guest' : 'logged';
@@ -607,10 +631,8 @@ const PerfilCliente: React.FC<PerfilClienteProps> = ({ modo = 'delivery', aoSair
 
                 <div className="perfil__campo">
                   <label className="perfil__label" htmlFor="perfilSenhaEmail">Sua senha</label>
-                  <input
+                  <CampoSenha
                     id="perfilSenhaEmail"
-                    className="perfil__input"
-                    type="password"
                     autoComplete="current-password"
                     value={senhaEmail}
                     onChange={(e) => setSenhaEmail(e.target.value)}
@@ -654,10 +676,8 @@ const PerfilCliente: React.FC<PerfilClienteProps> = ({ modo = 'delivery', aoSair
 
               <div className="perfil__campo">
                 <label className="perfil__label" htmlFor="perfilSenhaAtual">Senha atual</label>
-                <input
+                <CampoSenha
                   id="perfilSenhaAtual"
-                  className="perfil__input"
-                  type="password"
                   autoComplete="current-password"
                   value={senhaAtual}
                   onChange={(e) => setSenhaAtual(e.target.value)}
@@ -666,10 +686,8 @@ const PerfilCliente: React.FC<PerfilClienteProps> = ({ modo = 'delivery', aoSair
 
               <div className="perfil__campo">
                 <label className="perfil__label" htmlFor="perfilNovaSenha">Nova senha</label>
-                <input
+                <CampoSenha
                   id="perfilNovaSenha"
-                  className="perfil__input"
-                  type="password"
                   autoComplete="new-password"
                   value={novaSenha}
                   onChange={(e) => setNovaSenha(e.target.value)}
@@ -690,10 +708,8 @@ const PerfilCliente: React.FC<PerfilClienteProps> = ({ modo = 'delivery', aoSair
 
               <div className="perfil__campo">
                 <label className="perfil__label" htmlFor="perfilConfirmarSenha">Confirmar nova senha</label>
-                <input
+                <CampoSenha
                   id="perfilConfirmarSenha"
-                  className="perfil__input"
-                  type="password"
                   autoComplete="new-password"
                   value={confirmarSenha}
                   onChange={(e) => setConfirmarSenha(e.target.value)}
