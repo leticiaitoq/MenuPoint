@@ -7,7 +7,7 @@ import RestaurantLayout from '../../../../shared/components/layout/Restaurantela
 import ModalAlerta from '../../../../shared/components/ModalAlerta/ModalAlerta';
 import ComandaCozinha from '../../../../shared/components/ComandaCozinha/ComandaCozinha';
 import { useComandaMesa } from '../../../../shared/components/ComandaCozinha/useComandaMesa';
-import PedidoService, { Pedido as PedidoApi, StatusPedido as StatusApi } from '../../../../services/pedido.service';
+import PedidoService, { Pedido as PedidoApi, StatusPedido as StatusApi, ModalidadePedido } from '../../../../services/pedido.service';
 import { mensagemDeErro } from '../../../../services/cliente.service';
 import './Fila.css';
 
@@ -33,6 +33,8 @@ interface PedidoFila {
   /** Pedido de mesa: libera a comanda da cozinha */
   mesaId?: string;
   mesaNumero?: number;
+  /** Delivery (ENTREGA/RETIRADA) sai pelo Caixa: a Fila acompanha só até "Pronto" */
+  modalidade: ModalidadePedido;
   itens: ItemFila[];
   criadoEm: string;
   /** Etapa do pedido inteiro (= a do item mais atrasado) */
@@ -70,7 +72,7 @@ const PARA_API: Record<StatusFila, StatusApi> = {
 
 const INTERVALO_ATUALIZACAO_MS = 20000;
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+//  Helpers 
 const formatarPreco = (valor: number): string => `R$ ${valor.toFixed(2).replace('.', ',')}`;
 
 const tempoRelativo = (iso: string): string => {
@@ -93,6 +95,7 @@ const daApi = (p: PedidoApi, aguardando: Set<string>): PedidoFila | null => {
     local: rotuloLocal(p),
     mesaId: p.mesa?.id,
     mesaNumero: p.mesa?.numero,
+    modalidade: p.modalidade,
     itens: p.itens.map((i) => ({
       id: i.id,
       nome: i.produto?.nome ?? 'Item',
@@ -112,6 +115,13 @@ const daApi = (p: PedidoApi, aguardando: Set<string>): PedidoFila | null => {
 };
 
 const textoItem = (i: Pick<ItemFila, 'nome' | 'quantidade'>) => `${i.quantidade}x ${i.nome}`;
+
+/** Pedido de delivery que já está pronto: quem entrega ou recebe o cliente é o Caixa, não a cozinha */
+const saiPeloCaixa = (pedido: Pick<PedidoFila, 'modalidade'>, status: StatusFila): boolean =>
+  status === 'pronto' && pedido.modalidade !== 'MESA';
+
+const avisoSaiPeloCaixa = (pedido: Pick<PedidoFila, 'modalidade'>): string =>
+  pedido.modalidade === 'RETIRADA' ? 'Aguardando retirada no Caixa' : 'Aguardando entregador (Caixa)';
 
 // ── Componente principal ───────────────────────────────────────────────────────
 const Fila: React.FC = () => {
@@ -248,6 +258,16 @@ const Fila: React.FC = () => {
       return novo;
     });
 
+  /** Marca (ou desmarca) de uma vez todos os itens da mesa que estão nesta etapa, de todos os pedidos dela */
+  const alternarTodosDaMesa = (mesaId: string) =>
+    setItensMarcados((prev) => {
+      const novo = new Set(prev);
+      const itens = fragmentosAtivos.filter((f) => f.pedido.mesaId === mesaId).flatMap((f) => f.itens);
+      const todos = itens.every((i) => novo.has(i.id));
+      itens.forEach((i) => (todos ? novo.delete(i.id) : novo.add(i.id)));
+      return novo;
+    });
+
   const abrirModal = (coluna: ConfiguracaoColuna) => {
     if (marcados.length === 0) return;
     setErroAcao(null);
@@ -299,12 +319,20 @@ const Fila: React.FC = () => {
   // ── Render: linha da tabela (um pedido fatiado) ──
   const renderLinhaPedido = (fragmento: FragmentoFila) => {
     const { pedido, itens } = fragmento;
-    const podeMarcar = colunaAtual.proximoStatus !== null;
+    // Delivery pronto não avança pela Fila (o backend também recusa): o Caixa finaliza
+    const entregaPeloCaixa = saiPeloCaixa(pedido, colunaAtiva);
+    const podeMarcar = colunaAtual.proximoStatus !== null && !entregaPeloCaixa;
     const algumMarcado = itens.some((i) => itensMarcados.has(i.id));
     const todosMarcados = itens.every((i) => itensMarcados.has(i.id));
     // Itens entregues de um pedido que ainda não foi pago continuam na conta da mesa
     const aguardandoPagamento =
       colunaAtiva === 'entregue' && !!pedido.mesaId && (pedido.status !== 'entregue' || pedido.aguardandoPagamento);
+
+    // Mesa com itens em mais de um pedido nesta etapa: libera "marcar a mesa toda"
+    const fragmentosDaMesa = pedido.mesaId ? fragmentosAtivos.filter((f) => f.pedido.mesaId === pedido.mesaId) : [];
+    const itensDaMesa = fragmentosDaMesa.flatMap((f) => f.itens);
+    const mesaTodaMarcada = itensDaMesa.length > 0 && itensDaMesa.every((i) => itensMarcados.has(i.id));
+    const mostrarMesaToda = podeMarcar && fragmentosDaMesa.length > 1;
 
     return (
       <tr
@@ -320,6 +348,15 @@ const Fila: React.FC = () => {
           <span className="fila__mesa">
             <MdTableRestaurant /> {pedido.local}
           </span>
+          {mostrarMesaToda && (
+            <button
+              type="button"
+              className="fila__link-todos fila__link-mesa"
+              onClick={() => alternarTodosDaMesa(pedido.mesaId!)}
+            >
+              {mesaTodaMarcada ? 'Desmarcar a mesa' : `Marcar a mesa toda (${itensDaMesa.length} itens)`}
+            </button>
+          )}
         </td>
         <td className="fila__td fila__td--itens">
           <ul className="fila__itens-lista">
@@ -361,6 +398,7 @@ const Fila: React.FC = () => {
         </td>
         <td className="fila__td fila__td--comanda">
           {aguardandoPagamento && <span className="fila__badge-pagamento">Aguardando pagamento</span>}
+          {entregaPeloCaixa && <span className="fila__badge-pagamento">{avisoSaiPeloCaixa(pedido)}</span>}
           {pedido.mesaId && pedido.mesaNumero !== undefined && (
             <button
               className="fila__btn-avancar fila__btn-avancar--ativo fila__btn-avancar--compacto"
@@ -379,6 +417,9 @@ const Fila: React.FC = () => {
     const quantidade = quantidadeNaColuna(coluna.status);
     const carregada = colunaAtiva === coluna.status;
     const podeAvancar = carregada && marcados.length > 0 && coluna.proximoStatus !== null;
+    // Coluna "Pronto" só com delivery: não há o que marcar aqui
+    const soDeliveryPeloCaixa =
+      quantidade > 0 && fragmentosDe(coluna.status).every((f) => saiPeloCaixa(f.pedido, coluna.status));
 
     return (
       <div key={coluna.status} className={`fila__coluna ${coluna.corClasse}`}>
@@ -412,7 +453,9 @@ const Fila: React.FC = () => {
                 ? 'Nenhum item nesta etapa'
                 : coluna.proximoStatus === null
                   ? 'Itens já entregues'
-                  : 'Marque os itens abaixo'}
+                  : soDeliveryPeloCaixa
+                    ? 'Delivery é finalizado pelo Caixa'
+                    : 'Marque os itens abaixo'}
             </p>
           )}
 

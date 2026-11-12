@@ -198,7 +198,8 @@ async function pedidosRestauranteRoutes(app: FastifyInstance): Promise<void> {
       const pedido = await service.atualizarStatus(
         id,
         data,
-        user.estabelecimento_id
+        user.estabelecimento_id,
+        user.perfil
       )
 
       return reply.send(pedido)

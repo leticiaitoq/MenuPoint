@@ -13,6 +13,7 @@ import {
   r2,
 } from '@modules/pagamentos/conta'
 import { etapasAntesDe, proximaEtapa, statusDoPedido } from './itemStatus'
+import { itemPodeSerEntreguePelaFila, perfilPodeMudarStatus } from './permissaoStatus'
 import {
   CriarPedidoDeliveryDTO,
   MODALIDADES_POR_ORIGEM,
@@ -167,9 +168,20 @@ export class PedidoService {
   async atualizarStatus(
     id: string,
     data: AtualizarStatusPedidoDTO,
-    estabelecimento_id: string
+    estabelecimento_id: string,
+    perfil: string
   ) {
     const pedido = await this.findById(id, estabelecimento_id)
+
+    // Quem pode mudar o quê: cancelar e finalizar delivery são do Caixa/Admin (ver permissaoStatus.ts)
+    if (!perfilPodeMudarStatus(perfil, (pedido as any).modalidade, data.status)) {
+      throw new AppError(
+        data.status === 'CANCELADO'
+          ? 'Apenas caixa ou administrador podem cancelar pedidos'
+          : 'Delivery é finalizado pelo caixa ou administrador',
+        403
+      )
+    }
 
     const fluxoValido: Record<string, string[]> = {
       RECEBIDO: ['PREPARO', 'CANCELADO'],
@@ -314,6 +326,11 @@ export class PedidoService {
 
     if (!['RECEBIDO', 'PREPARO', 'PRONTO'].includes(pedido.status)) {
       throw new AppError('Só é possível avançar itens de pedidos em andamento', 400)
+    }
+
+    // Delivery sai por inteiro, pelo Caixa: a Fila não entrega item de entrega/retirada
+    if (data.status === 'ENTREGUE' && !itemPodeSerEntreguePelaFila(pedido.modalidade)) {
+      throw new AppError('Delivery é finalizado pelo caixa, não pela Fila', 403)
     }
 
     const ids = Array.from(new Set(data.item_ids))

@@ -178,6 +178,26 @@ test('pedido de entrega/retirada (sem mesa) não tem comanda da cozinha', async 
   expect(within(linha).queryByRole('button', { name: /comanda da cozinha/i })).toBeNull();
 });
 
+test('delivery pronto não avança pela Fila: sem checkbox e com aviso de que o Caixa finaliza', async () => {
+  const DELIVERY_PRONTO = ped('9', 9, 'PRONTO', null, [item('z', 'Lasanha', 'PRONTO')]);
+  mock.listar.mockImplementation(async (f: any) => {
+    if (f?.conta_aberta) return [] as any;
+    if (f?.status?.includes('RECEBIDO')) return [DELIVERY_PRONTO, ...PEDIDOS_ATIVOS] as any;
+    return [] as any;
+  });
+  renderFila();
+  await screen.findByText('#1');
+  await abrirColuna('Pronto');
+
+  const linha = (await screen.findByText('#9')).closest('tr') as HTMLElement;
+  expect(within(linha).queryByRole('checkbox')).toBeNull();
+  expect(within(linha).getByText('Aguardando entregador (Caixa)')).toBeTruthy();
+
+  // a mesa que está pronta (#3) continua podendo ser marcada e entregue pela Fila
+  const linhaMesa = screen.getByText('#3').closest('tr') as HTMLElement;
+  expect(within(linhaMesa).getByRole('checkbox', { name: /X-Burguer/ })).toBeTruthy();
+});
+
 test('entregue de mesa continua mostrando "aguardando pagamento"', async () => {
   renderFila();
   await screen.findByText('#1');
