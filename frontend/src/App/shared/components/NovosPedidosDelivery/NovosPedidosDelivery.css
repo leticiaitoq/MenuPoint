@@ -170,6 +170,25 @@
   border-radius: 50%;
 }
 
+/* Celular/tablet: */
+@media (max-width: 768px) {
+  .pedidos-delivery-fab {
+    top: 88px;
+    bottom: auto;
+    right: 12px;
+    width: 46px;
+    height: 46px;
+    font-size: 23px;
+  }
+  /* o aviso de chamados de mesa (centralizado no topo) desce para não ficar atrás do sino */
+  body:has(.pedidos-delivery-fab) .chamados-alerta { top: 144px; max-height: calc(100vh - 230px); }
+}
+
+@media (max-width: 600px) {
+  .pedidos-delivery-fab { top: 68px; right: 10px; }
+  body:has(.pedidos-delivery-fab) .chamados-alerta { top: 124px; }
+}
+
 @keyframes pedidos-delivery-entrada {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }

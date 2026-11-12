@@ -567,8 +567,11 @@ const GestaoCate: React.FC = () => {
     }
   };
 
-  const painelAdicionais = categoriaDaAba && (
-          <div className="cate__adic" ref={painelAdicionaisRef} role="region" aria-label={`Adicionais de ${categoriaDaAba.nome}`}>
+  // Desktop: o painel abre numa linha logo abaixo da categoria (dentro da tabela).
+  // Celular: o mesmo painel abre em tela cheia (.cate__tela). O CSS esconde o que não se aplica ao tamanho da tela;
+  // o ref fica só na versão inline, que é a que precisa rolar até aparecer.
+  const renderPainelAdicionais = (ref?: React.Ref<HTMLDivElement>) => categoriaDaAba && (
+          <div className="cate__adic" ref={ref} role="region" aria-label={`Adicionais de ${categoriaDaAba.nome}`}>
             <div className="cate__adic-aba">
               <HiPuzzle aria-hidden="true" />
               Adicionais de
@@ -689,7 +692,7 @@ const GestaoCate: React.FC = () => {
           ) : (
             <>
               <div className="cate__tabela-scroll">
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={() => setCategoriaAberta(null)} onDragEnd={handleDragEnd}>
                 <SortableContext items={categorias.map((c) => c.id)} strategy={verticalListSortingStrategy}>
                   <table className="cate__tabela">
                     <thead>
@@ -703,16 +706,23 @@ const GestaoCate: React.FC = () => {
                     </thead>
                     <tbody>
                       {categorias.map((categoria) => (
-                        <LinhaCategoria
-                          key={categoria.id}
-                          categoria={categoria}
-                          qtdAdicionais={qtdAdicionais[categoria.id] ?? 0}
-                          selecionada={categoriaAberta === categoria.id}
-                          onSelecionar={alternarCategoriaAberta}
-                          onEditar={abrirModalEditar}
-                          onDeletar={deletarCategoria}
-                          onRegistrarAdicional={(c) => abrirModalAdicional(c)}
-                        />
+                        <React.Fragment key={categoria.id}>
+                          <LinhaCategoria
+                            categoria={categoria}
+                            qtdAdicionais={qtdAdicionais[categoria.id] ?? 0}
+                            selecionada={categoriaAberta === categoria.id}
+                            onSelecionar={alternarCategoriaAberta}
+                            onEditar={abrirModalEditar}
+                            onDeletar={deletarCategoria}
+                            onRegistrarAdicional={(c) => abrirModalAdicional(c)}
+                          />
+                          {/* Desktop: adicionais abrem na linha logo abaixo da própria categoria */}
+                          {categoriaAberta === categoria.id && (
+                            <tr className="cate__linha-adic">
+                              <td colSpan={5}>{renderPainelAdicionais(painelAdicionaisRef)}</td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       ))}
                     </tbody>
                   </table>
@@ -731,7 +741,7 @@ const GestaoCate: React.FC = () => {
     <button className="cate__tela-fechar" onClick={() => setCategoriaAberta(null)} aria-label="Fechar adicionais">
       <HiX />
     </button>
-    {painelAdicionais}
+    {renderPainelAdicionais()}
   </div>
 )}
 

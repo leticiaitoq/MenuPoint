@@ -447,6 +447,18 @@
 .cate__linha--arrastando { background: var(--brand-soft); }
 .cate__linha--selecionada { box-shadow: inset 3px 0 0 var(--brand); }
 
+/* Desktop: adicionais abrem numa linha logo abaixo da categoria selecionada */
+.cate__linha--selecionada { border-bottom-color: transparent; }
+.cate__tabela tbody tr.cate__linha-adic { cursor: default; }
+.cate__tabela tbody tr.cate__linha-adic:hover { background: none; }
+.cate__tabela tbody tr.cate__linha-adic > td {
+  padding: 4px 16px 20px;
+  white-space: normal;
+  background: var(--bg-surface-alt);
+}
+/* Fora do celular a tela cheia não existe: o painel abre inline */
+.cate__tela { display: none; }
+
 /* Botão "Registrar adicionais" (ao lado da lixeira) */
 .cate__btn-adicional {
   display: inline-flex;
@@ -742,7 +754,9 @@
   .cate__btn-expandir { font-size: 14px; color: var(--text-muted); margin-right: auto; }
 
   /* ── Adicionais em tela cheia ── */
+  .cate__linha-adic { display: none !important; } /* a linha inline é só do desktop */
   .cate__tela {
+    display: block;
     position: fixed; inset: 0; z-index: 900; /* abaixo do .cate__overlay (999): o modal de adicional abre por cima */
     height: 100vh; height: 100dvh;
     overflow-y: auto;
