@@ -95,6 +95,16 @@ const EstabelecimentoService = {
     return response.data
   },
 
+  // Só o dono da empresa pode alterar a chave PIX
+  async podeAlterarPix(id: string): Promise<boolean> {
+    try {
+      const response = await api.get<{ pode_alterar: boolean }>(`/estabelecimentos/${id}/pix/permissao`)
+      return response.data.pode_alterar === true
+    } catch {
+      return false
+    }
+  },
+
   async atualizarPix(id: string, data: AtualizarPixDTO): Promise<Estabelecimento> {
     const response = await api.patch<Estabelecimento>(`/estabelecimentos/${id}/pix`, data)
     return response.data
