@@ -8,35 +8,13 @@ import {
   criarPedidoPublicoMesaSchema,
   vincularPedidosConvidadoSchema,
 } from './Mesa.schema'
-import { z } from 'zod'
 import { AppError } from '@shared/errors/AppError'
-import { ChamadoMesaService } from './ChamadoMesa.service'
 import { JWTPayload } from '@modules/auth/Auth.schema'
 import { clienteIdOpcional } from '@modules/pedidos/Pedido.publico'
 import { chegadaPeloCliente } from '@modules/reservas/Reserva.chegada'
 
 const repository = new MesaRepository()
 const service = new MesaService(repository)
-const chamados = new ChamadoMesaService()
-
-// Rotas públicas do QR: limite por IP (o Wi-Fi do restaurante é compartilhado, por isso folgado)
-const limiteChamado = {
-  config: {
-    rateLimit: {
-      max: 20,
-      timeWindow: '1 minute',
-      errorResponseBuilder: () => ({
-        statusCode: 429,
-        status: 'error',
-        message: 'Muitas solicitações em pouco tempo. Aguarde um instante e tente de novo.',
-      }),
-    },
-  },
-}
-
-const pedirContaSchema = z.object({
-  forma_pagamento: z.enum(['PIX_PRESENCIAL', 'DINHEIRO', 'CARTAO']).optional(),
-})
 
 export async function mesasRoutes(app: FastifyInstance): Promise<void> {
 
@@ -154,40 +132,6 @@ export async function mesasRoutes(app: FastifyInstance): Promise<void> {
       }
     )
 
-    // POST /mesas/qrcode/:token/chamar-garcom — cliente na mesa pede atendimento (sem login)
-    publicRoutes.post(
-      '/qrcode/:token/chamar-garcom',
-      limiteChamado,
-      async (request: FastifyRequest, reply: FastifyReply) => {
-        const { token } = request.params as { token: string }
-        return reply.status(201).send(await chamados.chamarGarcom(token))
-      }
-    )
-
-    // GET /mesas/qrcode/:token/conta — "Ver conta" do cliente local: consumo da mesa e total a pagar (sem login)
-    publicRoutes.get(
-      '/qrcode/:token/conta',
-      async (request: FastifyRequest, reply: FastifyReply) => {
-        const { token } = request.params as { token: string }
-        return reply.send(await chamados.contaPublica(token))
-      }
-    )
-
-    // POST /mesas/qrcode/:token/pedir-conta — cliente na mesa pede a conta (sem login)
-    // body opcional: { forma_pagamento?: 'PIX_PRESENCIAL' | 'DINHEIRO' | 'CARTAO' }
-    publicRoutes.post(
-      '/qrcode/:token/pedir-conta',
-      limiteChamado,
-      async (request: FastifyRequest, reply: FastifyReply) => {
-        const { token } = request.params as { token: string }
-        const parsed = pedirContaSchema.safeParse(request.body ?? {})
-        if (!parsed.success) {
-          throw new AppError(parsed.error.issues[0]?.message ?? 'Forma de pagamento inválida', 400)
-        }
-        return reply.status(201).send(await chamados.pedirConta(token, parsed.data.forma_pagamento))
-      }
-    )
-
   })
 
   app.register(async (privateRoutes) => {
@@ -250,31 +194,6 @@ export async function mesasRoutes(app: FastifyInstance): Promise<void> {
 
         const resumo = await service.resumoOcupacao(user.estabelecimento_id)
         return reply.send(resumo)
-      }
-    )
-
-    // GET /mesas/chamados — chamados de garçom e pedidos de conta em aberto (aviso do painel do restaurante)
-    privateRoutes.get(
-      '/chamados',
-      async (request: FastifyRequest, reply: FastifyReply) => {
-        const user = request.user as JWTPayload
-        if (!user.estabelecimento_id) {
-          throw new AppError('Usuário não vinculado a um estabelecimento', 400)
-        }
-        return reply.send(await chamados.listarAbertos(user.estabelecimento_id))
-      }
-    )
-
-    // PATCH /mesas/chamados/:id/atender — dá baixa quando o garçom atende
-    privateRoutes.patch(
-      '/chamados/:id/atender',
-      async (request: FastifyRequest, reply: FastifyReply) => {
-        const user = request.user as JWTPayload
-        if (!user.estabelecimento_id) {
-          throw new AppError('Usuário não vinculado a um estabelecimento', 400)
-        }
-        const { id } = z.object({ id: z.string().uuid('ID inválido') }).parse(request.params)
-        return reply.send(await chamados.atender(id, user.estabelecimento_id, user.sub))
       }
     )
 

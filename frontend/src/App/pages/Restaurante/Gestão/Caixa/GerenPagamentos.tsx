@@ -231,9 +231,6 @@ const GerenPagamentos: React.FC = () => {
   // Mesma regra do backend: só ADMIN e CAIXA cancelam pedido
   const podeCancelarDelivery = usuario?.perfil === 'ADMIN' || usuario?.perfil === 'CAIXA';
 
-  const { nomeRestaurante } = useEstabelecimento();
-const [imprimirQrAberto, setImprimirQrAberto] = useState(false);
-
   // Mesas reais, vindas do banco
   const [mesas, setMesas]           = useState<MesaCaixa[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -272,10 +269,7 @@ const [imprimirQrAberto, setImprimirQrAberto] = useState(false);
   const [filtro, setFiltro]             = useState<FiltroMesas>('todas');
 
   // Abas do Caixa: Salão (mesas), Reservas e Delivery (entrega/retirada)
-  // Pode abrir direto numa aba (ex.: o "Voltar" do histórico de reservas manda { aba: 'reservas' })
-  const [abaCaixa, setAbaCaixa] = useState<AbaCaixa>(
-    (location.state as { aba?: AbaCaixa } | null)?.aba === 'reservas' ? 'reservas' : 'salao'
-  );
+  const [abaCaixa, setAbaCaixa] = useState<AbaCaixa>('salao');
   const [filtroReservas, setFiltroReservas] = useState<FiltroReservas>('todas');
 
   // Delivery: pedidos de entrega/retirada em andamento + os concluídos/cancelados de hoje
@@ -1131,8 +1125,7 @@ const [imprimirQrAberto, setImprimirQrAberto] = useState(false);
         {/* ── Reservas (hoje e próximos dias) feitas pelos clientes no app ── */}
         {abaCaixa === 'reservas' && (
           <div className="caixa__painel caixa__reservas">
-            <div className="caixa__reservas-topo">
-            <div className="caixa__abas" role="tablist" aria-label="Filtrar reservas">
+            <div className="caixa__abas" role="tablist" aria-label="Filtrar reservas" style={{ marginBottom: 12 }}>
               {([
                 ['todas', `Todas (${gruposAtivos.length})`],
                 ['hoje', `Hoje (${totalReservasHoje})`],
@@ -1149,15 +1142,6 @@ const [imprimirQrAberto, setImprimirQrAberto] = useState(false);
                   {rotulo}
                 </button>
               ))}
-            </div>
-            <button
-              type="button"
-              className="caixa__btn-historico"
-              onClick={() => navigate('/restaurante/reservas/historico')}
-              title="Histórico de reservas: quantas foram feitas, compareceram e foram canceladas"
-            >
-              <HiClipboardList aria-hidden="true" /> Histórico
-            </button>
             </div>
 
             {gruposFiltrados.length === 0 && <div className="caixa__vazio">Nenhuma reserva nesta lista.</div>}
@@ -1275,6 +1259,75 @@ const [imprimirQrAberto, setImprimirQrAberto] = useState(false);
                 </button>
               ))}
             </div>
+
+            {erroDelivery && <div className="caixa__vazio" role="alert">{erroDelivery}</div>}
+
+            {deliveryFiltrados.length === 0 && !erroDelivery ? (
+              <div className="caixa__vazio">Nenhum pedido de delivery nesta lista.</div>
+            ) : (
+              <div className="caixa__reservas-lista">
+                {deliveryFiltrados.map((p) => {
+                  const prox = PROXIMO_DELIVERY[p.status];
+                  const end = p.endereco_entrega;
+                  const forma = FORMA_ROTULO[p.pagamento?.metodo ?? p.forma_pagamento ?? ''] ?? 'Pagamento na hora';
+                  return (
+                    <div key={p.id} className="caixa__reserva">
+                      <div className="caixa__reserva-info">
+                        <strong className="caixa__reserva-hora">
+                          #{p.numero_pedido} · {p.modalidade === 'ENTREGA' ? 'Entrega' : 'Retirada'} · {new Date(p.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </strong>
+                        <span className="caixa__reserva-nome">{p.cliente_nome}{p.cliente_telefone ? ` · ${p.cliente_telefone}` : ''}</span>
+                        <span className="caixa__reserva-detalhe">
+                          {p.itens.reduce((soma, i) => soma + i.quantidade, 0)} itens · {formatarMoeda(p.total)} · {forma}
+                          {end ? ` · ${end.rua}, ${end.numero} — ${end.bairro}` : ''}
+                        </span>
+                        {p.status === 'CANCELADO' && p.cancelamento_motivo && (
+                          <span className="caixa__reserva-obs">Motivo: {p.cancelamento_motivo}</span>
+                        )}
+                      </div>
+
+                      <span className={`caixa__reserva-status caixa__reserva-status--${p.status === 'RECEBIDO' ? 'pendente' : 'confirmada'}`}>
+                        {{ RECEBIDO: 'Novo', PREPARO: 'Em preparo', PRONTO: 'Pronto', ENTREGUE: 'Concluído', CANCELADO: 'Cancelado' }[p.status]}
+                      </span>
+
+                      <div className="caixa__reserva-acoes">
+                        {cancelandoDeliveryId === p.id ? (
+                          <>
+                            <input
+                              className="caixa__reserva-btn"
+                              placeholder="Motivo do cancelamento"
+                              value={motivoDelivery}
+                              maxLength={200}
+                              onChange={(e) => setMotivoDelivery(e.target.value)}
+                            />
+                            <button className="caixa__reserva-btn caixa__reserva-btn--perigo" disabled={agindoDeliveryId === p.id} onClick={() => void cancelarDelivery(p)}>Confirmar</button>
+                            <button className="caixa__reserva-btn" onClick={() => { setCancelandoDeliveryId(null); setMotivoDelivery(''); }}>Voltar</button>
+                          </>
+                        ) : (
+                          <>
+                            {prox && (
+                              <button className="caixa__reserva-btn caixa__reserva-btn--ok" disabled={agindoDeliveryId === p.id} onClick={() => void avancarDelivery(p)}>
+                                {prox.rotulo(p)}
+                              </button>
+                            )}
+                            {prox && podeCancelarDelivery && (
+                              <button className="caixa__reserva-btn caixa__reserva-btn--perigo" onClick={() => { setCancelandoDeliveryId(p.id); setMotivoDelivery(''); }}>
+                                Cancelar
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Painel de mesas (aba Salão) ── */}
+        <div className="caixa__painel" style={abaCaixa !== 'salao' ? { display: 'none' } : undefined}>
 
             {erroDelivery && <div className="caixa__vazio" role="alert">{erroDelivery}</div>}
 
