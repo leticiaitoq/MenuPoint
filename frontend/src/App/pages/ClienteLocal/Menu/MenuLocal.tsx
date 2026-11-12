@@ -10,6 +10,8 @@ import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
 import { extrairIngredientes, IngredienteProduto } from '../../../shared/utils/ingredientes';
 import RestaurantePublicoService from '../../../services/restaurantePublico.service';
 import MesaPublicaService from '../../../services/mesaPublica.service';
+import { iconeDaCategoria } from '../../../shared/constants/categoriasPadrao';
+import ProdutoDetalhe from '../../../shared/components/ProdutoDetalhe/ProdutoDetalhe';
 import './MenuLocal.css';
 
 // Tipos
@@ -29,13 +31,16 @@ interface Produto {
   destaque: boolean;
   ordem: number;
   ingredientes: IngredienteProduto[];
+  /** Preço "de" (só quando há promoção); `preco` já é o valor cobrado */
+  precoOriginal: number | null;
+  categoriaNome: string;
+  tempoPreparoMin: number | null;
 }
 
-// "Todos" usa o PNG; as demais categorias vêm da API (ícone = emoji ou imagem)
 const CATEGORIA_TODOS: Categoria = {
   id: 'todos',
   label: 'Todos',
-  icon: '/icons/icons-categorias/icons-categorias/todos.png',
+  icon: '/icons/categorias/todos.svg',
 };
 
 const ehImagem = (icon: string) => icon.startsWith('/') || icon.startsWith('http');
@@ -46,9 +51,9 @@ const compararProdutos = (idsCategorias: string[]) => (a: Produto, b: Produto) =
   || a.ordem - b.ordem
   || idsCategorias.indexOf(a.categoriaId) - idsCategorias.indexOf(b.categoriaId);
 
-// ── Componente
+//  Componente
 const MenuLocal: React.FC = () => {
-  // ── Estados
+  //  Estados
   const navigate = useNavigate();
   const location = useLocation();
   const { itens: itensCarrinho, removerItem, alterarQuantidade, limparCarrinho } = useCarrinho();
@@ -57,6 +62,8 @@ const MenuLocal: React.FC = () => {
   const { cliente } = useClienteAuth();
   const [busca, setBusca]                     = useState('');
   const [categoriaAtiva, setCategoriaAtiva]   = useState('todos');
+  // Produto aberto no modal de detalhes (null = fechado)
+  const [produtoDetalhe, setProdutoDetalhe]   = useState<Produto | null>(null);
   // Voltando da edição de um item, o carrinho já abre
   const [carrinhoAberto, setCarrinhoAberto]   = useState(
     () => Boolean((location.state as { abrirCarrinho?: boolean } | null)?.abrirCarrinho)
@@ -102,7 +109,7 @@ const MenuLocal: React.FC = () => {
           const ativas = lista.filter((c) => c.ativo !== false);
           const novasCategorias: Categoria[] = [
             CATEGORIA_TODOS,
-            ...ativas.map((c) => ({ id: c.id, label: c.nome, icon: c.icone ?? '🍽️' })),
+            ...ativas.map((c) => ({ id: c.id, label: c.nome, icon: iconeDaCategoria(c.nome, c.icone) })),
           ];
           setCategorias(novasCategorias);
           setCategoriaAtiva((atual) =>
@@ -121,6 +128,9 @@ const MenuLocal: React.FC = () => {
                   nome: p.nome,
                   descricao: p.descricao ?? '',
                   preco: Number(p.preco_promocional ?? p.preco),
+                  precoOriginal: p.preco_promocional != null && Number(p.preco_promocional) < Number(p.preco) ? Number(p.preco) : null,
+                  categoriaNome: c.nome,
+                  tempoPreparoMin: p.tempo_preparo_min ?? null,
                   imagem: p.imagem_url ?? '/icons/restaurant-logo.png',
                 }))
             ).sort(compararProdutos(ativas.map((c) => c.id)))
@@ -298,7 +308,21 @@ const MenuLocal: React.FC = () => {
             </p>
           ) : (
             produtosFiltrados.map((p) => (
-              <div key={p.id} className="menu__card">
+              <div
+                key={p.id}
+                className="menu__card menu__card--clicavel"
+                onClick={() => setProdutoDetalhe(p)}
+                onKeyDown={(e) => {
+                  if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    setProdutoDetalhe(p);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-haspopup="dialog"
+                aria-label={`Ver detalhes de ${p.nome}`}
+              >
                 <img src={p.imagem} alt={p.nome} className="menu__card-img" />
                 <div className="menu__card-body">
                   <h3 className="menu__card-nome">{p.nome}</h3>
@@ -309,7 +333,7 @@ const MenuLocal: React.FC = () => {
                     </span>
                     <button
                       className="menu__card-add"
-                      onClick={() => abrirPersonalizacao(p)}
+                      onClick={(e) => { e.stopPropagation(); abrirPersonalizacao(p); }}
                       aria-label={`Personalizar ${p.nome}`}
                     >
                       +
@@ -321,6 +345,16 @@ const MenuLocal: React.FC = () => {
           )}
         </div>
       </div>
+
+      <ProdutoDetalhe
+        produto={produtoDetalhe}
+        onFechar={() => setProdutoDetalhe(null)}
+        onPedir={() => {
+          const escolhido = produtoDetalhe;
+          setProdutoDetalhe(null);
+          if (escolhido) abrirPersonalizacao(escolhido);
+        }}
+      />
 
       <Carrinho
         aberto={carrinhoAberto}

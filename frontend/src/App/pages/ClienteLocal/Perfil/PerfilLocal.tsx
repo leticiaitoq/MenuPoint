@@ -1,9 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import CustomerLayout from '../../../shared/components/layout/Customerlayout';
 import { useNavigate } from 'react-router-dom';
 import { useConvidado } from '../../../shared/contexts/Convidadocontext';
 import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
 import { FOTO_PADRAO_CLIENTE } from '../../../services/cliente.service';
+import PerfilCliente from '../../cliente/Perfil/PerfilCliente';
 import './PerfilLocal.css';
 
 // ── Tipos
@@ -34,8 +35,8 @@ const PerfilLocal: React.FC = () => {
   const fotoRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { nome: nomeConvidado, mesa, definirConvidado } = useConvidado();
-  // Conta logada (a mesma do delivery): aqui o cliente só vê os dados dela e pode sair.
-  // Editar a conta (nome, telefone, endereços) é no perfil do delivery, que o cliente da mesa não acessa.
+  // Conta logada (a mesma do delivery): mostra o MESMO perfil do delivery (nome, telefone, foto,
+  // e-mail, senha e sair), sem a parte de endereços de entrega. Convidado continua com a tela simples.
   const { cliente: conta, isAuthenticated, sair } = useClienteAuth();
 
   const [cliente, setCliente]       = useState<Cliente>({
@@ -52,6 +53,15 @@ const PerfilLocal: React.FC = () => {
     definirConvidado({ nome: '', mesa });
     navigate('/welcomepage', { replace: true });
   };
+  // Nome da conta mudou no perfil: a navbar da mesa mostra o nome do convidado, então acompanha
+  const nomeAnterior = useRef(conta?.nome);
+  useEffect(() => {
+    if (isAuthenticated && conta?.nome && conta.nome !== nomeAnterior.current) {
+      definirConvidado({ nome: conta.nome });
+    }
+    nomeAnterior.current = conta?.nome;
+  }, [conta?.nome, isAuthenticated, definirConvidado]);
+
   const [editando, setEditando]     = useState(false);
   const [temaEscuro, setTemaEscuro] = useState(false);
 
@@ -83,6 +93,10 @@ const PerfilLocal: React.FC = () => {
     });
     setEditando(false);
   };
+
+  if (isAuthenticated) {
+    return <PerfilCliente modo="local" aoSair={handleSair} />;
+  }
 
   return (
     <CustomerLayout mode="guest">

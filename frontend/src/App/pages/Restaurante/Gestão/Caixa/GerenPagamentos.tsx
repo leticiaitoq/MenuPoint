@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   HiDotsVertical,
   HiUserGroup,
@@ -37,6 +37,8 @@ import {
   detectarConflitos,
   MARGEM_ENTRE_RESERVAS_MIN,
 } from '../../../../services/reserva.service';
+import ImprimirQrMesas from '../../../../shared/components/QrCodeMesas/ImprimirQrMesas';
+import { useEstabelecimento } from '../../../../shared/contexts/Estabelecimentocontext';
 import { ROTAS_CAIXA } from '../../../../routes/caixaRotas';
 import { useAuth } from '../../../../shared/contexts/Authcontext';
 import { pedidosParaComanda } from '../../../../shared/components/ComandaCozinha/comanda.adapter';
@@ -44,7 +46,7 @@ import type { PedidoParaComanda } from '../../../../shared/components/ComandaCoz
 import ProdutoService from '../../../../services/produto.service';
 import './GerenPagamentos.css';
 
-// ── Tipos ──────────────────────────────────────────────────────────────────────
+// Tipos 
 type StatusMesaCaixa = 'aberta' | 'fechada' | 'livre' | 'reservada';
 type StatusInicialMesa = 'livre' | 'reservada';
 type FiltroMesas = 'todas' | 'abertas' | 'livres' | 'reservadas';
@@ -87,7 +89,7 @@ interface MesaCaixa {
 
 type ErrosCadastro = Partial<Record<'numero' | 'capacidade' | 'observacao', string>>;
 
-// ── Constantes ─────────────────────────────────────────────────────────────────
+// Constantes
 // Os limites finais são conferidos de novo no backend (Mesa.schema.ts).
 const NUMERO_MAX = 9999;
 const CAPACIDADE_MIN = 1;
@@ -218,15 +220,19 @@ const ordenar = (lista: MesaCaixa[]) => [...lista].sort((a, b) => a.numero - b.n
 const formatarMoeda = (valor: number) =>
   valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-// ── Componente ─────────────────────────────────────────────────────────────────
+// Componente
 const GerenPagamentos: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { usuario } = useAuth();
   // Só o administrador pode cadastrar mesa (regra do backend: POST /mesas)
   const podeCadastrar = usuario?.perfil === 'ADMIN';
   // Mesma regra do backend: só ADMIN e CAIXA cancelam pedido
   const podeCancelarDelivery = usuario?.perfil === 'ADMIN' || usuario?.perfil === 'CAIXA';
+
+  const { nomeRestaurante } = useEstabelecimento();
+const [imprimirQrAberto, setImprimirQrAberto] = useState(false);
 
   // Mesas reais, vindas do banco
   const [mesas, setMesas]           = useState<MesaCaixa[]>([]);
@@ -266,7 +272,10 @@ const GerenPagamentos: React.FC = () => {
   const [filtro, setFiltro]             = useState<FiltroMesas>('todas');
 
   // Abas do Caixa: Salão (mesas), Reservas e Delivery (entrega/retirada)
-  const [abaCaixa, setAbaCaixa] = useState<AbaCaixa>('salao');
+  // Pode abrir direto numa aba (ex.: o "Voltar" do histórico de reservas manda { aba: 'reservas' })
+  const [abaCaixa, setAbaCaixa] = useState<AbaCaixa>(
+    (location.state as { aba?: AbaCaixa } | null)?.aba === 'reservas' ? 'reservas' : 'salao'
+  );
   const [filtroReservas, setFiltroReservas] = useState<FiltroReservas>('todas');
 
   // Delivery: pedidos de entrega/retirada em andamento + os concluídos/cancelados de hoje
@@ -312,7 +321,7 @@ const GerenPagamentos: React.FC = () => {
   const [alternandoId, setAlternandoId] = useState<string | null>(null);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
 
-  // ── Modal: Cadastrar mesa ────────────────────────────────────────────────────
+  // Modal: Cadastrar mesa 
   const [modalAberto, setModalAberto]   = useState(false);
   const [numero, setNumero]             = useState('');
   const [capacidade, setCapacidade]     = useState('4');
@@ -394,12 +403,12 @@ const GerenPagamentos: React.FC = () => {
     [gruposAtivos, agora]
   );
 
-  // ── Contagens usadas nos filtros, no resumo de disponibilidade e no chip "Pedidos em aberto" ──
+  //Contagens usadas nos filtros, no resumo de disponibilidade e no chip "Pedidos em aberto"
   const totalAbertas  = useMemo(() => mesasView.filter((m) => m.status === 'aberta').length, [mesasView]);
   const totalLivres     = useMemo(() => mesasView.filter((m) => m.status === 'livre').length, [mesasView]);
   const totalReservadas = useMemo(() => mesasView.filter((m) => m.status === 'reservada').length, [mesasView]);
 
-  // ── Aplica o filtro selecionado ──────────────────────────────────────────────
+  // Aplica o filtro selecionado
   const mesasFiltradas = useMemo(() => {
     if (filtro === 'abertas')  return mesasView.filter((m) => m.status === 'aberta');
     if (filtro === 'livres')     return mesasView.filter((m) => m.status === 'livre');
@@ -407,7 +416,7 @@ const GerenPagamentos: React.FC = () => {
     return mesasView;
   }, [filtro, mesasView]);
 
-  // ── Lista as mesas cadastradas ───────────────────────────────────────────────
+  // Lista as mesas cadastradas 
   // `silencioso`: atualização automática em segundo plano (sem piscar a tela nem trocar a lista por erro)
   const carregarMesas = useCallback(async (silencioso = false) => {
     if (!silencioso) {
@@ -514,7 +523,7 @@ const GerenPagamentos: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [modalAberto]);
 
-  // ── Cadastro de mesa ─────────────────────────────────────────────────────────
+  // Cadastro de mesa 
   const abrirModal = () => {
     setNumero(String(proximoNumero));
     setCapacidade('4');
@@ -586,7 +595,7 @@ const GerenPagamentos: React.FC = () => {
     }
   };
 
-  // ── Navegação ────────────────────────────────────────────────────────────────
+  // Navegação 
   // Mesa com pedido em andamento (aberta/fechada) abre a tela da mesa ao clicar no card.
   // Mesa ocupada mas sem pedido (cliente chegou e ainda não pediu) não abre detalhe de conta
   const temPedido = (mesa: MesaCaixa) =>
@@ -682,8 +691,8 @@ const GerenPagamentos: React.FC = () => {
     }
   };
 
-  // ── Reservas feitas pelos clientes ───────────────────────────────────────────
-  // Troca nas listas as linhas devolvidas pelo servidor (reserva em várias mesas = várias linhas)
+  // Reservas feitas pelos clientes 
+  // Troca nas listas as linhas devolvidas pelo servidor
   const aplicarAtualizacao = (atualizada: ReservaApi) => {
     const porId = new Map((atualizada.mesas_do_grupo ?? [atualizada]).map((l) => [l.id, l]));
     setReservas((prev) => prev.map((r) => (porId.has(r.id) ? { ...r, ...porId.get(r.id)! } : r)));
@@ -949,7 +958,7 @@ const GerenPagamentos: React.FC = () => {
     <RestaurantLayout>
       <div className="caixa" onClick={() => setMenuAberto(null)}>
 
-        {/* ── Cabeçalho ── */}
+        {/* Cabeçalho */}
         <div className="caixa__header">
           <div>
             <h2 className="caixa__titulo">Caixa</h2>
@@ -993,6 +1002,15 @@ const GerenPagamentos: React.FC = () => {
               )}
             </button>
 
+                        <button
+              className="caixa__btn-historico"
+              onClick={() => setImprimirQrAberto(true)}
+              disabled={carregando || mesas.length === 0}
+              aria-label="Imprimir QR Codes de todas as mesas"
+            >
+              <MdQrCode2 /> Imprimir QR Codes
+            </button>
+
             {/* Abre o modal de cadastro de mesa (só administrador) */}
             {podeCadastrar && (
               <button
@@ -1007,7 +1025,7 @@ const GerenPagamentos: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Aviso: o cliente cancelou a reserva pelo app ── */}
+        {/* Aviso: o cliente cancelou a reserva pelo app*/}
         {cancelamentosDoCliente.length > 0 && (
           <div className="caixa__aviso-cancelamento" role="alert">
             {cancelamentosDoCliente.map((g) => (
@@ -1024,7 +1042,7 @@ const GerenPagamentos: React.FC = () => {
           </div>
         )}
 
-        {/* ── ALERTA: reserva sem assentos suficientes (o restaurante decide: aceitar ou recusar) ── */}
+        {/* ALERTA: reserva sem assentos suficientes (o restaurante decide: aceitar ou recusar)  */}
         {gruposSemAssentos.length > 0 && (
           <div className="caixa__alerta-assentos" role="alert">
             <strong>
@@ -1062,7 +1080,7 @@ const GerenPagamentos: React.FC = () => {
           </div>
         )}
 
-        {/* ── Alerta: reservas da mesma mesa batendo ou muito próximas ── */}
+        {/* Alerta: reservas da mesma mesa batendo ou muito próximas  */}
         {conflitos.length > 0 && (
           <div className="caixa__alerta-conflito" role="alert">
             <strong>
@@ -1113,7 +1131,8 @@ const GerenPagamentos: React.FC = () => {
         {/* ── Reservas (hoje e próximos dias) feitas pelos clientes no app ── */}
         {abaCaixa === 'reservas' && (
           <div className="caixa__painel caixa__reservas">
-            <div className="caixa__abas" role="tablist" aria-label="Filtrar reservas" style={{ marginBottom: 12 }}>
+            <div className="caixa__reservas-topo">
+            <div className="caixa__abas" role="tablist" aria-label="Filtrar reservas">
               {([
                 ['todas', `Todas (${gruposAtivos.length})`],
                 ['hoje', `Hoje (${totalReservasHoje})`],
@@ -1130,6 +1149,15 @@ const GerenPagamentos: React.FC = () => {
                   {rotulo}
                 </button>
               ))}
+            </div>
+            <button
+              type="button"
+              className="caixa__btn-historico"
+              onClick={() => navigate('/restaurante/reservas/historico')}
+              title="Histórico de reservas: quantas foram feitas, compareceram e foram canceladas"
+            >
+              <HiClipboardList aria-hidden="true" /> Histórico
+            </button>
             </div>
 
             {gruposFiltrados.length === 0 && <div className="caixa__vazio">Nenhuma reserva nesta lista.</div>}
@@ -1317,7 +1345,7 @@ const GerenPagamentos: React.FC = () => {
         {/* ── Painel de mesas (aba Salão) ── */}
         <div className="caixa__painel" style={abaCaixa !== 'salao' ? { display: 'none' } : undefined}>
 
-          {/* ── Filtros + alternância de visualização ── */}
+          {/*  Filtros + alternância de visualização  */}
           <div className="caixa__filtros">
             <div className="caixa__abas" role="tablist" aria-label="Filtrar mesas">
               <button
@@ -1378,7 +1406,7 @@ const GerenPagamentos: React.FC = () => {
             <div className="caixa__vazio" role="alert">{erroAcao}</div>
           )}
 
-          {/* ── Grid de cards ── */}
+          {/*  Grid de cards  */}
           {carregando ? (
             <div className="caixa__vazio">Carregando mesas...</div>
           ) : erroLista ? (
@@ -1602,7 +1630,7 @@ const GerenPagamentos: React.FC = () => {
           )}
         </div>
 
-        {/* ── Modal: reservar a mesa (dia, horário e descrição opcional) ── */}
+        {/*  Modal: reservar a mesa (dia, horário e descrição opcional)  */}
         {reservandoMesa && (
           <div className="caixa__overlay" onClick={() => !resEnviando && setReservandoMesa(null)}>
             <div
@@ -1674,7 +1702,7 @@ const GerenPagamentos: React.FC = () => {
           </div>
         )}
 
-        {/* ── Modal: aceitar / recusar reserva ou mandar mensagem ao cliente ── */}
+        {/*  Modal: aceitar / recusar reserva ou mandar mensagem ao cliente  */}
         {decisao && (
           <div className="caixa__overlay" onClick={() => !reservaAgindoId && setDecisao(null)}>
             <div
@@ -1747,7 +1775,7 @@ const GerenPagamentos: React.FC = () => {
           </div>
         )}
 
-        {/* ── Modal: Cadastrar mesa ── */}
+        {/*  Modal: Cadastrar mesa  */}
         {modalAberto && (
           <div className="caixa__overlay" onClick={fecharModal}>
             <div
@@ -1869,7 +1897,7 @@ const GerenPagamentos: React.FC = () => {
           </div>
         )}
 
-        {/* ── Modal: Comanda da cozinha (gerada a partir do pedido da mesa) ── */}
+        {/*  Modal: Comanda da cozinha (gerada a partir do pedido da mesa)  */}
         <ComandaCozinha
           aberta={comandaMesa !== null}
           pedido={comandaPedido}
@@ -1880,13 +1908,20 @@ const GerenPagamentos: React.FC = () => {
           onFechar={fecharComanda}
         />
 
-        {/* ── Modal: QR Code da mesa ── */}
+        {/*  Modal: QR Code da mesa  */}
         <QrCodeMesa
           mesa={qrMesa ? { numero: qrMesa.numero, capacidade: qrMesa.capacidade, token: qrMesa.qrToken } : null}
           onFechar={() => setQrMesa(null)}
         />
 
-        {/* ── Modal: Cancelar pedido ── */}
+              <ImprimirQrMesas
+        aberto={imprimirQrAberto}
+        mesas={mesas.map((m) => ({ id: m.id, numero: m.numero, capacidade: m.capacidade, token: m.qrToken }))}
+        nomeRestaurante={nomeRestaurante ?? undefined}
+        onFechar={() => setImprimirQrAberto(false)}
+      />
+
+        {/*  Modal: Cancelar pedido  */}
         <CancelarPedido
           aberto={cancelarMesa !== null}
           mesaNumero={cancelarMesa?.numero ?? 0}

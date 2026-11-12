@@ -3,11 +3,9 @@ import { HiX, HiPrinter, HiDownload, HiClipboardCopy, HiCheck } from 'react-icon
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import './QrCodeMesa.css';
 
-// ── URL codificada no QR ───────────────────────────────────────────────────────
+//  URL codificada no QR 
 // Quando o cliente escaneia, o celular abre /mesa/:token no SITE (front-end), que
 // descobre a mesa e o restaurante pelo token e leva para a /welcomepage.
-// Usa o endereço em que o sistema está aberto; em desenvolvimento, defina
-// REACT_APP_FRONTEND_URL (ex.: http://192.168.0.10:3000) para o celular alcançar o PC.
 const BASE_URL = (process.env.REACT_APP_FRONTEND_URL || window.location.origin).replace(/\/$/, '');
 export const urlDaMesa = (token: string) => `${BASE_URL}/mesa/${encodeURIComponent(token)}`;
 
@@ -22,7 +20,6 @@ interface QrCodeMesaProps {
  * Reutilizável em qualquer tela que tenha uma mesa (Gestão de Mesas, Caixa...).
  */
 const QrCodeMesa: React.FC<QrCodeMesaProps> = ({ mesa, onFechar }) => {
-  // Aponta para o div que contém o <svg> (tela/impressão) e o <canvas> (download)
   const qrWrapRef = useRef<HTMLDivElement>(null);
   const [copiado, setCopiado] = useState(false);
 
@@ -43,9 +40,7 @@ const QrCodeMesa: React.FC<QrCodeMesaProps> = ({ mesa, onFechar }) => {
   const detalheCapacidade =
     mesa.capacidade !== undefined ? `${mesa.capacidade} pessoas` : '';
 
-  // ── Download como PNG ────────────────────────────────────────────────────────
-  // O QRCodeCanvas renderiza um <canvas> real, então dá para extrair a imagem
-  // com toDataURL e disparar o download por um link temporário.
+  // Download como PNG 
   const handleCopiar = async () => {
     if (!url) return;
     try {
@@ -73,9 +68,8 @@ const QrCodeMesa: React.FC<QrCodeMesaProps> = ({ mesa, onFechar }) => {
     link.click();
   };
 
-  // ── Impressão ────────────────────────────────────────────────────────────────
+  // Impressão 
   // Abre uma janela só com o QR e o título da mesa e chama window.print().
-  // Usa o SVG (não o canvas) porque escala sem perder qualidade na impressora.
   const handleImprimir = () => {
     if (!url) return;
     const svgEl = qrWrapRef.current?.querySelector('svg');

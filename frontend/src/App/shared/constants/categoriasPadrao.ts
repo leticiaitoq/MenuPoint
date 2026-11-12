@@ -104,7 +104,7 @@ export const acharCategoriaPadrao = (nome: string): CategoriaPadrao | undefined 
   return CATEGORIAS_PADRAO.find((c) => chaveDeNome(c.nome) === chave)
 }
 
-// ── Estado do seletor ────────────────────────────────────────────────────────
+//Estado do seletor 
 export interface SelecaoCategoria {
   /** nome de uma categoria pronta, OUTRA_CATEGORIA ou '' (nada escolhido) */
   selecao: string
@@ -144,4 +144,53 @@ export const validarSelecao = (s: SelecaoCategoria, jaUsadas: string[]): string 
     return 'Você já tem uma categoria com esse nome.'
   }
   return null
+}
+
+/**ICONS */
+//Ícones próprios
+const ARQUIVO_ICONE_POR_NOME: Record<string, string> = {
+  'entradas': 'entradas',
+  'porcoes e petiscos': 'porcoes',
+  'saladas': 'saladas',
+  'sopas e caldos': 'sopasecaldos',
+  'pratos principais': 'principais',
+  'pratos executivos': 'executivos',
+  'marmitas': 'marmitas',
+  'massas': 'massas',
+  'carnes e grelhados': 'carnesegrelhados',
+  'aves': 'aves',
+  'peixes e frutos do mar': 'peixesefrutos',
+  'japonesa': 'japonesa',
+  'vegetarianos e veganos': 'vegetarianosevaganos',
+  'acompanhamentos': 'acompanhamentos',
+  'pizzas': 'pizzas',
+  'hamburgueres': 'hamburguers',
+  'sanduiches e lanches': 'sanduicheselanches',
+  'hot dogs': 'hotdogs',
+  'pasteis': 'pasteis',
+  'salgados': 'salgados',
+  'crepes e tapiocas': 'crespesetapiocas',
+  'cafe da manha': 'cafedamanha',
+  'sobremesas': 'sobremesas',
+  'doces e confeitaria': 'confeitaria',
+  'acai e sorvetes': 'acaiesorvetes',
+  'bebidas': 'bebidas',
+  'refrigerantes e aguas': 'refrieaguas',
+  'sucos e vitaminas': 'sucosevitaminas',
+  'cafes e chas': 'cafesechas',
+  'cervejas': 'cervejas',
+  'drinks e coqueteis': 'drinks',
+  'vinhos': 'vinhos',
+  'combos': 'combos',
+  'promocoes': 'promocoes',
+  'menu infantil': 'menuinfantil',
+}
+
+/**
+ * Ícone da categoria no cardápio do cliente: SVG próprio se existir,
+ * senão o emoji salvo no banco, senão 🍽️.
+ */
+export const iconeDaCategoria = (nome: string, emoji: string | null): string => {
+  const arquivo = ARQUIVO_ICONE_POR_NOME[chaveDeNome(nome)]
+  return arquivo ? `/icons/categorias/${arquivo}.svg` : emoji ?? '🍽️'
 }

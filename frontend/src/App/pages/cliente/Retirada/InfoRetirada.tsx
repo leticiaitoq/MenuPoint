@@ -143,6 +143,7 @@ const handleTelefone = (e: React.ChangeEvent<HTMLInputElement>) =>
           </div>
 
           <PagamentoPedido
+            restaurante={restaurante}
             itens={itensCarrinho}
             taxaEntrega={0}
             momento="na retirada"

@@ -602,6 +602,7 @@ const CadastroEndereco: React.FC = () => {
               </button>
 
               <PagamentoPedido
+                restaurante={restaurante}
                 itens={itensCarrinho}
                 taxaEntrega={taxaEntrega}
                 momento="na entrega"

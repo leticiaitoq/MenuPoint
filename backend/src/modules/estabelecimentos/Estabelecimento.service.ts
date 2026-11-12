@@ -74,7 +74,7 @@ export class EstabelecimentoService extends BaseService <
     }
 
     try {
-      return await this.repository.update(id, data as any)
+      return await this.repository.update(id, { ...data, aceita_mesa: true } as any)
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         const alvo = String(err.meta?.target ?? '')
@@ -129,7 +129,7 @@ export class EstabelecimentoService extends BaseService <
   ): Promise<Estabelecimento> {
     await this.findById(id)
 
-    if (usuario.perfil !== 'ADMIN' || usuario.escopo !== 'GLOBAL') {
+    if (usuario.perfil !== 'ADMIN') {
       throw new AppError(
         'Apenas o dono da empresa pode alterar a chave PIX',
         403
