@@ -306,3 +306,8 @@
 .pedidos-local__resumo-item span { font-size: 12px; color: var(--text-faint); }
 .pedidos-local__resumo-item strong { font-size: 18px; color: var(--text); }
 
+.pedidos-local__selo-meu {
+  background-color: var(--brand);
+  color: #fff;
+  border-left: 5px solid var(--brand); 
+}

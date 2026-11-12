@@ -208,8 +208,9 @@ const ControlePedidoLocal: React.FC = () => {
 
                     {(pedido.cliente || meu) && (
                       <p className="pedidos-local__cliente">
+                        {meu && <span className="pedidos-local__status pedidos-local__selo-meu">Seu pedido</span>}
+                        {meu && pedido.cliente && <br />}
                         {pedido.cliente && <><HiUser aria-hidden="true" /> {pedido.cliente}</>}
-                        {meu && <span className="pedidos-local__selo-meu">Seu pedido</span>}
                       </p>
                     )}
 
