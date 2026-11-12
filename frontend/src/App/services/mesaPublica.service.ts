@@ -36,6 +36,13 @@ apiPublica.interceptors.request.use((config) => {
   return config
 })
 
+// Mesmo destino, mas SEM o interceptor que anexa o token (usado só no reenvio da leitura da mesa)
+const apiAnonima = axios.create({
+  baseURL: `${process.env.REACT_APP_API_URL}/api/v1`,
+  timeout: 20000,
+  headers: { 'Content-Type': 'application/json' },
+})
+
 export interface MesaPublica {
   id: string
   numero: number
@@ -101,8 +108,18 @@ export interface HistoricoMesaPublico {
 const MesaPublicaService = {
 
   async buscarPorToken(token: string): Promise<MesaPublica> {
-    const r = await apiPublica.get<MesaPublica>(`mesas/qrcode/${encodeURIComponent(token)}`)
-    return r.data
+    const url = `mesas/qrcode/${encodeURIComponent(token)}`
+    try {
+      const r = await apiPublica.get<MesaPublica>(url)
+      return r.data
+    } catch (err: any) {
+      // Token do cliente recusado (401/403): ler a mesa é público, então tenta de novo sem token.
+      // O cliente segue logado no navegador; só a leitura da mesa deixa de depender dele.
+      const status = err?.response?.status
+      if (status !== 401 && status !== 403) throw err
+      const r = await apiAnonima.get<MesaPublica>(url)
+      return r.data
+    }
   },
   /**
    * Cliente chegou à mesa reservada: valida a reserva (telefone usado na reserva, ou conta logada)

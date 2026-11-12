@@ -98,6 +98,23 @@ export async function estabelecimentosRoutes(app: FastifyInstance) {
     }
   )
 
+  // GET /:id/pix/permissao — a tela de configuração usa para esconder a edição de quem não é o dono
+  app.get(
+    '/:id/pix/permissao',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string }
+      const user = request.user as JWTPayload
+
+      if (user.escopo === 'LOCAL' && user.estabelecimento_id !== id) {
+        throw new AppError('Acesso não autorizado', 403)
+      }
+
+      const pode = user.perfil === 'ADMIN' && (await service.ehDono(id, user.sub))
+      return reply.send({ pode_alterar: pode })
+    }
+  )
+
   // PATCH /:id/pix — chave PIX é dado sensível
   app.patch(
     '/:id/pix',

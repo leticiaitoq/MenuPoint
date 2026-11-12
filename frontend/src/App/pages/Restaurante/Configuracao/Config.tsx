@@ -1658,6 +1658,15 @@ const Config: React.FC = () => {
   };
 
   const [pixModalAberto, setPixModalAberto] = useState(false);
+  // Só o dono da empresa mexe no PIX (o backend confere de novo; aqui só evita pedir a senha à toa)
+  const [ehDonoPix, setEhDonoPix] = useState(false);
+  useEffect(() => {
+    if (!estab?.id || !podeEditar) { setEhDonoPix(false); return; }
+    let ativo = true;
+    EstabelecimentoService.podeAlterarPix(estab.id).then((ok) => { if (ativo) setEhDonoPix(ok); });
+    return () => { ativo = false; };
+  }, [estab?.id, podeEditar]);
+  const podeEditarPix = podeEditar && ehDonoPix;
   const [editandoPix, setEditandoPix] = useState(false);
   const [avisoPix, setAvisoPix] = useState<string | null>(null);
   const desativandoPix = useRef(false);
@@ -2551,7 +2560,7 @@ const Config: React.FC = () => {
                     <span className="config__card-titulo-icone"><HiCash /></span>
                     Recebimento por PIX
                   </h3>
-                  {podeEditar && (
+                  {podeEditarPix && (
                     <div className="config__secao-controles">
                       <SecaoStatus
                         alterado={pix.alterado}
@@ -2588,6 +2597,9 @@ const Config: React.FC = () => {
                     </div>
                   )}
                 </div>
+                {podeEditar && !ehDonoPix && (
+                  <p className="config__pix-aviso" role="status">Apenas o dono da empresa pode alterar a chave PIX.</p>
+                )}
                 {pix.erroGeral && <p className="config__erro" role="alert">{pix.erroGeral}</p>}
                 {avisoPix && <p className="config__pix-aviso" role="status">{avisoPix}</p>}
 
@@ -2597,7 +2609,7 @@ const Config: React.FC = () => {
                       id="tipo-pix"
                       className="config__input config__select"
                       value={pix.valor.tipo_chave_pix}
-                      disabled={!podeEditar || pix.salvando || pixTravado}
+                      disabled={!podeEditarPix || pix.salvando || pixTravado}
                       onChange={(e) => pix.definir('tipo_chave_pix', e.target.value as TipoChavePix | '')}
                     >
                       <option value="">Sem chave PIX</option>
@@ -2606,7 +2618,7 @@ const Config: React.FC = () => {
                       ))}
                     </select>
                   </Campo>
-                  {podeEditar && !pixTravado && atalhosPix.length > 0 && (
+                  {podeEditarPix && !pixTravado && atalhosPix.length > 0 && (
                     <div className="config__pix-atalhos">
                       <span className="config__pix-atalhos-rotulo">Usar dado do cadastro:</span>
                       {atalhosPix.map((a) => (
@@ -2636,7 +2648,7 @@ const Config: React.FC = () => {
                       placeholder={pix.valor.tipo_chave_pix ? PLACEHOLDER_PIX[pix.valor.tipo_chave_pix] : ''}
                       autoComplete="off"
                       maxLength={77}
-                      disabled={!podeEditar || pix.salvando || pixTravado || !pix.valor.tipo_chave_pix}
+                      disabled={!podeEditarPix || pix.salvando || pixTravado || !pix.valor.tipo_chave_pix}
                       onChange={(e) => pix.definir('chave_pix', e.target.value)}
                     />
                   </Campo>
