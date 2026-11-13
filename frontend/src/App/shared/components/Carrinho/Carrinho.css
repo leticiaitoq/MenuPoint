@@ -347,3 +347,11 @@
 
 .carrinho__item-qtd-controle { grid-column: 3; grid-row: 2; justify-self: end; }
 .carrinho__item-qtd-controle .qstepper__btn { width: 36px; height: 36px; }
+
+.carrinho__item-obs:hover,
+.carrinho__item-obs:focus {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  display: block;
+  overflow: visible;
+}

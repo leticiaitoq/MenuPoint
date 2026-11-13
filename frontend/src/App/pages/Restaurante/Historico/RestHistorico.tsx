@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FiSearch, FiDownload, FiX, FiChevronRight, FiCreditCard, FiUsers, FiCalendar } from 'react-icons/fi';
+import { FiSearch, FiDownload, FiX, FiChevronRight, FiCreditCard, FiUsers, FiCalendar, FiCheckCircle } from 'react-icons/fi';
 import { HiOutlineTable, HiOutlineCash } from 'react-icons/hi';
 import { MdPix } from 'react-icons/md';
 import RestaurantLayout from '../../../shared/components/layout/Restaurantelayout';
@@ -445,6 +445,7 @@ const RestHistorico: React.FC = () => {
           </div>
 
           <div className="hist__select">
+            <FiCheckCircle className="hist__select-icone" />
             <select value={situacaoFiltro} onChange={(e) => setSituacaoFiltro(e.target.value as 'todos' | Situacao)}>
               <option value="todos">Todas as situações</option>
               <option value="concluido">Concluído</option>

@@ -725,14 +725,15 @@
 
 /* ── Origem do pedido: restaurante local × delivery ── */
 .hist__origens {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 12px;
-  background: var(--bg-surface-alt, #f1f1f1);
-  margin-bottom: 12px;
-  max-width: 100%;
-  overflow-x: auto;
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--bg-surface-alt, #f1f1f1);
+    margin-bottom: 12px;
+    max-width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
 }
 .hist__origem {
   display: inline-flex;
