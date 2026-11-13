@@ -6,6 +6,8 @@ import { useClienteAuth } from '../../../shared/contexts/ClienteAuthContext';
 import { lerPedidosProprios } from '../../../shared/utils/meusPedidosMesa';
 import MesaPublicaService, { PedidoMesaPublico } from '../../../services/mesaPublica.service';
 import ContaMesaModal from '../../../shared/components/ContaMesa/ContaMesaModal';
+import HistoricoPedidos, { FiltroOrigem } from '../../../shared/components/HistoricoPedidos/HistoricoPedidos';
+import { useHistoricoCliente } from '../../../shared/components/HistoricoPedidos/useHistoricoCliente';
 import './Controlepedidolocal.css';
 
 
@@ -68,11 +70,34 @@ const formatarPrecoLocal = (valor: number): string =>
   `R$ ${valor.toFixed(2).replace('.', ',')}`;
 
 
+/**
+ * Aba "Meu histórico": histórico FIXO da conta logada (mesa + delivery), o mesmo da tela do delivery.
+ * É um componente à parte para só buscar/atualizar na API enquanto a aba está aberta.
+ */
+const HistoricoDaConta: React.FC<{ slug?: string }> = ({ slug }) => {
+  const { pedidos, carregando, erro } = useHistoricoCliente(slug, true);
+  const [origem, setOrigem] = useState<FiltroOrigem>('todos');
+
+  return (
+    <HistoricoPedidos
+      pedidos={pedidos}
+      carregando={carregando}
+      erro={erro}
+      origem={origem}
+      onOrigemChange={setOrigem}
+      vazioTexto="Você ainda não fez nenhum pedido neste restaurante."
+    />
+  );
+};
+
+type AbaLocal = 'mesa' | 'historico';
+
 const ControlePedidoLocal: React.FC = () => {
   const [filtroLocal, setFiltroLocal]   = useState<FiltroAtivoLocal>('todos');
-  const { mesaToken, nome: nomeConvidado } = useConvidado();
+  const [aba, setAba]                   = useState<AbaLocal>('mesa');
+  const { mesaToken, nome: nomeConvidado, restauranteSlug } = useConvidado();
   // Logado na mesa: o pedido leva o nome da conta (mesma regra do cardápio)
-  const { cliente: clienteLogado } = useClienteAuth();
+  const { cliente: clienteLogado, isAuthenticated } = useClienteAuth();
   const [pedidosLocal, setPedidosLocal] = useState<PedidoLocal[]>([]);
   const [carregando, setCarregando]     = useState(true);
   const [erro, setErro]                 = useState<string | null>(null);
@@ -137,6 +162,28 @@ const ControlePedidoLocal: React.FC = () => {
         {/* ── Cabeçalho ── */}
         <h1 className="pedidos-local__titulo">Meus Pedidos</h1>
 
+        {/* ── Abas: só para quem está logado (convidado não tem histórico guardado) ── */}
+        {isAuthenticated && (
+          <div className="pedidos-local__filtros" role="tablist">
+            {([['mesa', 'Desta mesa'], ['historico', 'Meu histórico']] as [AbaLocal, string][]).map(([id, rotulo]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={aba === id}
+                className={`pedidos-local__filtro-btn ${aba === id ? 'pedidos-local__filtro-btn--ativo' : ''}`}
+                onClick={() => setAba(id)}
+              >
+                {rotulo}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {isAuthenticated && aba === 'historico' ? (
+          <HistoricoDaConta slug={restauranteSlug} />
+        ) : (
+        <>
         {/* ── Resumo da mesa: vale também para quem chega numa mesa que já estava aberta ── */}
         {mesaToken && mesaNumero !== null && !carregando && pedidosLocal.length > 0 && (
           <div className="pedidos-local__resumo">
@@ -284,6 +331,8 @@ const ControlePedidoLocal: React.FC = () => {
             })
           )}
         </div>
+        </>
+        )}
 
       </div>
       <ContaMesaModal aberto={contaAberta} token={mesaToken} onFechar={() => setContaAberta(false)} />
