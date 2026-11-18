@@ -53,11 +53,10 @@ import Despesas from "../pages/Restaurante/Gestão/Relatorios/Despesas/Despesa";
 import CadDespesa from "../pages/Restaurante/Gestão/Relatorios/Despesas/CadDespesa";
 import { EmBreve } from "../pages/Restaurante/Embreve/EmBreve";
 import Termospage from "../pages/Termos/Termospage";
-/**
- * Entrada do sistema: o cadastro fica em /cadastro (aberto a partir do site, com ?plano=).
- * "/" mantém os links antigos (/?plano=pro) funcionando e leva ao mesmo lugar;
- * sem plano escolhido, o /cadastro manda a pessoa para o site (REACT_APP_SITE_URL).
- */
+import NaoEncontrada from "../pages/NaoEncontrada/NaoEncontrada";
+import { ThemeToggleRotasPublicas } from "../shared/components/ThemeToggleFlutuante/ThemeToggleFlutuante";
+// O cadastro fica em /cadastro (o site abre com ?plano=).
+// O "/" continua aceitando os links antigos (/?plano=pro); sem plano, manda para o site.
 const EntradaSistema: React.FC = () => {
   const { search } = useLocation();
   if (search.includes('plano=')) return <Navigate to={`/cadastro${search}`} replace />;
@@ -65,17 +64,17 @@ const EntradaSistema: React.FC = () => {
   return null;
 };
 
-/**
- * Novas telas = Novas rotas aqui (Obrigatorio)
- */
+// Toda tela nova precisa de uma rota aqui
 const AppRoutes: React.FC = () => {
   return (
     <BrowserRouter>
-      {/* Modal "faça login para continuar" (pedido/reserva do delivery): precisa estar dentro do Router */}
+      {/* Modal de "faça login para continuar", precisa ficar dentro do Router */}
       <LoginObrigatorioProvider>
+      {/* Botão de tema das telas públicas sem navbar */}
+      <ThemeToggleRotasPublicas />
       <Routes>
         <Route path="/welcomepage" element={<WelcomePage />} />
-        {/* Link/QR Code da mesa: resolve o token e redireciona para a /welcomepage */}
+        {/* Link do QR Code da mesa: resolve o token e vai para /welcomepage */}
         <Route path="/mesa/:token" element={<MesaQr />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/r/:slug" element={<RestauranteLink />} />
@@ -89,7 +88,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/menulocal" element={<MenuLocal />} />
         <Route path="/recover" element={<RecoverPass />} />
          <Route path="/recover/cliente" element={<RecoverPassCliente />} />
-        <Route path="/verify-code" element={<VerifyCodePage />} />   {/* Rota para a página de verificação de código usada tanto para registro quanto para recuperação de senha */ }
+        <Route path="/verify-code" element={<VerifyCodePage />} />   {/* Serve para cadastro e para recuperação de senha */}
         <Route path="/verify-code/cliente" element={<VerifyCodeCliente />} />
         <Route path="/nova-senha/cliente" element={<NovaSenhaCliente />} />
         <Route path="/historicolocal" element={<ControlePedidoLocal />} />
@@ -99,21 +98,19 @@ const AppRoutes: React.FC = () => {
 
 
         {/*
-          SISTEMA DELIVERY (fora do restaurante) — só abre quem entrou pelo link /r/:slug.
-          O guarda de sistema vem ANTES do login: quem está na mesa (QR Code) é devolvido ao cardápio
-          da mesa e nunca entra aqui, mesmo logado. Dentro dele, o cliente navega sem login; reserva, perfil e
-          envio do pedido exigem conta (modal de aviso → /login/cliente).
+          Sistema delivery: só abre para quem entrou pelo link /r/:slug.
+          O guard de sistema roda antes do login, então quem está na mesa (QR Code) volta
+          para o cardápio da mesa mesmo logado. Aqui dentro dá para navegar sem login;
+          reserva, perfil e envio do pedido pedem conta.
           O cliente local usa /menulocal, /historicolocal e /perfilLocal (acima).
         */}
         <Route element={<RotaComRestaurante />}>
-          {/* Navegação livre, SEM login: o cliente vê o início, o cardápio, monta o carrinho e abre o
-              histórico (que fica vazio enquanto não houver conta). */}
+          {/* Sem login: início, cardápio, carrinho e histórico (vazio sem conta) */}
           <Route path="/dwelcome" element={<DWelcomePage />} />
           <Route path="/menu" element={<MenuCliente />} />
           <Route path="/historico" element={<ControlePedido />} />
 
-          {/* Só abrem logado. Quem chega sem conta volta para a tela de origem e vê o modal de aviso:
-              aceitou → login e volta aqui; recusou → o modal fecha e nada acontece. */}
+          {/* Exigem login. Sem conta, volta para a tela de origem e mostra o modal de aviso */}
           <Route element={<RotaExigeLogin motivo="reserva" fallback="/dwelcome" />}>
             <Route path="/reserva" element={<Reserva />} />
           </Route>
@@ -121,21 +118,21 @@ const AppRoutes: React.FC = () => {
             <Route path="/perfil" element={<PerfilCliente />} />
             <Route path="/perfil/enderecos" element={<EnderecosPerfil />} />
           </Route>
-          {/* Enviar o pedido (entrega ou retirada) exige conta; o carrinho é mantido durante o login */}
+          {/* Enviar o pedido exige conta, o carrinho é mantido durante o login */}
           <Route element={<RotaExigeLogin motivo="pedido" fallback="/menu" />}>
             <Route path="/endereço" element={<CadastroEndereco />} />
             <Route path="/retirada" element={<InfoRetirada />} />
           </Route>
         </Route>
 
-        {/* Rotas do restaurante: exigem login */}
+        {/* Rotas do restaurante, exigem login */}
         <Route element={<RotaProtegida />}>
           <Route path="/planos" element={<PlanosPage />} />
           <Route path="/pagamento" element={<PagamentoPage />} />
           <Route path="/restaurante/home" element={<HomeRestaurante /> } />
           <Route path="/restaurante/pedido" element={<Pedido />} />
           <Route path="/restaurante/historico" element={<RestHistorico />} />
-          {/* Sem item na sidebar: o acesso é pelo botão "Histórico" da aba Reservas do Caixa */}
+          {/* Não tem item na sidebar, o acesso é pelo botão Histórico da aba Reservas do Caixa */}
           <Route path="/restaurante/reservas/historico" element={<HistoricoReservas />} />
           <Route path="/restaurante/produtos" element={<RestProdutos />} />
           <Route path="/restaurante/cadprodutos" element={<CadProdutos />} />
@@ -145,7 +142,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/restaurante/relatorios" element={<Relatorios />} />
           <Route path="/restaurante/config" element={<Config />} />
           <Route path="/restaurante/caixa" element={<GerenPagamentos />} />
-          {/* Telas por mesa: o :id diz qual mesa está aberta. Sem id → volta para o caixa. */}
+          {/* Telas por mesa, o :id é a mesa aberta. Sem id volta para o caixa */}
           <Route path="/restaurante/caixa/pagar" element={<Navigate to={ROTAS_CAIXA.lista} replace />} />
           <Route path={ROTAS_CAIXA.pagarMesaPadrao} element={<PagarMesa />} />
           <Route path="/restaurante/caixa/pagarParcial" element={<Navigate to={ROTAS_CAIXA.lista} replace />} />
@@ -159,6 +156,9 @@ const AppRoutes: React.FC = () => {
             element={<EmBreve descricao="A integração com o WhatsApp está em desenvolvimento e estará disponível em breve." />}
           />
         </Route>
+
+        {/* Rota inexistente, precisa ser a última */}
+        <Route path="*" element={<NaoEncontrada />} />
       </Routes>
       </LoginObrigatorioProvider>
     </BrowserRouter>

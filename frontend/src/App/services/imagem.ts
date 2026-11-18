@@ -42,7 +42,7 @@ async function abrirImagem(arquivo: File): Promise<{ img: CanvasImageSource; lar
 }
 
 export async function prepararImagem(arquivo: File, opcoes: OpcoesImagem = {}): Promise<File> {
-  const { maxLado = 1024, quadrada = false, maxBytes = 1.5 * 1024 * 1024 } = opcoes
+  const { maxLado = 1024, quadrada = false, maxBytes = 500 * 1024 } = opcoes
 
   const { img, largura, altura } = await abrirImagem(arquivo)
 

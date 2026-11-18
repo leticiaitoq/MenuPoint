@@ -234,11 +234,12 @@ const HistoricoPedidos: React.FC<Props> = ({
                     {pedido.itens.map((item) => (
                       <div key={item.id} className="hist-cli__item">
                         <img
-                          src={item.imagem || '/icons/restaurant-logo.png'}
+                          src={item.imagem || '/icons/restaurant-logo.webp'}
                           alt={item.nome}
                           className="hist-cli__item-img"
+                          loading="lazy"
                           onError={(e) => {
-                            e.currentTarget.src = '/icons/restaurant-logo.png'
+                            e.currentTarget.src = '/icons/restaurant-logo.webp'
                           }}
                         />
                         <div className="hist-cli__item-info">

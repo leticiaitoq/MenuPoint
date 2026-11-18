@@ -115,7 +115,7 @@ const MenuCliente: React.FC = () => {
                   precoOriginal: p.preco_promocional != null && Number(p.preco_promocional) < Number(p.preco) ? Number(p.preco) : null,
                   categoriaNome: c.nome,
                   tempoPreparoMin: p.tempo_preparo_min ?? null,
-                  imagem: p.imagem_url ?? '/icons/restaurant-logo.png',
+                  imagem: p.imagem_url ?? '/icons/restaurant-logo.webp',
                 }))
             ).sort(compararProdutos(ativas.map((c) => c.id)))
           );
@@ -217,7 +217,7 @@ const MenuCliente: React.FC = () => {
     >
       <div
   className="menu bg-arte bg-arte--opaco"
-  style={{ '--bg-arte': 'url(/images/Fundo-menu.png)' } as React.CSSProperties}
+  style={{ '--bg-arte': 'url(/images/Fundo-menu.webp)' } as React.CSSProperties}
 >
 
         {/* Busca + botão Chamar garçom (o botão só aparece quando entrou pelo QR da mesa) */}
@@ -282,7 +282,7 @@ const MenuCliente: React.FC = () => {
                 aria-label={`Ver detalhes de ${p.nome}`}
               >
                 {p.destaque && <span className="menu__card-selo">⭐ Destaque</span>}
-                <img src={p.imagem} alt={p.nome} className="menu__card-img" />
+                <img src={p.imagem} alt={p.nome} className="menu__card-img" loading="lazy" />
                 <div className="menu__card-body">
                   <h3 className="menu__card-nome">{p.nome}</h3>
                   <p className="menu__card-desc">{p.descricao}</p>

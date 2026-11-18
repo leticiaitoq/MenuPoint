@@ -22,7 +22,7 @@ const LoginPage: React.FC = () => {
   const [pagamentoPendente, setPagamentoPendente] = useState(false);
   const [emailNaoVerificado, setEmailNaoVerificado] = useState(false);
   const [reenviando, setReenviando] = useState(false);
-  // Vindo da tela de retorno do Mercado Pago com o pagamento aprovado
+  // Veio do retorno do Mercado Pago com o pagamento aprovado
   const [pagamentoAprovado, setPagamentoAprovado] = useState(
     Boolean(
       (location.state as { pagamentoAprovado?: boolean; pagamentoConfirmado?: boolean } | null)?.pagamentoAprovado ||
@@ -30,13 +30,12 @@ const LoginPage: React.FC = () => {
     )
   );
 
-  // Limpa o estado da navegação: atualizar a página não mostra o modal de novo
+  // Limpa o state da navegação para o modal não voltar ao atualizar a página
   useEffect(() => {
     if (pagamentoAprovado) window.history.replaceState({}, document.title);
   }, [pagamentoAprovado]);
 
-  // Mesmo padrão usado na tela de verificação de código: mostra o toast de
-  // sucesso e só navega depois de um tempinho, pra pessoa ver a confirmação.
+  // Mostra o toast de sucesso e só navega depois de um tempo, para dar para ver a confirmação
   useEffect(() => {
     if (!showSucesso) return;
     const timer = setTimeout(() => navigate(ROTA_APOS_LOGIN), 1200);
@@ -56,15 +55,15 @@ const LoginPage: React.FC = () => {
         senha: password,
       });
 
-      // Guarda a sessão; o perfil completo é buscado do banco logo em seguida
+      // Guarda a sessão, o perfil completo é buscado do banco em seguida
       entrar({
         token: resultado.token,
         refresh_token: resultado.refresh_token,
         usuario: resultado.usuario,
       });
 
-      // Cadastro feito, mas o pagamento ainda consta como pendente. Antes de barrar, confere
-      // no Mercado Pago: a pessoa pode ter pago e fechado a aba sem voltar para o site.
+      // Pagamento consta como pendente, mas a pessoa pode ter pago e fechado a aba.
+      // Confere no Mercado Pago antes de barrar.
       if (resultado.usuario.pagamento_pendente) {
         try {
           const { status } = await AssinaturaService.sincronizar();
@@ -79,7 +78,7 @@ const LoginPage: React.FC = () => {
             return;
           }
         } catch {
-          // não conseguiu conferir: segue com o aviso de pagamento pendente
+          // Não deu para conferir, segue com o aviso de pagamento pendente
         }
         setCarregando(false);
         setPagamentoPendente(true);
@@ -92,7 +91,7 @@ const LoginPage: React.FC = () => {
       if (err?.response?.data?.code === 'EMAIL_NAO_VERIFICADO') {
         setEmailNaoVerificado(true);
       } else if (!err?.response) {
-        // Sem resposta do servidor (timeout/rede): não é senha errada
+        // Servidor sem resposta (timeout ou rede), não é senha errada
         setErro('Não foi possível conectar ao servidor. Tente novamente em instantes.');
       } else {
         setErro(err.response.data?.message ?? 'Email ou senha inválidos.');
@@ -118,7 +117,7 @@ const LoginPage: React.FC = () => {
   return (
     <div
       className="login-page"
-      style={{ backgroundImage: 'url(/images/Register-Back.png)' }}
+      style={{ backgroundImage: 'url(/images/Register-Back.webp)' }}
     >
       <div className="login-page__container">
         <AuthCard />
@@ -128,7 +127,6 @@ const LoginPage: React.FC = () => {
 
           <form className="login-page__form" onSubmit={handleSubmit}>
 
-            {/* Mensagem de erro ← novo */}
             {erro && (
               <p style={{ color: 'red', fontSize: '14px', marginBottom: '8px' }}>
                 {erro}
@@ -166,13 +164,13 @@ const LoginPage: React.FC = () => {
               </div>
             )}
 
-            {/* Campo Email */}
             <div className="login-page__field">
               <label className="login-page__label" htmlFor="email">Email</label>
               <div className="login-page__input-wrapper">
                 <MdEmail className="login-page__input-icon" />
                 <input
                   id="email"
+                  autoComplete="username"
                   type="email"
                   placeholder="seu@email.com"
                   className="login-page__input login-page__input--with-icon"
@@ -183,12 +181,12 @@ const LoginPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Campo Senha */}
             <div className="login-page__field">
               <label className="login-page__label" htmlFor="password">Senha</label>
               <div className="login-page__input-wrapper">
                 <input
                   id="password"
+                  autoComplete="current-password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Digite sua senha"
                   className="login-page__input login-page__input--with-toggle"

@@ -61,7 +61,7 @@ const PlanosPage: React.FC = () => {
   };
 
   return (
-    <div className="login-page" style={{ backgroundImage: 'url(/images/Register-Back.png)' }}>
+    <div className="login-page" style={{ backgroundImage: 'url(/images/Register-Back.webp)' }}>
       <div className="login-page__container">
         <AuthCard />
 

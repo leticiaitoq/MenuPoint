@@ -35,7 +35,7 @@ interface PedidoLocal {
 }
 
 
-const IMAGEM_PADRAO_PRODUTO = '/icons/restaurant-logo.png';
+const IMAGEM_PADRAO_PRODUTO = '/icons/restaurant-logo.webp';
 const INTERVALO_ATUALIZACAO_MS = 15000; // atualiza sozinho para o cliente ver o pedido ficar pronto
 
 const STATUS_API_PARA_TELA: Record<PedidoMesaPublico['status'], StatusPedidoLocal> = {

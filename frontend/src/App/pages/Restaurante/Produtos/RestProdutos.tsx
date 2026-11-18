@@ -62,9 +62,10 @@ const LinhaProduto: React.FC<LinhaProps> = ({ produto, posicao, onEditar, onDesa
       </td>
       <td className="prod__td-produto">
         <img
-          src={produto.imagem_url || '/icons/restaurant-logo.png'}
+          src={produto.imagem_url || '/icons/restaurant-logo.webp'}
           alt={produto.nome}
           className="prod__imagem"
+          loading="lazy"
         />
         {produto.nome}
         {produto.destaque && (

@@ -16,7 +16,7 @@ export function EmBreve({ descricao }: EmBreveProps) {
     <div className="em-breve">
       <div className="em-breve__content">
         <img
-          src="/images/embreve.png"
+          src="/images/embreve.webp"
           alt="Mascote MenuPoint"
           className="em-breve__mascote"
         />
@@ -38,7 +38,7 @@ export function EmBreve({ descricao }: EmBreveProps) {
         </div>
 
         <img
-          src="/images/embreve2.png"
+          src="/images/embreve2.webp"
           alt="Em construção"
           className="em-breve__placa"
         />

@@ -27,12 +27,12 @@ const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
       onClick={() => navigate('/restaurante/config')}
       aria-label="Ir para configurações"
     >
-      <img src={logoUrl ?? '/icons/restaurant-avatar.png'} alt="Foto do restaurante" />
+      <img src={logoUrl ?? '/icons/restaurant-avatar.webp'} alt="Foto do restaurante" />
     </button>
   );
 
   const leftIcon = (
-    <img src="/icons/restaurant-logo.png" alt="Logo do restaurante" />
+    <img src="/icons/restaurant-logo.webp" alt="Logo do restaurante" />
   );
 
   return (

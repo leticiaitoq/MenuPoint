@@ -78,7 +78,7 @@ const RegisterCliente: React.FC = () => {
 
     setCarregandoCliente(true);
     try {
-      // Não devolve token: o cliente só entra depois de confirmar o e-mail
+      // Não vem token, o cliente só entra depois de confirmar o e-mail
       await ClienteService.registrar({
         nome: nomeCliente.trim(),
         cpf: cpfCliente,
@@ -106,33 +106,30 @@ const RegisterCliente: React.FC = () => {
   return (
     <div
       className="register-cliente"
-      style={{ backgroundImage: 'url(/images/Register-Back.png)' }}
+      style={{ backgroundImage: 'url(/images/Register-Back.webp)' }}
     >
       <div className="register-cliente__container">
 
-        {/* Imagem compartilhada */}
         <AuthCard />
 
-        {/* Formulário */}
         <div className="register-cliente__form-side">
           <h1 className="register-cliente__title">Criar conta</h1>
 
           <form className="register-cliente__form" onSubmit={handleSubmitCliente}>
 
-            {/* Mensagem de erro */}
             {erroCliente && (
               <p style={{ color: 'red', fontSize: '14px', marginBottom: '8px' }}>
                 {erroCliente}
               </p>
             )}
 
-            {/* Nome */}
             <div className="register-cliente__field">
               <label className="register-cliente__label" htmlFor="nomeCliente">
                 Nome
               </label>
               <input
                 id="nomeCliente"
+                autoComplete="name"
                 type="text"
                 placeholder="Digite seu nome"
                 className="register-cliente__input"
@@ -142,13 +139,13 @@ const RegisterCliente: React.FC = () => {
               />
             </div>
 
-            {/* CPF */}
             <div className="register-cliente__field">
               <label className="register-cliente__label" htmlFor="cpfCliente">
                 CPF
               </label>
               <input
                 id="cpfCliente"
+                autoComplete="off"
                 type="text"
                 placeholder="000.000.000-00"
                 className="register-cliente__input"
@@ -158,13 +155,13 @@ const RegisterCliente: React.FC = () => {
               />
             </div>
 
-            {/* Telefone */}
             <div className="register-cliente__field">
               <label className="register-cliente__label" htmlFor="telefoneCliente">
                 Telefone
               </label>
               <input
                 id="telefoneCliente"
+                autoComplete="tel"
                 type="tel"
                 inputMode="numeric"
                 placeholder="(00) 00000-0000"
@@ -175,13 +172,13 @@ const RegisterCliente: React.FC = () => {
               />
             </div>
 
-            {/* Email */}
             <div className="register-cliente__field">
               <label className="register-cliente__label" htmlFor="emailCliente">
                 Email
               </label>
               <input
                 id="emailCliente"
+                autoComplete="email"
                 type="email"
                 placeholder="seu@email.com"
                 className="register-cliente__input"
@@ -191,7 +188,6 @@ const RegisterCliente: React.FC = () => {
               />
             </div>
 
-            {/* Senhas */}
             <div className="register-cliente__field-row">
 
               <div className="register-cliente__field">
@@ -201,6 +197,7 @@ const RegisterCliente: React.FC = () => {
                 <div className="register-cliente__input-wrapper">
                   <input
                     id="senhaCliente"
+                    autoComplete="new-password"
                     type={mostrarSenha ? 'text' : 'password'}
                     placeholder="Digite sua senha"
                     className="register-cliente__input register-cliente__input--with-toggle"
@@ -242,6 +239,7 @@ const RegisterCliente: React.FC = () => {
                 <div className="register-cliente__input-wrapper">
                   <input
                     id="confirmarSenhaCliente"
+                    autoComplete="new-password"
                     type={mostrarConfirmar ? 'text' : 'password'}
                     placeholder="Confirme sua senha"
                     className="register-cliente__input register-cliente__input--with-toggle"
@@ -285,7 +283,6 @@ const RegisterCliente: React.FC = () => {
 
       </div>
 
-      {/* Modal de sucesso */}
       {mostrarSucesso && (
         <div className="register-cliente__overlay" onClick={() => setMostrarSucesso(false)}>
           <div className="register-cliente__modal" onClick={(e) => e.stopPropagation()}>

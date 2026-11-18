@@ -21,7 +21,7 @@ const CLIENTE_MOCK: Cliente = {
   nome:     '',
   telefone: '',
   email:    'email.tal@email.com',
-  foto:     '/icons/customer-avatar.png',
+  foto:     '/icons/customer-avatar.webp',
 };
 
 const formatarTelefone = (valor: string): string => {
@@ -117,7 +117,7 @@ const PerfilLocal: React.FC = () => {
                 src={fotoPreview}
                 alt="Foto do cliente"
                 className="perfil__foto"
-                onError={(e) => { (e.target as HTMLImageElement).src = '/icons/customer-avatar.png'; }}
+                onError={(e) => { (e.target as HTMLImageElement).src = '/icons/customer-avatar.webp'; }}
               />
               {editando && (
                 <>

@@ -31,28 +31,24 @@ const RecoverPassCliente: React.FC = () => {
   return (
     <div
       className="recover-pass-cliente"
-      style={{ backgroundImage: 'url(/images/Register-Back.png)' }}
+      style={{ backgroundImage: 'url(/images/Register-Back.webp)' }}
     >
       <div className="recover-pass-cliente__container">
 
-        {/* Imagem compartilhada */}
         <AuthCard />
 
-        {/* Formulário */}
         <div className="recover-pass-cliente__form-side">
           <h1 className="recover-pass-cliente__title">Recuperar senha</h1>
           <p className="recover-pass-cliente__subtitle">Digite seu email para receber instruções</p>
 
           <form className="recover-pass-cliente__form" onSubmit={handleSubmitCliente}>
 
-            {/* Mensagem de erro */}
             {erroCliente && (
               <p style={{ color: 'red', fontSize: '14px', marginBottom: '8px' }}>
                 {erroCliente}
               </p>
             )}
 
-            {/* Campo Email */}
             <div className="recover-pass-cliente__field">
               <label className="recover-pass-cliente__label" htmlFor="emailCliente">
                 Email
@@ -61,6 +57,7 @@ const RecoverPassCliente: React.FC = () => {
                 <MdEmail className="recover-pass-cliente__input-icon" />
                 <input
                   id="emailCliente"
+                  autoComplete="email"
                   type="email"
                   placeholder="seu@email.com"
                   className="recover-pass-cliente__input recover-pass-cliente__input--with-icon"

@@ -149,7 +149,7 @@ optgroup {
 
 
 
-/* Telas de login/cadastro (restaurante e cliente) usam a arte clara Register-Back.png.
+/* Telas de login/cadastro (restaurante e cliente) usam a arte clara Register-Back.webp.
    No escuro ela é multiplicada por um cinza para não ofuscar ao redor do cartão. */
 [data-theme="dark"] .login-page,
 [data-theme="dark"] .register-page,

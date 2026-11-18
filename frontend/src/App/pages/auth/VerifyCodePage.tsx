@@ -154,7 +154,7 @@ const VerifyCodePage: React.FC = () => {
   return (
     <div
       className="verify-page"
-      style={{ backgroundImage: 'url(/images/Register-Back.png)' }}
+      style={{ backgroundImage: 'url(/images/Register-Back.webp)' }}
     >
       <div className="verify-page__container">
         <AuthCard />
