@@ -162,7 +162,7 @@ export async function clientesRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(200).send({ cliente })
     })
 
-    // POST /auth/cliente/me/foto — multipart (campo "arquivo"), JPG/PNG até 5MB.
+    // POST /auth/cliente/me/foto — multipart (campo "arquivo"), JPG/PNG até 1MB.
     // Grava no Storage e salva a URL no cadastro
     priv.post(
       '/me/foto',
@@ -178,7 +178,7 @@ export async function clientesRoutes(app: FastifyInstance): Promise<void> {
           buffer = await arquivo.toBuffer()
         } catch (err: any) {
           if (err?.code === 'FST_REQ_FILE_TOO_LARGE') {
-            throw new AppError('Imagem muito grande (máximo 5MB)', 413)
+            throw new AppError('Imagem muito grande (máximo 1MB)', 413)
           }
           throw err
         }
