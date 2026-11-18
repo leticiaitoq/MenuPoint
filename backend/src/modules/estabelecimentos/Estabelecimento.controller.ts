@@ -164,7 +164,7 @@ export async function estabelecimentosRoutes(app: FastifyInstance) {
         buffer = await arquivo.toBuffer()
       } catch (err: any) {
         if (err?.code === 'FST_REQ_FILE_TOO_LARGE') {
-          throw new AppError('Imagem muito grande (máximo 5MB)', 413)
+          throw new AppError('Imagem muito grande (máximo 1MB)', 413)
         }
         throw err
       }

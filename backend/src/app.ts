@@ -81,7 +81,7 @@ app.register(cors, {
 
   // Multipart para upload de arquivos
   app.register(multipart, {
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    limits: { fileSize: 1 * 1024 * 1024 }, // 1MB (o front já envia a imagem reduzida, ~500KB)
   })
 
 app.register(fastifySwagger, {

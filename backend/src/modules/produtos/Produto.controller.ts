@@ -100,7 +100,7 @@ export async function produtosRoutes(app: FastifyInstance): Promise<void> {
   app.register(async (adminRoutes) => {
     adminRoutes.addHook('onRequest', authorize('ADMIN'))
 
-    // POST /upload-imagem — multipart (campo "arquivo"), JPG/PNG até 5MB
+    // POST /upload-imagem — multipart (campo "arquivo"), JPG/PNG até 1MB
     // Usada antes do POST / (criação) já que o produto ainda não tem id.
     adminRoutes.post(
       '/upload-imagem',
@@ -121,7 +121,7 @@ export async function produtosRoutes(app: FastifyInstance): Promise<void> {
           buffer = await arquivo.toBuffer()
         } catch (err: any) {
           if (err?.code === 'FST_REQ_FILE_TOO_LARGE') {
-            throw new AppError('Imagem muito grande (máximo 5MB)', 413)
+            throw new AppError('Imagem muito grande (máximo 1MB)', 413)
           }
           throw err
         }
