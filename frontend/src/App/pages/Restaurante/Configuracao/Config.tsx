@@ -66,7 +66,7 @@ const TIPOS_PIX: { valor: TipoChavePix; rotulo: string }[] = [
   { valor: 'ALEATORIA', rotulo: 'Chave aleatória' },
 ];
 
-const LOGO_PADRAO = '/icons/restaurant-avatar.png';
+const LOGO_PADRAO = '/icons/restaurant-avatar.webp';
 const TAMANHO_MAX_LOGO = 20 * 1024 * 1024; // original; é reduzida antes do envio
 
 type Erros = Partial<Record<string, string>>;

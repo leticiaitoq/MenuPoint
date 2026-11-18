@@ -1,0 +1,463 @@
+/* Modo escuro das telas de login, cadastro, recuperar senha e verificar código.
+   Essas telas usam cores fixas, então aqui só trocamos as cores quando
+   <html data-theme="dark"> está ativo, com os tokens do tema.css.
+   O tema claro não muda. */
+
+[data-theme="dark"] .login-page__container,
+[data-theme="dark"] .login-page__form-side,
+[data-theme="dark"] .login-page__toast-inner,
+[data-theme="dark"] .login-page__modal-inner,
+[data-theme="dark"] .recover-pass__container,
+[data-theme="dark"] .recover-pass__form-side,
+[data-theme="dark"] .recover-pass__toast-inner,
+[data-theme="dark"] .recover-pass__modal-inner,
+[data-theme="dark"] .verify-page__container,
+[data-theme="dark"] .verify-page__form-side,
+[data-theme="dark"] .verify-page__toast-inner,
+[data-theme="dark"] .verify-page__modal-inner,
+[data-theme="dark"] .login-cliente__container,
+[data-theme="dark"] .login-cliente__form-side,
+[data-theme="dark"] .login-cliente__toast-inner,
+[data-theme="dark"] .login-cliente__modal-inner,
+[data-theme="dark"] .recover-pass-cliente__container,
+[data-theme="dark"] .recover-pass-cliente__form-side,
+[data-theme="dark"] .recover-pass-cliente__toast-inner,
+[data-theme="dark"] .recover-pass-cliente__modal-inner,
+[data-theme="dark"] .verify-cliente__container,
+[data-theme="dark"] .verify-cliente__form-side,
+[data-theme="dark"] .verify-cliente__toast-inner,
+[data-theme="dark"] .verify-cliente__modal-inner,
+[data-theme="dark"] .register-cliente__container,
+[data-theme="dark"] .register-cliente__form-side,
+[data-theme="dark"] .register-cliente__toast-inner,
+[data-theme="dark"] .register-cliente__modal-inner,
+[data-theme="dark"] .register-page__container,
+[data-theme="dark"] .register-page__form-side,
+[data-theme="dark"] .register-page__toast-inner,
+[data-theme="dark"] .register-page__modal-inner {
+  background: var(--bg-surface);
+}
+[data-theme="dark"] .register-page__card { background: var(--bg-surface); }
+
+[data-theme="dark"] .login-page__title,
+[data-theme="dark"] .login-page__label,
+[data-theme="dark"] .login-page__email,
+[data-theme="dark"] .login-page__toast-text,
+[data-theme="dark"] .login-page__modal-title,
+[data-theme="dark"] .login-page__modal-titulo,
+[data-theme="dark"] .recover-pass__title,
+[data-theme="dark"] .recover-pass__label,
+[data-theme="dark"] .recover-pass__email,
+[data-theme="dark"] .recover-pass__toast-text,
+[data-theme="dark"] .recover-pass__modal-title,
+[data-theme="dark"] .recover-pass__modal-titulo,
+[data-theme="dark"] .verify-page__title,
+[data-theme="dark"] .verify-page__label,
+[data-theme="dark"] .verify-page__email,
+[data-theme="dark"] .verify-page__toast-text,
+[data-theme="dark"] .verify-page__modal-title,
+[data-theme="dark"] .verify-page__modal-titulo,
+[data-theme="dark"] .login-cliente__title,
+[data-theme="dark"] .login-cliente__label,
+[data-theme="dark"] .login-cliente__email,
+[data-theme="dark"] .login-cliente__toast-text,
+[data-theme="dark"] .login-cliente__modal-title,
+[data-theme="dark"] .login-cliente__modal-titulo,
+[data-theme="dark"] .recover-pass-cliente__title,
+[data-theme="dark"] .recover-pass-cliente__label,
+[data-theme="dark"] .recover-pass-cliente__email,
+[data-theme="dark"] .recover-pass-cliente__toast-text,
+[data-theme="dark"] .recover-pass-cliente__modal-title,
+[data-theme="dark"] .recover-pass-cliente__modal-titulo,
+[data-theme="dark"] .verify-cliente__title,
+[data-theme="dark"] .verify-cliente__label,
+[data-theme="dark"] .verify-cliente__email,
+[data-theme="dark"] .verify-cliente__toast-text,
+[data-theme="dark"] .verify-cliente__modal-title,
+[data-theme="dark"] .verify-cliente__modal-titulo,
+[data-theme="dark"] .register-cliente__title,
+[data-theme="dark"] .register-cliente__label,
+[data-theme="dark"] .register-cliente__email,
+[data-theme="dark"] .register-cliente__toast-text,
+[data-theme="dark"] .register-cliente__modal-title,
+[data-theme="dark"] .register-cliente__modal-titulo,
+[data-theme="dark"] .register-page__title,
+[data-theme="dark"] .register-page__label,
+[data-theme="dark"] .register-page__email,
+[data-theme="dark"] .register-page__toast-text,
+[data-theme="dark"] .register-page__modal-title,
+[data-theme="dark"] .register-page__modal-titulo {
+  color: var(--text);
+}
+
+[data-theme="dark"] .login-page__subtitle,
+[data-theme="dark"] .login-page__redirect,
+[data-theme="dark"] .login-page__forgot,
+[data-theme="dark"] .login-page__description,
+[data-theme="dark"] .login-page__input-icon,
+[data-theme="dark"] .login-page__toggle-password,
+[data-theme="dark"] .login-page__toggle,
+[data-theme="dark"] .login-page__resend-text,
+[data-theme="dark"] .login-page__resend-timer,
+[data-theme="dark"] .login-page__back-btn,
+[data-theme="dark"] .login-page__modal-text,
+[data-theme="dark"] .login-page__modal-texto,
+[data-theme="dark"] .login-page__toast-sub,
+[data-theme="dark"] .recover-pass__subtitle,
+[data-theme="dark"] .recover-pass__redirect,
+[data-theme="dark"] .recover-pass__forgot,
+[data-theme="dark"] .recover-pass__description,
+[data-theme="dark"] .recover-pass__input-icon,
+[data-theme="dark"] .recover-pass__toggle-password,
+[data-theme="dark"] .recover-pass__toggle,
+[data-theme="dark"] .recover-pass__resend-text,
+[data-theme="dark"] .recover-pass__resend-timer,
+[data-theme="dark"] .recover-pass__back-btn,
+[data-theme="dark"] .recover-pass__modal-text,
+[data-theme="dark"] .recover-pass__modal-texto,
+[data-theme="dark"] .recover-pass__toast-sub,
+[data-theme="dark"] .verify-page__subtitle,
+[data-theme="dark"] .verify-page__redirect,
+[data-theme="dark"] .verify-page__forgot,
+[data-theme="dark"] .verify-page__description,
+[data-theme="dark"] .verify-page__input-icon,
+[data-theme="dark"] .verify-page__toggle-password,
+[data-theme="dark"] .verify-page__toggle,
+[data-theme="dark"] .verify-page__resend-text,
+[data-theme="dark"] .verify-page__resend-timer,
+[data-theme="dark"] .verify-page__back-btn,
+[data-theme="dark"] .verify-page__modal-text,
+[data-theme="dark"] .verify-page__modal-texto,
+[data-theme="dark"] .verify-page__toast-sub,
+[data-theme="dark"] .login-cliente__subtitle,
+[data-theme="dark"] .login-cliente__redirect,
+[data-theme="dark"] .login-cliente__forgot,
+[data-theme="dark"] .login-cliente__description,
+[data-theme="dark"] .login-cliente__input-icon,
+[data-theme="dark"] .login-cliente__toggle-password,
+[data-theme="dark"] .login-cliente__toggle,
+[data-theme="dark"] .login-cliente__resend-text,
+[data-theme="dark"] .login-cliente__resend-timer,
+[data-theme="dark"] .login-cliente__back-btn,
+[data-theme="dark"] .login-cliente__modal-text,
+[data-theme="dark"] .login-cliente__modal-texto,
+[data-theme="dark"] .login-cliente__toast-sub,
+[data-theme="dark"] .recover-pass-cliente__subtitle,
+[data-theme="dark"] .recover-pass-cliente__redirect,
+[data-theme="dark"] .recover-pass-cliente__forgot,
+[data-theme="dark"] .recover-pass-cliente__description,
+[data-theme="dark"] .recover-pass-cliente__input-icon,
+[data-theme="dark"] .recover-pass-cliente__toggle-password,
+[data-theme="dark"] .recover-pass-cliente__toggle,
+[data-theme="dark"] .recover-pass-cliente__resend-text,
+[data-theme="dark"] .recover-pass-cliente__resend-timer,
+[data-theme="dark"] .recover-pass-cliente__back-btn,
+[data-theme="dark"] .recover-pass-cliente__modal-text,
+[data-theme="dark"] .recover-pass-cliente__modal-texto,
+[data-theme="dark"] .recover-pass-cliente__toast-sub,
+[data-theme="dark"] .verify-cliente__subtitle,
+[data-theme="dark"] .verify-cliente__redirect,
+[data-theme="dark"] .verify-cliente__forgot,
+[data-theme="dark"] .verify-cliente__description,
+[data-theme="dark"] .verify-cliente__input-icon,
+[data-theme="dark"] .verify-cliente__toggle-password,
+[data-theme="dark"] .verify-cliente__toggle,
+[data-theme="dark"] .verify-cliente__resend-text,
+[data-theme="dark"] .verify-cliente__resend-timer,
+[data-theme="dark"] .verify-cliente__back-btn,
+[data-theme="dark"] .verify-cliente__modal-text,
+[data-theme="dark"] .verify-cliente__modal-texto,
+[data-theme="dark"] .verify-cliente__toast-sub,
+[data-theme="dark"] .register-cliente__subtitle,
+[data-theme="dark"] .register-cliente__redirect,
+[data-theme="dark"] .register-cliente__forgot,
+[data-theme="dark"] .register-cliente__description,
+[data-theme="dark"] .register-cliente__input-icon,
+[data-theme="dark"] .register-cliente__toggle-password,
+[data-theme="dark"] .register-cliente__toggle,
+[data-theme="dark"] .register-cliente__resend-text,
+[data-theme="dark"] .register-cliente__resend-timer,
+[data-theme="dark"] .register-cliente__back-btn,
+[data-theme="dark"] .register-cliente__modal-text,
+[data-theme="dark"] .register-cliente__modal-texto,
+[data-theme="dark"] .register-cliente__toast-sub,
+[data-theme="dark"] .register-page__subtitle,
+[data-theme="dark"] .register-page__redirect,
+[data-theme="dark"] .register-page__forgot,
+[data-theme="dark"] .register-page__description,
+[data-theme="dark"] .register-page__input-icon,
+[data-theme="dark"] .register-page__toggle-password,
+[data-theme="dark"] .register-page__toggle,
+[data-theme="dark"] .register-page__resend-text,
+[data-theme="dark"] .register-page__resend-timer,
+[data-theme="dark"] .register-page__back-btn,
+[data-theme="dark"] .register-page__modal-text,
+[data-theme="dark"] .register-page__modal-texto,
+[data-theme="dark"] .register-page__toast-sub {
+  color: var(--text-muted);
+}
+
+/* Links ficam no âmbar do tema escuro */
+[data-theme="dark"] .login-page__redirect-link,
+[data-theme="dark"] .login-page__resend-btn,
+[data-theme="dark"] .login-page__email-icon,
+[data-theme="dark"] .recover-pass__redirect-link,
+[data-theme="dark"] .recover-pass__resend-btn,
+[data-theme="dark"] .recover-pass__email-icon,
+[data-theme="dark"] .verify-page__redirect-link,
+[data-theme="dark"] .verify-page__resend-btn,
+[data-theme="dark"] .verify-page__email-icon,
+[data-theme="dark"] .login-cliente__redirect-link,
+[data-theme="dark"] .login-cliente__resend-btn,
+[data-theme="dark"] .login-cliente__email-icon,
+[data-theme="dark"] .recover-pass-cliente__redirect-link,
+[data-theme="dark"] .recover-pass-cliente__resend-btn,
+[data-theme="dark"] .recover-pass-cliente__email-icon,
+[data-theme="dark"] .verify-cliente__redirect-link,
+[data-theme="dark"] .verify-cliente__resend-btn,
+[data-theme="dark"] .verify-cliente__email-icon,
+[data-theme="dark"] .register-cliente__redirect-link,
+[data-theme="dark"] .register-cliente__resend-btn,
+[data-theme="dark"] .register-cliente__email-icon,
+[data-theme="dark"] .register-page__redirect-link,
+[data-theme="dark"] .register-page__resend-btn,
+[data-theme="dark"] .register-page__email-icon,
+[data-theme="dark"] .login-page__forgot:hover,
+[data-theme="dark"] .login-page__back-btn:hover,
+[data-theme="dark"] .recover-pass__forgot:hover,
+[data-theme="dark"] .recover-pass__back-btn:hover,
+[data-theme="dark"] .verify-page__forgot:hover,
+[data-theme="dark"] .verify-page__back-btn:hover,
+[data-theme="dark"] .login-cliente__forgot:hover,
+[data-theme="dark"] .login-cliente__back-btn:hover,
+[data-theme="dark"] .recover-pass-cliente__forgot:hover,
+[data-theme="dark"] .recover-pass-cliente__back-btn:hover,
+[data-theme="dark"] .verify-cliente__forgot:hover,
+[data-theme="dark"] .verify-cliente__back-btn:hover,
+[data-theme="dark"] .register-cliente__forgot:hover,
+[data-theme="dark"] .register-cliente__back-btn:hover,
+[data-theme="dark"] .register-page__forgot:hover,
+[data-theme="dark"] .register-page__back-btn:hover {
+  color: var(--accent);
+}
+[data-theme="dark"] .login-page__divider,
+[data-theme="dark"] .recover-pass__divider,
+[data-theme="dark"] .verify-page__divider,
+[data-theme="dark"] .login-cliente__divider,
+[data-theme="dark"] .recover-pass-cliente__divider,
+[data-theme="dark"] .verify-cliente__divider,
+[data-theme="dark"] .register-cliente__divider,
+[data-theme="dark"] .register-page__divider {
+  background-color: var(--border);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .login-page input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+[data-theme="dark"] .login-page select,
+[data-theme="dark"] .login-page textarea,
+[data-theme="dark"] .recover-pass input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+[data-theme="dark"] .recover-pass select,
+[data-theme="dark"] .recover-pass textarea,
+[data-theme="dark"] .verify-page input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+[data-theme="dark"] .verify-page select,
+[data-theme="dark"] .verify-page textarea,
+[data-theme="dark"] .login-cliente input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+[data-theme="dark"] .login-cliente select,
+[data-theme="dark"] .login-cliente textarea,
+[data-theme="dark"] .recover-pass-cliente input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+[data-theme="dark"] .recover-pass-cliente select,
+[data-theme="dark"] .recover-pass-cliente textarea,
+[data-theme="dark"] .verify-cliente input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+[data-theme="dark"] .verify-cliente select,
+[data-theme="dark"] .verify-cliente textarea,
+[data-theme="dark"] .register-cliente input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+[data-theme="dark"] .register-cliente select,
+[data-theme="dark"] .register-cliente textarea,
+[data-theme="dark"] .register-page input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+[data-theme="dark"] .register-page select,
+[data-theme="dark"] .register-page textarea {
+  background-color: var(--bg-surface-alt);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+[data-theme="dark"] .login-page input:focus,
+[data-theme="dark"] .login-page select:focus,
+[data-theme="dark"] .login-page textarea:focus,
+[data-theme="dark"] .recover-pass input:focus,
+[data-theme="dark"] .recover-pass select:focus,
+[data-theme="dark"] .recover-pass textarea:focus,
+[data-theme="dark"] .verify-page input:focus,
+[data-theme="dark"] .verify-page select:focus,
+[data-theme="dark"] .verify-page textarea:focus,
+[data-theme="dark"] .login-cliente input:focus,
+[data-theme="dark"] .login-cliente select:focus,
+[data-theme="dark"] .login-cliente textarea:focus,
+[data-theme="dark"] .recover-pass-cliente input:focus,
+[data-theme="dark"] .recover-pass-cliente select:focus,
+[data-theme="dark"] .recover-pass-cliente textarea:focus,
+[data-theme="dark"] .verify-cliente input:focus,
+[data-theme="dark"] .verify-cliente select:focus,
+[data-theme="dark"] .verify-cliente textarea:focus,
+[data-theme="dark"] .register-cliente input:focus,
+[data-theme="dark"] .register-cliente select:focus,
+[data-theme="dark"] .register-cliente textarea:focus,
+[data-theme="dark"] .register-page input:focus,
+[data-theme="dark"] .register-page select:focus,
+[data-theme="dark"] .register-page textarea:focus {
+  background-color: var(--bg-surface);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--brand-tint);
+}
+[data-theme="dark"] .login-page input::placeholder,
+[data-theme="dark"] .login-page textarea::placeholder,
+[data-theme="dark"] .recover-pass input::placeholder,
+[data-theme="dark"] .recover-pass textarea::placeholder,
+[data-theme="dark"] .verify-page input::placeholder,
+[data-theme="dark"] .verify-page textarea::placeholder,
+[data-theme="dark"] .login-cliente input::placeholder,
+[data-theme="dark"] .login-cliente textarea::placeholder,
+[data-theme="dark"] .recover-pass-cliente input::placeholder,
+[data-theme="dark"] .recover-pass-cliente textarea::placeholder,
+[data-theme="dark"] .verify-cliente input::placeholder,
+[data-theme="dark"] .verify-cliente textarea::placeholder,
+[data-theme="dark"] .register-cliente input::placeholder,
+[data-theme="dark"] .register-cliente textarea::placeholder,
+[data-theme="dark"] .register-page input::placeholder,
+[data-theme="dark"] .register-page textarea::placeholder {
+  color: var(--text-faint);
+}
+
+[data-theme="dark"] .login-page__otp-input--filled,
+[data-theme="dark"] .recover-pass__otp-input--filled,
+[data-theme="dark"] .verify-page__otp-input--filled,
+[data-theme="dark"] .login-cliente__otp-input--filled,
+[data-theme="dark"] .recover-pass-cliente__otp-input--filled,
+[data-theme="dark"] .verify-cliente__otp-input--filled,
+[data-theme="dark"] .register-cliente__otp-input--filled,
+[data-theme="dark"] .register-page__otp-input--filled {
+  background-color: var(--brand-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+[data-theme="dark"] .login-page__otp-input,
+[data-theme="dark"] .recover-pass__otp-input,
+[data-theme="dark"] .verify-page__otp-input,
+[data-theme="dark"] .login-cliente__otp-input,
+[data-theme="dark"] .recover-pass-cliente__otp-input,
+[data-theme="dark"] .verify-cliente__otp-input,
+[data-theme="dark"] .register-cliente__otp-input,
+[data-theme="dark"] .register-page__otp-input {
+  caret-color: var(--accent);
+}
+
+[data-theme="dark"] .login-page__icon-wrapper,
+[data-theme="dark"] .login-page__modal-icon-wrap,
+[data-theme="dark"] .recover-pass__icon-wrapper,
+[data-theme="dark"] .recover-pass__modal-icon-wrap,
+[data-theme="dark"] .verify-page__icon-wrapper,
+[data-theme="dark"] .verify-page__modal-icon-wrap,
+[data-theme="dark"] .login-cliente__icon-wrapper,
+[data-theme="dark"] .login-cliente__modal-icon-wrap,
+[data-theme="dark"] .recover-pass-cliente__icon-wrapper,
+[data-theme="dark"] .recover-pass-cliente__modal-icon-wrap,
+[data-theme="dark"] .verify-cliente__icon-wrapper,
+[data-theme="dark"] .verify-cliente__modal-icon-wrap,
+[data-theme="dark"] .register-cliente__icon-wrapper,
+[data-theme="dark"] .register-cliente__modal-icon-wrap,
+[data-theme="dark"] .register-page__icon-wrapper,
+[data-theme="dark"] .register-page__modal-icon-wrap {
+  background-color: var(--brand-soft);
+}
+[data-theme="dark"] .login-page__error,
+[data-theme="dark"] .recover-pass__error,
+[data-theme="dark"] .verify-page__error,
+[data-theme="dark"] .login-cliente__error,
+[data-theme="dark"] .recover-pass-cliente__error,
+[data-theme="dark"] .verify-cliente__error,
+[data-theme="dark"] .register-cliente__error,
+[data-theme="dark"] .register-page__error {
+  color: var(--danger);
+  background-color: var(--danger-soft);
+  border-left-color: var(--danger);
+}
+[data-theme="dark"] .login-page__info,
+[data-theme="dark"] .recover-pass__info,
+[data-theme="dark"] .verify-page__info,
+[data-theme="dark"] .login-cliente__info,
+[data-theme="dark"] .recover-pass-cliente__info,
+[data-theme="dark"] .verify-cliente__info,
+[data-theme="dark"] .register-cliente__info,
+[data-theme="dark"] .register-page__info {
+  color: var(--info-text);
+  background-color: var(--info-soft);
+}
+[data-theme="dark"] .register-page__alert {
+  background: var(--danger-soft);
+  border-color: var(--brand-soft-border);
+  color: var(--danger);
+}
+
+[data-theme="dark"] .recover-pass__rules li.is-missing,
+[data-theme="dark"] .register-cliente__regra--erro { color: var(--danger); }
+[data-theme="dark"] .recover-pass__rules li.is-ok,
+[data-theme="dark"] .register-cliente__regra--ok { color: var(--success); }
+
+/* O cadastro do restaurante usa variáveis --rp-* */
+[data-theme="dark"] .register-page {
+  --rp-ink: var(--text);
+  --rp-muted: var(--text-muted);
+  --rp-line: var(--border);
+  --rp-field: var(--bg-surface-alt);
+  --rp-error: var(--danger);
+  --rp-ok: var(--success);
+}
+[data-theme="dark"] .register-page__step-line { background: var(--border-strong); }
+[data-theme="dark"] .register-page__step-dot { background: var(--border-strong); }
+[data-theme="dark"] .register-page__step-label,
+[data-theme="dark"] .register-page__icon,
+[data-theme="dark"] .register-page__chevron,
+[data-theme="dark"] .register-page__toggle { color: var(--text-muted); }
+[data-theme="dark"] .register-page__hint { color: var(--text-muted); }
+[data-theme="dark"] .register-page__hint.is-valid { background: var(--success-soft); border-color: var(--success); color: var(--success-text); }
+[data-theme="dark"] .register-page__terms label { color: var(--text-muted); }
+[data-theme="dark"] .register-page__spinner { border-color: var(--border); border-top-color: var(--accent); }
+[data-theme="dark"] .register-page__input--select:has(option[value=""]:checked) { color: var(--text-faint); }
+
+/* Autofill do navegador, o tema.css força o claro */
+[data-theme="dark"] .login-page input:-webkit-autofill,
+[data-theme="dark"] .login-page input:-webkit-autofill:hover,
+[data-theme="dark"] .login-page input:-webkit-autofill:focus,
+[data-theme="dark"] .login-page input:-webkit-autofill:active,
+[data-theme="dark"] .recover-pass input:-webkit-autofill,
+[data-theme="dark"] .recover-pass input:-webkit-autofill:hover,
+[data-theme="dark"] .recover-pass input:-webkit-autofill:focus,
+[data-theme="dark"] .recover-pass input:-webkit-autofill:active,
+[data-theme="dark"] .verify-page input:-webkit-autofill,
+[data-theme="dark"] .verify-page input:-webkit-autofill:hover,
+[data-theme="dark"] .verify-page input:-webkit-autofill:focus,
+[data-theme="dark"] .verify-page input:-webkit-autofill:active,
+[data-theme="dark"] .login-cliente input:-webkit-autofill,
+[data-theme="dark"] .login-cliente input:-webkit-autofill:hover,
+[data-theme="dark"] .login-cliente input:-webkit-autofill:focus,
+[data-theme="dark"] .login-cliente input:-webkit-autofill:active,
+[data-theme="dark"] .recover-pass-cliente input:-webkit-autofill,
+[data-theme="dark"] .recover-pass-cliente input:-webkit-autofill:hover,
+[data-theme="dark"] .recover-pass-cliente input:-webkit-autofill:focus,
+[data-theme="dark"] .recover-pass-cliente input:-webkit-autofill:active,
+[data-theme="dark"] .verify-cliente input:-webkit-autofill,
+[data-theme="dark"] .verify-cliente input:-webkit-autofill:hover,
+[data-theme="dark"] .verify-cliente input:-webkit-autofill:focus,
+[data-theme="dark"] .verify-cliente input:-webkit-autofill:active,
+[data-theme="dark"] .register-cliente input:-webkit-autofill,
+[data-theme="dark"] .register-cliente input:-webkit-autofill:hover,
+[data-theme="dark"] .register-cliente input:-webkit-autofill:focus,
+[data-theme="dark"] .register-cliente input:-webkit-autofill:active,
+[data-theme="dark"] .register-page input:-webkit-autofill,
+[data-theme="dark"] .register-page input:-webkit-autofill:hover,
+[data-theme="dark"] .register-page input:-webkit-autofill:focus,
+[data-theme="dark"] .register-page input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-surface-alt) inset;
+  box-shadow: 0 0 0 1000px var(--bg-surface-alt) inset;
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+}

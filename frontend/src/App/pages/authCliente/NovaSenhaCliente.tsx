@@ -10,11 +10,9 @@ interface LocationStateCliente {
   code?: string;
 }
 
-/**
- * Último passo da recuperação de senha do cliente.
- * Chega aqui vindo de /verify-code/cliente (mode "recover") com { email, code } no state.
- * Reaproveita o CSS do cadastro do cliente (mesmos campos e regras de senha).
- */
+// Último passo da recuperação de senha do cliente.
+// Chega de /verify-code/cliente (mode "recover") com { email, code } no state.
+// Usa o CSS do cadastro do cliente, os campos e as regras de senha são os mesmos.
 const NovaSenhaCliente: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,7 +29,7 @@ const NovaSenhaCliente: React.FC = () => {
   const [carregandoCliente, setCarregandoCliente] = useState(false);
   const [sucesso, setSucesso] = useState(false);
 
-  // Mesmas regras do back-end (Cliente.schema.ts)
+  // Mesmas regras do back (Cliente.schema.ts)
   const regrasSenha = [
     { label: 'Mínimo 8 caracteres', valido: novaSenha.length >= 8 },
     { label: 'Pelo menos 1 letra maiúscula', valido: /[A-Z]/.test(novaSenha) },
@@ -39,7 +37,7 @@ const NovaSenhaCliente: React.FC = () => {
     { label: 'Pelo menos 1 número', valido: /[0-9]/.test(novaSenha) },
   ];
 
-  // Sem e-mail/código (abriu a URL direto ou recarregou): recomeça a recuperação
+  // Sem e-mail ou código (abriu a URL direto ou recarregou), recomeça a recuperação
   if (!emailCliente || !codigoCliente) {
     return <Navigate to="/recover/cliente" replace />;
   }
@@ -79,7 +77,7 @@ const NovaSenhaCliente: React.FC = () => {
   return (
     <div
       className="register-cliente"
-      style={{ backgroundImage: 'url(/images/Register-Back.png)' }}
+      style={{ backgroundImage: 'url(/images/Register-Back.webp)' }}
     >
       <div className="register-cliente__container">
         <AuthCard />
@@ -109,7 +107,6 @@ const NovaSenhaCliente: React.FC = () => {
                   </p>
                 )}
 
-                {/* Nova senha */}
                 <div className="register-cliente__field">
                   <label className="register-cliente__label" htmlFor="novaSenhaCliente">
                     Nova senha
@@ -117,6 +114,7 @@ const NovaSenhaCliente: React.FC = () => {
                   <div className="register-cliente__input-wrapper">
                     <input
                       id="novaSenhaCliente"
+                      autoComplete="new-password"
                       type={mostrarSenha ? 'text' : 'password'}
                       placeholder="Digite a nova senha"
                       className="register-cliente__input register-cliente__input--with-toggle"
@@ -151,7 +149,6 @@ const NovaSenhaCliente: React.FC = () => {
                   )}
                 </div>
 
-                {/* Confirmar senha */}
                 <div className="register-cliente__field">
                   <label className="register-cliente__label" htmlFor="confirmarNovaSenhaCliente">
                     Confirmar senha
@@ -159,6 +156,7 @@ const NovaSenhaCliente: React.FC = () => {
                   <div className="register-cliente__input-wrapper">
                     <input
                       id="confirmarNovaSenhaCliente"
+                      autoComplete="new-password"
                       type={mostrarConfirmar ? 'text' : 'password'}
                       placeholder="Confirme a nova senha"
                       className="register-cliente__input register-cliente__input--with-toggle"

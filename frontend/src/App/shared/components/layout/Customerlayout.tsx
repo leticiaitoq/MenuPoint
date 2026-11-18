@@ -100,7 +100,7 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
   );
 
   const leftIcon = (
-    <img src="/icons/restaurant-logo.png" alt="Logo do restaurante" />
+    <img src="/icons/restaurant-logo.webp" alt="Logo do restaurante" />
   );
 
   // Logado: mostra o primeiro nome do cliente. Sem nome (não deveria ocorrer) cai no texto antigo.

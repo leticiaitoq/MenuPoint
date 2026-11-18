@@ -32,7 +32,7 @@ const RecoverPass: React.FC = () => {
   return (
     <div
       className="recover-pass"
-      style= {{ backgroundImage: 'url(/images/Register-Back.png)' }}
+      style= {{ backgroundImage: 'url(/images/Register-Back.webp)' }}
     >
       <div className="recover-pass__container">
 

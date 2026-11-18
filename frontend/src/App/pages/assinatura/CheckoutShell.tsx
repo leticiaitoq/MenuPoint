@@ -37,7 +37,7 @@ const CheckoutShell: React.FC<CheckoutShellProps> = ({ children, voltarPara }) =
           )}
           <div className="ck__conteudo">{children}</div>
         </div>
-        <div className="ck__imagem" style={{ backgroundImage: 'url(/images/Register-Back.png)' }} aria-hidden="true" />
+        <div className="ck__imagem" style={{ backgroundImage: 'url(/images/Register-Back.webp)' }} aria-hidden="true" />
       </div>
     </div>
   );

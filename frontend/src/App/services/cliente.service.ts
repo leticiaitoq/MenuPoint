@@ -13,7 +13,7 @@ export interface Cliente {
 }
 
 /** Imagem mostrada enquanto o cliente não enviou nenhuma foto */
-export const FOTO_PADRAO_CLIENTE = '/icons/customer-avatar.png'
+export const FOTO_PADRAO_CLIENTE = '/icons/customer-avatar.webp'
 
 // GET /auth/cliente/me (inclui o CPF, que não fica guardado no localStorage)
 export interface ClientePerfil extends Cliente {

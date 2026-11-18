@@ -166,7 +166,7 @@ const MenuLocal: React.FC = () => {
                         : null,
                     categoriaNome: c.nome,
                     tempoPreparoMin: p.tempo_preparo_min ?? null,
-                    imagem: p.imagem_url ?? "/icons/restaurant-logo.png",
+                    imagem: p.imagem_url ?? "/icons/restaurant-logo.webp",
                   })),
               )
               .sort(compararProdutos(ativas.map((c) => c.id))),
@@ -300,7 +300,7 @@ const MenuLocal: React.FC = () => {
       <div
         className="menu bg-arte bg-arte--opaco"
         style={
-          { "--bg-arte": "url(/images/Fundo-menu.png)" } as React.CSSProperties
+          { "--bg-arte": "url(/images/Fundo-menu.webp)" } as React.CSSProperties
         }
       >
         {/* Botão flutuante do carrinho — igual ao MenuCliente */}
@@ -404,7 +404,7 @@ const MenuLocal: React.FC = () => {
                 {p.destaque && (
                   <span className="menu__card-selo">⭐ Destaque</span>
                 )}
-                <img src={p.imagem} alt={p.nome} className="menu__card-img" />
+                <img src={p.imagem} alt={p.nome} className="menu__card-img" loading="lazy" />
                 <div className="menu__card-body">
                   <h3 className="menu__card-nome">{p.nome}</h3>
                   <p className="menu__card-desc">{p.descricao}</p>

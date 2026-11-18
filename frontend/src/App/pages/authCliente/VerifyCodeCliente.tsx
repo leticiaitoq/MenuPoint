@@ -159,7 +159,7 @@ const VerifyCodeCliente: React.FC = () => {
   return (
     <div
       className="verify-cliente"
-      style={{ backgroundImage: 'url(/images/Register-Back.png)' }}
+      style={{ backgroundImage: 'url(/images/Register-Back.webp)' }}
     >
       <div className="verify-cliente__container">
         <AuthCard />

@@ -579,13 +579,13 @@ const RegisterPage: React.FC = () => {
   return (
     <div
       className="register-page"
-      style={{ backgroundImage: 'url(/images/Register-Back.png)' }}
+      style={{ backgroundImage: 'url(/images/Register-Back.webp)' }}
     >
       <div className="register-page__card">
 
         {/* ── Lateral da marca ── */}
         <aside className="register-page__brand">
-          <img src="/images/lLogo.png" alt="" className="register-page__logo" />
+          <img src="/images/lLogo.webp" alt="" className="register-page__logo" />
           <span className="register-page__wordmark" aria-label="MenuPoint">
             Menu<span>Point</span>
           </span>

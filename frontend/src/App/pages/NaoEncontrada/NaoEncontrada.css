@@ -1,0 +1,121 @@
+.nao-encontrada {
+  --ne-destaque: #6e1f1f;
+  --ne-texto: #6e1f1f;
+  --ne-botao: #6e1f1f;
+  --ne-botao-hover: #5e1717;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 24px;
+  background: var(--bg-page);
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .nao-encontrada {
+  --ne-destaque: var(--text);
+  --ne-texto: var(--text-muted);
+  --ne-botao: var(--brand);
+  --ne-botao-hover: var(--brand-hover);
+}
+
+.nao-encontrada__content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  max-width: 1000px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.nao-encontrada__mascote {
+  max-width: 380px;
+  width: 100%;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.nao-encontrada__texto {
+  flex: 1;
+  min-width: 260px;
+  text-align: center;
+}
+
+.nao-encontrada__codigo {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--warning);
+}
+
+.nao-encontrada__titulo,
+.nao-encontrada__titulo .destaque,
+.nao-encontrada__titulo .laranja {
+  font-family: var(--font-brand);
+}
+
+.nao-encontrada__titulo {
+  font-size: 2.75rem;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.nao-encontrada__titulo .destaque {
+  color: var(--ne-destaque);
+}
+
+.nao-encontrada__titulo .laranja {
+  color: var(--warning);
+}
+
+.nao-encontrada__divisor {
+  width: 220px;
+  height: 3px;
+  background-color: var(--warning);
+  border-radius: 2px;
+  margin: 20px auto;
+}
+
+.nao-encontrada__descricao {
+  color: var(--ne-texto);
+  font-size: 1.15rem;
+  line-height: 1.5;
+  margin: 0 auto 28px;
+  max-width: 480px;
+}
+
+.nao-encontrada__botao {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--ne-botao);
+  color: var(--on-brand);
+  border: none;
+  border-radius: 999px;
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.nao-encontrada__botao:hover {
+  background-color: var(--ne-botao-hover);
+}
+
+@media (max-width: 800px) {
+  .nao-encontrada__content {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .nao-encontrada__mascote {
+    max-width: 240px;
+  }
+
+  .nao-encontrada__titulo {
+    font-size: 2.1rem;
+  }
+}

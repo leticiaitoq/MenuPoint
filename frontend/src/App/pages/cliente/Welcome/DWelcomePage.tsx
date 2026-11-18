@@ -82,7 +82,7 @@ const DWelcomePage: React.FC = () => {
         <div className="wc__left">
           <div className="wc__logo-wrap">
             <img
-              src={restaurante.logo_url ?? "/icons/restaurant-logo.png"}
+              src={restaurante.logo_url ?? "/icons/restaurant-logo.webp"}
               alt="Logo do restaurante"
               className="wc__logo"
             />

@@ -13,8 +13,8 @@ const LoginCliente: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { entrar, isAuthenticated } = useClienteAuth();
-  // Mesma conta nos dois sistemas, mas o login NUNCA troca a pessoa de sistema:
-  // quem veio da mesa volta para a mesa, quem veio do link do restaurante volta para o delivery.
+  // A conta é a mesma nos dois sistemas, mas o login não troca a pessoa de sistema:
+  // quem veio da mesa volta para a mesa, quem veio do link do restaurante volta para o delivery
   const { sistema } = useSistemaCliente();
 
   const [emailCliente, setEmailCliente] = useState('');
@@ -24,16 +24,15 @@ const LoginCliente: React.FC = () => {
   const [carregandoCliente, setCarregandoCliente] = useState(false);
   const [showSucesso, setShowSucesso] = useState(false);
 
-  // Aviso vindo de outra tela (ex.: "você abriu outro restaurante, entre novamente")
+  // Aviso vindo de outra tela, ex.: "você abriu outro restaurante, entre novamente"
   const avisoCliente = (location.state as { aviso?: string } | null)?.aviso;
 
-  // Mesmo padrão do login do restaurante: mostra o toast de sucesso e só navega
-  // depois de um tempinho, para a pessoa ver a confirmação.
+  // Igual ao login do restaurante: toast de sucesso e navega depois de um tempo
   useEffect(() => {
     if (!showSucesso) return;
     const timer = setTimeout(() => {
-      // Volta para a tela de onde veio, se ela for do MESMO sistema; senão, para a primeira tela dele
-      // Tela de onde veio (aviso de "faça login") ou a guardada na pendência de login
+      // Volta para a tela de origem se for do mesmo sistema, senão para a primeira tela dele.
+      // A origem vem do aviso de "faça login" ou da pendência de login guardada
       const destino = consumirRetornoLogin((location.state as { from?: string } | null)?.from);
       navigate(destinoDoSistema(sistema, destino), { replace: true });
     }, 1200);
@@ -51,12 +50,12 @@ const LoginCliente: React.FC = () => {
         senha: senhaCliente,
       });
 
-      // O toast vem ANTES do entrar(): assim que a sessão existe, o guard abaixo
-      // ("já está logado") não pode redirecionar antes da mensagem aparecer.
+      // O toast vem antes do entrar(), senão o guard abaixo ("já está logado")
+      // redireciona antes da mensagem aparecer
       setShowSucesso(true);
       entrar(sessao);
     } catch (err: any) {
-      // 403 = e-mail ainda não confirmado (o back já enviou um código novo)
+      // 403: e-mail não confirmado, o back já enviou um código novo
       if (err?.response?.status === 403) {
         navigate('/verify-code/cliente', {
           state: {
@@ -73,7 +72,7 @@ const LoginCliente: React.FC = () => {
     }
   };
 
-  // Já está logado: não precisa ver a tela de login (exceto durante o toast de sucesso)
+  // Já logado não vê a tela de login, só durante o toast de sucesso
   if (isAuthenticated && !showSucesso) {
     return <Navigate to={destinoDoSistema(sistema)} replace />;
   }
@@ -81,7 +80,7 @@ const LoginCliente: React.FC = () => {
   return (
     <div
       className="login-cliente"
-      style={{ backgroundImage: 'url(/images/Register-Back.png)' }}
+      style={{ backgroundImage: 'url(/images/Register-Back.webp)' }}
     >
       <div className="login-cliente__container">
         <AuthCard />
@@ -91,25 +90,23 @@ const LoginCliente: React.FC = () => {
 
           <form className="login-cliente__form" onSubmit={handleSubmitCliente}>
 
-            {/* Aviso informativo */}
             {avisoCliente && !erroCliente && (
               <p className="login-cliente__info" role="status">{avisoCliente}</p>
             )}
 
-            {/* Mensagem de erro */}
             {erroCliente && (
               <p style={{ color: 'red', fontSize: '14px', marginBottom: '8px' }}>
                 {erroCliente}
               </p>
             )}
 
-            {/* Campo Email */}
             <div className="login-cliente__field">
               <label className="login-cliente__label" htmlFor="emailCliente">Email</label>
               <div className="login-cliente__input-wrapper">
                 <MdEmail className="login-cliente__input-icon" />
                 <input
                   id="emailCliente"
+                  autoComplete="username"
                   type="email"
                   placeholder="seu@email.com"
                   className="login-cliente__input login-cliente__input--with-icon"
@@ -120,12 +117,12 @@ const LoginCliente: React.FC = () => {
               </div>
             </div>
 
-            {/* Campo Senha */}
             <div className="login-cliente__field">
               <label className="login-cliente__label" htmlFor="senhaCliente">Senha</label>
               <div className="login-cliente__input-wrapper">
                 <input
                   id="senhaCliente"
+                  autoComplete="current-password"
                   type={mostrarSenha ? 'text' : 'password'}
                   placeholder="Digite sua senha"
                   className="login-cliente__input login-cliente__input--with-toggle"

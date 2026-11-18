@@ -37,7 +37,7 @@ const AuthCard: React.FC<AuthCardProps> = ({
   tagline = 'Seu restaurante mais perto dos seus clientes.',
 }) => (
   <aside className="auth-brand">
-    <img src="/images/lLogo.png" alt="" className="auth-brand__logo" />
+    <img src="/images/lLogo.webp" alt="" className="auth-brand__logo" />
     <span className="auth-brand__wordmark" aria-label="MenuPoint">
       Menu<span>Point</span>
     </span>
